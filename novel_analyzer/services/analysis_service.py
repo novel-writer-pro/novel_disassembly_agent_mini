@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import json
+import re
 import time
 from collections.abc import Sequence
 from pathlib import Path
@@ -79,7 +81,46 @@ class AnalysisService:
         end = stripped.rfind("}")
         if start == -1 or end == -1 or end < start:
             raise ValueError("model response does not contain a JSON object")
-        return cast(dict[str, object], json.loads(stripped[start : end + 1]))
+        candidate = stripped[start : end + 1]
+        return cls._load_json_with_repair(candidate)
+
+    @staticmethod
+    def _load_json_with_repair(payload: str) -> dict[str, object]:
+        """Load JSON with lightweight repair attempts for common LLM formatting drift."""
+
+        def _attempt(text: str) -> dict[str, object] | None:
+            try:
+                loaded = json.loads(text)
+            except json.JSONDecodeError:
+                return None
+            return cast(dict[str, object], loaded) if isinstance(loaded, dict) else None
+
+        direct = _attempt(payload)
+        if direct is not None:
+            return direct
+
+        candidates = [
+            re.sub(r",(\s*[}\]])", r"\1", payload),
+            payload.replace("“", '"').replace("”", '"').replace("’", "'"),
+            re.sub(r"[\x00-\x1f]", "", payload),
+        ]
+        for text in candidates:
+            repaired = _attempt(text)
+            if repaired is not None:
+                return repaired
+
+        pythonish = (
+            payload.replace("null", "None")
+            .replace("true", "True")
+            .replace("false", "False")
+        )
+        try:
+            loaded = ast.literal_eval(pythonish)
+        except Exception as exc:  # noqa: BLE001
+            raise ValueError("model response does not contain valid JSON after repair") from exc
+        if not isinstance(loaded, dict):
+            raise ValueError("repaired payload is not a JSON object")
+        return cast(dict[str, object], loaded)
 
     def _invoke_with_retry(self, model: object, prompt: str) -> BaseMessage:
         last_error: Exception | None = None
@@ -350,11 +391,7 @@ class AnalysisService:
             chapter_index=chapter_index,
             normalized_title=normalized_title,
             dimensions=dimensions,
-            chapter_summary=(
-                analysis.summary.short
-                or analysis.summary.one_sentence
-                or analysis.summary.detailed
-            ),
+            chapter_summary=analysis.summary.compact(),
             key_entities=[item.label for item in facts.characters],
             key_events=[item.label for item in facts.events],
             continuity_notes=analysis.continuity_notes,
@@ -545,6 +582,9 @@ class AnalysisService:
                     ).ensure_minimum_writer_notes(
                         segment.normalized_title,
                         analysis.summary.short or analysis.summary.one_sentence,
+                        state_transition_notes,
+                        evidence_backed_resolutions,
+                        unresolved_threads,
                     )
                     guard_context = ChapterAgentContext(
                         chapter_index=segment.chapter_index,

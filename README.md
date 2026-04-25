@@ -59,18 +59,88 @@ export NOVEL_ANALYZER_EMBEDDING_CACHE_DIR=.cache/embeddings
 
 See [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md) for the internal staged agent pipeline and ONNX embedding details.
 
-## Quick start
-```bash
-poetry install
-poetry run novel-analyzer init-db
-poetry run novel-analyzer db-health
-poetry run novel-analyzer list-skills
-poetry run novel-analyzer test-embedding
-poetry run novel-analyzer inspect-novel /path/to/novel.txt
-poetry run novel-analyzer ingest /path/to/novel.txt --title 'sample'
-poetry run novel-analyzer start-run <novel_id> <manifest_id>
-poetry run novel-analyzer analyze-range <run_id> <branch_id> 1 3
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    A[Novel TXT / Source Text] --> B[Ingest & Chapter Splitter]
+    B --> C[Manifest / Chapter Segments]
+    C --> D[Run / Branch / Jobs]
+
+    D --> E[Chapter Analysis Pipeline]
+    E --> E1[chapter_intake]
+    E --> E2[fact_extractor]
+    E --> E3[evidence_binder]
+    E --> E4[analysis_generator]
+    E --> E5[writer_learning_lens]
+    E --> E6[anti_fabrication_guard]
+
+    E6 --> F[Chapter Artifact JSON]
+    F --> G[Retrieval Materialization]
+    F --> H[Fact Materialization]
+    F --> I[Reasoning Graph Materialization]
+    H --> J[Window Summaries]
+    I --> K[State Machine / State Summary]
+
+    G --> L[Branch QA / Search]
+    I --> L
+    J --> L
+    K --> L
+
+    F --> M[Chapter Bundle / Markdown]
+    K --> M
+    I --> M
+
+    F --> N[Chapter QA Context]
+    G --> N
+    I --> N
+    K --> N
+
+    L --> O[Branch QA Context]
+    K --> O
+    I --> O
+    J --> O
+    O --> P[Thematic Contexts]
+    P --> P1[Character Arc]
+    P --> P2[Conflict Arc]
+    P --> P3[Foreshadow Arc]
+    P --> P4[World Rule Arc]
+
+    M --> Q[Branch Report / Package Export]
+    N --> Q
+    O --> Q
 ```
+
+### Reading guide
+1. **输入层**：原始小说文本先经过导入与切章。
+2. **分析层**：按章节进入 staged agent pipeline，产出 chapter artifact。
+3. **派生层**：从 artifact 派生 retrieval、facts、reasoning graph、window、state summary。
+4. **消费层**：导出 chapter/branch bundle、QA context、thematic contexts、report、package。
+
+## Python3 install (without Poetry)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+python3 -m novel_analyzer.cli.app init-db
+python3 -m novel_analyzer.cli.app db-health
+```
+
+## Quick start
+
+| 场景 | Poetry | Python3 |
+|---|---|---|
+| 安装依赖 | `poetry install` | `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
+| 初始化数据库 | `poetry run novel-analyzer init-db` | `python3 -m novel_analyzer.cli.app init-db` |
+| 数据库健康检查 | `poetry run novel-analyzer db-health` | `python3 -m novel_analyzer.cli.app db-health` |
+| 查看技能 | `poetry run novel-analyzer list-skills` | `python3 -m novel_analyzer.cli.app list-skills` |
+| 测 embedding | `poetry run novel-analyzer test-embedding` | `python3 -m novel_analyzer.cli.app test-embedding` |
+| 查看切章结果 | `poetry run novel-analyzer inspect-novel /path/to/novel.txt` | `python3 -m novel_analyzer.cli.app inspect-novel /path/to/novel.txt` |
+| 导入小说 | `poetry run novel-analyzer ingest /path/to/novel.txt --title 'sample'` | `python3 -m novel_analyzer.cli.app ingest /path/to/novel.txt --title 'sample'` |
+| 创建 run | `poetry run novel-analyzer start-run <novel_id> <manifest_id>` | `python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>` |
+| 推进章节 | `poetry run novel-analyzer analyze-range <run_id> <branch_id> 1 3` | `python3 -m novel_analyzer.cli.app analyze-range <run_id> <branch_id> 1 3` |
+
 
 ## Skills
 Project-local skills live under:
@@ -102,11 +172,25 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 
 ## More docs
 
-- [`./docs/direct-usage-guide.md`](./docs/direct-usage-guide.md)：直接使用拆书 agent 的操作指南
-- [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md)：内部 staged agent 与 ONNX embedding 说明
-- [`./docs/interface-manifest.md`](./docs/interface-manifest.md)：chapter / branch / QA context / thematic context 接口说明
-- [`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)：从 ingest 到 analyze / export / QA context / package 的标准 CLI 操作手册
-- [`./docs/final-handoff.md`](./docs/final-handoff.md)：阶段性交付清单 / 风险 / 接入建议 / 后续演进顺序
-- [`./docs/release-handoff-brief.md`](./docs/release-handoff-brief.md)：上线/交接版简要说明，适合快速交付与接手
-- [`./docs/real-run-checklist.md`](./docs/real-run-checklist.md)：真实小说首轮试跑清单与复盘建议
-- [`./docs/review-template.md`](./docs/review-template.md)：章节/窗口试跑复盘模板
+### 0. 开发变更记录
+- [`./CHANGELOG.md`](./CHANGELOG.md)：开发变更记录；后续每次开发更改都需要追加 changelog
+
+### 1. 使用者
+1. [`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)
+2. [`./docs/direct-usage-guide.md`](./docs/direct-usage-guide.md)
+3. [`./docs/real-run-checklist.md`](./docs/real-run-checklist.md)
+4. [`./docs/review-template.md`](./docs/review-template.md)
+5. [`./docs/session-handoff-manual.md`](./docs/session-handoff-manual.md)
+
+### 2. 接入者
+1. [`./docs/interface-manifest.md`](./docs/interface-manifest.md)
+2. [`./docs/examples/`](./docs/examples/)
+3. [`./docs/real-run-evaluation-1-12.md`](./docs/real-run-evaluation-1-12.md)
+
+### 3. 开发者 / 维护者
+1. [`./docs/final-handoff.md`](./docs/final-handoff.md)
+2. [`./docs/release-handoff-brief.md`](./docs/release-handoff-brief.md)
+3. [`./docs/session-handoff-manual.md`](./docs/session-handoff-manual.md)
+4. [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md)
+5. [`./docs/model-eval-template.md`](./docs/model-eval-template.md)
+6. [`./docs/README.md`](./docs/README.md)

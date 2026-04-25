@@ -189,6 +189,19 @@ class AnalysisSummary(BaseModel):
             return {'short': value}
         return value
 
+    def compact(self, max_chars: int = 90) -> str:
+        """Return a concise card-style summary."""
+
+        for candidate in [self.short, self.one_sentence, self.detailed]:
+            text = str(candidate).strip()
+            if not text:
+                continue
+            if len(text) <= max_chars:
+                return text
+            clipped = text[: max_chars - 1].rstrip('，。；;、, ')
+            return clipped + '。'
+        return ''
+
 
 class ChapterAnalysisLayerOutput(BaseModel):
     """Skill output for chapter-analysis-generator."""
@@ -239,6 +252,9 @@ class WriterLearningLensOutput(BaseModel):
         self,
         title: str,
         summary: str,
+        state_transition_notes: list[str] | None = None,
+        evidence_backed_resolutions: list[str] | None = None,
+        unresolved_threads: list[str] | None = None,
     ) -> WriterLearningLensOutput:
         """Provide a fallback craft note when the stage is empty."""
 
@@ -252,8 +268,18 @@ class WriterLearningLensOutput(BaseModel):
             ]
         ):
             return self
-        lesson = f'《{title}》这一章可重点学习其如何用章节标题与核心事件建立读者预期：{summary}'
-        return self.model_copy(update={'transferable_lessons': [lesson]})
+        transition = (state_transition_notes or [''])[0]
+        resolution = (evidence_backed_resolutions or [''])[0]
+        unresolved = (unresolved_threads or [''])[0]
+        lessons: list[str] = []
+        if transition:
+            lessons.append(f'可学习作者如何把状态推进明确写成阶段变化：{transition}')
+        if resolution:
+            lessons.append(f'可学习作者如何让阶段性解决显得可信：{resolution}')
+        if unresolved:
+            lessons.append(f'可学习作者如何保留未解线程驱动后续：{unresolved}')
+        lessons.append(f'《{title}》这一章可重点学习其如何用章节标题与核心事件建立读者预期：{summary}')
+        return self.model_copy(update={'transferable_lessons': lessons[:3]})
 
 
 class AntiFabricationGuardOutput(BaseModel):

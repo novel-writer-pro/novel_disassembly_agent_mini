@@ -13,6 +13,7 @@ from novel_analyzer.domain.schemas import (
     ChapterAnalysisLayerOutput,
     ChapterFactExtractionOutput,
     EvidenceNote,
+    WriterLearningLensOutput,
 )
 from novel_analyzer.services.analysis_service import AnalysisService
 from novel_analyzer.services.ingest_service import IngestService
@@ -33,6 +34,26 @@ def test_extract_json_payload_accepts_fenced_json() -> None:
         "chapter_index": 1,
         "normalized_title": "X",
     }
+
+
+def test_extract_json_payload_repairs_trailing_comma() -> None:
+    message = AIMessage(
+        content='{"chapter_index":1,"normalized_title":"X",}'
+    )
+    assert AnalysisService._extract_json_payload(message) == {
+        "chapter_index": 1,
+        "normalized_title": "X",
+    }
+
+
+def test_analysis_summary_compact_prefers_short_and_truncates() -> None:
+    summary = AnalysisSummary(
+        short='这是一个非常长的摘要' * 10,
+        one_sentence='一句话',
+    )
+    compact = summary.compact(max_chars=20)
+    assert len(compact) <= 20
+    assert compact.endswith('。')
 
 
 def test_state_summary_guard_flags_unsupported_resolution_claims() -> None:
@@ -130,3 +151,18 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
         service.context_service.fact_context_json = _boom  # type: ignore[method-assign]
         with pytest.raises(RuntimeError, match='boom'):
             service.analyze_range(run.id, branch.id, 1, 1)
+
+
+def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() -> None:
+    output = WriterLearningLensOutput().ensure_minimum_writer_notes(
+        '测试章',
+        '这是摘要',
+        ['本章推进了关系变化。'],
+        ['前文冲突获得阶段性解决。'],
+        ['仍有未解线程待处理。'],
+    )
+    lessons = output.transferable_lessons
+    assert lessons
+    assert any('推进' in item for item in lessons)
+    assert any('可信' in item or '解决' in item for item in lessons)
+    assert any('未解线程' in item for item in lessons)

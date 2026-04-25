@@ -21,3 +21,4 @@
    - 作者如何推进状态
    - 作者如何让“解决”显得可信
    - 作者如何保留未解线程来驱动后续章节
+8. 默认至少给出 1~3 条 transferable_lessons；如果其他桶为空，也必须尽量把 lesson 落在 transferable_lessons 中，不要整段空白。

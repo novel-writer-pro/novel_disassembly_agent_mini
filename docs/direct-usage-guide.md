@@ -8,6 +8,26 @@
 - 5 章固定窗口总结
 - 事实层沉淀（entity / event / continuity）
 
+## Python3 安装方式（不使用 Poetry）
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+```
+
+运行命令时，将：
+
+```bash
+poetry run novel-analyzer <command> ...
+```
+
+替换为：
+
+```bash
+python3 -m novel_analyzer.cli.app <command> ...
+```
+
 ## 基础配置
 建议通过 `.env.local` 配置：
 

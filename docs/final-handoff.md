@@ -21,6 +21,64 @@
 
 ---
 
+## 1.1 架构总览
+
+```mermaid
+flowchart TD
+    A[Novel TXT / Source Text] --> B[Ingest & Chapter Splitter]
+    B --> C[Manifest / Chapter Segments]
+    C --> D[Run / Branch / Jobs]
+
+    D --> E[Chapter Analysis Pipeline]
+    E --> E1[chapter_intake]
+    E --> E2[fact_extractor]
+    E --> E3[evidence_binder]
+    E --> E4[analysis_generator]
+    E --> E5[writer_learning_lens]
+    E --> E6[anti_fabrication_guard]
+
+    E6 --> F[Chapter Artifact JSON]
+    F --> G[Retrieval Materialization]
+    F --> H[Fact Materialization]
+    F --> I[Reasoning Graph Materialization]
+    H --> J[Window Summaries]
+    I --> K[State Machine / State Summary]
+
+    G --> L[Branch QA / Search]
+    I --> L
+    J --> L
+    K --> L
+
+    F --> M[Chapter Bundle / Markdown]
+    K --> M
+    I --> M
+
+    F --> N[Chapter QA Context]
+    G --> N
+    I --> N
+    K --> N
+
+    L --> O[Branch QA Context]
+    K --> O
+    I --> O
+    J --> O
+    O --> P[Thematic Contexts]
+    P --> P1[Character Arc]
+    P --> P2[Conflict Arc]
+    P --> P3[Foreshadow Arc]
+    P --> P4[World Rule Arc]
+
+    M --> Q[Branch Report / Package Export]
+    N --> Q
+    O --> Q
+```
+
+### 阅读说明
+1. 输入层：原始文本进入导入与切章。
+2. 分析层：按章节进入 staged agent pipeline。
+3. 派生层：生成 retrieval / facts / graph / window / state summary。
+4. 消费层：输出 bundle / markdown / QA context / thematic contexts / package。
+
 ## 2. 已支持能力总览
 
 ### 2.1 拆书主链路
@@ -150,6 +208,8 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 
 ## 4. 稳定输出接口
 
+> 开发约定：后续每次开发更改，都需要同步更新 [`../CHANGELOG.md`](../CHANGELOG.md)。
+
 核心稳定输出面：
 - chapter bundle
 - branch bundle
@@ -250,6 +310,12 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - 多书管理 / 多 branch 工作台
 
 ---
+
+## 8.1 当前真实试跑评估
+
+- [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
+- [`./stage-evaluation-1-12.md`](./stage-evaluation-1-12.md)
+- [`./session-handoff-manual.md`](./session-handoff-manual.md)
 
 ## 9. 当前阶段结论
 

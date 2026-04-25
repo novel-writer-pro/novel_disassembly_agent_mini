@@ -4,6 +4,31 @@
 
 ---
 
+## 0. Python3 安装（不使用 Poetry）
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+```
+
+如果你不使用 `poetry run`，下面所有命令都可以改写为：
+
+```bash
+python3 -m novel_analyzer.cli.app <command> ...
+```
+
+例如：
+
+```bash
+python3 -m novel_analyzer.cli.app init-db
+python3 -m novel_analyzer.cli.app ingest /path/to/novel.txt --title '样例小说'
+python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>
+```
+
+---
+
 ## 1. 初始化环境
 
 ```bash
