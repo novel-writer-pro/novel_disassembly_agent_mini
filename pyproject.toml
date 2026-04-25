@@ -1,0 +1,58 @@
+[tool.poetry]
+name = "novel-analyzer"
+version = "0.1.0"
+description = "CLI-first, chapter-progressive novel deconstruction scaffold"
+authors = ["OpenAI Codex <codex@openai.com>"]
+readme = "README.md"
+packages = [{ include = "novel_analyzer" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.11.10"
+pydantic-settings = "^2.11.0"
+sqlalchemy = "^2.0.44"
+typer = "^0.16.1"
+langchain = "^0.3.27"
+langgraph = "^0.6.11"
+langchain-openai = "^0.3.35"
+psycopg = { version = "^3.2.10", extras = ["binary"] }
+alembic = "^1.18.4"
+skillkit = { version = "^0.4.0", extras = ["langchain"] }
+aiofiles = "^25.1.0"
+onnxruntime = "^1.22.1"
+transformers = "^4.56.2"
+huggingface-hub = "^0.35.1"
+numpy = "^2.3.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+ruff = "^0.14.0"
+mypy = "^1.18.2"
+
+[tool.poetry.scripts]
+novel-analyzer = "novel_analyzer.cli.app:app"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501", "I001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+packages = ["novel_analyzer"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"

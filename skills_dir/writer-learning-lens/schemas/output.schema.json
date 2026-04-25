@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WriterLearningLensOutput",
+  "type": "object",
+  "required": ["hook_notes", "conflict_notes", "reveal_order_notes", "scene_efficiency_notes", "transferable_lessons"],
+  "properties": {
+    "hook_notes": {"type": "array", "items": {"type": "string"}},
+    "conflict_notes": {"type": "array", "items": {"type": "string"}},
+    "reveal_order_notes": {"type": "array", "items": {"type": "string"}},
+    "scene_efficiency_notes": {"type": "array", "items": {"type": "string"}},
+    "transferable_lessons": {"type": "array", "items": {"type": "string"}}
+  }
+}

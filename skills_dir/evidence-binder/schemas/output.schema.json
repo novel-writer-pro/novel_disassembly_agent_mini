@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EvidenceBindingOutput",
+  "type": "object",
+  "required": ["retained_items", "unsupported_items", "coverage_summary"],
+  "properties": {
+    "retained_items": {"type": "array", "items": {"type": "object"}},
+    "unsupported_items": {"type": "array", "items": {"type": "object"}},
+    "coverage_summary": {"type": "string"}
+  }
+}

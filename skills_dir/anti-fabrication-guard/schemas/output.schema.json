@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AntiFabricationGuardOutput",
+  "type": "object",
+  "required": ["unsupported_inferences", "ambiguous_points", "overclaim_flags", "needs_human_review"],
+  "properties": {
+    "unsupported_inferences": {"type": "array", "items": {"type": "string"}},
+    "ambiguous_points": {"type": "array", "items": {"type": "string"}},
+    "overclaim_flags": {"type": "array", "items": {"type": "string"}},
+    "needs_human_review": {"type": "boolean"}
+  }
+}

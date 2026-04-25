@@ -1,0 +1,107 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from novel_analyzer.config.settings import Settings
+from novel_analyzer.services.fact_service import FactService
+from novel_analyzer.services.ingest_service import IngestService
+from novel_analyzer.services.qa_service import BranchQAService
+from novel_analyzer.services.run_service import RunService
+
+
+class _DummyQAService(BranchQAService):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, Settings(llm_api_key='test-key'))
+
+    def answer_question(self, branch_id: str, question: str, limit: int = 5):
+        hits = self.retrieval_service.search_branch(branch_id, question, limit)
+        if not hits:
+            return super().answer_question(branch_id, question, limit)
+        from novel_analyzer.domain.schemas import BranchQAResult
+        return BranchQAResult(
+            answer=(
+                f"根据第{hits[0].chapter_index}章，可直接确认：{hits[0].summary_text}"
+                '。若追问更深层动机，还需要更多章节证据。'
+            ),
+            used_chapters=[hit.chapter_index for hit in hits],
+            evidence=[f"第{hit.chapter_index}章：{hit.summary_text}" for hit in hits],
+            confidence=0.7,
+            insufficient_context=False,
+        )
+
+
+def _session() -> Session:
+    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    from novel_analyzer.database.session import create_schema
+    create_schema(engine)
+    return Session(engine)
+
+
+def test_branch_qa_returns_grounded_answer(tmp_path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 命格初现\n卫图觉醒命格，并决定先修养生功。\n', encoding='utf-8')
+
+    with _session() as session:
+        settings = Settings()
+        novel, manifest = IngestService(session, settings).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session, settings).create_run(novel.id, manifest.id)
+        artifact = RunService(session, settings).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '命格初现',
+                'chapter_summary': '卫图觉醒命格，并决定先修养生功。',
+                'key_entities': ['卫图', '命格', '养生功'],
+                'key_events': ['卫图觉醒命格'],
+                'continuity_notes': ['主线进入修行筹备阶段。'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'dimensions': [],
+            },
+        )
+        from novel_analyzer.services.retrieval_service import RetrievalService
+        RetrievalService(session, settings).materialize_for_artifact(artifact.id)
+        result = _DummyQAService(session).answer_question(branch.id, '卫图为什么要修养生功？')
+        assert not result.insufficient_context
+        assert result.used_chapters == [1]
+        assert '根据第1章' in result.answer
+        assert '卫图觉醒命格' in result.answer
+
+
+def test_branch_qa_window_context_is_available(tmp_path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        settings = Settings()
+        novel, manifest = IngestService(session, settings).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session, settings).create_run(novel.id, manifest.id)
+        fact_service = FactService(session)
+        from novel_analyzer.services.retrieval_service import RetrievalService
+        retrieval_service = RetrievalService(session, settings)
+        for idx in range(1, 6):
+            artifact = RunService(session, settings).record_chapter_artifact(
+                branch.id,
+                idx,
+                {
+                    'chapter_index': idx,
+                    'normalized_title': f'第{idx}章',
+                    'chapter_summary': f'第{idx}章摘要',
+                    'key_entities': ['卫图', '养生功'],
+                    'key_events': [f'第{idx}章事件'],
+                    'continuity_notes': [f'第{idx}章衔接'],
+                    'writer_learning_notes': [],
+                    'unsupported_inferences': [],
+                    'ambiguous_points': [],
+                    'needs_human_review': False,
+                    'dimensions': [],
+                },
+            )
+            retrieval_service.materialize_for_artifact(artifact.id)
+            fact_service.materialize_for_artifact(artifact.id)
+            fact_service.materialize_window_if_ready(branch.id, idx, 5)
+        service = BranchQAService(session, settings)
+        lines = service._window_context(branch.id, [3])
+        assert lines
+        assert '窗口 1-5' in lines[0]

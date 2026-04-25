@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChapterFactExtractionOutput",
+  "type": "object",
+  "required": ["characters", "events", "relations", "conflicts", "foreshadowing", "worldbuilding_facts"],
+  "properties": {
+    "characters": {"type": "array", "items": {"type": "object"}},
+    "events": {"type": "array", "items": {"type": "object"}},
+    "relations": {"type": "array", "items": {"type": "object"}},
+    "conflicts": {"type": "array", "items": {"type": "object"}},
+    "foreshadowing": {"type": "array", "items": {"type": "object"}},
+    "worldbuilding_facts": {"type": "array", "items": {"type": "object"}}
+  }
+}

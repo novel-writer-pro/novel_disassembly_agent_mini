@@ -1,0 +1,282 @@
+
+<div class="hyc-component-reasoner__text"><div class="hyc-content-md hyc-content-md-done"><div class="hyc-common-markdown hyc-common-markdown-style"><h1>小说拆书工具开发任务说明书
+</h1><h2>项目概述
+</h2><div class="ybc-p">开发一个基于LangChain/LangGraph/SkillKit的小说拆书工具，能够自动分析小说文本，提取结构化信息，构建知识图谱，并生成分析报告。工具需严格遵循我们之前讨论的分析流程和数据模型。</div>
+<h2>技术栈要求
+</h2><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Python环境: /usr/local/miniconda3/bin/python</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Python版本: 3.10+</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">核心框架:</div>
+<ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">LangChain (最新稳定版)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">LangGraph (最新稳定版)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">SkillKit (LangChain技能包)</div>
+</span></li></ul></span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">数据库: PostgreSQL 14+ (唯一外部存储)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">向量存储: 使用pgvector扩展(PostgreSQL内嵌)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">大模型接入: Claude API (anthropic) 或 OpenAI API兼容接口</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">缓存: Redis可选，但非必需</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">异步支持: 必须支持asyncio</div>
+</span></li></ul><h2>系统架构设计
+</h2><h3>1. 核心模块划分
+</h3><div class="ybc-p">novel_analyzer/</div>
+<div class="ybc-p">├── init.py</div>
+<div class="ybc-p">├── config/              # 配置管理</div>
+<div class="ybc-p">├── database/           # PostgreSQL数据模型和连接</div>
+<div class="ybc-p">├── preprocessing/      # 文本预处理和章节分割</div>
+<div class="ybc-p">├── analysis/          # 分析引擎</div>
+<div class="ybc-p">│   ├── chapter/       # 单章分析</div>
+<div class="ybc-p">│   ├── cross_chapter/ # 跨章分析</div>
+<div class="ybc-p">│   └── graph/         # 知识图谱构建</div>
+<div class="ybc-p">├── retrieval/         # 检索系统 (embedding+bm25+graph)</div>
+<div class="ybc-p">├── prompts/          # 所有Prompt模板</div>
+<div class="ybc-p">├── skills/           # SkillKit技能定义</div>
+<div class="ybc-p">├── workflows/        # LangGraph工作流定义</div>
+<div class="ybc-p">├── reporting/        # 报告生成模块</div>
+<div class="ybc-p">└── cli/             # 命令行接口</div>
+<h3>2. 数据库设计要点
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">使用SQLAlchemy 2.0+ ORM</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">所有表必须支持软删除和时间戳</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">JSONB字段用于存储灵活的分析结果</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">必须实现我们讨论的完整数据模型：</div>
+<ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">novels (小说元数据)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">chapters (章节基础表)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">chapter_analysis (章节分析结果)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">narrative_entities (叙事实体)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">narrative_relations (实体关系)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">volatility_patterns (波动模式)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">writing_patterns (写作模式)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">等所有之前讨论的表</div>
+</span></li></ul></span></li></ul><h2>核心功能实现细节
+</h2><h3>1. 预处理模块
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">章节分割算法: 实现启发式分割，支持多种章节标记模式</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">元数据提取: 自动识别章节标题、编号、可能的卷/弧标记</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">文本清洗: 去除无关字符，标准化格式</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">输出: 结构化章节列表，每章包含位置元数据</div>
+</span></li></ul><h3>2. 单章分析引擎
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">上下文组装: 实现我们讨论的混合检索(embedding+bm25+graph)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Prompt管理: 使用LangChain的PromptTemplate，支持变量注入</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">分析维度: 必须实现我们讨论的所有14+个分析维度</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">错误处理: 分析失败时重试机制，支持跳过问题章节</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">结果验证: JSON Schema验证输出格式</div>
+</span></li></ul><div class="ybc-p">单章分析Prompt设计:</div>
+<h1>prompts/chapter_analysis.py
+</h1><div class="ybc-p">CHAPTER_ANALYSIS_PROMPT = """</div>
+<div class="ybc-p">你是一个专业的小说分析师。请分析以下章节，提取结构化信息。</div>
+<div class="ybc-p">章节信息</div>
+<div class="ybc-p">标题: {chapter_title}</div>
+<div class="ybc-p">序号: 第{chapter_number}章</div>
+<div class="ybc-p">上下文: {context_hint}</div>
+<div class="ybc-p">前情提要</div>
+<div class="ybc-p">{relevant_background}</div>
+<div class="ybc-p">本章内容</div>
+<div class="ybc-p">{chapter_content}</div>
+<div class="ybc-p">分析要求</div>
+<div class="ybc-p">{analysis_instructions}</div>
+<div class="ybc-p">输出格式(严格JSON)</div>
+<div class="ybc-p">{output_schema}</div>
+<div class="ybc-p">"""</div>
+<h3>3. 跨章分析引擎
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">触发机制: 实现我们讨论的三级窗口触发</div>
+<ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">固定窗口(每5-10章)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">叙事单元窗口(故事弧结束)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">关键节点窗口(检测到重大转折)</div>
+</span></li></ul></span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">分析方法: 基于知识图谱的关联分析</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">状态追踪: 实时更新角色状态、伏笔追踪等</div>
+</span></li></ul><div class="ybc-p">跨章分析Prompt示例:</div>
+<h1>prompts/cross_chapter_analysis.py
+</h1><div class="ybc-p">ARC_ANALYSIS_PROMPT = """</div>
+<div class="ybc-p">分析以下故事弧的完整叙事结构。</div>
+<div class="ybc-p">弧信息</div>
+<div class="ybc-p">弧标题: {arc_title}</div>
+<div class="ybc-p">包含章节: 第{start_chapter}章 至 第{end_chapter}章</div>
+<div class="ybc-p">弧内章节摘要</div>
+<div class="ybc-p">{chapter_summaries}</div>
+<div class="ybc-p">关键事件序列</div>
+<div class="ybc-p">{key_events}</div>
+<div class="ybc-p">角色发展轨迹</div>
+<div class="ybc-p">{character_developments}</div>
+<div class="ybc-p">分析任务</div>
+<ol class="ybc-ol-component ybc-ol-component_1"><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">1.</span></span><span class="ybc-li-component_content"><div class="ybc-p">评估本弧的叙事完整性</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">2.</span></span><span class="ybc-li-component_content"><div class="ybc-p">识别节奏变化模式</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">3.</span></span><span class="ybc-li-component_content"><div class="ybc-p">分析伏笔设置与回收效果</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">4.</span></span><span class="ybc-li-component_content"><div class="ybc-p">评估情感曲线合理性</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">5.</span></span><span class="ybc-li-component_content"><div class="ybc-p">给出改进建议(如需要)</div>
+<div class="ybc-p">"""</div>
+</span></li></ol><h3>4. 知识图谱构建
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">实体抽取: 从单章分析结果中提取实体</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">关系建立: 基于事件和上下文建立关系</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">图谱更新: 增量更新，支持回滚</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">查询接口: 实现Cypher-like查询接口</div>
+</span></li></ul><h3>5. 检索系统实现
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">混合检索策略:</div>
+<ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">向量检索: 使用text-embedding-3-large或等效模型</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">BM25: 使用whoosh或直接PostgreSQL全文搜索</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">图谱检索: 通过实体关系网络查询</div>
+</span></li></ul></span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">结果融合: 实现加权分数融合算法</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">缓存优化: 频繁查询结果缓存</div>
+</span></li></ul><h3>6. LangGraph工作流设计
+</h3><h1>workflows/analysis_workflow.py
+</h1><div class="ybc-p">class NovelAnalysisWorkflow:</div>
+<div class="ybc-p">"""</div>
+<div class="ybc-p">主工作流，控制从预处理到报告生成的完整流程</div>
+<div class="ybc-p">必须支持状态持久化和断点续传</div>
+<div class="ybc-p">"""</div>
+<pre class="ybc-pre-component ybc-pre-component_not-math"><div class="hyc-common-markdown__code"><div class="hyc-common-markdown__code__hd"><div class="hyc-common-markdown__code__hd__inner"><div class="hyc-common-markdown__code__hd__l"></div><div class="hyc-common-markdown__code__hd__r"><div class="hyc-common-markdown__code__option"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.18563 1.02148H6.27219C7.2371 1.02147 8.02186 1.02145 8.64056 1.10464C9.28576 1.19138 9.83952 1.37836 10.2808 1.81962C10.722 2.26088 10.909 2.81464 10.9958 3.45984C11.013 3.58781 11.0266 3.72289 11.0374 3.8652C11.4689 3.87473 11.8501 3.8954 12.1831 3.94018C12.8283 4.02693 13.3821 4.21391 13.8234 4.65517C14.2646 5.09643 14.4516 5.65018 14.5383 6.29538C14.6215 6.9141 14.6215 7.69882 14.6215 8.66375V10.167C14.6215 11.1319 14.6215 11.9166 14.5383 12.5354C14.4516 13.1806 14.2646 13.7343 13.8234 14.1756C13.3821 14.6168 12.8283 14.8038 12.1831 14.8906C11.5644 14.9737 10.7797 14.9737 9.81476 14.9737H9.72821C8.76328 14.9737 7.97855 14.9737 7.35983 14.8906C6.71463 14.8038 6.16088 14.6168 5.71962 14.1756C5.27836 13.7343 5.09138 13.1806 5.00464 12.5354C4.98743 12.4074 4.97379 12.2723 4.96296 12.13C4.53148 12.1205 4.15032 12.0998 3.81726 12.055C3.17206 11.9683 2.6183 11.7813 2.17704 11.34C1.73578 10.8988 1.5488 10.345 1.46206 9.69981C1.37888 9.0811 1.37889 8.29639 1.37891 7.33148V5.82821C1.37889 4.8633 1.37888 4.07854 1.46206 3.45984C1.5488 2.81464 1.73578 2.26088 2.17704 1.81962C2.6183 1.37836 3.17206 1.19138 3.81726 1.10464C4.43596 1.02145 5.22072 1.02147 6.18563 1.02148ZM4.92325 10.9287C4.92148 10.6885 4.92148 10.4347 4.92148 10.167V8.66375C4.92147 7.69882 4.92145 6.9141 5.00464 6.29538C5.09138 5.65018 5.27836 5.09643 5.71962 4.65517C6.16088 4.21391 6.71463 4.02693 7.35983 3.94018C7.97855 3.857 8.76327 3.85701 9.7282 3.85703H9.81477C9.82079 3.85703 9.82681 3.85703 9.83282 3.85703C9.82532 3.77412 9.8166 3.69516 9.80646 3.61973C9.73761 3.1076 9.61339 2.84929 9.43225 2.66815C9.25111 2.48701 8.9928 2.36279 8.48066 2.29394C7.95127 2.22276 7.24761 2.22149 6.22891 2.22149C5.21021 2.22149 4.50655 2.22276 3.97716 2.29394C3.46502 2.36279 3.20671 2.48701 3.02557 2.66815C2.84443 2.84929 2.72021 3.1076 2.65136 3.61973C2.58018 4.14913 2.57891 4.85279 2.57891 5.87149V7.28816C2.57891 8.30685 2.58018 9.01052 2.65136 9.53991C2.72021 10.052 2.84443 10.3104 3.02557 10.4915C3.20671 10.6726 3.46502 10.7969 3.97716 10.8657C4.24274 10.9014 4.55218 10.9195 4.92325 10.9287ZM6.19393 6.45528C6.26279 5.94314 6.38701 5.68483 6.56815 5.5037C6.74928 5.32256 7.0076 5.19834 7.51973 5.12948C8.04913 5.05831 8.75279 5.05703 9.77149 5.05703C10.7902 5.05703 11.4938 5.05831 12.0232 5.12948C12.5354 5.19834 12.7937 5.32256 12.9748 5.50369C13.156 5.68483 13.2802 5.94314 13.349 6.45528C13.4202 6.98467 13.4215 7.68834 13.4215 8.70703V10.1237C13.4215 11.1424 13.4202 11.8461 13.349 12.3755C13.2802 12.8876 13.156 13.1459 12.9748 13.327C12.7937 13.5082 12.5354 13.6324 12.0232 13.7013C11.4938 13.7724 10.7902 13.7737 9.77149 13.7737C8.75279 13.7737 8.04913 13.7724 7.51973 13.7013C7.0076 13.6324 6.74929 13.5082 6.56815 13.327C6.38701 13.1459 6.26279 12.8876 6.19393 12.3755C6.12276 11.8461 6.12149 11.1424 6.12149 10.1237V8.70704C6.12149 7.68834 6.12276 6.98467 6.19393 6.45528Z" fill="currentColor"></path></svg><span class="hyc-common-markdown__code__option__text">复制</span></div></div></div></div><pre class="hyc-common-markdown__code-lan"><div class="hyc-code-scrollbar" style="position: relative; overflow: hidden; width: 100%; height: 100%;"><div class="hyc-code-scrollbar__view" style="position: relative; inset: 0px; overflow: scroll; margin-right: -13px; margin-bottom: -13px;"><pre><code class="language-markdown">def init(self):
+<span class="hljs-code">    self.graph = StateGraph(AnalysisState)
+    
+    # 定义节点
+    self.graph.add_node("preprocess", preprocess_chapters)
+    self.graph.add_node("analyze_chapter", analyze_single_chapter)
+    self.graph.add_node("cross_analysis", perform_cross_analysis)
+    self.graph.add_node("build_graph", build_knowledge_graph)
+    self.graph.add_node("generate_report", generate_reports)
+    
+    # 定义边和条件跳转
+    self.graph.add_conditional_edges(
+        "analyze_chapter",
+        should_trigger_cross_analysis,  # 条件函数
+        {
+            "continue": "analyze_chapter",
+            "trigger_cross": "cross_analysis",
+            "complete": "generate_report"
+        }
+    )</span></code></pre></div><div class="hyc-code-scrollbar__track" style="position: absolute; height: 7px; right: 4px; bottom: 4px; left: 4px;"><div class="hyc-code-scrollbar__thumb" style="position: relative; display: block; height: 100%; width: 0px;"></div></div><div style="position: absolute; width: 6px; right: 2px; bottom: 2px; top: 2px; border-radius: 3px;"><div style="position: relative; display: block; width: 100%; cursor: pointer; border-radius: inherit; background-color: rgba(0, 0, 0, 0.2); height: 0px;"></div></div></div></pre></div></pre><h3>7. SkillKit技能定义
+</h3><h1>skills/analysis_skills.py
+</h1><div class="ybc-p">class ChapterAnalysisSkill(BaseSkill):</div>
+<div class="ybc-p">"""单章分析技能"""</div>
+<pre class="ybc-pre-component ybc-pre-component_not-math"><div class="hyc-common-markdown__code"><div class="hyc-common-markdown__code__hd"><div class="hyc-common-markdown__code__hd__inner"><div class="hyc-common-markdown__code__hd__l"></div><div class="hyc-common-markdown__code__hd__r"><div class="hyc-common-markdown__code__option"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.18563 1.02148H6.27219C7.2371 1.02147 8.02186 1.02145 8.64056 1.10464C9.28576 1.19138 9.83952 1.37836 10.2808 1.81962C10.722 2.26088 10.909 2.81464 10.9958 3.45984C11.013 3.58781 11.0266 3.72289 11.0374 3.8652C11.4689 3.87473 11.8501 3.8954 12.1831 3.94018C12.8283 4.02693 13.3821 4.21391 13.8234 4.65517C14.2646 5.09643 14.4516 5.65018 14.5383 6.29538C14.6215 6.9141 14.6215 7.69882 14.6215 8.66375V10.167C14.6215 11.1319 14.6215 11.9166 14.5383 12.5354C14.4516 13.1806 14.2646 13.7343 13.8234 14.1756C13.3821 14.6168 12.8283 14.8038 12.1831 14.8906C11.5644 14.9737 10.7797 14.9737 9.81476 14.9737H9.72821C8.76328 14.9737 7.97855 14.9737 7.35983 14.8906C6.71463 14.8038 6.16088 14.6168 5.71962 14.1756C5.27836 13.7343 5.09138 13.1806 5.00464 12.5354C4.98743 12.4074 4.97379 12.2723 4.96296 12.13C4.53148 12.1205 4.15032 12.0998 3.81726 12.055C3.17206 11.9683 2.6183 11.7813 2.17704 11.34C1.73578 10.8988 1.5488 10.345 1.46206 9.69981C1.37888 9.0811 1.37889 8.29639 1.37891 7.33148V5.82821C1.37889 4.8633 1.37888 4.07854 1.46206 3.45984C1.5488 2.81464 1.73578 2.26088 2.17704 1.81962C2.6183 1.37836 3.17206 1.19138 3.81726 1.10464C4.43596 1.02145 5.22072 1.02147 6.18563 1.02148ZM4.92325 10.9287C4.92148 10.6885 4.92148 10.4347 4.92148 10.167V8.66375C4.92147 7.69882 4.92145 6.9141 5.00464 6.29538C5.09138 5.65018 5.27836 5.09643 5.71962 4.65517C6.16088 4.21391 6.71463 4.02693 7.35983 3.94018C7.97855 3.857 8.76327 3.85701 9.7282 3.85703H9.81477C9.82079 3.85703 9.82681 3.85703 9.83282 3.85703C9.82532 3.77412 9.8166 3.69516 9.80646 3.61973C9.73761 3.1076 9.61339 2.84929 9.43225 2.66815C9.25111 2.48701 8.9928 2.36279 8.48066 2.29394C7.95127 2.22276 7.24761 2.22149 6.22891 2.22149C5.21021 2.22149 4.50655 2.22276 3.97716 2.29394C3.46502 2.36279 3.20671 2.48701 3.02557 2.66815C2.84443 2.84929 2.72021 3.1076 2.65136 3.61973C2.58018 4.14913 2.57891 4.85279 2.57891 5.87149V7.28816C2.57891 8.30685 2.58018 9.01052 2.65136 9.53991C2.72021 10.052 2.84443 10.3104 3.02557 10.4915C3.20671 10.6726 3.46502 10.7969 3.97716 10.8657C4.24274 10.9014 4.55218 10.9195 4.92325 10.9287ZM6.19393 6.45528C6.26279 5.94314 6.38701 5.68483 6.56815 5.5037C6.74928 5.32256 7.0076 5.19834 7.51973 5.12948C8.04913 5.05831 8.75279 5.05703 9.77149 5.05703C10.7902 5.05703 11.4938 5.05831 12.0232 5.12948C12.5354 5.19834 12.7937 5.32256 12.9748 5.50369C13.156 5.68483 13.2802 5.94314 13.349 6.45528C13.4202 6.98467 13.4215 7.68834 13.4215 8.70703V10.1237C13.4215 11.1424 13.4202 11.8461 13.349 12.3755C13.2802 12.8876 13.156 13.1459 12.9748 13.327C12.7937 13.5082 12.5354 13.6324 12.0232 13.7013C11.4938 13.7724 10.7902 13.7737 9.77149 13.7737C8.75279 13.7737 8.04913 13.7724 7.51973 13.7013C7.0076 13.6324 6.74929 13.5082 6.56815 13.327C6.38701 13.1459 6.26279 12.8876 6.19393 12.3755C6.12276 11.8461 6.12149 11.1424 6.12149 10.1237V8.70704C6.12149 7.68834 6.12276 6.98467 6.19393 6.45528Z" fill="currentColor"></path></svg><span class="hyc-common-markdown__code__option__text">复制</span></div></div></div></div><pre class="hyc-common-markdown__code-lan"><div class="hyc-code-scrollbar" style="position: relative; overflow: hidden; width: 100%; height: 100%;"><div class="hyc-code-scrollbar__view" style="position: relative; inset: 0px; overflow: scroll; margin-right: -13px; margin-bottom: -13px;"><pre><code class="language-markdown">def init(self):
+<span class="hljs-code">    self.required_inputs = ["chapter_text", "context"]
+    self.provided_outputs = ["analysis_result"]
+</span>
+async def execute(self, inputs: Dict) -&gt; Dict:
+<span class="hljs-code">    # 实现完整的单章分析逻辑
+    pass</span></code></pre></div><div class="hyc-code-scrollbar__track" style="position: absolute; height: 7px; right: 4px; bottom: 4px; left: 4px;"><div class="hyc-code-scrollbar__thumb" style="position: relative; display: block; height: 100%; width: 0px;"></div></div><div style="position: absolute; width: 6px; right: 2px; bottom: 2px; top: 2px; border-radius: 3px;"><div style="position: relative; display: block; width: 100%; cursor: pointer; border-radius: inherit; background-color: rgba(0, 0, 0, 0.2); height: 0px;"></div></div></div></pre></div></pre><div class="ybc-p">class CrossChapterAnalysisSkill(BaseSkill):</div>
+<div class="ybc-p">"""跨章分析技能"""</div>
+<pre class="ybc-pre-component ybc-pre-component_not-math"><div class="hyc-common-markdown__code"><div class="hyc-common-markdown__code__hd"><div class="hyc-common-markdown__code__hd__inner"><div class="hyc-common-markdown__code__hd__l"></div><div class="hyc-common-markdown__code__hd__r"><div class="hyc-common-markdown__code__option"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.18563 1.02148H6.27219C7.2371 1.02147 8.02186 1.02145 8.64056 1.10464C9.28576 1.19138 9.83952 1.37836 10.2808 1.81962C10.722 2.26088 10.909 2.81464 10.9958 3.45984C11.013 3.58781 11.0266 3.72289 11.0374 3.8652C11.4689 3.87473 11.8501 3.8954 12.1831 3.94018C12.8283 4.02693 13.3821 4.21391 13.8234 4.65517C14.2646 5.09643 14.4516 5.65018 14.5383 6.29538C14.6215 6.9141 14.6215 7.69882 14.6215 8.66375V10.167C14.6215 11.1319 14.6215 11.9166 14.5383 12.5354C14.4516 13.1806 14.2646 13.7343 13.8234 14.1756C13.3821 14.6168 12.8283 14.8038 12.1831 14.8906C11.5644 14.9737 10.7797 14.9737 9.81476 14.9737H9.72821C8.76328 14.9737 7.97855 14.9737 7.35983 14.8906C6.71463 14.8038 6.16088 14.6168 5.71962 14.1756C5.27836 13.7343 5.09138 13.1806 5.00464 12.5354C4.98743 12.4074 4.97379 12.2723 4.96296 12.13C4.53148 12.1205 4.15032 12.0998 3.81726 12.055C3.17206 11.9683 2.6183 11.7813 2.17704 11.34C1.73578 10.8988 1.5488 10.345 1.46206 9.69981C1.37888 9.0811 1.37889 8.29639 1.37891 7.33148V5.82821C1.37889 4.8633 1.37888 4.07854 1.46206 3.45984C1.5488 2.81464 1.73578 2.26088 2.17704 1.81962C2.6183 1.37836 3.17206 1.19138 3.81726 1.10464C4.43596 1.02145 5.22072 1.02147 6.18563 1.02148ZM4.92325 10.9287C4.92148 10.6885 4.92148 10.4347 4.92148 10.167V8.66375C4.92147 7.69882 4.92145 6.9141 5.00464 6.29538C5.09138 5.65018 5.27836 5.09643 5.71962 4.65517C6.16088 4.21391 6.71463 4.02693 7.35983 3.94018C7.97855 3.857 8.76327 3.85701 9.7282 3.85703H9.81477C9.82079 3.85703 9.82681 3.85703 9.83282 3.85703C9.82532 3.77412 9.8166 3.69516 9.80646 3.61973C9.73761 3.1076 9.61339 2.84929 9.43225 2.66815C9.25111 2.48701 8.9928 2.36279 8.48066 2.29394C7.95127 2.22276 7.24761 2.22149 6.22891 2.22149C5.21021 2.22149 4.50655 2.22276 3.97716 2.29394C3.46502 2.36279 3.20671 2.48701 3.02557 2.66815C2.84443 2.84929 2.72021 3.1076 2.65136 3.61973C2.58018 4.14913 2.57891 4.85279 2.57891 5.87149V7.28816C2.57891 8.30685 2.58018 9.01052 2.65136 9.53991C2.72021 10.052 2.84443 10.3104 3.02557 10.4915C3.20671 10.6726 3.46502 10.7969 3.97716 10.8657C4.24274 10.9014 4.55218 10.9195 4.92325 10.9287ZM6.19393 6.45528C6.26279 5.94314 6.38701 5.68483 6.56815 5.5037C6.74928 5.32256 7.0076 5.19834 7.51973 5.12948C8.04913 5.05831 8.75279 5.05703 9.77149 5.05703C10.7902 5.05703 11.4938 5.05831 12.0232 5.12948C12.5354 5.19834 12.7937 5.32256 12.9748 5.50369C13.156 5.68483 13.2802 5.94314 13.349 6.45528C13.4202 6.98467 13.4215 7.68834 13.4215 8.70703V10.1237C13.4215 11.1424 13.4202 11.8461 13.349 12.3755C13.2802 12.8876 13.156 13.1459 12.9748 13.327C12.7937 13.5082 12.5354 13.6324 12.0232 13.7013C11.4938 13.7724 10.7902 13.7737 9.77149 13.7737C8.75279 13.7737 8.04913 13.7724 7.51973 13.7013C7.0076 13.6324 6.74929 13.5082 6.56815 13.327C6.38701 13.1459 6.26279 12.8876 6.19393 12.3755C6.12276 11.8461 6.12149 11.1424 6.12149 10.1237V8.70704C6.12149 7.68834 6.12276 6.98467 6.19393 6.45528Z" fill="currentColor"></path></svg><span class="hyc-common-markdown__code__option__text">复制</span></div></div></div></div><pre class="hyc-common-markdown__code-lan"><div class="hyc-code-scrollbar" style="position: relative; overflow: hidden; width: 100%; height: 100%;"><div class="hyc-code-scrollbar__view" style="position: relative; inset: 0px; overflow: scroll; margin-right: -13px; margin-bottom: -13px;"><pre><code class="language-markdown">def init(self):
+<span class="hljs-code">    self.required_inputs = ["chapter_range", "analysis_data"]
+    self.provided_outputs = ["cross_analysis_result", "graph_updates"]
+</span>
+async def execute(self, inputs: Dict) -&gt; Dict:
+<span class="hljs-code">    # 实现跨章分析逻辑
+    pass</span></code></pre></div><div class="hyc-code-scrollbar__track" style="position: absolute; height: 7px; right: 4px; bottom: 4px; left: 4px;"><div class="hyc-code-scrollbar__thumb" style="position: relative; display: block; height: 100%; width: 0px;"></div></div><div style="position: absolute; width: 6px; right: 2px; bottom: 2px; top: 2px; border-radius: 3px;"><div style="position: relative; display: block; width: 100%; cursor: pointer; border-radius: inherit; background-color: rgba(0, 0, 0, 0.2); height: 0px;"></div></div></div></pre></div></pre><h2>开发约束和要求
+</h2><h3>1. 代码质量
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">类型提示: 必须使用Python类型提示</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">代码格式化: 使用black和isort</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Linting: 通过mypy和flake8检查</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">测试覆盖: 关键模块测试覆盖率&gt;80%</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">文档: 所有函数和类必须有docstring</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">错误处理: 统一的错误处理机制</div>
+</span></li></ul><h3>2. 性能要求
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">内存管理: 处理大文件时使用流式处理</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">数据库优化: 合理使用索引，避免N+1查询</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">并发控制: 支持并发分析多个章节</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">缓存策略: 频繁访问的数据需要缓存</div>
+</span></li></ul><h3>3. 配置管理
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">使用pydantic-settings管理配置</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持环境变量和配置文件</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">所有模型参数可配置</div>
+</span></li></ul><h3>4. 可扩展性
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">插件化设计，支持添加新的分析维度</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">技能系统支持动态注册新技能</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">工作流可自定义和扩展</div>
+</span></li></ul><h2>数据流程规范
+</h2><h3>1. 输入输出规范
+</h3><h1>输入格式
+</h1><div class="ybc-p">{</div>
+<div class="ybc-p">"novel_id": str,           # 小说唯一标识</div>
+<div class="ybc-p">"title": str,              # 小说标题</div>
+<div class="ybc-p">"content": str,            # 完整小说文本</div>
+<div class="ybc-p">"metadata": {              # 元数据</div>
+<div class="ybc-p">"author": str,</div>
+<div class="ybc-p">"genre": str,</div>
+<div class="ybc-p">"language": str</div>
+<div class="ybc-p">},</div>
+<div class="ybc-p">"analysis_config": {       # 分析配置</div>
+<div class="ybc-p">"model_provider": "anthropic",</div>
+<div class="ybc-p">"model_name": "claude-3-opus-20240229",</div>
+<div class="ybc-p">"enable_cross_analysis": True,</div>
+<div class="ybc-p">"report_types": ["researcher", "reader"]</div>
+<div class="ybc-p">}</div>
+<div class="ybc-p">}</div>
+<h3>2. 处理状态追踪
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">每个章节分析状态必须持久化</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持查询分析进度</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持暂停、继续、重新分析</div>
+</span></li></ul><h3>3. 结果存储规范
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">原始文本和分析结果分离存储</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">所有分析结果版本化</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持导出完整分析包</div>
+</span></li></ul><h2>报告生成要求
+</h2><h3>1. 研究者报告
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">必须是结构化数据(JSON/Parquet)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">包含所有原始分析数据</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持高级查询和筛选</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">提供数据可视化原始数据</div>
+</span></li></ul><h3>2. 读者报告
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">必须是易读的HTML/PDF</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">包含阅读地图和建议</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持交互式探索</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">移动设备友好</div>
+</span></li></ul><h2>部署和运行
+</h2><h3>1. 依赖管理
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">使用poetry管理依赖</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">明确的Python版本约束</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">生产环境和开发环境分离</div>
+</span></li></ul><h3>2. 运行方式
+</h3><h1>安装
+</h1><div class="ybc-p">poetry install</div>
+<h1>运行分析
+</h1><div class="ybc-p">poetry run python -m novel_analyzer.cli analyze --input novel.txt --output ./results</div>
+<h1>启动API服务(可选)
+</h1><div class="ybc-p">poetry run python -m novel_analyzer.api</div>
+<h3>3. 环境要求
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">PostgreSQL 14+ with pgvector</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Python 3.10+</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">至少8GB RAM(处理长篇小说)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Claude API密钥或兼容的LLM API</div>
+</span></li></ul><h2>测试策略
+</h2><h3>1. 单元测试
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">每个技能独立测试</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">数据库操作测试</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">Prompt模板测试</div>
+</span></li></ul><h3>2. 集成测试
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">完整工作流测试</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">端到端分析测试</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">性能基准测试</div>
+</span></li></ul><h3>3. 测试数据
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">提供示例小说片段</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">模拟各种边界情况</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">错误恢复测试</div>
+</span></li></ul><h2>错误处理和监控
+</h2><h3>1. 错误分类
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">可恢复错误(重试)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">数据错误(跳过并记录)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">系统错误(中止)</div>
+</span></li></ul><h3>2. 监控指标
+</h3><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">分析进度百分比</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">API调用统计</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">内存使用情况</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">处理时间统计</div>
+</span></li></ul><h2>安全考虑
+</h2><ul class="ybc-ul-component"><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">API密钥安全存储</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">输入内容安全检查</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">数据库连接安全</div>
+</span></li><li class="ybc-li-component ybc-li-component_ul"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">•</span></span><span class="ybc-li-component_content"><div class="ybc-p">输出内容过滤(可选)</div>
+</span></li></ul><h2>交付物
+</h2><ol class="ybc-ol-component ybc-ol-component_1"><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">1.</span></span><span class="ybc-li-component_content"><div class="ybc-p">完整的源代码仓库</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">2.</span></span><span class="ybc-li-component_content"><div class="ybc-p">详细的部署文档</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">3.</span></span><span class="ybc-li-component_content"><div class="ybc-p">API文档(如提供API)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">4.</span></span><span class="ybc-li-component_content"><div class="ybc-p">使用示例和教程</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">5.</span></span><span class="ybc-li-component_content"><div class="ybc-p">测试套件和测试数据</div>
+</span></li></ol><h2>注意事项
+</h2><ol class="ybc-ol-component ybc-ol-component_2"><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">1.</span></span><span class="ybc-li-component_content"><div class="ybc-p">严格遵守Python代码规范(PEP 8)</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">2.</span></span><span class="ybc-li-component_content"><div class="ybc-p">所有数据库操作必须使用异步版本</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">3.</span></span><span class="ybc-li-component_content"><div class="ybc-p">大模型调用必须有速率限制和退避策略</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">4.</span></span><span class="ybc-li-component_content"><div class="ybc-p">处理长文本时注意上下文窗口限制</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">5.</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持从断点恢复分析</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">6.</span></span><span class="ybc-li-component_content"><div class="ybc-p">提供进度报告和日志</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">7.</span></span><span class="ybc-li-component_content"><div class="ybc-p">所有配置可外部化</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">8.</span></span><span class="ybc-li-component_content"><div class="ybc-p">支持批量处理多部小说</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot">9.</span></span><span class="ybc-li-component_content"><div class="ybc-p">提供数据导出功能</div>
+</span></li><li class="ybc-li-component ybc-li-component_ol"><span class="ybc-li-component__dot-wp"><span class="ybc-li-component_dot" style="font-size: 16px; font-weight: 400;">10.</span></span><span class="ybc-li-component_content"><div class="ybc-p">考虑国际化和本地化(中英文支持)</div>
+</span></li></ol><div class="ybc-p">这个工具应该是一个完整、专业、可用于生产环境的小说分析系统，能够为研究者和读者提供深刻的叙事洞察。</div>
+</div></div></div>
+

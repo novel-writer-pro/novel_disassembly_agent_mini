@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChapterAnalysisLayerOutput",
+  "type": "object",
+  "required": ["summary", "themes", "pacing", "emotional_curve", "continuity_notes"],
+  "properties": {
+    "summary": {"type": "object"},
+    "themes": {"type": "array", "items": {"type": "object"}},
+    "pacing": {"type": "object"},
+    "emotional_curve": {"type": "object"},
+    "continuity_notes": {"type": "array", "items": {"type": "string"}}
+  }
+}

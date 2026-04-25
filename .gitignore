@@ -1,0 +1,17 @@
+.omx/
+.codex/*
+!.codex/agents/
+!.codex/agents/**
+!.codex/skills/
+!.codex/skills/**
+.codex/skills/.system/**
+!.codex/prompts/
+!.codex/prompts/**
+.env
+.env.*
+!.env.example
+__pycache__/*
+/__pycache__
+.cache
+*_cache
+.venv

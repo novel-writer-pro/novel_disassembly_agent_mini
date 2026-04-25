@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChapterIntakeOutput",
+  "type": "object",
+  "required": ["chapter_index", "normalized_title", "cleaned_text", "paragraph_blocks", "notes"],
+  "properties": {
+    "chapter_index": {"type": "integer"},
+    "normalized_title": {"type": "string"},
+    "cleaned_text": {"type": "string"},
+    "paragraph_blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["order", "text"],
+        "properties": {
+          "order": {"type": "integer"},
+          "text": {"type": "string"}
+        }
+      }
+    },
+    "dialogue_candidates": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "scene_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["order", "text"],
+        "properties": {
+          "order": {"type": "integer"},
+          "text": {"type": "string"}
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}
