@@ -410,6 +410,7 @@ class AnalysisService:
             job = self.run_service.start_chapter_job(branch_id, segment.chapter_index)
             response_text = ""
             raw_result: dict[str, object] | None = None
+            stage_payload: dict[str, object] = {}
             try:
                 chapter_content = full_text[segment.start_offset : segment.end_offset].strip()
                 previous_summary = self.context_service.previous_summary(
@@ -435,7 +436,6 @@ class AnalysisService:
                 prior_context_json = json.dumps(prior_context, ensure_ascii=False, indent=2)
                 graph_context_json = json.dumps(graph_context, ensure_ascii=False, indent=2)
                 state_summary_json = json.dumps(state_summary, ensure_ascii=False, indent=2)
-                stage_payload: dict[str, object] = {}
                 try:
                     prompts = build_agent_stage_prompts(
                         ChapterAgentContext(

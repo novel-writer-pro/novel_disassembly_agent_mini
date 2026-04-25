@@ -40,18 +40,18 @@
 ## 3. 你应该先看哪几份文档
 
 ### 如果你要直接操作
-1. `docs/cli-operations-manual.md`
-2. `docs/direct-usage-guide.md`
+1. [`./cli-operations-manual.md`](./cli-operations-manual.md)
+2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
 
 ### 如果你要接前端 / 工具 / 其他 agent
-1. `docs/interface-manifest.md`
-2. `docs/examples/*.sample.json`
-3. `docs/final-handoff.md`
+1. [`./interface-manifest.md`](./interface-manifest.md)
+2. [`./examples/*.sample.json`](./examples/)
+3. [`./final-handoff.md`](./final-handoff.md)
 
 ### 如果你是接手维护者
-1. `docs/final-handoff.md`
-2. `docs/interface-manifest.md`
-3. `docs/agent-skills-and-embedding.md`
+1. [`./final-handoff.md`](./final-handoff.md)
+2. [`./interface-manifest.md`](./interface-manifest.md)
+3. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
 
 ---
 

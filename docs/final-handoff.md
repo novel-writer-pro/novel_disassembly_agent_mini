@@ -158,16 +158,16 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - thematic contexts
 
 接口说明文档：
-- `docs/interface-manifest.md`
+- [`./interface-manifest.md`](./interface-manifest.md)
 
 样例 JSON：
-- `docs/examples/chapter-bundle.sample.json`
-- `docs/examples/branch-bundle.sample.json`
-- `docs/examples/chapter-qa-context.sample.json`
-- `docs/examples/branch-qa-context.sample.json`
+- [`./examples/chapter-bundle.sample.json`](./examples/chapter-bundle.sample.json)
+- [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
+- [`./examples/chapter-qa-context.sample.json`](./examples/chapter-qa-context.sample.json)
+- [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)
 
 操作手册：
-- `docs/cli-operations-manual.md`
+- [`./cli-operations-manual.md`](./cli-operations-manual.md)
 
 ---
 

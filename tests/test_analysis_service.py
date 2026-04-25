@@ -1,5 +1,12 @@
-from langchain_core.messages import AIMessage
+from pathlib import Path
 
+import pytest
+from langchain_core.messages import AIMessage
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from novel_analyzer.config.settings import Settings
+from novel_analyzer.database.session import create_schema
 from novel_analyzer.domain.schemas import (
     AnalysisSummary,
     AntiFabricationGuardOutput,
@@ -8,6 +15,14 @@ from novel_analyzer.domain.schemas import (
     EvidenceNote,
 )
 from novel_analyzer.services.analysis_service import AnalysisService
+from novel_analyzer.services.ingest_service import IngestService
+from novel_analyzer.services.run_service import RunService
+
+
+def _session() -> Session:
+    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    create_schema(engine)
+    return Session(engine)
 
 
 def test_extract_json_payload_accepts_fenced_json() -> None:
@@ -98,3 +113,20 @@ def test_derive_state_progression_returns_progress_resolution_and_unresolved_not
     assert transitions
     assert resolutions
     assert unresolved
+
+
+def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        def _boom(*_args: object, **_kwargs: object) -> dict[str, object]:
+            raise RuntimeError('boom')
+
+        service.context_service.fact_context_json = _boom  # type: ignore[method-assign]
+        with pytest.raises(RuntimeError, match='boom'):
+            service.analyze_range(run.id, branch.id, 1, 1)

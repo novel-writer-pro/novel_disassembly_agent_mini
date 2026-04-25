@@ -254,8 +254,8 @@ poetry run novel-analyzer repair-branch <branch_id>
 5. 读取 `branch_qa_context.json`
 
 ### 做前端/工具接入时
-1. 读 `docs/interface-manifest.md`
-2. 参考 `docs/examples/*.sample.json`
+1. 读 [`./interface-manifest.md`](./interface-manifest.md)
+2. 参考 [`./examples/*.sample.json`](./examples/)
 3. 接 `branch_qa_context.json`
 4. 再接 `thematic_contexts`
 
@@ -263,7 +263,7 @@ poetry run novel-analyzer repair-branch <branch_id>
 
 ## 10. 文档导航
 
-- `docs/direct-usage-guide.md`
-- `docs/interface-manifest.md`
-- `docs/examples/*.sample.json`
-- `docs/final-handoff.md`
+- [`./direct-usage-guide.md`](./direct-usage-guide.md)
+- [`./interface-manifest.md`](./interface-manifest.md)
+- [`./examples/*.sample.json`](./examples/)
+- [`./final-handoff.md`](./final-handoff.md)

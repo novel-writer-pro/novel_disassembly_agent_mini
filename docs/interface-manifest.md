@@ -227,7 +227,7 @@
 
 ## 8. Example Files
 
-- `docs/examples/chapter-bundle.sample.json`
-- `docs/examples/branch-bundle.sample.json`
-- `docs/examples/chapter-qa-context.sample.json`
-- `docs/examples/branch-qa-context.sample.json`
+- [`./examples/chapter-bundle.sample.json`](./examples/chapter-bundle.sample.json)
+- [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
+- [`./examples/chapter-qa-context.sample.json`](./examples/chapter-qa-context.sample.json)
+- [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)

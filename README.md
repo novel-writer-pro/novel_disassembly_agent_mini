@@ -15,10 +15,10 @@ CLI-first scaffold for a chapter-progressive 小说拆书系统.
 - PostgreSQL 内 BM25 / trigram / vector 扩展探测与启用
 
 ## Newcomer Path
-- 想快速上手：`docs/cli-operations-manual.md`
-- 想看接口与样例：`docs/interface-manifest.md` + `docs/examples/*.sample.json`
-- 想看交付全貌：`docs/final-handoff.md`
-- 想浏览全部文档：`docs/README.md`
+- 想快速上手：[`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)
+- 想看接口与样例：[`./docs/interface-manifest.md`](./docs/interface-manifest.md) + [`./docs/examples/*.sample.json`](./docs/examples/)
+- 想看交付全貌：[`./docs/final-handoff.md`](./docs/final-handoff.md)
+- 想浏览全部文档：[`./docs/README.md`](./docs/README.md)
 
 ## Environment
 
@@ -57,7 +57,7 @@ export NOVEL_ANALYZER_EMBEDDING_MODEL_PATH=
 export NOVEL_ANALYZER_EMBEDDING_CACHE_DIR=.cache/embeddings
 ```
 
-See `docs/agent-skills-and-embedding.md` for the internal staged agent pipeline and ONNX embedding details.
+See [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md) for the internal staged agent pipeline and ONNX embedding details.
 
 ## Quick start
 ```bash
@@ -102,10 +102,11 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 
 ## More docs
 
-- `docs/direct-usage-guide.md`：直接使用拆书 agent 的操作指南
-- `docs/agent-skills-and-embedding.md`：内部 staged agent 与 ONNX embedding 说明
-- `docs/interface-manifest.md`：chapter / branch / QA context / thematic context 接口说明
-- `docs/cli-operations-manual.md`：从 ingest 到 analyze / export / QA context / package 的标准 CLI 操作手册
-- `docs/final-handoff.md`：阶段性交付清单 / 风险 / 接入建议 / 后续演进顺序
-- `docs/release-handoff-brief.md`：上线/交接版简要说明，适合快速交付与接手
-- `docs/real-run-checklist.md`：真实小说首轮试跑清单与复盘建议
+- [`./docs/direct-usage-guide.md`](./docs/direct-usage-guide.md)：直接使用拆书 agent 的操作指南
+- [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md)：内部 staged agent 与 ONNX embedding 说明
+- [`./docs/interface-manifest.md`](./docs/interface-manifest.md)：chapter / branch / QA context / thematic context 接口说明
+- [`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)：从 ingest 到 analyze / export / QA context / package 的标准 CLI 操作手册
+- [`./docs/final-handoff.md`](./docs/final-handoff.md)：阶段性交付清单 / 风险 / 接入建议 / 后续演进顺序
+- [`./docs/release-handoff-brief.md`](./docs/release-handoff-brief.md)：上线/交接版简要说明，适合快速交付与接手
+- [`./docs/real-run-checklist.md`](./docs/real-run-checklist.md)：真实小说首轮试跑清单与复盘建议
+- [`./docs/review-template.md`](./docs/review-template.md)：章节/窗口试跑复盘模板
