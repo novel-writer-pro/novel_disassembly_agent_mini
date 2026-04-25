@@ -58,3 +58,6 @@ def test_render_branch_report_contains_status_and_windows(tmp_path: Path) -> Non
         assert '## Status' in report
         assert '## Windows' in report
         assert '## Graph Overview' in report
+        assert '## State Summary' in report
+        assert '## Reasoning Graph' in report
+        assert '### Reasoning Paths' in report

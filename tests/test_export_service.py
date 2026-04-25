@@ -56,3 +56,5 @@ def test_export_branch_bundle_contains_status_windows_and_graph(tmp_path: Path) 
         assert bundle['windows']
         assert bundle['graph_nodes']
         assert bundle['graph_edges']
+        assert bundle['reasoning_graph']['overview']['node_count'] >= len(bundle['graph_nodes'])
+        assert 'state_summary' in bundle

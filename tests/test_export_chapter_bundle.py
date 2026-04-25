@@ -51,3 +51,5 @@ def test_export_chapter_bundle_contains_artifact_facts_retrieval_graph(tmp_path:
         assert bundle['facts']
         assert bundle['retrieval']['title'] == '命格初现'
         assert bundle['graph_nodes']
+        assert 'state_summary' in bundle
+        assert 'state_summary' in bundle['artifact']

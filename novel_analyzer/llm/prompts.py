@@ -73,17 +73,21 @@ def build_branch_qa_prompt(*, question: str, retrieval_context: str) -> str:
 3. 如果证据不足，请明确说“当前证据不足”，并指出缺少什么。
 4. 尽量引用章节号，例如“第1章”。
 5. 如果窗口总结或图谱上下文支持你的回答，也要纳入 explanation。
+6. 如果图谱里存在明确的 reasoning path、活跃冲突、未回收伏笔或世界规则，尽量把这些信号转成保守表述。
 6. 输出 JSON，结构如下：
 {{
   "answer": "...",
   "used_chapters": [1, 2],
   "evidence": ["..."],
+  "reasoning_paths": ["A -[advances_to]-> B"],
+  "graph_signals": ["活跃冲突: ...", "未回收伏笔: ..."],
   "confidence": 0.0,
   "insufficient_context": false
 }}
-7. 如果问题无法由当前上下文完整回答：
+7. evidence 必须优先放章节证据，reasoning_paths 放图谱路径，graph_signals 放冲突/伏笔/规则等图信号。
+8. 如果问题无法由当前上下文完整回答：
    - answer 仍给出保守但有信息量的部分回答
    - insufficient_context = true
    - confidence 低于 0.5
-8. 不要只说“无法判断”，除非上下文几乎完全没有相关信息。
+9. 不要只说“无法判断”，除非上下文几乎完全没有相关信息。
 """.strip()

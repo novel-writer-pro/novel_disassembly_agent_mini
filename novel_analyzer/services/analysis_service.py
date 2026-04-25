@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
 
@@ -98,6 +99,148 @@ class AnalysisService:
         raw = self._extract_json_payload(response)
         return schema.model_validate(raw)  # type: ignore[attr-defined]
 
+    @staticmethod
+    def _labels_from_notes(notes: Sequence[object]) -> list[str]:
+        labels: list[str] = []
+        for item in notes:
+            label = getattr(item, 'label', item)
+            text = str(label).strip()
+            if text:
+                labels.append(text)
+        return labels
+
+    @staticmethod
+    def _contains_transition_claim(text: str, keywords: list[str]) -> bool:
+        return any(keyword in text for keyword in keywords)
+
+    @classmethod
+    def _derive_state_progression(
+        cls,
+        state_summary: dict[str, object],
+        facts: ChapterFactExtractionOutput,
+        analysis: ChapterAnalysisLayerOutput,
+    ) -> tuple[list[str], list[str], list[str]]:
+        """Derive chapter-level progression, resolution, and unresolved-thread notes."""
+
+        fact_events = cls._labels_from_notes(facts.events)
+        fact_relations = cls._labels_from_notes(facts.relations)
+        fact_conflicts = cls._labels_from_notes(facts.conflicts)
+        fact_foreshadowing = cls._labels_from_notes(facts.foreshadowing)
+        transitions: list[str] = []
+        resolutions: list[str] = []
+        unresolved: list[str] = []
+
+        if fact_events:
+            transitions.append(f"本章状态推进集中体现在：{'、'.join(fact_events[:3])}。")
+        if fact_relations:
+            transitions.append(f"本章关系面出现可见变化：{'、'.join(fact_relations[:2])}。")
+        if fact_conflicts:
+            transitions.append(f"本章冲突面继续推进：{'、'.join(fact_conflicts[:2])}。")
+
+        paid_off = state_summary.get('paid_off_foreshadowing', [])
+        if isinstance(paid_off, list):
+            for label in paid_off[:3]:
+                text = str(label).strip()
+                if text:
+                    resolutions.append(f"前文伏笔“{text}”在当前分支中已有兑现信号。")
+
+        evolved = state_summary.get('evolved_relations', [])
+        if isinstance(evolved, list):
+            for label in evolved[:2]:
+                text = str(label).strip()
+                if text:
+                    resolutions.append(f"关系线“{text}”已出现阶段性变化证据。")
+
+        for label in fact_foreshadowing[:3]:
+            unresolved.append(f"新埋下的线程：{label}")
+        escalated = state_summary.get('escalated_conflicts', [])
+        if isinstance(escalated, list):
+            for label in escalated[:3]:
+                text = str(label).strip()
+                if text:
+                    unresolved.append(f"仍待后续处理的升级冲突：{text}")
+        constraining = state_summary.get('constraining_world_rules', [])
+        if isinstance(constraining, list):
+            for label in constraining[:2]:
+                text = str(label).strip()
+                if text:
+                    unresolved.append(f"持续施加约束的规则：{text}")
+
+        for note in analysis.continuity_notes[:2]:
+            text = str(note).strip()
+            if text and text not in transitions:
+                transitions.append(text)
+
+        def dedup(items: list[str]) -> list[str]:
+            return list(dict.fromkeys(item for item in items if item.strip()))
+
+        return dedup(transitions), dedup(resolutions), dedup(unresolved)
+
+    @classmethod
+    def _state_summary_guard(
+        cls,
+        state_summary: dict[str, object],
+        facts: ChapterFactExtractionOutput,
+        analysis: ChapterAnalysisLayerOutput,
+        guard: AntiFabricationGuardOutput,
+    ) -> AntiFabricationGuardOutput:
+        """Add deterministic no-fabrication warnings from prior state summary."""
+
+        note_text = ' '.join(analysis.continuity_notes)
+        fact_labels = set(
+            cls._labels_from_notes(facts.events)
+            + cls._labels_from_notes(facts.relations)
+            + cls._labels_from_notes(facts.conflicts)
+            + cls._labels_from_notes(facts.foreshadowing)
+            + cls._labels_from_notes(facts.worldbuilding_facts)
+        )
+        overclaim_flags = list(guard.overclaim_flags)
+        ambiguous_points = list(guard.ambiguous_points)
+
+        paid_off = state_summary.get('paid_off_foreshadowing', [])
+        if isinstance(paid_off, list) and cls._contains_transition_claim(
+            note_text,
+            ['回收', '兑现'],
+        ):
+            if not fact_labels:
+                overclaim_flags.append('前情伏笔被宣称回收/兑现，但本章事实层缺少对应支撑。')
+
+        escalated = state_summary.get('escalated_conflicts', [])
+        if isinstance(escalated, list) and cls._contains_transition_claim(
+            note_text,
+            ['解决', '化解', '终止'],
+        ):
+            current_conflicts = cls._labels_from_notes(facts.conflicts)
+            if not current_conflicts:
+                overclaim_flags.append('前情升级冲突被宣称解决/终止，但本章未提供新的冲突事实支撑。')
+
+        evolved_relations = state_summary.get('evolved_relations', [])
+        if isinstance(evolved_relations, list) and cls._contains_transition_claim(
+            note_text,
+            ['关系变化', '和解', '反目', '修复'],
+        ):
+            current_relations = cls._labels_from_notes(facts.relations)
+            if not current_relations:
+                ambiguous_points.append('关系状态出现解释性变化表述，但事实层缺少关系证据。')
+
+        constraining_rules = state_summary.get('constraining_world_rules', [])
+        if isinstance(constraining_rules, list) and cls._contains_transition_claim(
+            note_text,
+            ['规则改变', '限制解除', '不再受限'],
+        ):
+            current_rules = cls._labels_from_notes(facts.worldbuilding_facts)
+            if not current_rules:
+                overclaim_flags.append('规则/约束被宣称改变或解除，但本章缺少世界规则事实支撑。')
+
+        needs_review = guard.needs_human_review or bool(overclaim_flags)
+        return guard.model_copy(
+            update={
+                'overclaim_flags': overclaim_flags,
+                'ambiguous_points': ambiguous_points,
+                'needs_human_review': needs_review,
+            }
+        )
+
 
     def _invoke_monolithic_analysis(
         self,
@@ -132,6 +275,9 @@ class AnalysisService:
         analysis: ChapterAnalysisLayerOutput,
         writer: WriterLearningLensOutput,
         guard: AntiFabricationGuardOutput,
+        state_transition_notes: list[str] | None = None,
+        evidence_backed_resolutions: list[str] | None = None,
+        unresolved_threads: list[str] | None = None,
     ) -> ChapterAnalysisOutput:
         dimensions: list[DimensionResult] = []
         for item in facts.worldbuilding_facts:
@@ -212,6 +358,9 @@ class AnalysisService:
             key_entities=[item.label for item in facts.characters],
             key_events=[item.label for item in facts.events],
             continuity_notes=analysis.continuity_notes,
+            state_transition_notes=state_transition_notes or [],
+            evidence_backed_resolutions=evidence_backed_resolutions or [],
+            unresolved_threads=unresolved_threads or [],
             writer_learning_notes=writer_notes,
             unsupported_inferences=guard.unsupported_inferences + guard.overclaim_flags,
             ambiguous_points=guard.ambiguous_points,
@@ -275,12 +424,17 @@ class AnalysisService:
                     branch_id,
                     segment.chapter_index,
                 )
+                state_summary = self.context_service.state_summary_json(
+                    branch_id,
+                    segment.chapter_index,
+                )
                 window_summary = self.context_service.window_summary(
                     branch_id,
                     segment.chapter_index,
                 )
                 prior_context_json = json.dumps(prior_context, ensure_ascii=False, indent=2)
                 graph_context_json = json.dumps(graph_context, ensure_ascii=False, indent=2)
+                state_summary_json = json.dumps(state_summary, ensure_ascii=False, indent=2)
                 stage_payload: dict[str, object] = {}
                 try:
                     prompts = build_agent_stage_prompts(
@@ -291,6 +445,7 @@ class AnalysisService:
                             previous_summary=previous_summary,
                             prior_context_json=prior_context_json,
                             graph_context_json=graph_context_json,
+                            state_summary_json=state_summary_json,
                             window_summary=window_summary,
                         )
                     )
@@ -311,6 +466,7 @@ class AnalysisService:
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
                             graph_context_json=graph_context_json,
+                            state_summary_json=state_summary_json,
                             cleaned_text=intake.cleaned_text,
                             window_summary=window_summary,
                         )
@@ -332,6 +488,7 @@ class AnalysisService:
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
                             graph_context_json=graph_context_json,
+                            state_summary_json=state_summary_json,
                             cleaned_text=intake.cleaned_text,
                             window_summary=window_summary,
                             fact_json=facts.model_dump_json(indent=2),
@@ -354,6 +511,7 @@ class AnalysisService:
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
                             graph_context_json=graph_context_json,
+                            state_summary_json=state_summary_json,
                             cleaned_text=intake.cleaned_text,
                             window_summary=window_summary,
                             fact_json=facts.model_dump_json(indent=2),
@@ -387,6 +545,7 @@ class AnalysisService:
                         intake_json=intake.model_dump_json(indent=2),
                         prior_context_json=prior_context_json,
                         graph_context_json=graph_context_json,
+                        state_summary_json=state_summary_json,
                         window_summary=window_summary,
                         cleaned_text=intake.cleaned_text,
                         fact_json=facts.model_dump_json(indent=2),
@@ -400,6 +559,9 @@ class AnalysisService:
                             analysis,
                             writer,
                             AntiFabricationGuardOutput(),
+                            [],
+                            [],
+                            [],
                         ).model_dump_json(indent=2),
                     )
                     guard_prompt_map = build_agent_stage_prompts(guard_context)
@@ -411,6 +573,21 @@ class AnalysisService:
                             AntiFabricationGuardOutput,
                         ),
                     )
+                    guard = self._state_summary_guard(
+                        state_summary,
+                        facts,
+                        analysis,
+                        guard,
+                    )
+                    (
+                        state_transition_notes,
+                        evidence_backed_resolutions,
+                        unresolved_threads,
+                    ) = self._derive_state_progression(
+                        state_summary,
+                        facts,
+                        analysis,
+                    )
                     result = self._merge_stage_outputs(
                         segment.chapter_index,
                         segment.normalized_title,
@@ -418,6 +595,9 @@ class AnalysisService:
                         analysis,
                         writer,
                         guard,
+                        state_transition_notes,
+                        evidence_backed_resolutions,
+                        unresolved_threads,
                     )
                     stage_payload = {
                         'intake': intake.model_dump(mode='json'),

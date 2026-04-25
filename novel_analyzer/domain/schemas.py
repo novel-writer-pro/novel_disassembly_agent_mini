@@ -284,6 +284,9 @@ class ChapterAnalysisOutput(BaseModel):
     key_entities: list[str] = Field(default_factory=list)
     key_events: list[str] = Field(default_factory=list)
     continuity_notes: list[str] = Field(default_factory=list)
+    state_transition_notes: list[str] = Field(default_factory=list)
+    evidence_backed_resolutions: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
     writer_learning_notes: list[str] = Field(default_factory=list)
     unsupported_inferences: list[str] = Field(default_factory=list)
     ambiguous_points: list[str] = Field(default_factory=list)
@@ -298,5 +301,7 @@ class BranchQAResult(BaseModel):
     answer: str
     used_chapters: list[int] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
+    reasoning_paths: list[str] = Field(default_factory=list)
+    graph_signals: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     insufficient_context: bool = Field(default=False)

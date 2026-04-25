@@ -11,7 +11,7 @@ from typer import echo
 
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.migrations import upgrade_database
-from novel_analyzer.database.models import ChapterManifest, GraphEdge, GraphNode, WindowArtifact
+from novel_analyzer.database.models import ChapterManifest, WindowArtifact
 from novel_analyzer.database.session import (
     create_session_factory,
     database_healthcheck,
@@ -412,6 +412,10 @@ def ask_branch(
         echo(f"insufficient_context={result.insufficient_context}")
         for item in result.evidence:
             echo(f"evidence={item}")
+        for item in result.reasoning_paths:
+            echo(f"reasoning_path={item}")
+        for item in result.graph_signals:
+            echo(f"graph_signal={item}")
 
 
 
@@ -772,17 +776,30 @@ def summarize_graph(
         echo(f"branch_id={summary.branch_id}")
         echo(f"node_count={summary.node_count}")
         echo(f"edge_count={summary.edge_count}")
+        echo(f"node_types={json.dumps(summary.node_type_counts, ensure_ascii=False)}")
+        echo(f"edge_types={json.dumps(summary.edge_type_counts, ensure_ascii=False)}")
         for label, count in summary.top_entities:
             echo(f"top_entity={label}:{count}")
         for label, count in summary.top_events:
             echo(f"top_event={label}:{count}")
+        for label, count in summary.top_conflicts:
+            echo(f"top_conflict={label}:{count}")
         for edge in summary.progression_edges:
             echo(f"progression={edge}")
+        for path in summary.reasoning_paths:
+            echo(f"reasoning_path={path}")
+        for label in summary.open_foreshadowing:
+            echo(f"open_foreshadowing={label}")
+        for label in summary.active_conflicts:
+            echo(f"active_conflict={label}")
+        for label in summary.world_rules:
+            echo(f"world_rule={label}")
 
 
 @app.command()
 def show_graph(
     branch_id: str,
+    upto_chapter: int | None = None,
     database_url: str | None = None,
 ) -> None:
     """Show a compact graph snapshot for a branch."""
@@ -790,20 +807,31 @@ def show_graph(
     settings = _settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        nodes = session.scalars(
-            select(GraphNode)
-            .where(GraphNode.branch_id == branch_id)
-            .order_by(GraphNode.node_type, GraphNode.label)
-        ).all()
-        edges = session.scalars(
-            select(GraphEdge).where(GraphEdge.branch_id == branch_id).order_by(GraphEdge.edge_type)
-        ).all()
-        echo(f"node_count={len(nodes)}")
-        for node in nodes[:20]:
-            echo(f"node={node.node_type}:{node.label}:{node.occurrence_count}")
-        echo(f"edge_count={len(edges)}")
-        for edge in edges[:20]:
-            echo(f"edge={edge.edge_type}:{edge.source_node_id}->{edge.target_node_id}:w={edge.weight}")
+        snapshot = GraphService(session).reasoning_snapshot(
+            branch_id,
+            upto_chapter=upto_chapter,
+        )
+        echo(json.dumps(snapshot, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def show_reasoning_graph(
+    branch_id: str,
+    upto_chapter: int | None = None,
+    database_url: str | None = None,
+) -> None:
+    """Show the full reasoning-graph JSON for a branch."""
+
+    settings = _settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        snapshot = GraphService(session).reasoning_snapshot(
+            branch_id,
+            upto_chapter=upto_chapter,
+            node_limit=50,
+            edge_limit=80,
+        )
+        echo(json.dumps(snapshot, ensure_ascii=False, indent=2))
 
 
 @app.command()

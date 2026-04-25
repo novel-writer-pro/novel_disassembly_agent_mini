@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
 from novel_analyzer.services.fact_service import FactService
+from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.run_service import RunService
@@ -24,6 +25,8 @@ class _DummyQAService(BranchQAService):
             ),
             used_chapters=[hit.chapter_index for hit in hits],
             evidence=[f"第{hit.chapter_index}章：{hit.summary_text}" for hit in hits],
+            reasoning_paths=['卫图觉醒命格 -[advances_to]-> 卫图决定先修养生功'],
+            graph_signals=['活跃冲突: 卫图受限于出身'],
             confidence=0.7,
             insufficient_context=False,
         )
@@ -68,6 +71,8 @@ def test_branch_qa_returns_grounded_answer(tmp_path) -> None:
         assert result.used_chapters == [1]
         assert '根据第1章' in result.answer
         assert '卫图觉醒命格' in result.answer
+        assert result.reasoning_paths
+        assert result.graph_signals
 
 
 def test_branch_qa_window_context_is_available(tmp_path) -> None:
@@ -105,3 +110,76 @@ def test_branch_qa_window_context_is_available(tmp_path) -> None:
         lines = service._window_context(branch.id, [3])
         assert lines
         assert '窗口 1-5' in lines[0]
+
+
+def test_branch_qa_graph_reasoning_snapshot_is_available(tmp_path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        settings = Settings()
+        novel, manifest = IngestService(session, settings).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session, settings).create_run(novel.id, manifest.id)
+        artifact1 = RunService(session, settings).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '命格初现',
+                'chapter_summary': '卫图觉醒命格。',
+                'key_entities': ['卫图', '命格'],
+                'key_events': ['卫图觉醒命格'],
+                'continuity_notes': ['命格线开启'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'dimensions': [],
+            },
+        )
+        artifact2 = RunService(session, settings).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '命格兑现',
+                'chapter_summary': '卫图因命格得到机缘。',
+                'key_entities': ['卫图', '命格'],
+                'key_events': ['卫图因命格得到机缘'],
+                'continuity_notes': ['命格开始兑现'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'dimensions': [],
+            },
+        )
+        RunService(session, settings).record_raw_output(
+            run.id,
+            branch.id,
+            1,
+            1,
+            '{"facts":{"characters":[{"label":"卫图"}],"events":[{"label":"卫图觉醒命格"}],"relations":[{"label":"卫图与命格建立联系"}],"conflicts":[{"label":"卫图受限于出身"}],"foreshadowing":[{"label":"命格后续将改变命运"}],"worldbuilding_facts":[{"label":"命格决定成长路径"}]},"analysis":{"continuity_notes":["命格线开启"]}}',
+            parsed_json={'ok': True},
+            parse_status='parsed',
+            parse_error=None,
+            invocation_metadata={'pipeline': 'test'},
+        )
+        RunService(session, settings).record_raw_output(
+            run.id,
+            branch.id,
+            2,
+            1,
+            '{"facts":{"characters":[{"label":"卫图"}],"events":[{"label":"卫图因命格得到机缘"}],"relations":[{"label":"卫图借命格翻身"}],"conflicts":[{"label":"卫图仍受家境掣肘"}],"foreshadowing":[],"worldbuilding_facts":[{"label":"命格会影响机缘分配"}]},"analysis":{"continuity_notes":["命格开始兑现"]}}',
+            parsed_json={'ok': True},
+            parse_status='parsed',
+            parse_error=None,
+            invocation_metadata={'pipeline': 'test'},
+        )
+        GraphService(session).materialize_for_artifact(artifact1.id)
+        GraphService(session).materialize_for_artifact(artifact2.id)
+        service = BranchQAService(session, settings)
+        reasoning_paths, graph_signals = service._graph_reasoning_snapshot(branch.id, [1, 2])
+        assert reasoning_paths
+        assert any('advances_to' in item for item in reasoning_paths)
+        assert graph_signals
+        assert any(item.startswith('活跃冲突:') for item in graph_signals)

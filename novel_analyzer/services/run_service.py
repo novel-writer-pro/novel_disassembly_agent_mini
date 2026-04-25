@@ -272,21 +272,28 @@ class RunService:
             .values(visibility="hidden")
         )
 
-        self.session.execute(
-            update(RunCheckpoint)
+        checkpoint = self.session.scalar(
+            select(RunCheckpoint)
             .where(RunCheckpoint.branch_id == branch_id)
             .where(RunCheckpoint.chapter_index == chapter_index)
-            .where(RunCheckpoint.visibility == "active")
-            .values(visibility="hidden")
         )
+        if checkpoint is None:
+            checkpoint = RunCheckpoint(
+                branch_id=branch_id,
+                chapter_index=chapter_index,
+                langgraph_thread_id=langgraph_thread_id,
+                langgraph_checkpoint_id=langgraph_checkpoint_id,
+                state_summary={"committed": True, "chapter_index": chapter_index},
+            )
+            self.session.add(checkpoint)
+        else:
+            checkpoint.langgraph_thread_id = langgraph_thread_id
+            checkpoint.langgraph_checkpoint_id = langgraph_checkpoint_id
+            checkpoint.state_summary = {"committed": True, "chapter_index": chapter_index}
+            checkpoint.visibility = "active"
+            checkpoint.inherited_from_branch_id = None
+            checkpoint.is_inherited = False
 
-        checkpoint = RunCheckpoint(
-            branch_id=branch_id,
-            chapter_index=chapter_index,
-            langgraph_thread_id=langgraph_thread_id,
-            langgraph_checkpoint_id=langgraph_checkpoint_id,
-            state_summary={"committed": True, "chapter_index": chapter_index},
-        )
         artifact = ChapterArtifact(
             branch_id=branch_id,
             chapter_index=chapter_index,
@@ -294,7 +301,7 @@ class RunService:
             source_kind=source_kind,
             participates_in_downstream=participates_in_downstream,
         )
-        self.session.add_all([checkpoint, artifact])
+        self.session.add(artifact)
         self.session.commit()
         self.session.refresh(artifact)
         return artifact

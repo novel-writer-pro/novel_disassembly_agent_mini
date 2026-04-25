@@ -36,6 +36,7 @@ class ChapterAgentContext:
     intake_json: str = '{}'
     prior_context_json: str = '{}'
     graph_context_json: str = '{}'
+    state_summary_json: str = '{}'
     cleaned_text: str = ''
     fact_json: str = '{}'
     evidence_bound_json: str = '{}'
@@ -57,6 +58,7 @@ def build_agent_stage_prompts(context: ChapterAgentContext) -> dict[str, str]:
         'intake_json': context.intake_json,
         'prior_context_json': context.prior_context_json,
         'graph_context_json': context.graph_context_json,
+        'state_summary_json': context.state_summary_json,
         'cleaned_text': context.cleaned_text,
         'fact_json': context.fact_json,
         'evidence_bound_json': context.evidence_bound_json,

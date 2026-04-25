@@ -54,3 +54,5 @@ def test_context_service_exposes_prior_summary_facts_window_and_graph(tmp_path: 
         assert bundle['fact_context']['facts']
         assert bundle['window_summary']
         assert bundle['graph_context']['nodes']
+        assert 'overview' in bundle['graph_context']
+        assert 'state_summary' in bundle

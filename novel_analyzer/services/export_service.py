@@ -14,6 +14,7 @@ from novel_analyzer.database.models import (
     WindowArtifact,
 )
 from novel_analyzer.services.chapter_index_service import ChapterIndexService
+from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.status_service import StatusService
 
 
@@ -24,6 +25,7 @@ class ExportService:
         self.session = session
         self.status_service = StatusService(session)
         self.chapter_index_service = ChapterIndexService(session)
+        self.graph_service = GraphService(session)
 
     def export_branch_bundle(self, run_id: str, branch_id: str) -> dict[str, object]:
         """Return a JSON-serializable bundle for one branch."""
@@ -44,6 +46,7 @@ class ExportService:
             .where(GraphEdge.branch_id == branch_id)
             .order_by(GraphEdge.edge_type)
         ).all()
+        reasoning_graph = self.graph_service.reasoning_snapshot(branch_id)
         return {
             'status': {
                 key: getattr(status, key) for key in status.__dataclass_fields__
@@ -60,6 +63,7 @@ class ExportService:
                     'chapter_first_seen': node.chapter_first_seen,
                     'chapter_last_seen': node.chapter_last_seen,
                     'occurrence_count': node.occurrence_count,
+                    'metadata': node.metadata_json,
                 }
                 for node in nodes
             ],
@@ -71,9 +75,12 @@ class ExportService:
                     'weight': edge.weight,
                     'chapter_first_seen': edge.chapter_first_seen,
                     'chapter_last_seen': edge.chapter_last_seen,
+                    'metadata': edge.metadata_json,
                 }
                 for edge in edges
             ],
+            'reasoning_graph': reasoning_graph,
+            'state_summary': self.graph_service.state_summary_from_snapshot(reasoning_graph),
         }
 
     def export_chapter_bundle(self, branch_id: str, chapter_index: int) -> dict[str, object]:
@@ -107,6 +114,7 @@ class ExportService:
             .where(GraphNode.chapter_last_seen >= chapter_index)
             .order_by(GraphNode.node_type, GraphNode.label)
         ).all()
+        node_by_id = {node.id: node for node in nodes}
         edges = self.session.scalars(
             select(GraphEdge)
             .where(GraphEdge.branch_id == branch_id)
@@ -115,9 +123,22 @@ class ExportService:
             .order_by(GraphEdge.edge_type)
         ).all()
 
+        reasoning_graph = self.graph_service.reasoning_snapshot(
+            branch_id,
+            upto_chapter=chapter_index,
+        )
+        state_summary = self.graph_service.state_summary_from_snapshot(
+            reasoning_graph,
+            chapter_index=chapter_index,
+        )
+        artifact_payload = {
+            **artifact.payload_json,
+            'state_summary': state_summary,
+        }
+
         return {
             'chapter_index': chapter_index,
-            'artifact': artifact.payload_json,
+            'artifact': artifact_payload,
             'facts': [
                 {
                     'fact_type': fact.fact_type,
@@ -138,16 +159,28 @@ class ExportService:
                     'node_type': node.node_type,
                     'label': node.label,
                     'occurrence_count': node.occurrence_count,
+                    'metadata': node.metadata_json,
                 }
                 for node in nodes
             ],
             'graph_edges': [
                 {
                     'edge_type': edge.edge_type,
-                    'source_node_id': edge.source_node_id,
-                    'target_node_id': edge.target_node_id,
+                    'source': (
+                        node_by_id[edge.source_node_id].label
+                        if edge.source_node_id in node_by_id
+                        else edge.source_node_id
+                    ),
+                    'target': (
+                        node_by_id[edge.target_node_id].label
+                        if edge.target_node_id in node_by_id
+                        else edge.target_node_id
+                    ),
                     'weight': edge.weight,
+                    'metadata': edge.metadata_json,
                 }
                 for edge in edges
             ],
+            'reasoning_graph': reasoning_graph,
+            'state_summary': state_summary,
         }

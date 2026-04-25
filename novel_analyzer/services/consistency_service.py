@@ -17,6 +17,7 @@ from novel_analyzer.database.models import (
     RunBranch,
     WindowArtifact,
 )
+from novel_analyzer.services.graph_service import GraphService
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +43,7 @@ class ConsistencyService:
 
     def __init__(self, session: Session) -> None:
         self.session = session
+        self.graph_service = GraphService(session)
 
     def validate_branch(self, branch_id: str) -> BranchConsistencyReport:
         """Validate materialization consistency for one branch."""
@@ -143,5 +145,31 @@ class ConsistencyService:
             issues.append(
                 ConsistencyIssue('warning', 'missing_graph_edges', '当前 branch 缺少 graph edges')
             )
+        if has_non_demo_artifacts and node_count and edge_count:
+            snapshot = self.graph_service.reasoning_snapshot(branch_id)
+            overview = snapshot.get('overview', {})
+            node_type_counts = (
+                overview.get('node_type_counts', {})
+                if isinstance(overview, dict)
+                else {}
+            )
+            has_stateful_nodes = any(
+                int(node_type_counts.get(key, 0)) > 0
+                for key in ['foreshadow', 'conflict', 'relation', 'world_rule']
+            )
+            if has_stateful_nodes:
+                state_summary = self.graph_service.state_summary_from_snapshot(snapshot)
+                summary_has_signal = any(
+                    isinstance(value, list) and value
+                    for value in state_summary.values()
+                )
+                if not summary_has_signal:
+                    issues.append(
+                        ConsistencyIssue(
+                            'warning',
+                            'missing_state_summary_signals',
+                            '图谱已存在，但未形成可用的状态摘要信号',
+                        )
+                    )
 
         return BranchConsistencyReport(branch_id=branch_id, issue_count=len(issues), issues=issues)

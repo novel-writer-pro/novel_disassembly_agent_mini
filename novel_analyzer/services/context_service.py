@@ -5,13 +5,8 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from novel_analyzer.database.models import (
-    ChapterArtifact,
-    FactRecord,
-    GraphEdge,
-    GraphNode,
-    WindowArtifact,
-)
+from novel_analyzer.database.models import ChapterArtifact, FactRecord, WindowArtifact
+from novel_analyzer.services.graph_service import GraphService
 
 
 class ContextService:
@@ -61,7 +56,6 @@ class ContextService:
         ]
         return {'facts': facts}
 
-
     def graph_context_json(
         self,
         branch_id: str,
@@ -69,48 +63,56 @@ class ContextService:
         node_limit: int = 12,
         edge_limit: int = 12,
     ) -> dict[str, object]:
-        """Return a compact graph snapshot from earlier chapters."""
+        """Return a reasoning-oriented graph snapshot from earlier chapters."""
 
         if chapter_index <= 1:
-            return {'nodes': [], 'edges': []}
-        nodes = self.session.scalars(
-            select(GraphNode)
-            .where(GraphNode.branch_id == branch_id)
-            .where(GraphNode.chapter_last_seen < chapter_index)
-            .order_by(GraphNode.occurrence_count.desc(), GraphNode.label)
-            .limit(node_limit)
-        ).all()
-        edges = self.session.scalars(
-            select(GraphEdge)
-            .where(GraphEdge.branch_id == branch_id)
-            .where(GraphEdge.chapter_last_seen < chapter_index)
-            .order_by(GraphEdge.weight.desc(), GraphEdge.edge_type)
-            .limit(edge_limit)
-        ).all()
-        node_by_id = {node.id: node for node in nodes}
-        edge_items = []
-        for edge in edges:
-            source = node_by_id.get(edge.source_node_id)
-            target = node_by_id.get(edge.target_node_id)
-            edge_items.append(
-                {
-                    'edge_type': edge.edge_type,
-                    'weight': edge.weight,
-                    'source': source.label if source else edge.source_node_id,
-                    'target': target.label if target else edge.target_node_id,
-                }
-            )
-        return {
-            'nodes': [
-                {
-                    'node_type': node.node_type,
-                    'label': node.label,
-                    'occurrence_count': node.occurrence_count,
-                }
-                for node in nodes
-            ],
-            'edges': edge_items,
-        }
+            return {
+                'overview': {
+                    'node_count': 0,
+                    'edge_count': 0,
+                    'node_type_counts': {},
+                    'edge_type_counts': {},
+                },
+                'central_nodes': [],
+                'recent_timeline': [],
+                'reasoning_paths': [],
+                'active_conflicts': [],
+                'open_foreshadowing': [],
+                'world_rules': [],
+                'nodes': [],
+                'edges': [],
+            }
+        return GraphService(self.session).reasoning_snapshot(
+            branch_id,
+            upto_chapter=chapter_index - 1,
+            node_limit=node_limit,
+            edge_limit=edge_limit,
+        )
+
+    def state_summary_json(self, branch_id: str, chapter_index: int) -> dict[str, object]:
+        """Return prior state-summary context from the reasoning graph."""
+
+        if chapter_index <= 1:
+            return {
+                'new_foreshadowing': [],
+                'paid_off_foreshadowing': [],
+                'new_conflicts': [],
+                'escalated_conflicts': [],
+                'stable_relations': [],
+                'evolved_relations': [],
+                'observed_world_rules': [],
+                'constraining_world_rules': [],
+            }
+        snapshot = GraphService(self.session).reasoning_snapshot(
+            branch_id,
+            upto_chapter=chapter_index - 1,
+            node_limit=12,
+            edge_limit=12,
+        )
+        return GraphService.state_summary_from_snapshot(
+            snapshot,
+            chapter_index=chapter_index - 1,
+        )
 
     def window_summary(self, branch_id: str, chapter_index: int) -> str:
         """Return the latest completed window summary before this chapter."""
@@ -140,5 +142,6 @@ class ContextService:
             'previous_summary': self.previous_summary(branch_id, chapter_index),
             'fact_context': self.fact_context_json(branch_id, chapter_index, fact_limit),
             'graph_context': self.graph_context_json(branch_id, chapter_index),
+            'state_summary': self.state_summary_json(branch_id, chapter_index),
             'window_summary': self.window_summary(branch_id, chapter_index),
         }

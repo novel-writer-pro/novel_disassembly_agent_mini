@@ -57,9 +57,15 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
 
     graph_nodes = bundle.get('graph_nodes', [])
     graph_edges = bundle.get('graph_edges', [])
+    reasoning_graph = bundle.get('reasoning_graph', {})
+    state_summary = bundle.get('state_summary', {})
+    overview = reasoning_graph.get('overview', {}) if isinstance(reasoning_graph, dict) else {}
     lines.extend(['', '## Graph Overview'])
     lines.append(f'- nodes: {len(graph_nodes)}')
     lines.append(f'- edges: {len(graph_edges)}')
+    if overview:
+        lines.append(f"- node types: {overview.get('node_type_counts', {})}")
+        lines.append(f"- edge types: {overview.get('edge_type_counts', {})}")
     if graph_nodes:
         lines.append('')
         lines.append('Top Nodes:')
@@ -68,4 +74,68 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
                 f"- {node.get('node_type')}:{node.get('label')} "
                 f"(seen {node.get('occurrence_count')})"
             )
+    if isinstance(state_summary, dict):
+        lines.extend(['', '## State Summary'])
+        for label, key in [
+            ('新增伏笔', 'new_foreshadowing'),
+            ('已回收伏笔', 'paid_off_foreshadowing'),
+            ('新增冲突', 'new_conflicts'),
+            ('冲突升级', 'escalated_conflicts'),
+            ('关系变化', 'evolved_relations'),
+            ('规则约束', 'constraining_world_rules'),
+        ]:
+            items = state_summary.get(key, [])
+            if not isinstance(items, list) or not items:
+                continue
+            lines.append(f'### {label}')
+            for item in items[:10]:
+                lines.append(f'- {item}')
+    if isinstance(reasoning_graph, dict):
+        lines.extend(['', '## Reasoning Graph'])
+        central_nodes = reasoning_graph.get('central_nodes', [])
+        if central_nodes:
+            lines.append('### Central Nodes')
+            for item in central_nodes[:8]:
+                lines.append(
+                    f"- {item.get('node_type')}:{item.get('label')} degree={item.get('degree')}"
+                )
+        reasoning_paths = reasoning_graph.get('reasoning_paths', [])
+        if reasoning_paths:
+            lines.append('')
+            lines.append('### Reasoning Paths')
+            for path in reasoning_paths[:12]:
+                lines.append(f'- {path}')
+        active_conflicts = reasoning_graph.get('active_conflicts', [])
+        if active_conflicts:
+            lines.append('')
+            lines.append('### Active Conflicts')
+            for item in active_conflicts[:10]:
+                lines.append(f'- {item}')
+        open_foreshadowing = reasoning_graph.get('open_foreshadowing', [])
+        if open_foreshadowing:
+            lines.append('')
+            lines.append('### Open Foreshadowing')
+            for item in open_foreshadowing[:10]:
+                lines.append(f'- {item}')
+        world_rules = reasoning_graph.get('world_rules', [])
+        if world_rules:
+            lines.append('')
+            lines.append('### World Rules')
+            for item in world_rules[:10]:
+                lines.append(f'- {item}')
+        state_machine = reasoning_graph.get('state_machine', {})
+        if isinstance(state_machine, dict):
+            for key, heading in [
+                ('foreshadow', 'Foreshadow States'),
+                ('conflict', 'Conflict States'),
+                ('relation', 'Relation States'),
+                ('world_rule', 'World Rule States'),
+            ]:
+                items = state_machine.get(key, [])
+                if not items:
+                    continue
+                lines.append('')
+                lines.append(f'### {heading}')
+                for item in items[:10]:
+                    lines.append(f"- {item.get('label')} [{item.get('status')}]")
     return '\n'.join(lines).strip() + '\n'

@@ -10,6 +10,8 @@
 {{window_summary}}
 - 可选图谱摘要：
 {{graph_context_json}}
+- 可选前情状态摘要：
+{{state_summary_json}}
 
 输出要求：
 1. 只输出 JSON。
@@ -19,6 +21,7 @@
 5. 若某结论依赖弱证据，请在 confidence 上体现。
 6. 参考“hook scoring”思路，在 continuity_notes 中明确指出本章结尾是否有继续阅读钩子、悬念强弱、下一章驱动因素。
 7. 参考“state consistency”思路，若本章对角色位置、关系、力量、信息掌握状态有明显变化，要在 continuity_notes 中点明。 
+8. 如果前情状态摘要表明有未回收伏笔、升级中的冲突、已变化关系或正在起约束作用的规则，要优先判断本章是“延续 / 局部兑现 / 升级 / 暂缓”，并在 continuity_notes 中用保守措辞写出。
 
 示例（格式示意）：
 {

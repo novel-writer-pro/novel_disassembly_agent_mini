@@ -23,6 +23,7 @@ def test_build_small_model_skill_prompts_renders_all_core_skills() -> None:
             normalized_title='大器晚成',
             chapter_content='卫图在李宅做马倌。',
             previous_summary='上一章无。',
+            state_summary_json='{"escalated_conflicts":["旧冲突"]}',
         )
     )
     assert set(CORE_SMALL_MODEL_SKILLS).issubset(prompts.keys())
@@ -32,3 +33,4 @@ def test_build_small_model_skill_prompts_renders_all_core_skills() -> None:
         'fact extraction JSON' in prompts['evidence-binder']
         or '事实提取结果' in prompts['evidence-binder']
     )
+    assert '旧冲突' in prompts['chapter-fact-extractor']
