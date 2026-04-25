@@ -17,3 +17,7 @@
 4. 如果看不出明确写法，也要说明“本章更偏信息铺垫/情节推进/人物立设”的哪个方向。
 5. 参考“hook scoring rubric”，优先关注：章尾钩子强度、信息揭示顺序、冲突推进效率、情绪曲线控制。
 6. 参考“state consistency check”，若本章在角色状态、关系状态、信息揭露上有连贯处理，也要提炼为 lesson。
+7. 如果 validated chapter JSON 中包含 `state_transition_notes / evidence_backed_resolutions / unresolved_threads`，要优先提炼：
+   - 作者如何推进状态
+   - 作者如何让“解决”显得可信
+   - 作者如何保留未解线程来驱动后续章节

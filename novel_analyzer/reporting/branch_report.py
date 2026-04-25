@@ -59,6 +59,7 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
     graph_edges = bundle.get('graph_edges', [])
     reasoning_graph = bundle.get('reasoning_graph', {})
     state_summary = bundle.get('state_summary', {})
+    chapter_output_summary = bundle.get('chapter_output_summary', {})
     overview = reasoning_graph.get('overview', {}) if isinstance(reasoning_graph, dict) else {}
     lines.extend(['', '## Graph Overview'])
     lines.append(f'- nodes: {len(graph_nodes)}')
@@ -90,6 +91,22 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
             lines.append(f'### {label}')
             for item in items[:10]:
                 lines.append(f'- {item}')
+    if isinstance(chapter_output_summary, dict):
+        lines.extend(['', '## Chapter Output Summary'])
+        for heading, key in [
+            ('推进摘要总览', 'state_transition_notes'),
+            ('已解决线索总览', 'evidence_backed_resolutions'),
+            ('未解线程总览', 'unresolved_threads'),
+        ]:
+            items = chapter_output_summary.get(key, [])
+            if not isinstance(items, list) or not items:
+                continue
+            lines.append(f'### {heading}')
+            for item in items[:12]:
+                if isinstance(item, dict):
+                    lines.append(
+                        f"- 第{item.get('chapter_index')}章: {item.get('note')}"
+                    )
     if isinstance(reasoning_graph, dict):
         lines.extend(['', '## Reasoning Graph'])
         central_nodes = reasoning_graph.get('central_nodes', [])

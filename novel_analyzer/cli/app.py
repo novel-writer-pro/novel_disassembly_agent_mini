@@ -555,6 +555,40 @@ def export_branch_bundle(
 
 
 @app.command()
+def export_chapter_qa_context(
+    branch_id: str,
+    chapter_index: int,
+    output_path: Path,
+    database_url: str | None = None,
+) -> None:
+    """Export one chapter QA context JSON for downstream tools."""
+
+    settings = _settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = ExportService(session).export_chapter_qa_context(branch_id, chapter_index)
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"chapter_qa_context_path={output_path}")
+
+
+@app.command()
+def export_branch_qa_context(
+    run_id: str,
+    branch_id: str,
+    output_path: Path,
+    database_url: str | None = None,
+) -> None:
+    """Export one branch QA context JSON for downstream tools."""
+
+    settings = _settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = ExportService(session).export_branch_qa_context(run_id, branch_id)
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"branch_qa_context_path={output_path}")
+
+
+@app.command()
 def export_markdown(
     branch_id: str,
     chapter_index: int,

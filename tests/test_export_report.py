@@ -46,6 +46,9 @@ def test_render_branch_report_contains_status_and_windows(tmp_path: Path) -> Non
                     'quality_gate_notes': [],
                     'hook_score': 4.5,
                     'dimensions': [],
+                    'state_transition_notes': [f'第{idx}章推进'],
+                    'evidence_backed_resolutions': [f'第{idx}章解决'],
+                    'unresolved_threads': [f'第{idx}章未解'],
                 },
             )
             retrieval.materialize_for_artifact(artifact.id)
@@ -59,5 +62,6 @@ def test_render_branch_report_contains_status_and_windows(tmp_path: Path) -> Non
         assert '## Windows' in report
         assert '## Graph Overview' in report
         assert '## State Summary' in report
+        assert '## Chapter Output Summary' in report
         assert '## Reasoning Graph' in report
         assert '### Reasoning Paths' in report

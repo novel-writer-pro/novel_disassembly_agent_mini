@@ -1,0 +1,17 @@
+{
+  "chapter_index": 2,
+  "title": "命格兑现",
+  "chapter_summary": "卫图因命格得到机缘。",
+  "key_events": ["卫图因命格得到机缘"],
+  "state_transition_notes": ["第2章把命格线从设定推进到兑现。"],
+  "evidence_backed_resolutions": ["前文命格伏笔出现阶段性兑现。"],
+  "unresolved_threads": ["家境掣肘仍待后续处理。"],
+  "query_hints": ["第2章 命格兑现 讲了什么"],
+  "recommended_questions": ["这一章里最关键的剧情兑现点是什么？"],
+  "reasoning_graph": {
+    "reasoning_paths": ["卫图觉醒命格 -[advances_to]-> 卫图因命格得到机缘"]
+  },
+  "state_summary": {
+    "paid_off_foreshadowing": ["命格后续将改变命运"]
+  }
+}

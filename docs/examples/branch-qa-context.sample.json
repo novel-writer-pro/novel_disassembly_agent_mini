@@ -1,0 +1,21 @@
+{
+  "recommended_questions": ["伏笔“命格后续将改变命运”是在哪些章节逐步兑现的？"],
+  "retrieval_documents": [
+    {"chapter_index": 1, "title": "命格初现", "summary_text": "卫图觉醒命格。"},
+    {"chapter_index": 2, "title": "命格兑现", "summary_text": "卫图因命格得到机缘。"}
+  ],
+  "thematic_contexts": {
+    "foreshadow_arc": {
+      "recommended_questions": ["伏笔“命格后续将改变命运”的铺垫与兑现节奏是怎样的？"],
+      "question_sequence": [{"step": 1, "question": "伏笔“命格后续将改变命运”的铺垫与兑现节奏是怎样的？"}],
+      "related_chapters": [1, 2],
+      "evidence_summaries": ["第1章《命格初现》：卫图觉醒命格。", "第2章《命格兑现》：卫图因命格得到机缘。"],
+      "reasoning_paths": ["命格后续将改变命运 -[pays_off_as]-> 卫图因命格得到机缘"],
+      "state_signals": ["已兑现伏笔: 命格后续将改变命运"],
+      "supporting_facts": ["foreshadow:命格后续将改变命运"],
+      "node_refs": [{"node_type": "foreshadow", "label": "命格后续将改变命运"}],
+      "edge_refs": [{"edge_type": "pays_off_as", "source": "命格后续将改变命运", "target": "卫图因命格得到机缘"}],
+      "timeline_points": [{"chapter_index": 1, "summary": "第1章《命格初现》：卫图觉醒命格。"}]
+    }
+  }
+}

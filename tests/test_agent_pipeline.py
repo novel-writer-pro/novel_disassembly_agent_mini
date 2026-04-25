@@ -14,6 +14,7 @@ def test_build_agent_stage_prompts_renders_core_pipeline() -> None:
             chapter_content='卫图在李宅做马倌。',
             previous_summary='上一章无。',
             state_summary_json='{"paid_off_foreshadowing":["旧伏笔"]}',
+            chapter_json='{"state_transition_notes":["推进A"],"evidence_backed_resolutions":["解决A"],"unresolved_threads":["未解A"]}',
         )
     )
     assert set(DEFAULT_SMALL_MODEL_STAGES).issubset(prompts.keys())
@@ -21,6 +22,7 @@ def test_build_agent_stage_prompts_renders_core_pipeline() -> None:
     assert '卫图在李宅做马倌' in prompts['chapter_intake']
     assert '作者学习视角' in prompts['writer_learning_lens']
     assert '旧伏笔' in prompts['analysis_generator']
+    assert '推进A' in prompts['writer_learning_lens']
 
 
 def test_internal_stages_are_backed_by_repo_local_skill_assets() -> None:

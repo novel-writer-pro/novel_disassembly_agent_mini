@@ -305,3 +305,97 @@ class BranchQAResult(BaseModel):
     graph_signals: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     insufficient_context: bool = Field(default=False)
+
+
+class ChapterNoteRow(BaseModel):
+    """One chapter-indexed summary note."""
+
+    chapter_index: int
+    note: str
+
+
+class NodeRef(BaseModel):
+    """Visualization-friendly node reference."""
+
+    node_type: str
+    label: str
+    chapter_first_seen: int | None = None
+    chapter_last_seen: int | None = None
+
+
+class EdgeRef(BaseModel):
+    """Visualization-friendly edge reference."""
+
+    edge_type: str
+    source: str
+    target: str
+    chapter_first_seen: int | None = None
+    chapter_last_seen: int | None = None
+
+
+class TimelinePoint(BaseModel):
+    """Visualization-friendly timeline point."""
+
+    chapter_index: int
+    summary: str
+
+
+class QuestionStep(BaseModel):
+    """Ordered recommended question step."""
+
+    step: int
+    question: str
+
+
+class ThematicContextOutput(BaseModel):
+    """A themed QA/navigation context entry."""
+
+    recommended_questions: list[str] = Field(default_factory=list)
+    question_sequence: list[QuestionStep] = Field(default_factory=list)
+    related_chapters: list[int] = Field(default_factory=list)
+    evidence_summaries: list[str] = Field(default_factory=list)
+    reasoning_paths: list[str] = Field(default_factory=list)
+    state_signals: list[str] = Field(default_factory=list)
+    supporting_facts: list[str] = Field(default_factory=list)
+    node_refs: list[NodeRef] = Field(default_factory=list)
+    edge_refs: list[EdgeRef] = Field(default_factory=list)
+    timeline_points: list[TimelinePoint] = Field(default_factory=list)
+    focus_entities: list[str] = Field(default_factory=list)
+    active_conflicts: list[str] = Field(default_factory=list)
+    escalated_conflicts: list[str] = Field(default_factory=list)
+    open_or_paid_off: list[str] = Field(default_factory=list)
+    rules: list[str] = Field(default_factory=list)
+    chapter_threads: list[ChapterNoteRow] = Field(default_factory=list)
+    document_summaries: list[dict[str, object]] = Field(default_factory=list)
+
+
+class ChapterQAContextOutput(BaseModel):
+    """Downstream-consumable chapter QA context package."""
+
+    chapter_index: int
+    title: str | None = None
+    chapter_summary: str | None = None
+    key_events: list[str] = Field(default_factory=list)
+    state_transition_notes: list[str] = Field(default_factory=list)
+    evidence_backed_resolutions: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
+    facts: list[dict[str, object]] = Field(default_factory=list)
+    retrieval: dict[str, object] = Field(default_factory=dict)
+    query_hints: list[str] = Field(default_factory=list)
+    recommended_questions: list[str] = Field(default_factory=list)
+    reasoning_graph: dict[str, object] = Field(default_factory=dict)
+    state_summary: dict[str, object] = Field(default_factory=dict)
+
+
+class BranchQAContextOutput(BaseModel):
+    """Downstream-consumable branch QA context package."""
+
+    status: dict[str, object] = Field(default_factory=dict)
+    chapter_index: list[dict[str, object]] = Field(default_factory=list)
+    windows: list[dict[str, object]] = Field(default_factory=list)
+    state_summary: dict[str, object] = Field(default_factory=dict)
+    chapter_output_summary: dict[str, object] = Field(default_factory=dict)
+    recommended_questions: list[str] = Field(default_factory=list)
+    reasoning_graph: dict[str, object] = Field(default_factory=dict)
+    retrieval_documents: list[dict[str, object]] = Field(default_factory=list)
+    thematic_contexts: dict[str, ThematicContextOutput] = Field(default_factory=dict)

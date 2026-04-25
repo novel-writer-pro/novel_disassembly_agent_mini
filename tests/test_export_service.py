@@ -45,6 +45,9 @@ def test_export_branch_bundle_contains_status_windows_and_graph(tmp_path: Path) 
                     'quality_gate_notes': [],
                     'hook_score': 4.5,
                     'dimensions': [],
+                    'state_transition_notes': [f'第{idx}章推进'],
+                    'evidence_backed_resolutions': [f'第{idx}章解决'],
+                    'unresolved_threads': [f'第{idx}章未解'],
                 },
             )
             retrieval.materialize_for_artifact(artifact.id)
@@ -58,3 +61,14 @@ def test_export_branch_bundle_contains_status_windows_and_graph(tmp_path: Path) 
         assert bundle['graph_edges']
         assert bundle['reasoning_graph']['overview']['node_count'] >= len(bundle['graph_nodes'])
         assert 'state_summary' in bundle
+        assert bundle['chapter_output_summary']['state_transition_notes']
+        qa_context = ExportService(session).export_branch_qa_context(run.id, branch.id)
+        assert qa_context['retrieval_documents']
+        assert qa_context['recommended_questions']
+        assert qa_context['thematic_contexts']
+        assert 'question_sequence' in qa_context['thematic_contexts']['conflict_arc']
+        assert 'reasoning_paths' in qa_context['thematic_contexts']['conflict_arc']
+        assert 'supporting_facts' in qa_context['thematic_contexts']['world_rule_arc']
+        assert 'node_refs' in qa_context['thematic_contexts']['character_arc']
+        assert 'edge_refs' in qa_context['thematic_contexts']['conflict_arc']
+        assert 'timeline_points' in qa_context['thematic_contexts']['foreshadow_arc']

@@ -180,17 +180,6 @@ poetry run novel-analyzer retry-chapter <run_id> <branch_id> <chapter_index>
 poetry run novel-analyzer retry-failed-jobs <run_id> <branch_id>
 ```
 
-## Branch package contents
-
-`export-branch-package` 现在会包含：
-- `branch_bundle.json`
-- `branch_report.md`
-- `chapter_index.json`
-- `chapters/chapter_XXXX.json`
-- `chapters/chapter_XXXX.md`
-- `chapters/chapter_XXXX.raw.json`
-- `chapters/chapter_XXXX.context.json`
-
 ## 运行恢复与修复
 
 ```bash

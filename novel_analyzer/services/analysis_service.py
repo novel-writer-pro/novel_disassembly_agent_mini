@@ -526,6 +526,15 @@ class AnalysisService:
                             ChapterAnalysisLayerOutput,
                         ),
                     ).ensure_minimum_analysis(segment.normalized_title, evidence)
+                    (
+                        state_transition_notes,
+                        evidence_backed_resolutions,
+                        unresolved_threads,
+                    ) = self._derive_state_progression(
+                        state_summary,
+                        facts,
+                        analysis,
+                    )
                     writer = cast(
                         WriterLearningLensOutput,
                         self._invoke_stage(
@@ -559,9 +568,9 @@ class AnalysisService:
                             analysis,
                             writer,
                             AntiFabricationGuardOutput(),
-                            [],
-                            [],
-                            [],
+                            state_transition_notes,
+                            evidence_backed_resolutions,
+                            unresolved_threads,
                         ).model_dump_json(indent=2),
                     )
                     guard_prompt_map = build_agent_stage_prompts(guard_context)
@@ -578,15 +587,6 @@ class AnalysisService:
                         facts,
                         analysis,
                         guard,
-                    )
-                    (
-                        state_transition_notes,
-                        evidence_backed_resolutions,
-                        unresolved_threads,
-                    ) = self._derive_state_progression(
-                        state_summary,
-                        facts,
-                        analysis,
                     )
                     result = self._merge_stage_outputs(
                         segment.chapter_index,

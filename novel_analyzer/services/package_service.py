@@ -49,6 +49,11 @@ class PackageService:
             render_branch_report(bundle),
             encoding='utf-8',
         )
+        branch_qa_context = self.export_service.export_branch_qa_context(run_id, branch_id)
+        (output_dir / 'branch_qa_context.json').write_text(
+            json.dumps(branch_qa_context, ensure_ascii=False, indent=2),
+            encoding='utf-8',
+        )
 
         chapters_dir = output_dir / 'chapters'
         chapters_dir.mkdir(exist_ok=True)
@@ -67,6 +72,7 @@ class PackageService:
             md_path = chapters_dir / f'chapter_{artifact.chapter_index:04d}.md'
             raw_path = chapters_dir / f'chapter_{artifact.chapter_index:04d}.raw.json'
             context_path = chapters_dir / f'chapter_{artifact.chapter_index:04d}.context.json'
+            qa_context_path = chapters_dir / f'chapter_{artifact.chapter_index:04d}.qa-context.json'
             json_path.write_text(
                 json.dumps(chapter_bundle, ensure_ascii=False, indent=2),
                 encoding='utf-8',
@@ -101,6 +107,14 @@ class PackageService:
             )
             context_path.write_text(
                 json.dumps(context_payload, ensure_ascii=False, indent=2),
+                encoding='utf-8',
+            )
+            qa_context_payload = self.export_service.export_chapter_qa_context(
+                branch_id,
+                artifact.chapter_index,
+            )
+            qa_context_path.write_text(
+                json.dumps(qa_context_payload, ensure_ascii=False, indent=2),
                 encoding='utf-8',
             )
         return output_dir

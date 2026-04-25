@@ -1,0 +1,28 @@
+{
+  "status": {
+    "completed_chapters": 2,
+    "next_chapter": null,
+    "graph_node_count": 12,
+    "graph_edge_count": 38
+  },
+  "chapter_index": [
+    {"chapter_index": 1, "title": "命格初现"},
+    {"chapter_index": 2, "title": "命格兑现"}
+  ],
+  "state_summary": {
+    "paid_off_foreshadowing": ["命格后续将改变命运"],
+    "escalated_conflicts": ["卫图受限于出身"],
+    "constraining_world_rules": ["命格决定成长路径"]
+  },
+  "chapter_output_summary": {
+    "state_transition_notes": [{"chapter_index": 2, "note": "第2章把命格线从设定推进到兑现。"}],
+    "evidence_backed_resolutions": [{"chapter_index": 2, "note": "前文命格伏笔出现阶段性兑现。"}],
+    "unresolved_threads": [{"chapter_index": 2, "note": "家境掣肘仍待后续处理。"}]
+  },
+  "reasoning_graph": {
+    "overview": {"node_count": 12, "edge_count": 38},
+    "state_machine": {
+      "foreshadow": [{"label": "命格后续将改变命运", "status": "paid_off"}]
+    }
+  }
+}

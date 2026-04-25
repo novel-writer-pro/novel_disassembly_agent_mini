@@ -1,0 +1,37 @@
+{
+  "chapter_index": 2,
+  "artifact": {
+    "chapter_index": 2,
+    "normalized_title": "命格兑现",
+    "chapter_summary": "卫图因命格得到机缘。",
+    "key_entities": ["卫图", "命格"],
+    "key_events": ["卫图因命格得到机缘"],
+    "continuity_notes": ["命格开始兑现。"],
+    "state_transition_notes": ["第2章把命格线从设定推进到兑现。"],
+    "evidence_backed_resolutions": ["前文命格伏笔出现阶段性兑现。"],
+    "unresolved_threads": ["家境掣肘仍待后续处理。"],
+    "state_summary": {
+      "paid_off_foreshadowing": ["命格后续将改变命运"],
+      "escalated_conflicts": ["卫图受限于出身"],
+      "evolved_relations": ["卫图与命格建立联系"],
+      "constraining_world_rules": ["命格决定成长路径"]
+    }
+  },
+  "facts": [
+    {"fact_type": "event", "label": "卫图因命格得到机缘", "confidence": 0.93}
+  ],
+  "retrieval": {
+    "title": "命格兑现",
+    "summary_text": "卫图因命格得到机缘。",
+    "keyword_list": ["卫图", "命格"],
+    "query_hints": ["第2章 命格兑现 讲了什么"]
+  },
+  "reasoning_graph": {
+    "overview": {"node_count": 12, "edge_count": 38},
+    "reasoning_paths": ["卫图觉醒命格 -[advances_to]-> 卫图因命格得到机缘"]
+  },
+  "state_summary": {
+    "paid_off_foreshadowing": ["命格后续将改变命运"],
+    "escalated_conflicts": ["卫图受限于出身"]
+  }
+}

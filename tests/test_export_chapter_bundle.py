@@ -53,3 +53,7 @@ def test_export_chapter_bundle_contains_artifact_facts_retrieval_graph(tmp_path:
         assert bundle['graph_nodes']
         assert 'state_summary' in bundle
         assert 'state_summary' in bundle['artifact']
+        qa_context = ExportService(session).export_chapter_qa_context(branch.id, 1)
+        assert qa_context['chapter_summary'] == '卫图觉醒命格。'
+        assert qa_context['query_hints']
+        assert qa_context['recommended_questions']

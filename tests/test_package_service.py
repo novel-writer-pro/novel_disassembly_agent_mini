@@ -41,6 +41,9 @@ def test_export_branch_package_writes_expected_files(tmp_path: Path) -> None:
                 'quality_gate_notes': [],
                 'hook_score': 4.0,
                 'dimensions': [],
+                'state_transition_notes': ['命格线开启。'],
+                'evidence_backed_resolutions': ['命格设定完成。'],
+                'unresolved_threads': ['后续修行路径待展开。'],
             },
         )
         RetrievalService(session).materialize_for_artifact(artifact.id)
@@ -49,9 +52,11 @@ def test_export_branch_package_writes_expected_files(tmp_path: Path) -> None:
         output_dir = tmp_path / 'pkg'
         PackageService(session).export_branch_package(run.id, branch.id, output_dir)
         assert (output_dir / 'branch_bundle.json').exists()
+        assert (output_dir / 'branch_qa_context.json').exists()
         assert (output_dir / 'branch_report.md').exists()
         assert (output_dir / 'chapter_index.json').exists()
         assert (output_dir / 'chapters' / 'chapter_0001.json').exists()
         assert (output_dir / 'chapters' / 'chapter_0001.md').exists()
         assert (output_dir / 'chapters' / 'chapter_0001.raw.json').exists()
         assert (output_dir / 'chapters' / 'chapter_0001.context.json').exists()
+        assert (output_dir / 'chapters' / 'chapter_0001.qa-context.json').exists()
