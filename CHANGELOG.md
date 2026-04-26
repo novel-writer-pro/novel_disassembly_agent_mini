@@ -91,6 +91,12 @@
   - `/api/branch-exports`
   - `/api/download`
 
+### Web 前端产品化重构（进行中）
+- 前端开始从单页静态原型迁移到 Next.js + React + Ant Design
+- 开始拆分为多组件 / 多页面结构
+- 增补原始章节正文回看与 `第N章` 引用跳转
+- 补充 Node.js / npm mirror (`https://registry.npmmirror.com/`) 部署说明
+
 ### 测试与测试基座迁移
 - 迁移一批旧 CLI 测试，移除对 SQLite runtime 成功的依赖
 - 新增 `tests/cli_test_support.py`
@@ -101,3 +107,17 @@
 - `pytest` 目标与 broadened CLI/runtime 切片共 45+ 用例通过
 - `ruff check` 通过
 - `mypy` 通过
+
+
+### 控制台产品化打磨与运行配置收口
+- 重做工作台顶部结构、控制台流程区、导出与恢复页，使界面更接近面向作家的产品界面
+- Reader / Sidebar / Control / Ops 之间的视觉语言继续统一，减少“技术后台”感
+- 文档同步更新为当前推荐运行配置：`vip1129 + gpt-5.4-mini`
+- 明确记录章节失败自动重试策略：默认自动重试最多 **5 次**，超过阈值后才进入人工恢复
+- 明确从第一章重新创建新 run/branch 进行真实拆书，不再沿用旧 provider 的历史任务
+
+### 本轮验证
+- `cd apps/web && ./node_modules/.bin/tsc --noEmit`
+- `cd apps/web && npm run build`
+- `.venv/bin/pytest tests/test_application_layer.py tests/test_cli_retry_bulk.py -q`
+- 真实创建新 run：`run_id=7e22a5d8-eb57-4306-858b-90386f1c2b22`

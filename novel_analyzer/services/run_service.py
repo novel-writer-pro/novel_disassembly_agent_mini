@@ -127,6 +127,24 @@ class RunService:
             for job in jobs
         ]
 
+    def list_retryable_failed_jobs(self, branch_id: str, limit: int = 20) -> list[FailedJobInfo]:
+        """Return failed jobs that are still below the manual-recovery threshold."""
+
+        return [
+            item
+            for item in self.list_failed_jobs(branch_id, limit)
+            if item.attempts < self.settings.chapter_failure_retry_limit
+        ]
+
+    def list_terminal_failed_jobs(self, branch_id: str, limit: int = 20) -> list[FailedJobInfo]:
+        """Return failed jobs that exhausted automatic retry budget."""
+
+        return [
+            item
+            for item in self.list_failed_jobs(branch_id, limit)
+            if item.attempts >= self.settings.chapter_failure_retry_limit
+        ]
+
     def reset_failed_job(self, branch_id: str, chapter_index: int) -> None:
         """Reset a failed chapter job back to pending-like state for retry."""
 

@@ -236,8 +236,8 @@ def test_application_snapshots_recovery_and_exports_work_together(
         database_url=db_url,
     )
 
-    assert run_snapshot.pipeline_state == "needs_recovery"
-    assert branch_snapshot.failed_summary[0]["chapter_index"] == 2
+    assert run_snapshot.pipeline_state == "ready"
+    assert branch_snapshot.failed_summary == []
     assert recovery.accepted_action == "retry-chapter"
     assert Path(exports.branch_bundle_path).exists()
     assert Path(exports.branch_qa_context_path).exists()
@@ -310,4 +310,131 @@ def test_needs_recovery_outranks_paused(
         branch_id=result.branch_id,
         database_url=db_url,
     )
+    assert snapshot.pipeline_state == "ready"
+
+
+def test_application_pipeline_auto_retries_until_manual_recovery_threshold(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _engine, db_url = _patch_application_sqlite(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\n正文\n第2章 二\n正文\n", encoding="utf-8")
+
+    def fake_analyze_range(
+        self: AnalysisService,
+        run_id: str,
+        branch_id: str,
+        start_chapter: int,
+        end_chapter: int,
+    ) -> list[str]:
+        _ = (run_id, end_chapter)
+        self.run_service.start_chapter_job(branch_id, start_chapter)
+        self.run_service.fail_chapter_job(branch_id, start_chapter, "boom")
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(AnalysisService, "analyze_range", fake_analyze_range)
+
+    result = ingest_and_start_pipeline(
+        path=str(novel_path),
+        pipeline_profile="auto-lite",
+        max_chapters=1,
+        database_url=db_url,
+    )
+
+    assert result.pipeline_state == "needs_recovery"
+    assert result.run_id is not None
+    assert result.branch_id is not None
+
+    run_snapshot = get_run_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+    branch_snapshot = get_branch_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+
+    assert run_snapshot.pipeline_state == "needs_recovery"
+    assert branch_snapshot.failed_summary[0]["chapter_index"] == 1
+
+
+
+def test_retryable_failed_job_stays_ready_until_attempt_limit(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    engine, db_url = _patch_application_sqlite(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\n正文\n第2章 二\n正文\n", encoding="utf-8")
+
+    result = ingest_and_start_pipeline(
+        path=str(novel_path),
+        pipeline_profile="manual",
+        max_chapters=0,
+        database_url=db_url,
+    )
+    assert result.run_id is not None
+    assert result.branch_id is not None
+
+    with Session(engine) as session:
+        service = RunService(session)
+        service.start_chapter_job(result.branch_id, 1)
+        service.fail_chapter_job(result.branch_id, 1, "temporary failure")
+
+    snapshot = get_run_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+    branch_snapshot = get_branch_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+
+    assert snapshot.pipeline_state == "ready"
+    assert snapshot.failed_jobs == 0
+    assert branch_snapshot.failed_summary == []
+
+
+def test_failed_job_requires_manual_recovery_after_five_attempts(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    engine, db_url = _patch_application_sqlite(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\n正文\n第2章 二\n正文\n", encoding="utf-8")
+
+    result = ingest_and_start_pipeline(
+        path=str(novel_path),
+        pipeline_profile="manual",
+        max_chapters=0,
+        database_url=db_url,
+    )
+    assert result.run_id is not None
+    assert result.branch_id is not None
+
+    with Session(engine) as session:
+        service = RunService(session)
+        for _ in range(5):
+            service.start_chapter_job(result.branch_id, 1)
+            service.fail_chapter_job(result.branch_id, 1, "still broken")
+
+    snapshot = get_run_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+    branch_snapshot = get_branch_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+
     assert snapshot.pipeline_state == "needs_recovery"
+    assert snapshot.failed_jobs == 1
+    assert branch_snapshot.failed_summary[0]["chapter_index"] == 1
+

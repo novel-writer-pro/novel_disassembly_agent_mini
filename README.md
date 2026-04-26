@@ -42,9 +42,21 @@ export NOVEL_ANALYZER_DB_ADMIN_NAME=postgres
 ```bash
 export NOVEL_ANALYZER_LLM_API_KEY='your-key'
 export NOVEL_ANALYZER_LLM_BASE_URL='https://api.vip1129.cc/v1'
-export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4'
+export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4-mini'
 
 # or copy .env.example -> .env.local and fill the secrets locally
+```
+
+
+### Recommended workbench runtime (current)
+```bash
+export NOVEL_ANALYZER_LLM_PROVIDER_NAME='vip1129'
+export NOVEL_ANALYZER_LLM_BASE_URL='https://api.vip1129.cc/v1'
+export NOVEL_ANALYZER_LLM_API_KEY='your-key'
+export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4-mini'
+export NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME='gpt-5.4-mini'
+export NOVEL_ANALYZER_LLM_QA_MODEL_NAME='gpt-5.4-mini'
+export NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME='gpt-5.4-mini'
 ```
 
 ### Embedding backend example
@@ -140,24 +152,32 @@ python3 -m novel_analyzer.cli.app db-health
 | 创建 run | `poetry run novel-analyzer start-run <novel_id> <manifest_id>` | `python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>` |
 | 推进章节 | `poetry run novel-analyzer analyze-range <run_id> <branch_id> 1 3` | `python3 -m novel_analyzer.cli.app analyze-range <run_id> <branch_id> 1 3` |
 
-## Workbench prototype
+## Workbench
 
-### Start backend prototype
+### Start backend
 ```bash
-python3 -m apps.api.app.main
+.venv/bin/python -m apps.api.app.main
 ```
 
-### Start frontend prototype
+### Start frontend
 ```bash
 cd apps/web
-python3 -m http.server 4173
+npm config set registry https://registry.npmmirror.com/
+npm install
+npm run dev
 ```
 
 Open:
 
 `http://127.0.0.1:4173`
 
-Current workbench prototype supports:
+
+### Workbench notes
+- 当前控制台已经收口为面向作家的阅读型工作台，而不是技术调试页。
+- 拆书失败默认会先自动重试，当前自动重试上限为 **5 次**；只有超过 5 次仍失败，才进入人工恢复流程。
+- 如果你要重启 Web/API 原型，请确保后端进程实际加载的是 `.env.local` / `.env.runtime.local` 中的目标 provider 配置。
+
+Current workbench target capabilities:
 - 真实导入小说并创建 run / branch
 - 读取真实 run / branch snapshot
 - 启动 `manual` pipeline
@@ -220,6 +240,8 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 4. [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md)
 5. [`./docs/model-eval-template.md`](./docs/model-eval-template.md)
 6. [`./docs/README.md`](./docs/README.md)
+7. [`./apps/web/README.md`](./apps/web/README.md)
+8. [`./apps/api/README.md`](./apps/api/README.md)
 ### PostgreSQL checks
 ```bash
 python3 scripts/check_postgres.py

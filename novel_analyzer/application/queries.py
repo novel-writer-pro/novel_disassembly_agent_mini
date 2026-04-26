@@ -66,8 +66,13 @@ def _derive_pipeline_state(
 
     status = StatusService(session).get_run_status(run_id, branch_id)
     branch = session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
-    if status.failed_jobs > 0:
+    run_service = RunService(session)
+    terminal_failed_jobs = len(run_service.list_terminal_failed_jobs(branch_id, limit=1000))
+    retryable_failed_jobs = len(run_service.list_retryable_failed_jobs(branch_id, limit=1000))
+    if terminal_failed_jobs > 0:
         return "needs_recovery"
+    if retryable_failed_jobs > 0:
+        return "ready"
     if status.running_jobs > 0:
         return "auto_running"
     if branch is not None and branch.status == "paused":
@@ -94,6 +99,8 @@ def get_run_snapshot(
     factory = create_session_factory(runtime)
     with factory() as session:
         status = StatusService(session).get_run_status(run_id, branch_id)
+        run_service = RunService(session)
+        terminal_failed_jobs = len(run_service.list_terminal_failed_jobs(branch_id, limit=1000))
         pipeline_state = _derive_pipeline_state(session, run_id, branch_id, status.next_chapter)
         return RunSnapshot(
             run_id=status.run_id,
@@ -102,7 +109,7 @@ def get_run_snapshot(
             pipeline_state=pipeline_state,
             manifest_chapter_count=status.manifest_chapter_count,
             completed_chapters=status.completed_chapters,
-            failed_jobs=status.failed_jobs,
+            failed_jobs=terminal_failed_jobs,
             running_jobs=status.running_jobs,
             next_chapter=status.next_chapter,
             allowed_actions=_allowed_actions(pipeline_state),
@@ -140,7 +147,7 @@ def get_branch_snapshot(
             for row in ChapterIndexService(session).list_rows(branch_id)
         ]
         pipeline_state = _derive_pipeline_state(session, run_id, branch_id, status.next_chapter)
-        failed = run_service.list_failed_jobs(branch_id)
+        failed = run_service.list_terminal_failed_jobs(branch_id)
         return BranchSnapshot(
             branch_id=branch_id,
             pipeline_state=pipeline_state,

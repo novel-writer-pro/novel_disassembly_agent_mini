@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     llm_fallback_model_name: str = Field(default="gpt-5.4")
     llm_timeout_seconds: float = Field(default=60.0)
     llm_max_retries: int = Field(default=2)
+    chapter_failure_retry_limit: int = Field(default=5)
     cross_chapter_window: int = Field(default=5)
     chapter_splitter_version: str = Field(default="heuristic-v1")
     skills_dir: str = Field(default="skills_dir")

@@ -27,6 +27,45 @@ poetry run novel-analyzer db-capabilities
 - 一个可连接的 PostgreSQL 库
 - `run_id / branch_id` 可供前端读取
 - `apps/api` 原型后端
+- `apps/web` Next.js 前端运行环境
+
+### 0.1 Web 工作台前端依赖
+前端当前使用：
+- Next.js
+- React
+- Ant Design
+
+建议 Node.js 20+，并先设置 npm 源：
+
+```bash
+npm config set registry https://registry.npmmirror.com/
+```
+
+
+## 0.2 当前推荐 LLM 配置
+
+当前工作台与真实拆书默认建议使用：
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+例如：
+```bash
+export NOVEL_ANALYZER_LLM_PROVIDER_NAME=vip1129
+export NOVEL_ANALYZER_LLM_BASE_URL=https://api.vip1129.cc/v1
+export NOVEL_ANALYZER_LLM_API_KEY='your-key'
+export NOVEL_ANALYZER_LLM_MODEL_NAME=gpt-5.4-mini
+export NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME=gpt-5.4-mini
+export NOVEL_ANALYZER_LLM_QA_MODEL_NAME=gpt-5.4-mini
+export NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME=gpt-5.4-mini
+```
+
+## 0.3 自动重试说明
+
+章节拆书失败时：
+- 系统会先自动重试
+- 当前自动重试上限为 **5 次**
+- 达到 5 次后仍失败，才进入人工恢复（`needs_recovery` / 工作台恢复页）
 
 ## 1. Python3 安装（不使用 Poetry）
 

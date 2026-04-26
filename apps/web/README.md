@@ -2,29 +2,88 @@
 
 独立前端目录。
 
-当前已经提供一个无依赖静态原型：
+当前前端正在向 **Next.js + React + Ant Design** 的产品结构迁移，目标是：
+- 多页面 / 多组件可维护结构
+- 面向作家的阅读型工作台
+- 拆书结果卡片化渲染
+- 原文回看与章节跳转
+
+## 开发环境
+
+建议 Node.js 版本：
+- Node.js 20+
+
+建议先设置 npm 源：
+
+```bash
+npm config set registry https://registry.npmmirror.com/
+```
+
+也可以只针对当前安装命令使用：
+
+```bash
+npm --registry=https://registry.npmmirror.com/ install
+```
+
+## 安装依赖
 
 ```bash
 cd apps/web
-python3 -m http.server 4173
+npm install
 ```
 
-然后打开：
+## 开发启动
+
+```bash
+npm run dev
+```
+
+默认地址：
 
 `http://127.0.0.1:4173`
 
-用于演示：
-- 导入小说入口
-- pipeline profile 切换
-- run / branch snapshot 展示
-- 左侧章节导航 + 右侧详情主视图
-- 章节列表点击查看 chapter bundle / QA context
-- 原始章节正文回看
-- 拆书中的 `第N章` 引用跳转
-- recovery 动作矩阵
-- export 下载链接
+## 生产构建
 
-当前界面重点：
-- 让使用者更偏“阅读”和“浏览”章节拆书结果
-- 减少直接盯 JSON
-- 仍保留原始 JSON 折叠区，方便排查
+```bash
+npm run build
+npm run start
+```
+
+## 当前目标能力
+
+- 导入小说入口
+- 作品进度总览
+- 左侧章节导航
+- 右侧章节详情主视图
+- chapter bundle / QA context 结构化阅读
+- 原始章节正文回看
+- `第N章` 引用跳转
+- 恢复动作
+- 导出下载链接
+
+## 说明
+
+- 当前仓库里仍保留一部分旧静态原型思路，但目标是全面收口到 Next.js 前端
+- 最终界面不应强调技术信息，而应以“章节、人物、事件、线索、原文、导出手册”为核心
+
+
+## 当前产品化方向
+
+当前页面已经不再按“开发原型 / 调试页”组织，而是按作家使用习惯组织：
+- 控制台：导入、进度、下一步建议
+- 章节阅读：阅读提要、人物/线索、追问/推理、原文回看
+- 导出与恢复：手册导出优先，恢复操作后置
+
+## 当前推荐运行配置
+
+前端默认建议配合以下后端运行：
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+## 恢复机制说明
+
+章节失败时：
+- 系统先自动重试
+- 当前自动重试上限为 **5 次**
+- 超过 5 次仍失败，才需要人工进入“导出与恢复”页处理

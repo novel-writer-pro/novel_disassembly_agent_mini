@@ -87,3 +87,21 @@
 6. [`./application-seams.md`](./application-seams.md)
 7. [`./api-contract.md`](./api-contract.md)
 8. [`./storage-lifecycle.md`](./storage-lifecycle.md)
+
+### 前端 / 部署补充
+- `apps/web/README.md`：前端开发、构建、npm 源
+- `apps/api/README.md`：后端原型启动与接口说明
+
+
+---
+
+## 当前推荐运行配置
+
+真实拆书与工作台当前建议统一使用：
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+同时，当前失败恢复策略已经收口为：
+- 自动重试最多 5 次
+- 超过 5 次才需要人工介入

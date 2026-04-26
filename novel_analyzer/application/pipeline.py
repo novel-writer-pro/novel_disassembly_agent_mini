@@ -63,13 +63,21 @@ def advance_pipeline(
                     next_index,
                 )
             except Exception as exc:
-                if not run_service.list_failed_jobs(branch_id, 1):
+                failed_jobs = run_service.list_failed_jobs(branch_id, 1)
+                if not failed_jobs:
                     _set_pipeline_hint(
                         run,
                         state_hint="failed_terminal",
                         error_message=str(exc),
                     )
                     session.commit()
+                    break
+
+                failed_job = failed_jobs[0]
+                if failed_job.attempts < runtime.chapter_failure_retry_limit:
+                    run_service.reset_failed_job(branch_id, failed_job.chapter_index)
+                    continue
+
                 break
             processed += len(artifact_ids)
             if not artifact_ids:
