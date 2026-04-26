@@ -113,3 +113,25 @@
 8. 可交接
 
 当前状态适合作为“阶段性交付版本”。
+
+## 8. 当前原型前端 / 后端状态
+
+### 8.1 后端原型
+`apps/api` 已提供一个轻量 WSGI JSON 原型，支持：
+- run snapshot
+- branch snapshot
+- chapter bundle
+- chapter QA context
+- 原始章节正文片段
+- import / start / recovery / export link generation
+
+### 8.2 前端原型
+`apps/web` 已提供一个静态工作台原型，支持：
+- 真实导入
+- 读取真实 run / branch
+- 左侧章节导航
+- 右侧章节拆书详情
+- QA / 推理视图
+- 原始正文回看
+- `第N章` 引用跳转
+- 导出链接生成

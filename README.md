@@ -4,8 +4,8 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 
 ## Next-stage structure
 - `novel_analyzer/application/`: shared application/orchestration seam for CLI and future Web/API
-- `apps/api/`: separate backend surface scaffold
-- `apps/web/`: separate frontend surface scaffold
+- `apps/api/`: separate backend surface prototype
+- `apps/web/`: separate frontend surface prototype
 
 ## Current scope
 - 文本导入与章节规范化
@@ -139,6 +139,33 @@ python3 -m novel_analyzer.cli.app db-health
 | 一键导入并创建 run | `poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0` | `python3 -m novel_analyzer.cli.app auto-run /path/to/novel.txt --max-chapters 0` |
 | 创建 run | `poetry run novel-analyzer start-run <novel_id> <manifest_id>` | `python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>` |
 | 推进章节 | `poetry run novel-analyzer analyze-range <run_id> <branch_id> 1 3` | `python3 -m novel_analyzer.cli.app analyze-range <run_id> <branch_id> 1 3` |
+
+## Workbench prototype
+
+### Start backend prototype
+```bash
+python3 -m apps.api.app.main
+```
+
+### Start frontend prototype
+```bash
+cd apps/web
+python3 -m http.server 4173
+```
+
+Open:
+
+`http://127.0.0.1:4173`
+
+Current workbench prototype supports:
+- 真实导入小说并创建 run / branch
+- 读取真实 run / branch snapshot
+- 启动 `manual` pipeline
+- 执行恢复动作（retry-failed / clear-running / repair）
+- 点击章节查看 chapter bundle / chapter QA context
+- 查看原始章节正文
+- 从引用里的 `第N章` 直接跳转到对应章节
+- 生成 branch bundle / branch QA context / branch report 下载链接
 
 
 ## Skills

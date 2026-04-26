@@ -68,6 +68,8 @@
 3. [`./real-run-checklist.md`](./real-run-checklist.md)
 4. [`./review-template.md`](./review-template.md)
 5. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+6. [`../apps/web/README.md`](../apps/web/README.md)
+7. [`../apps/api/README.md`](../apps/api/README.md)
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)
@@ -82,3 +84,6 @@
 3. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
 4. [`./model-eval-template.md`](./model-eval-template.md)
 5. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
+6. [`./application-seams.md`](./application-seams.md)
+7. [`./api-contract.md`](./api-contract.md)
+8. [`./storage-lifecycle.md`](./storage-lifecycle.md)

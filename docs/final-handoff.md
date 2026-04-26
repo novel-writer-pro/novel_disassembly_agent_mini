@@ -134,6 +134,14 @@ flowchart TD
 - fork branch 逻辑回退
 - 同 branch 同章重拆兼容
 
+### 2.8 Web 工作台原型
+- 独立前端目录：`apps/web/`
+- 独立后端目录：`apps/api/`
+- 前端可读取真实 run / branch snapshot
+- 可按章节查看 chapter bundle / QA context / 原始正文
+- 支持从拆书引用中的 `第N章` 跳转查看对应章节
+- 支持恢复动作与导出链接生成
+
 ---
 
 ## 3. 关键命令清单
@@ -239,6 +247,14 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 2. `thematic_contexts`
 3. `branch_report.md`
 4. `chapter_XXXX.qa-context.json`
+5. `chapter bundle`
+6. 原始章节正文片段（通过 chapter segment offset / source text）
+
+当前仓库内已经提供独立工作台原型：
+- `apps/api/`
+- `apps/web/`
+
+可直接作为后续真实前端的演进起点。
 
 ### 写作者参考工具
 建议优先使用：

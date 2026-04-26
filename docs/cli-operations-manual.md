@@ -23,6 +23,11 @@ python3 scripts/check_postgres.py
 poetry run novel-analyzer db-capabilities
 ```
 
+如果你打算使用 Web 工作台原型，建议同时准备：
+- 一个可连接的 PostgreSQL 库
+- `run_id / branch_id` 可供前端读取
+- `apps/api` 原型后端
+
 ## 1. Python3 安装（不使用 Poetry）
 
 ```bash
@@ -149,6 +154,16 @@ poetry run novel-analyzer show-raw-output <branch_id> <chapter_index>
 poetry run novel-analyzer export-raw-output <branch_id> <chapter_index> ./raw.json
 ```
 
+### 4.4 章节原文回看
+当前前端工作台原型已经支持按章节查看原始正文片段。
+
+CLI 下若需要回看，可结合：
+- `show-chapter`
+- `show-context`
+- `export-chapter-bundle`
+
+以及数据库中的 `chapter_segments.start_offset/end_offset` 与原始文本源文件进行定位。
+
 ---
 
 ## 6. 图谱、状态机与专题导航
@@ -253,6 +268,16 @@ poetry run novel-analyzer export-branch-package <run_id> <branch_id> ./branch_pk
 - `chapters/chapter_XXXX.context.json`
 - `chapters/chapter_XXXX.qa-context.json`
 
+### 8.1 Web 工作台下载
+当前 `apps/api` 原型还提供：
+- `GET /api/branch-exports`
+- `GET /api/download`
+
+前端工作台可以直接生成并下载：
+- branch bundle
+- branch QA context
+- branch report
+
 ---
 
 ## 9. 恢复、修复与回退
@@ -290,6 +315,14 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 poetry run novel-analyzer validate-branch <branch_id>
 poetry run novel-analyzer repair-branch <branch_id>
 ```
+
+### 9.1 工作台中的恢复动作
+当前前端工作台原型已接入：
+- `retry-failed`
+- `clear-running`
+- `repair`
+
+适合在 `needs_recovery` 状态下直接从界面操作。
 
 ---
 

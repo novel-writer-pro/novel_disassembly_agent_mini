@@ -17,5 +17,17 @@ python3 -m apps.api.app.main
 - `GET /health`
 - `GET /api/meta`
 - `GET /api/mock/import?profile=auto-lite`
+- `POST /api/import`
+- `POST /api/start`
+- `POST /api/recovery`
 - `GET /api/run-snapshot?run_id=...&branch_id=...`
 - `GET /api/branch-snapshot?run_id=...&branch_id=...`
+- `GET /api/chapter-bundle?branch_id=...&chapter_index=...`
+- `GET /api/chapter-qa-context?branch_id=...&chapter_index=...`
+- `GET /api/chapter-source?branch_id=...&chapter_index=...`
+- `GET /api/branch-exports?run_id=...&branch_id=...`
+- `GET /api/download?path=...`
+
+说明：
+- 当前仍是轻量原型后端，不是完整生产 API
+- 已足够驱动本地控制台原型进行真实导入、章节查看、恢复与下载操作
