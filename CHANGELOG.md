@@ -121,3 +121,9 @@
 - `cd apps/web && npm run build`
 - `.venv/bin/pytest tests/test_application_layer.py tests/test_cli_retry_bulk.py -q`
 - 真实创建新 run：`run_id=7e22a5d8-eb57-4306-858b-90386f1c2b22`
+
+### 文档补完与仓库清理收口
+- 补充 `apps/api/README.md`，明确当前推荐启动方式、provider 与自动恢复机制
+- 补充 `docs/release-handoff-brief.md` / `docs/final-handoff.md`，同步当前工作台产品化方向与真实运行配置
+- 补充 `.gitignore`，忽略 `apps/web/node_modules`、`.next` 与 ts build 缓存
+- 准备将前端从旧静态原型彻底收口到 Next.js 目录结构

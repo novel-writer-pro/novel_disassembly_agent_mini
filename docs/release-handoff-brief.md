@@ -126,7 +126,7 @@
 - import / start / recovery / export link generation
 
 ### 8.2 前端原型
-`apps/web` 已提供一个静态工作台原型，支持：
+`apps/web` 正在向 Next.js + React + Ant Design 的产品前端迁移，目标支持：
 - 真实导入
 - 读取真实 run / branch
 - 左侧章节导航
@@ -135,3 +135,20 @@
 - 原始正文回看
 - `第N章` 引用跳转
 - 导出链接生成
+
+
+### 8.3 当前推荐运行配置
+当前真实拆书与工作台建议统一使用：
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+### 8.4 当前恢复策略
+- 章节失败默认先自动重试
+- 自动重试上限为 **5 次**
+- 超过 5 次仍失败，才进入人工恢复
+
+### 8.5 当前真实新任务
+本轮已按上述配置从第一章重新创建真实任务：
+- `run_id=7e22a5d8-eb57-4306-858b-90386f1c2b22`
+- `branch_id=72da24e9-e65c-45a9-836d-957c4ae783ec`
