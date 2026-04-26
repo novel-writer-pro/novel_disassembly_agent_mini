@@ -142,3 +142,13 @@
 - 问答结果保留 `used_chapters`、`evidence`、`reasoning_paths`、`graph_signals`，并支持点击跳转章节
 - 修复左侧章节点击后被旧 URL query 覆盖回退、请求竞态回退到旧章节、分页无法翻页等交互问题
 - 自动拆书任务检查发现第 21 章长期 running，已执行 `clear-running` 并重新继续运行
+
+
+### 前端构建缓存异常修复
+- 定位到一次 `npm run build` 失败并非源码路由缺失，而是 `apps/web/.next` 脏缓存导致 `/ops` 未进入 pages manifest
+- 通过删除 `apps/web/.next` 并重新构建恢复正常，新的 build 已重新包含 `/ops` 路由
+
+
+### 交付纪律补充
+- 增补项目约定：每一次修复和变动，都同步更新文档、`CHANGELOG.md` 与 git commit 记录
+- 后续所有 UI、API、运行时恢复与自动拆书推进相关修改，均按该约定执行

@@ -221,6 +221,7 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 ## More docs
 
 ### 0. 开发变更记录
+- 约定：每次修复 / 变动都需要同步：文档、`CHANGELOG.md`、git commit 记录
 - [`./CHANGELOG.md`](./CHANGELOG.md)：开发变更记录；后续每次开发更改都需要追加 changelog
 
 ### 1. 使用者
@@ -257,3 +258,5 @@ poetry run novel-analyzer db-capabilities
 - `pg_trgm`
 - `vector`
 - text search config
+
+- 若 `npm run build` 出现页面模块缺失（例如 `/ops`）但源码文件实际存在，先删除 `apps/web/.next` 再重新构建。
