@@ -186,6 +186,8 @@ Current workbench target capabilities:
 - 查看原始章节正文
 - 从引用里的 `第N章` 直接跳转到对应章节
 - 生成 branch bundle / branch QA context / branch report 下载链接
+- 人物 / 事件检索
+- 基于小说内容问答（保留引用章节、证据、推理路径、图谱信号）
 
 
 ## Skills

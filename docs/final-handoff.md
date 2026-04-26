@@ -365,3 +365,10 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - 有操作手册
 
 的可交付拆书 agent 后端。
+
+
+### 2.12 小说检索 / 问答工作台能力
+- 前端已接入 branch 级人物/事件检索
+- 前端已接入基于整本小说内容的问答
+- 问答结果保留 `used_chapters`、`evidence`、`reasoning_paths`、`graph_signals`
+- 引用章节在界面内可直接跳转

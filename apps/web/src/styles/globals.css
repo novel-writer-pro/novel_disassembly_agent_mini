@@ -344,3 +344,61 @@ a {
     padding: 16px;
   }
 }
+
+
+.chapter-sidebar-pager-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.chapter-sidebar-range-select .ant-select-selector,
+.chapter-sidebar-page-size-select .ant-select-selector {
+  background: rgba(8, 15, 28, 0.9) !important;
+  color: #eaf2ff !important;
+  border-color: rgba(74, 109, 162, 0.36) !important;
+}
+
+.chapter-sidebar-pagination {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.chapter-sidebar-pagination .ant-pagination-simple-pager input {
+  background: rgba(8, 15, 28, 0.9);
+  color: #eaf2ff;
+}
+
+@media (max-width: 992px) {
+  .chapter-sidebar-pager-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+.qa-search-item {
+  padding: 14px 0 !important;
+}
+
+.qa-search-item .ant-typography {
+  color: rgba(234, 242, 255, 0.92);
+}
+
+.reader-insight-card .ant-input,
+.reader-insight-card .ant-input-affix-wrapper,
+.reader-insight-card textarea.ant-input {
+  background: rgba(8, 15, 28, 0.9) !important;
+  color: #eaf2ff !important;
+  border-color: rgba(74, 109, 162, 0.36) !important;
+}
+
+.reader-insight-card .ant-input::placeholder,
+.reader-insight-card textarea.ant-input::placeholder {
+  color: rgba(155, 178, 209, 0.72) !important;
+}
+
+.reader-insight-card .ant-list-item {
+  border-block-end-color: rgba(74, 109, 162, 0.18) !important;
+}

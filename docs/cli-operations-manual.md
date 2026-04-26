@@ -397,3 +397,10 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./interface-manifest.md`](./interface-manifest.md)
 - [`./examples/*.sample.json`](./examples/)
 - [`./final-handoff.md`](./final-handoff.md)
+
+
+### 6.5 Web 工作台中的问答能力
+当前阅读页已经直接接入：
+- branch 级检索（人物 / 事件 / 冲突 / 关键词）
+- 基于小说内容的问答
+- 结果中的引用章节跳转、证据摘要、推理路径与图谱信号
