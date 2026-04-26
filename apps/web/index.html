@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novel Analyzer Workbench</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Novel Analyzer</p>
+        <h1>Web 工作台原型</h1>
+        <p class="subtitle">
+          独立前端目录原型，围绕导入小说、自动推进、分支状态、恢复动作与导出结果。
+        </p>
+      </div>
+      <div class="hero-card">
+        <div><strong>DB</strong><span>PostgreSQL-only</span></div>
+        <div><strong>Pipeline</strong><span>manual / auto-lite / auto-full</span></div>
+        <div><strong>Search</strong><span>BM25 + embedding + graph</span></div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>1. 导入与启动</h2>
+        <form class="stack">
+          <label>
+            小说文件
+            <input type="file" disabled />
+          </label>
+          <label>
+            标题
+            <input type="text" placeholder="例如：凡人修仙传" />
+          </label>
+          <label>
+            Pipeline Profile
+            <select id="profile-select">
+              <option value="manual">manual</option>
+              <option value="auto-lite" selected>auto-lite</option>
+              <option value="auto-full">auto-full</option>
+            </select>
+          </label>
+          <label>
+            API Base
+            <input id="api-base" type="text" value="http://127.0.0.1:8011" />
+          </label>
+          <button type="button" id="simulate-import">模拟导入响应</button>
+        </form>
+        <pre id="import-result" class="result"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>2. Run / Branch 状态</h2>
+        <div class="status-grid">
+          <article class="status-card">
+            <h3>Run Snapshot</h3>
+            <pre id="run-snapshot" class="result small"></pre>
+          </article>
+          <article class="status-card">
+            <h3>Branch Snapshot</h3>
+            <pre id="branch-snapshot" class="result small"></pre>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>3. 恢复动作矩阵</h2>
+        <div class="chips">
+          <span>retry-chapter</span>
+          <span>retry-failed</span>
+          <span>clear-running</span>
+          <span>repair</span>
+        </div>
+        <p class="note">
+          UI 只在 <code>needs_recovery</code> 状态显示这些动作，实际调用将走
+          <code>apps/api</code> 对接的 application seam。
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>4. 导出结果</h2>
+        <div class="export-list">
+          <div class="export-item">
+            <strong>branch-bundle</strong>
+            <span>{download_ref, content_type}</span>
+          </div>
+          <div class="export-item">
+            <strong>branch-qa-context</strong>
+            <span>{download_ref, content_type}</span>
+          </div>
+          <div class="export-item">
+            <strong>branch-report</strong>
+            <span>{download_ref, content_type: text/markdown}</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

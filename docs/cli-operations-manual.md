@@ -4,7 +4,26 @@
 
 ---
 
-## 0. Python3 安装（不使用 Poetry）
+## 0. PostgreSQL 前置要求
+
+当前运行时已收口为 **PostgreSQL-only**。
+
+在执行 CLI 前，请先准备：
+- PostgreSQL 数据库实例
+- 用户与数据库
+- 必要扩展能力检查
+
+建议先运行：
+```bash
+python3 scripts/check_postgres.py
+```
+
+或：
+```bash
+poetry run novel-analyzer db-capabilities
+```
+
+## 1. Python3 安装（不使用 Poetry）
 
 ```bash
 python3 -m venv .venv
@@ -29,7 +48,7 @@ python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>
 
 ---
 
-## 1. 初始化环境
+## 2. 初始化环境
 
 ```bash
 poetry install
@@ -45,7 +64,21 @@ poetry run novel-analyzer test-embedding
 
 ---
 
-## 2. 导入小说并创建分支
+## 3. 导入小说并创建分支
+
+### 2.0 一键高层入口（新）
+如果你想减少手工步骤，可以直接用：
+```bash
+poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0
+```
+
+这条命令会：
+- 导入小说
+- 创建 manifest
+- 创建 run / branch
+- 输出 `novel_id / manifest_id / run_id / branch_id`
+
+当 `--max-chapters > 0` 时，它还会继续自动推进指定数量的章节。
 
 ### 2.1 导入文本
 ```bash
@@ -68,7 +101,7 @@ poetry run novel-analyzer start-run <novel_id> <manifest_id>
 
 ---
 
-## 3. 标准拆书推进路径
+## 4. 标准拆书推进路径
 
 ### 3.1 单章推进（推荐）
 ```bash
@@ -92,7 +125,7 @@ poetry run novel-analyzer resume-run <run_id> <branch_id> --max-chapters 3
 
 ---
 
-## 4. 运行状态与审计
+## 5. 运行状态与审计
 
 ### 4.1 查看 branch / run 状态
 ```bash
@@ -118,7 +151,7 @@ poetry run novel-analyzer export-raw-output <branch_id> <chapter_index> ./raw.js
 
 ---
 
-## 5. 图谱、状态机与专题导航
+## 6. 图谱、状态机与专题导航
 
 ### 5.1 图谱概览
 ```bash
@@ -148,7 +181,7 @@ poetry run novel-analyzer export-branch-report <run_id> <branch_id> ./branch.md
 
 ---
 
-## 6. 小说问答与 QA Context
+## 7. 小说问答与 QA Context
 
 ### 6.1 直接问答
 ```bash
@@ -203,7 +236,7 @@ poetry run novel-analyzer export-branch-qa-context <run_id> <branch_id> ./branch
 
 ---
 
-## 7. Package 导出标准路径
+## 8. Package 导出标准路径
 
 ```bash
 poetry run novel-analyzer export-branch-package <run_id> <branch_id> ./branch_pkg
@@ -222,7 +255,7 @@ poetry run novel-analyzer export-branch-package <run_id> <branch_id> ./branch_pk
 
 ---
 
-## 8. 恢复、修复与回退
+## 9. 恢复、修复与回退
 
 ### 8.1 查失败任务
 ```bash

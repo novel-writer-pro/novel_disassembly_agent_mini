@@ -1,18 +1,18 @@
 from pathlib import Path
 
+from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
 from novel_analyzer.cli.app import app
 from novel_analyzer.config.settings import Settings
-from novel_analyzer.database.session import create_session_factory
 from novel_analyzer.services.run_service import RunService
+from tests.cli_test_support import patch_cli_sqlite_runtime
 
 runner = CliRunner()
 
 
-def test_export_raw_output_cli(tmp_path: Path) -> None:
-    db_path = tmp_path / 'test.db'
-    db_url = f'sqlite:///{db_path}'
+def test_export_raw_output_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
@@ -24,7 +24,8 @@ def test_export_raw_output_cli(tmp_path: Path) -> None:
         ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
     )
     run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
-    with create_session_factory(Settings(database_url=db_url))() as session:
+    _ = Settings
+    with factory() as session:
         RunService(session).record_raw_output(
             run_lines['run_id'],
             run_lines['branch_id'],

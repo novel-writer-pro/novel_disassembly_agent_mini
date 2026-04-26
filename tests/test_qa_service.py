@@ -1,7 +1,11 @@
+from pathlib import Path
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
+from novel_analyzer.domain.schemas import BranchQAResult
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.ingest_service import IngestService
@@ -13,11 +17,15 @@ class _DummyQAService(BranchQAService):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Settings(llm_api_key='test-key'))
 
-    def answer_question(self, branch_id: str, question: str, limit: int = 5):
+    def answer_question(
+        self,
+        branch_id: str,
+        question: str,
+        limit: int = 5,
+    ) -> BranchQAResult:
         hits = self.retrieval_service.search_branch(branch_id, question, limit)
         if not hits:
             return super().answer_question(branch_id, question, limit)
-        from novel_analyzer.domain.schemas import BranchQAResult
         return BranchQAResult(
             answer=(
                 f"根据第{hits[0].chapter_index}章，可直接确认：{hits[0].summary_text}"
@@ -39,7 +47,7 @@ def _session() -> Session:
     return Session(engine)
 
 
-def test_branch_qa_returns_grounded_answer(tmp_path) -> None:
+def test_branch_qa_requires_postgresql_retrieval_runtime(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 命格初现\n卫图觉醒命格，并决定先修养生功。\n', encoding='utf-8')
 
@@ -66,16 +74,11 @@ def test_branch_qa_returns_grounded_answer(tmp_path) -> None:
         )
         from novel_analyzer.services.retrieval_service import RetrievalService
         RetrievalService(session, settings).materialize_for_artifact(artifact.id)
-        result = _DummyQAService(session).answer_question(branch.id, '卫图为什么要修养生功？')
-        assert not result.insufficient_context
-        assert result.used_chapters == [1]
-        assert '根据第1章' in result.answer
-        assert '卫图觉醒命格' in result.answer
-        assert result.reasoning_paths
-        assert result.graph_signals
+        with pytest.raises(RuntimeError, match='Only PostgreSQL is supported'):
+            _DummyQAService(session).answer_question(branch.id, '卫图为什么要修养生功？')
 
 
-def test_branch_qa_window_context_is_available(tmp_path) -> None:
+def test_branch_qa_window_context_is_available(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
     with _session() as session:
@@ -112,7 +115,7 @@ def test_branch_qa_window_context_is_available(tmp_path) -> None:
         assert '窗口 1-5' in lines[0]
 
 
-def test_branch_qa_graph_reasoning_snapshot_is_available(tmp_path) -> None:
+def test_branch_qa_graph_reasoning_snapshot_is_available(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
     with _session() as session:

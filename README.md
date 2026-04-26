@@ -1,10 +1,15 @@
 # novel-analyzer
 
-CLI-first scaffold for a chapter-progressive 小说拆书系统.
+PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
+
+## Next-stage structure
+- `novel_analyzer/application/`: shared application/orchestration seam for CLI and future Web/API
+- `apps/api/`: separate backend surface scaffold
+- `apps/web/`: separate frontend surface scaffold
 
 ## Current scope
 - 文本导入与章节规范化
-- PostgreSQL / SQLite 双模式配置
+- PostgreSQL-only runtime
 - Alembic 迁移驱动的数据库演进
 - 运行 / 分支 / checkpoint / chapter_job / raw_output 数据模型
 - 逻辑隐藏式回退分支
@@ -21,13 +26,6 @@ CLI-first scaffold for a chapter-progressive 小说拆书系统.
 - 想浏览全部文档：[`./docs/README.md`](./docs/README.md)
 
 ## Environment
-
-### SQLite default
-No extra setup is required; the app falls back to:
-
-```bash
-sqlite:///./novel_analyzer.db
-```
 
 ### PostgreSQL example
 ```bash
@@ -138,6 +136,7 @@ python3 -m novel_analyzer.cli.app db-health
 | 测 embedding | `poetry run novel-analyzer test-embedding` | `python3 -m novel_analyzer.cli.app test-embedding` |
 | 查看切章结果 | `poetry run novel-analyzer inspect-novel /path/to/novel.txt` | `python3 -m novel_analyzer.cli.app inspect-novel /path/to/novel.txt` |
 | 导入小说 | `poetry run novel-analyzer ingest /path/to/novel.txt --title 'sample'` | `python3 -m novel_analyzer.cli.app ingest /path/to/novel.txt --title 'sample'` |
+| 一键导入并创建 run | `poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0` | `python3 -m novel_analyzer.cli.app auto-run /path/to/novel.txt --max-chapters 0` |
 | 创建 run | `poetry run novel-analyzer start-run <novel_id> <manifest_id>` | `python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>` |
 | 推进章节 | `poetry run novel-analyzer analyze-range <run_id> <branch_id> 1 3` | `python3 -m novel_analyzer.cli.app analyze-range <run_id> <branch_id> 1 3` |
 
@@ -162,7 +161,7 @@ This keeps skill discovery scoped to repo-local skills only.
 - 回退后续进展采用**逻辑隐藏**，默认只读 active branch。
 - 手工结果允许保留，但默认 `participates_in_downstream = false`。
 - JSON 是标准中间产物；后续从 JSON 入库并渲染 Markdown。
-- 中文检索优先 PostgreSQL 扩展 / 原生能力；当前已启用 `pg_textsearch`、`pg_trgm`、`vector`。
+- 中文检索统一依赖 PostgreSQL 原生检索 + 扩展能力；当前强校验 `pg_trgm`、`vector`，并报告 text search config 可用性。
 
 ## Live ONNX note
 
@@ -194,3 +193,16 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 4. [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md)
 5. [`./docs/model-eval-template.md`](./docs/model-eval-template.md)
 6. [`./docs/README.md`](./docs/README.md)
+### PostgreSQL checks
+```bash
+python3 scripts/check_postgres.py
+poetry run novel-analyzer db-capabilities
+```
+
+会检查：
+- 数据库是否存在
+- 是否可连接
+- Alembic / 关键表是否已初始化
+- `pg_trgm`
+- `vector`
+- text search config

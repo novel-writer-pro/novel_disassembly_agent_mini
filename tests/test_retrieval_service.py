@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
@@ -31,7 +34,9 @@ def _artifact_payload() -> dict[str, object]:
     }
 
 
-def test_retrieval_materialization_creates_document_chunk_and_embedding(tmp_path) -> None:
+def test_retrieval_materialization_creates_document_chunk_and_embedding(
+    tmp_path: Path,
+) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
@@ -56,7 +61,7 @@ def test_retrieval_materialization_creates_document_chunk_and_embedding(tmp_path
         assert embedding.vector_dim == len(embedding.vector_payload)
 
 
-def test_repeated_materialization_replaces_chunks_without_orphans(tmp_path) -> None:
+def test_repeated_materialization_replaces_chunks_without_orphans(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
@@ -74,7 +79,7 @@ def test_repeated_materialization_replaces_chunks_without_orphans(tmp_path) -> N
         assert session.query(ChunkEmbedding).count() == first_embedding_count
 
 
-def test_search_branch_returns_hits_for_materialized_document(tmp_path) -> None:
+def test_search_branch_requires_postgresql_runtime(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
@@ -84,12 +89,11 @@ def test_search_branch_returns_hits_for_materialized_document(tmp_path) -> None:
         artifact = RunService(session).record_chapter_artifact(branch.id, 1, _artifact_payload())
         service = RetrievalService(session, Settings())
         service.materialize_for_artifact(artifact.id)
-        hits = service.search_branch(branch.id, '命格')
-        assert hits
-        assert hits[0].chapter_index == 1
+        with pytest.raises(RuntimeError, match='Only PostgreSQL is supported'):
+            service.search_branch(branch.id, '命格')
 
 
-def test_default_fts_config_is_simple_on_sqlite(tmp_path) -> None:
+def test_default_fts_config_remains_simple_without_pg_jieba(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 

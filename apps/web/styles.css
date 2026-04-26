@@ -1,0 +1,90 @@
+:root {
+  color-scheme: dark;
+  --bg: #09111f;
+  --panel: #101b2d;
+  --panel-2: #15233b;
+  --line: #284267;
+  --text: #eaf2ff;
+  --muted: #9bb2d1;
+  --accent: #68a7ff;
+  --ok: #43d17a;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: linear-gradient(180deg, #09111f 0%, #0f1727 100%);
+  color: var(--text);
+}
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 40px;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+.subtitle, .note { color: var(--muted); max-width: 720px; }
+.hero-card, .panel, .status-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.hero-card {
+  min-width: 320px;
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+.hero-card div { display: flex; justify-content: space-between; gap: 16px; }
+.layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 24px 40px 40px;
+}
+.panel { padding: 20px; }
+.stack { display: grid; gap: 12px; }
+label { display: grid; gap: 6px; color: var(--muted); }
+input, select, button {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 12px;
+}
+button {
+  cursor: pointer;
+  background: linear-gradient(180deg, #2872ff, #1854c7);
+  border: none;
+  font-weight: 600;
+}
+.result {
+  margin: 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: #08101c;
+  border: 1px solid #1e314d;
+  white-space: pre-wrap;
+  min-height: 120px;
+}
+.small { min-height: 180px; }
+.status-grid { display: grid; gap: 16px; }
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chips span, .export-item {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+}
+.export-list { display: grid; gap: 12px; }
+.export-item {
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+}

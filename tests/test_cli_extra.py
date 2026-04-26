@@ -1,15 +1,16 @@
 from pathlib import Path
 
+from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
 from novel_analyzer.cli.app import app
+from tests.cli_test_support import patch_cli_sqlite_runtime
 
 runner = CliRunner()
 
 
-def test_export_markdown_cli(tmp_path: Path) -> None:
-    db_path = tmp_path / 'test.db'
-    db_url = f'sqlite:///{db_path}'
+def test_export_markdown_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
@@ -31,9 +32,8 @@ def test_export_markdown_cli(tmp_path: Path) -> None:
     assert out.exists()
 
 
-def test_export_qa_context_cli(tmp_path: Path) -> None:
-    db_path = tmp_path / 'test.db'
-    db_url = f'sqlite:///{db_path}'
+def test_export_qa_context_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
