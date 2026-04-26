@@ -96,3 +96,20 @@ npm run start
 - 基于整本小说的问答
 - 回答中的引用章节跳转
 - 证据摘要、推理路径、图谱信号展示
+
+## 构建缓存异常排查
+
+如果 `npm run build` 报类似：
+- `Cannot find module for page: /ops`
+
+但 `src/pages/ops.tsx` 实际存在，通常是 `.next` 构建缓存脏了。可直接执行：
+
+```bash
+cd apps/web
+rm -rf .next
+npm run build
+```
+
+当前已验证这能恢复 `/ops` 页面进入构建产物。
+
+- 问答 / 检索台会优先显示在阅读页上方，避免被章节详情淹没。

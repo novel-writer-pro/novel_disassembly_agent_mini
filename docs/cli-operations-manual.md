@@ -404,3 +404,18 @@ poetry run novel-analyzer repair-branch <branch_id>
 - branch 级检索（人物 / 事件 / 冲突 / 关键词）
 - 基于小说内容的问答
 - 结果中的引用章节跳转、证据摘要、推理路径与图谱信号
+
+
+## 附：前端构建缓存异常
+
+如果工作台前端在 `npm run build` 时出现页面模块缺失，但源码页面文件实际存在，优先清理：
+
+```bash
+cd apps/web
+rm -rf .next
+npm run build
+```
+
+本轮已验证：曾出现 `/ops` 页面缺失于 manifest，但清理 `.next` 后重新构建即可恢复。
+
+- 问答 / 检索台已上移到阅读页前部，默认先于章节详情展示。

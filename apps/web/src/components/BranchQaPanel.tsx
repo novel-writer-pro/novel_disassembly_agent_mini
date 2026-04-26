@@ -74,7 +74,26 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
   };
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+    <Space id="novel-qa-panel" direction="vertical" size="large" style={{ width: "100%" }}>
+      <Card bordered={false} className="reader-hero-card">
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <Typography.Text className="reader-eyebrow">小说问答 / 检索台</Typography.Text>
+            <Typography.Title level={3} style={{ margin: "8px 0 10px" }}>
+              直接追问人物背景、冲突前因后果和线索走向
+            </Typography.Title>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              这里不是随意生成答案，而是基于当前 branch 的检索结果、章节摘要、推理路径和图谱信号来回答，并保留引用章节。
+            </Typography.Paragraph>
+          </div>
+          <Space wrap>
+            <Tag color="blue">可检索人物 / 事件 / 冲突</Tag>
+            <Tag color="processing">回答保留引用章节</Tag>
+            <Tag color="purple">显示证据与推理路径</Tag>
+          </Space>
+        </Space>
+      </Card>
+
       <Card bordered={false} className="reader-insight-card" title="人物 / 事件检索">
         <Space.Compact style={{ width: "100%" }}>
           <Input
