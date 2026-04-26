@@ -104,3 +104,22 @@ export interface WorkbenchState {
   maxChapters: string;
   lastChapterIndex?: number | null;
 }
+
+
+export interface RetrievalHit {
+  chapter_index: number;
+  title: string;
+  summary_text: string;
+  score: number;
+  keyword_list: string[];
+}
+
+export interface BranchAskResult {
+  answer: string;
+  used_chapters: number[];
+  evidence: string[];
+  reasoning_paths: string[];
+  graph_signals: string[];
+  confidence: number;
+  insufficient_context: boolean;
+}

@@ -127,3 +127,18 @@
 - 补充 `docs/release-handoff-brief.md` / `docs/final-handoff.md`，同步当前工作台产品化方向与真实运行配置
 - 补充 `.gitignore`，忽略 `apps/web/node_modules`、`.next` 与 ts build 缓存
 - 准备将前端从旧静态原型彻底收口到 Next.js 目录结构
+
+### 小说检索 / 问答界面接入
+- 新增工作台内的人物/事件检索与基于小说内容的问答面板
+- 后端新增 `/api/search-branch` 与 `/api/ask-branch` 接口
+- 问答结果保留 `used_chapters`、`evidence`、`reasoning_paths`、`graph_signals`，并在前端可直接跳转章节
+- 左侧章节分页增加范围选择与每页条数控制
+- 修复章节点击后被旧 query 覆盖、请求竞态回退到旧章节的问题
+
+
+### 工作台问答 / 检索能力接入与交互修复
+- 新增 `BranchQaPanel`，在阅读页内直接提供人物/事件检索与基于小说内容的问答入口
+- 后端新增 `/api/search-branch` 与 `/api/ask-branch` 接口，前端直接消费现有 branch retrieval / QA 能力
+- 问答结果保留 `used_chapters`、`evidence`、`reasoning_paths`、`graph_signals`，并支持点击跳转章节
+- 修复左侧章节点击后被旧 URL query 覆盖回退、请求竞态回退到旧章节、分页无法翻页等交互问题
+- 自动拆书任务检查发现第 21 章长期 running，已执行 `clear-running` 并重新继续运行

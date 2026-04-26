@@ -6,6 +6,8 @@ import type {
   ChapterSource,
   RecoveryResult,
   RunSnapshot,
+  RetrievalHit,
+  BranchAskResult,
 } from "@/types/workbench";
 
 const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
@@ -104,3 +106,28 @@ export const fetchBranchExports = (
   if (databaseUrl) query.set("database_url", databaseUrl);
   return requestJson<BranchExports>(`${apiBase}/api/branch-exports?${query.toString()}`);
 };
+
+
+export const searchBranch = (
+  apiBase: string,
+  branchId: string,
+  queryText: string,
+  databaseUrl?: string,
+  limit = 8,
+) => {
+  const query = new URLSearchParams({ branch_id: branchId, q: queryText, limit: String(limit) });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<{ hits: RetrievalHit[] }>(`${apiBase}/api/search-branch?${query.toString()}`);
+};
+
+export const askBranch = (
+  apiBase: string,
+  branchId: string,
+  question: string,
+  databaseUrl?: string,
+  limit = 6,
+) => requestJson<BranchAskResult>(`${apiBase}/api/ask-branch`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ branch_id: branchId, question, database_url: databaseUrl, limit }),
+});

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { message } from "antd";
+import { message, Space } from "antd";
 import WorkbenchLayout from "@/components/WorkbenchLayout";
 import ControlPage from "@/components/ControlPage";
 import ReaderPage from "@/components/ReaderPage";
+import BranchQaPanel from "@/components/BranchQaPanel";
 import OpsPage from "@/components/OpsPage";
 import { useWorkbenchState } from "@/hooks/useWorkbenchState";
 import {
@@ -62,6 +63,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   });
 
   const didBootstrapRef = useRef(false);
+  const chapterRequestSeqRef = useRef(0);
 
   const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
     setWorkspace(nextWorkspace as "control" | "reader" | "ops");
@@ -89,6 +91,26 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   };
 
   const loadChapter = async (chapterIndex: number, options?: { navigate?: boolean }) => {
+    const requestId = chapterRequestSeqRef.current + 1;
+    chapterRequestSeqRef.current = requestId;
+    const row = branchSnapshot?.chapter_rows?.find((item) => item.chapter_index === chapterIndex) || null;
+    setActiveChapterIndex(chapterIndex);
+    patchState({ lastChapterIndex: chapterIndex });
+
+    if (options?.navigate) {
+      navigateWorkspace("reader", { chapterIndex });
+    }
+
+    if (row && !row.has_artifact) {
+      if (chapterRequestSeqRef.current === requestId) {
+        setBundle(null);
+        setQa(null);
+        setSource(null);
+        message.info(row.job_status === "running" ? `第 ${chapterIndex} 章正在整理中，请稍后再看。` : `第 ${chapterIndex} 章还没有拆书结果，请先继续整理。`);
+      }
+      return;
+    }
+
     setLoading((current) => ({ ...current, chapter: true }));
     try {
       const [bundleData, qaData, sourceData] = await Promise.all([
@@ -96,26 +118,25 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
         fetchChapterQaContext(state.apiBase, state.branchId, chapterIndex, state.databaseUrl),
         fetchChapterSource(state.apiBase, state.branchId, chapterIndex, state.databaseUrl),
       ]);
-      setActiveChapterIndex(chapterIndex);
+      if (chapterRequestSeqRef.current !== requestId) return;
       setBundle(bundleData);
       setQa(qaData);
       setSource(sourceData);
-      patchState({ lastChapterIndex: chapterIndex });
-      if (options?.navigate) {
-        navigateWorkspace("reader", { chapterIndex });
-      }
+    } catch (error) {
+      if (chapterRequestSeqRef.current !== requestId) return;
+      setBundle(null);
+      setQa(null);
+      setSource(null);
+      message.error(error instanceof Error ? error.message : "章节读取失败");
     } finally {
-      setLoading((current) => ({ ...current, chapter: false }));
+      if (chapterRequestSeqRef.current === requestId) {
+        setLoading((current) => ({ ...current, chapter: false }));
+      }
     }
   };
 
   const openChapter = async (chapterIndex: number) => {
-    patchState({ lastChapterIndex: chapterIndex });
-    if (workspace === "reader") {
-      await loadChapter(chapterIndex);
-      return;
-    }
-    navigateWorkspace("reader", { chapterIndex });
+    await loadChapter(chapterIndex, { navigate: true });
   };
 
   const handleImport = async () => {

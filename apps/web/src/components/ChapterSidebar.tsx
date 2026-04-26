@@ -1,4 +1,4 @@
-import { Badge, Empty, Input, Segmented, Space, Tag, Typography } from "antd";
+import { Badge, Empty, Input, Pagination, Select, Segmented, Space, Tag, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChapterRow } from "@/types/workbench";
 
@@ -25,6 +25,8 @@ const statusLabel = (row: ChapterRow) => {
 export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "review" | "failed" | "unfinished">("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const activeItemRef = useRef<HTMLDivElement | null>(null);
 
   const reviewCount = rows.filter((row) => row.needs_human_review).length;
@@ -54,7 +56,38 @@ export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: P
     if (activeItemRef.current) {
       activeItemRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
-  }, [activeChapterIndex, filter, query]);
+  }, [activeChapterIndex, filter, query, page, pageSize]);
+
+  const pageSizeOptions = [10, 20, 30, 50];
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, query]);
+
+  useEffect(() => {
+    if (!activeChapterIndex) return;
+    const index = filteredRows.findIndex((row) => row.chapter_index === activeChapterIndex);
+    if (index < 0) return;
+    const nextPage = Math.floor(index / pageSize) + 1;
+    const currentPageStart = (page - 1) * pageSize;
+    const currentPageEnd = currentPageStart + pageSize;
+    const activeInCurrentPage = index >= currentPageStart && index < currentPageEnd;
+    if (!activeInCurrentPage) setPage(nextPage);
+  }, [activeChapterIndex, filteredRows, pageSize]);
+
+  const pagedRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredRows.slice(start, start + pageSize);
+  }, [filteredRows, page, pageSize]);
+
+  const rangeOptions = useMemo(() => {
+    const options = [];
+    for (let start = 1; start <= filteredRows.length; start += pageSize) {
+      const end = Math.min(start + pageSize - 1, filteredRows.length);
+      options.push({ value: Math.floor((start - 1) / pageSize) + 1, label: `${start}-${end} 章` });
+    }
+    return options;
+  }, [filteredRows.length, pageSize]);
 
   return (
     <div className="chapter-sidebar-shell">
@@ -97,13 +130,34 @@ export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: P
         className="chapter-sidebar-segment"
       />
 
-      <Typography.Paragraph style={{ color: "#9bb2d1", marginBottom: 12 }}>
-        当前筛选到 {filteredRows.length} 章
-      </Typography.Paragraph>
+      <Space direction="vertical" size={10} style={{ width: "100%", marginBottom: 12 }}>
+        <Typography.Paragraph style={{ color: "#9bb2d1", marginBottom: 0 }}>
+          当前筛选到 {filteredRows.length} 章
+        </Typography.Paragraph>
+        {filteredRows.length ? (
+          <div className="chapter-sidebar-pager-row">
+            <Select
+              value={page}
+              options={rangeOptions}
+              onChange={(value) => setPage(value)}
+              className="chapter-sidebar-range-select"
+            />
+            <Select
+              value={pageSize}
+              options={pageSizeOptions.map((value) => ({ value, label: `每页 ${value} 章` }))}
+              onChange={(value) => {
+                setPageSize(value);
+                setPage(1);
+              }}
+              className="chapter-sidebar-page-size-select"
+            />
+          </div>
+        ) : null}
+      </Space>
 
       <div className="chapter-sidebar-list">
-        {filteredRows.length ? (
-          filteredRows.map((row) => {
+        {pagedRows.length ? (
+          pagedRows.map((row) => {
             const active = activeChapterIndex === row.chapter_index;
             const tone = statusTone(row);
             return (
@@ -157,6 +211,17 @@ export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: P
           </div>
         )}
       </div>
+
+      {filteredRows.length ? (
+        <Pagination
+          simple
+          current={page}
+          pageSize={pageSize}
+          total={filteredRows.length}
+          onChange={(nextPage) => setPage(nextPage)}
+          className="chapter-sidebar-pagination"
+        />
+      ) : null}
     </div>
   );
 }

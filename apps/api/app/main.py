@@ -23,6 +23,8 @@ from novel_analyzer.config.settings import get_settings
 from novel_analyzer.database.models import ChapterManifest, ChapterSegment, NovelSource, RunBranch
 from novel_analyzer.database.session import create_session_factory
 from novel_analyzer.services.export_service import ExportService
+from novel_analyzer.services.qa_service import BranchQAService
+from novel_analyzer.services.retrieval_service import RetrievalService
 
 
 def _json_payload(value: Any) -> bytes:
@@ -246,6 +248,8 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-bundle",
                     "/api/chapter-qa-context",
                     "/api/chapter-source",
+                    "/api/search-branch",
+                    "/api/ask-branch",
                     "/api/branch-exports",
                     "/api/download",
                 ],
@@ -505,6 +509,57 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/search-branch":
+        ok, missing = _require(params, "branch_id", "q")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        if params.get("database_url"):
+            runtime.database_url = params["database_url"]
+        limit = int(params.get("limit", "8"))
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                hits = RetrievalService(session, runtime).search_branch(params["branch_id"], params["q"], limit)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload={"hits": [asdict(hit) for hit in hits]})
+
+    if path == "/api/ask-branch" and method == "POST":
+        body = _body(environ)
+        branch_id = str(body.get("branch_id") or "")
+        question = str(body.get("question") or "")
+        if not branch_id or not question:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "branch_id and question are required"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = str(body.get("database_url") or "") or None
+        if database_url:
+            runtime.database_url = database_url
+        limit = int(str(body.get("limit") or "6"))
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                result = BranchQAService(session, runtime).answer_question(branch_id, question, limit)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=result.model_dump(mode="json"))
 
     if path == "/api/branch-exports":
         ok, missing = _require(params, "run_id", "branch_id")
