@@ -2,17 +2,19 @@ import {
   Alert,
   Button,
   Card,
+  Collapse,
   Empty,
   Input,
   List,
   Space,
   Spin,
+  Statistic,
   Tag,
   Tabs,
   Timeline,
   Typography,
 } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { askBranch, askBranchStream, searchBranch } from "@/lib/api";
 import type { BranchAskResult, BranchAskStreamEvent, RetrievalHit } from "@/types/workbench";
 
@@ -81,11 +83,24 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingAsk, setLoadingAsk] = useState(false);
   const [errorText, setErrorText] = useState("");
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   const latestAnswer = useMemo(
     () => [...messages].reverse().find((item) => item.role === "assistant" && item.result)?.result || null,
     [messages],
   );
+  const askedQuestions = useMemo(
+    () => messages.filter((item) => item.role === "user").map((item) => item.content),
+    [messages],
+  );
+  const latestReferencedChapters = useMemo(
+    () => Array.from(new Set(latestAnswer?.used_chapters || [])).slice(0, 8),
+    [latestAnswer],
+  );
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
 
   const updateAssistantMessage = (messageId: string, patch: Partial<ChatMessage>) => {
     setMessages((current) =>
@@ -249,155 +264,261 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
             key: "chat",
             label: "小说问答",
             children: (
-              <Space direction="vertical" size="large" style={{ width: "100%" }}>
-                <Card bordered={false} className="reader-insight-card qa-chat-shell">
-                  <div className="qa-message-list">
-                    {messages.length ? (
-                      messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`qa-message-row ${message.role === "user" ? "is-user" : "is-assistant"}`}
-                        >
-                          <Card
-                            bordered={false}
-                            className={`qa-message-bubble ${message.role === "user" ? "user-bubble" : "assistant-bubble"}`}
+              <div className="qa-chat-layout">
+                <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                  <div className="qa-overview-grid">
+                    <Card bordered={false} className="reader-source-meta qa-overview-card">
+                      <Statistic title="已提问轮次" value={askedQuestions.length} valueStyle={{ color: "#eaf2ff" }} />
+                      <Typography.Paragraph type="secondary" style={{ marginBottom: 0, marginTop: 10 }}>
+                        会话会按正常聊天方式持续追加，你可以围绕上一问继续追问。
+                      </Typography.Paragraph>
+                    </Card>
+                    <Card bordered={false} className="reader-source-meta qa-overview-card">
+                      <Statistic title="最近引用章节" value={latestReferencedChapters.length || 0} valueStyle={{ color: "#eaf2ff" }} />
+                      <Space wrap style={{ marginTop: 10 }}>
+                        {latestReferencedChapters.length
+                          ? latestReferencedChapters.map((chapter) => (
+                            <Tag key={`top-${chapter}`} color="processing">
+                              <a className="chapter-inline-link" onClick={() => onJumpChapter(chapter)}>第{chapter}章</a>
+                            </Tag>
+                          ))
+                          : <Tag>等待回答中</Tag>}
+                      </Space>
+                    </Card>
+                    <Card bordered={false} className="reader-source-meta qa-overview-card">
+                      <Statistic title="当前模式" value={loadingAsk ? "生成中" : "可提问"} valueStyle={{ color: "#eaf2ff", fontSize: 24 }} />
+                      <Typography.Paragraph type="secondary" style={{ marginBottom: 0, marginTop: 10 }}>
+                        优先流式返回；如果流式不可用，会自动切回普通回答，不需要你手动处理。
+                      </Typography.Paragraph>
+                    </Card>
+                  </div>
+
+                  <Card bordered={false} className="reader-insight-card qa-chat-shell">
+                    <div className="qa-message-list">
+                      {messages.length ? (
+                        messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`qa-message-row ${message.role === "user" ? "is-user" : "is-assistant"}`}
                           >
-                            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-                              <Space wrap>
-                                <Tag color={message.role === "user" ? "gold" : "blue"}>
-                                  {message.role === "user" ? "你" : "小说助手"}
-                                </Tag>
-                                {message.status === "streaming" ? <Tag color="processing">生成中</Tag> : null}
-                                {message.status === "error" ? <Tag color="error">失败</Tag> : null}
-                                {message.result ? (
-                                  <Tag color={message.result.insufficient_context ? "warning" : "success"}>
-                                    {message.result.insufficient_context
-                                      ? "证据不足"
-                                      : `可信度 ${Math.round((message.result.confidence || 0) * 100)}%`}
+                            <Card
+                              bordered={false}
+                              className={`qa-message-bubble ${message.role === "user" ? "user-bubble" : "assistant-bubble"}`}
+                            >
+                              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                                <Space wrap>
+                                  <Tag color={message.role === "user" ? "gold" : "blue"}>
+                                    {message.role === "user" ? "你" : "小说助手"}
                                   </Tag>
+                                  {message.status === "streaming" ? <Tag color="processing">生成中</Tag> : null}
+                                  {message.status === "error" ? <Tag color="error">失败</Tag> : null}
+                                  {message.result ? (
+                                    <Tag color={message.result.insufficient_context ? "warning" : "success"}>
+                                      {message.result.insufficient_context
+                                        ? "证据不足"
+                                        : `可信度 ${Math.round((message.result.confidence || 0) * 100)}%`}
+                                    </Tag>
+                                  ) : null}
+                                </Space>
+
+                                {message.status === "error" ? (
+                                  <Alert type="error" showIcon message={message.errorText || "问答失败"} />
+                                ) : (
+                                  <Typography.Paragraph style={{ marginBottom: 0, lineHeight: 1.95 }}>
+                                    {message.content
+                                      ? jumpify(message.content, onJumpChapter)
+                                      : message.progressText || <Spin size="small" />}
+                                    {message.status === "streaming" ? <span className="qa-cursor">▍</span> : null}
+                                  </Typography.Paragraph>
+                                )}
+
+                                {message.retrievalHits?.length ? (
+                                  <div className="qa-quick-reference">
+                                    <Typography.Text strong>本次参考章节</Typography.Text>
+                                    <Space wrap style={{ marginTop: 8 }}>
+                                      {message.retrievalHits.map((hit) => (
+                                        <Tag key={`${message.id}-${hit.chapter_index}`} color="processing">
+                                          <a className="chapter-inline-link" onClick={() => onJumpChapter(hit.chapter_index)}>
+                                            第{hit.chapter_index}章
+                                          </a>
+                                        </Tag>
+                                      ))}
+                                    </Space>
+                                  </div>
+                                ) : null}
+
+                                {message.result ? (
+                                  <Collapse
+                                    ghost
+                                    className="qa-detail-collapse"
+                                    items={[
+                                      {
+                                        key: "chapters",
+                                        label: "引用章节",
+                                        children: (
+                                          <Space wrap>
+                                            {message.result.used_chapters.length ? message.result.used_chapters.map((chapter) => (
+                                              <Tag key={`${message.id}-${chapter}`} color="processing">
+                                                <a className="chapter-inline-link" onClick={() => onJumpChapter(chapter)}>第{chapter}章</a>
+                                              </Tag>
+                                            )) : <Tag>暂无</Tag>}
+                                          </Space>
+                                        ),
+                                      },
+                                      {
+                                        key: "evidence",
+                                        label: "证据摘要",
+                                        children: (
+                                          <List
+                                            split={false}
+                                            dataSource={message.result.evidence || []}
+                                            locale={{ emptyText: "暂无证据摘要" }}
+                                            renderItem={(item) => (
+                                              <List.Item className="reader-list-item">
+                                                <span className="reader-list-content">{jumpify(item, onJumpChapter)}</span>
+                                              </List.Item>
+                                            )}
+                                          />
+                                        ),
+                                      },
+                                      {
+                                        key: "reasoning",
+                                        label: "推理摘要",
+                                        children: (
+                                          <Timeline
+                                            items={(message.result.reasoning_paths || []).map((item) => ({
+                                              children: <span>{jumpify(item, onJumpChapter)}</span>,
+                                              color: "blue",
+                                            }))}
+                                          />
+                                        ),
+                                      },
+                                      {
+                                        key: "signals",
+                                        label: "图谱信号",
+                                        children: (
+                                          <Space wrap>
+                                            {message.result.graph_signals.length
+                                              ? message.result.graph_signals.map((item) => (
+                                                <Tag key={`${message.id}-${item}`} color="purple">{item}</Tag>
+                                              ))
+                                              : <Tag>暂无</Tag>}
+                                          </Space>
+                                        ),
+                                      },
+                                    ]}
+                                  />
                                 ) : null}
                               </Space>
+                            </Card>
+                          </div>
+                        ))
+                      ) : (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description="还没有开始问答。你可以直接问人物背景、冲突前因后果、人物关系变化或某条伏笔。"
+                        />
+                      )}
+                      <div ref={messageEndRef} />
+                    </div>
+                  </Card>
 
-                              {message.status === "error" ? (
-                                <Alert type="error" showIcon message={message.errorText || "问答失败"} />
-                              ) : (
-                                <Typography.Paragraph style={{ marginBottom: 0, lineHeight: 1.95 }}>
-                                  {message.content
-                                    ? jumpify(message.content, onJumpChapter)
-                                    : message.progressText || <Spin size="small" />}
-                                  {message.status === "streaming" ? <span className="qa-cursor">▍</span> : null}
-                                </Typography.Paragraph>
-                              )}
-
-                              {message.retrievalHits?.length ? (
-                                <div>
-                                  <Typography.Text strong>本次参考章节</Typography.Text>
-                                  <Space wrap style={{ marginTop: 8 }}>
-                                    {message.retrievalHits.map((hit) => (
-                                      <Tag key={`${message.id}-${hit.chapter_index}`} color="processing">
-                                        <a className="chapter-inline-link" onClick={() => onJumpChapter(hit.chapter_index)}>
-                                          第{hit.chapter_index}章
-                                        </a>
-                                      </Tag>
-                                    ))}
-                                  </Space>
-                                </div>
-                              ) : null}
-
-                              {message.result ? (
-                                <div className="qa-answer-sections">
-                                  <div className="qa-answer-section">
-                                    <Typography.Text strong>引用章节</Typography.Text>
-                                    <Space wrap style={{ marginTop: 8 }}>
-                                      {message.result.used_chapters.length ? message.result.used_chapters.map((chapter) => (
-                                        <Tag key={`${message.id}-${chapter}`} color="processing">
-                                          <a className="chapter-inline-link" onClick={() => onJumpChapter(chapter)}>第{chapter}章</a>
-                                        </Tag>
-                                      )) : <Tag>暂无</Tag>}
-                                    </Space>
-                                  </div>
-
-                                  <div className="qa-answer-section">
-                                    <Typography.Text strong>证据摘要</Typography.Text>
-                                    <List
-                                      split={false}
-                                      dataSource={message.result.evidence || []}
-                                      locale={{ emptyText: "暂无证据摘要" }}
-                                      renderItem={(item) => (
-                                        <List.Item className="reader-list-item">
-                                          <span className="reader-list-content">{jumpify(item, onJumpChapter)}</span>
-                                        </List.Item>
-                                      )}
-                                    />
-                                  </div>
-
-                                  <div className="qa-answer-section">
-                                    <Typography.Text strong>推理摘要</Typography.Text>
-                                    <Timeline
-                                      style={{ marginTop: 12 }}
-                                      items={(message.result.reasoning_paths || []).map((item) => ({
-                                        children: <span>{jumpify(item, onJumpChapter)}</span>,
-                                        color: "blue",
-                                      }))}
-                                    />
-                                  </div>
-
-                                  <div className="qa-answer-section">
-                                    <Typography.Text strong>图谱信号</Typography.Text>
-                                    <Space wrap style={{ marginTop: 8 }}>
-                                      {message.result.graph_signals.length
-                                        ? message.result.graph_signals.map((item) => (
-                                          <Tag key={`${message.id}-${item}`} color="purple">{item}</Tag>
-                                        ))
-                                        : <Tag>暂无</Tag>}
-                                    </Space>
-                                  </div>
-                                </div>
-                              ) : null}
-                            </Space>
-                          </Card>
-                        </div>
-                      ))
-                    ) : (
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="还没有开始问答。你可以直接问人物背景、冲突前因后果、人物关系变化或某条伏笔。"
-                      />
-                    )}
-                  </div>
-                </Card>
-
-                <Card bordered={false} className="reader-insight-card">
-                  <Space direction="vertical" style={{ width: "100%" }} size="middle">
-                    <Typography.Text strong>开始提问</Typography.Text>
-                    <Input.TextArea
-                      rows={4}
-                      placeholder="例如：卫图的人物背景是什么？这段冲突为什么会发生？某条伏笔后来有没有兑现？"
-                      value={question}
-                      onChange={(event) => setQuestion(event.target.value)}
-                      onPressEnter={(event) => {
-                        if (!event.shiftKey) {
-                          event.preventDefault();
-                          void runAsk();
-                        }
-                      }}
-                    />
-                    <Space wrap>
-                      <Button type="primary" loading={loadingAsk} onClick={() => void runAsk()}>
-                        发送问题
-                      </Button>
-                      {QUICK_QUESTIONS.map((item) => (
-                        <Button key={item} onClick={() => {
-                          setQuestion(item);
-                          void runAsk(item);
-                        }}>
-                          {item}
+                  <Card bordered={false} className="reader-insight-card qa-composer-card">
+                    <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                      <div className="qa-composer-header">
+                        <Typography.Text strong>开始提问</Typography.Text>
+                        <Button
+                          disabled={!messages.length}
+                          onClick={() => {
+                            setMessages([]);
+                            setErrorText("");
+                          }}
+                        >
+                          清空会话
                         </Button>
-                      ))}
+                      </div>
+                      <Input.TextArea
+                        rows={4}
+                        placeholder="例如：卫图的人物背景是什么？这段冲突为什么会发生？某条伏笔后来有没有兑现？"
+                        value={question}
+                        onChange={(event) => setQuestion(event.target.value)}
+                        onPressEnter={(event) => {
+                          if (!event.shiftKey) {
+                            event.preventDefault();
+                            void runAsk();
+                          }
+                        }}
+                      />
+                      <Space wrap>
+                        <Button type="primary" loading={loadingAsk} onClick={() => void runAsk()}>
+                          发送问题
+                        </Button>
+                        {QUICK_QUESTIONS.map((item) => (
+                          <Button key={item} onClick={() => {
+                            setQuestion(item);
+                            void runAsk(item);
+                          }}>
+                            {item}
+                          </Button>
+                        ))}
+                      </Space>
                     </Space>
-                  </Space>
-                </Card>
-              </Space>
+                  </Card>
+                </Space>
+
+                <div className="qa-side-column">
+                  <Card bordered={false} className="reader-source-meta">
+                    <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                      <div>
+                        <Typography.Text className="reader-eyebrow">问答指引</Typography.Text>
+                        <Typography.Title level={5} style={{ margin: "8px 0 0" }}>
+                          适合怎么问
+                        </Typography.Title>
+                      </div>
+                      <List
+                        split={false}
+                        dataSource={[
+                          "先问人物背景，再追问人物关系变化。",
+                          "先问冲突前因，再问冲突升级与代价。",
+                          "先问某条伏笔，再问它后来是否兑现。",
+                        ]}
+                        renderItem={(item, index) => (
+                          <List.Item className="reader-list-item">
+                            <span className="reader-list-index">{index + 1}</span>
+                            <span className="reader-list-content">{item}</span>
+                          </List.Item>
+                        )}
+                      />
+                    </Space>
+                  </Card>
+
+                  <Card bordered={false} className="reader-source-meta">
+                    <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                      <Typography.Title level={5} style={{ margin: 0 }}>
+                        本轮提问记录
+                      </Typography.Title>
+                      {askedQuestions.length ? (
+                        <div className="qa-question-history">
+                          {askedQuestions.slice().reverse().map((item, index) => (
+                            <button
+                              key={`${item}-${index}`}
+                              type="button"
+                              className="qa-question-chip"
+                              onClick={() => setQuestion(item)}
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                          你发起问答后，这里会保留最近的问题，方便二次编辑再问。
+                        </Typography.Paragraph>
+                      )}
+                    </Space>
+                  </Card>
+                </div>
+              </div>
             ),
           },
           {
@@ -443,6 +564,14 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
                               {hit.keyword_list?.slice(0, 8).map((item) => (
                                 <Tag key={`${hit.chapter_index}-${item}`}>{item}</Tag>
                               ))}
+                            </Space>
+                            <Space wrap>
+                              <Button size="small" onClick={() => void runAsk(`围绕第${hit.chapter_index}章，解释${searchText || hit.title}的关键信息。`)}>
+                                围绕这一章继续问
+                              </Button>
+                              <Button size="small" onClick={() => onJumpChapter(hit.chapter_index)}>
+                                去看这一章
+                              </Button>
                             </Space>
                           </Space>
                         </List.Item>

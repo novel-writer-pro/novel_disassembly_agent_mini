@@ -227,6 +227,35 @@ a {
   padding: 10px !important;
 }
 
+.qa-chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.qa-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 24px;
+}
+
+.qa-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.qa-overview-card .ant-statistic {
+  min-height: 92px;
+}
+
+.qa-overview-card .ant-statistic-title {
+  color: #9bb2d1;
+}
+
 .qa-message-list {
   display: flex;
   flex-direction: column;
@@ -267,11 +296,72 @@ a {
   gap: 16px;
 }
 
+.qa-detail-collapse .ant-collapse-item {
+  border: 1px solid rgba(74, 109, 162, 0.18) !important;
+  border-radius: 12px !important;
+  background: rgba(8, 15, 28, 0.4);
+  margin-bottom: 10px;
+}
+
+.qa-detail-collapse .ant-collapse-header {
+  color: #dbe8ff !important;
+  font-weight: 600;
+}
+
+.qa-detail-collapse .ant-collapse-content {
+  background: transparent !important;
+  border-top: 1px solid rgba(74, 109, 162, 0.12);
+}
+
 .qa-answer-section {
   padding: 14px 16px;
   border-radius: 14px;
   background: rgba(8, 15, 28, 0.5);
   border: 1px solid rgba(74, 109, 162, 0.18);
+}
+
+.qa-quick-reference {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(14, 28, 47, 0.72);
+  border: 1px solid rgba(74, 109, 162, 0.18);
+}
+
+.qa-composer-card {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  box-shadow: 0 -14px 30px rgba(7, 14, 28, 0.22);
+}
+
+.qa-composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.qa-question-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qa-question-chip {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(74, 109, 162, 0.22);
+  background: rgba(10, 19, 34, 0.9);
+  color: #dbe8ff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qa-question-chip:hover {
+  border-color: rgba(104, 167, 255, 0.45);
+  transform: translateY(-1px);
 }
 
 .qa-summary-grid {
@@ -333,6 +423,16 @@ a {
 
   .qa-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .qa-chat-layout,
+  .qa-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .qa-side-column,
+  .qa-composer-card {
+    position: static;
   }
 }
 
