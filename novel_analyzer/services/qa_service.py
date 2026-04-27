@@ -122,6 +122,33 @@ class BranchQAService:
                 graph_signals.append(f"冲突状态: {item.get('label')} [escalated]")
         return reasoning_paths, graph_signals
 
+    def _degraded_answer(
+        self,
+        question: str,
+        used_chapters: list[int],
+        evidence: list[str],
+        reasoning_paths: list[str],
+        graph_signals: list[str],
+        *,
+        error_message: str,
+    ) -> BranchQAResult:
+        chapter_text = "、".join(f"第{chapter}章" for chapter in used_chapters[:4]) or "当前检索章节"
+        evidence_text = evidence[0] if evidence else "当前只拿到了有限的章节摘要。"
+        answer = (
+            f"当前问答模型暂时不可用，所以我先基于已检索到的章节给出保守回答。"
+            f"围绕“{question}”，目前最直接能确认的是：{evidence_text}"
+            f" 如需更完整结论，可优先回看{chapter_text}，待模型服务恢复后再继续追问。"
+        )
+        return BranchQAResult(
+            answer=answer,
+            used_chapters=used_chapters,
+            evidence=evidence[:5],
+            reasoning_paths=reasoning_paths[:5],
+            graph_signals=graph_signals[:6] + [f"服务降级: {error_message[:80]}"],
+            confidence=0.35,
+            insufficient_context=True,
+        )
+
     def answer_question(self, branch_id: str, question: str, limit: int = 5) -> BranchQAResult:
         """Answer a question from retrieval hits only."""
 
@@ -164,9 +191,19 @@ class BranchQAService:
             self.settings,
             model_name=self.settings.llm_qa_model_name,
         )
-        response = model.invoke(prompt)
-        raw = AnalysisService._extract_json_payload(response)
-        result = BranchQAResult.model_validate(raw)
+        try:
+            response = model.invoke(prompt)
+            raw = AnalysisService._extract_json_payload(response)
+            result = BranchQAResult.model_validate(raw)
+        except Exception as exc:
+            return self._degraded_answer(
+                question,
+                used_chapters,
+                evidence,
+                reasoning_paths,
+                graph_signals,
+                error_message=str(exc),
+            )
         if not result.used_chapters:
             result = result.model_copy(update={'used_chapters': used_chapters})
         if not result.evidence:
