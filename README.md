@@ -264,3 +264,5 @@ poetry run novel-analyzer db-capabilities
 - 当 provider 额度耗尽导致章节失败时，控制台首页会直接提示失败章节与恢复入口。
 
 - 工作台现已将“小说问答”拆为单独的导航页签，不再和章节阅读混在同一长页面里。
+
+- 首页 `/` 现直接渲染控制台，不再依赖前端运行时重定向到 `/control`，避免 Next.js build 在收集 page data 时失稳。

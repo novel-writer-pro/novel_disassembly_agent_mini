@@ -1,12 +1,5 @@
-import { useEffect } from "react";
-import { useRouter } from "next/router";
+import WorkbenchApp from "@/components/WorkbenchApp";
 
-export default function IndexRedirect() {
-  const router = useRouter();
-
-  useEffect(() => {
-    void router.replace("/control");
-  }, [router]);
-
-  return null;
+export default function IndexRoute() {
+  return <WorkbenchApp initialWorkspace="control" />;
 }
