@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
@@ -155,6 +156,13 @@ def _mock_branch_snapshot(profile: str) -> dict[str, Any]:
         "failed_summary": [],
     }
 
+
+
+
+def _stable_export_dir(run_id: str, branch_id: str) -> str:
+    base = Path('.omx/runtime-exports') / run_id / branch_id / datetime.now().strftime('%Y%m%dT%H%M%S')
+    base.mkdir(parents=True, exist_ok=True)
+    return str(base)
 
 def _persist_uploaded_text(file_item: Any) -> str:
     suffix = Path(getattr(file_item, "filename", "upload.txt")).suffix or ".txt"
@@ -573,7 +581,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             refs = export_branch_refs(
                 run_id=params["run_id"],
                 branch_id=params["branch_id"],
-                output_dir=tempfile.mkdtemp(prefix="novel-analyzer-export-"),
+                output_dir=_stable_export_dir(params["run_id"], params["branch_id"]),
                 database_url=params.get("database_url"),
             )
         except Exception as exc:  # noqa: BLE001

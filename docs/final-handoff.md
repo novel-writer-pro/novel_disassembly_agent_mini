@@ -372,3 +372,5 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - 前端已接入基于整本小说内容的问答
 - 问答结果保留 `used_chapters`、`evidence`、`reasoning_paths`、`graph_signals`
 - 引用章节在界面内可直接跳转
+
+- Web 工作台导出链路已从临时 `/tmp` 目录收口到项目内 `.omx/runtime-exports/` 持久目录，减少链接失效。
