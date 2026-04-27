@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { message, Space } from "antd";
+import { message } from "antd";
 import WorkbenchLayout from "@/components/WorkbenchLayout";
 import ControlPage from "@/components/ControlPage";
 import ReaderPage from "@/components/ReaderPage";
@@ -31,11 +31,12 @@ import { useRouter } from "next/router";
 const routeByWorkspace: Record<string, string> = {
   control: "/control",
   reader: "/reader",
+  qa: "/qa",
   ops: "/ops",
 };
 
 interface Props {
-  initialWorkspace: "control" | "reader" | "ops";
+  initialWorkspace: "control" | "reader" | "qa" | "ops";
 }
 
 export default function WorkbenchApp({ initialWorkspace }: Props) {
@@ -66,7 +67,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const chapterRequestSeqRef = useRef(0);
 
   const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
-    setWorkspace(nextWorkspace as "control" | "reader" | "ops");
+    setWorkspace(nextWorkspace as "control" | "reader" | "qa" | "ops");
     const nextRoute = routeByWorkspace[nextWorkspace] || "/";
     const nextQuery: Record<string, string> = {};
     if (options?.chapterIndex) nextQuery.chapter = String(options.chapterIndex);

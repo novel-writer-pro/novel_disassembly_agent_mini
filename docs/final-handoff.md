@@ -378,3 +378,5 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - 控制台首页现在会显式提示 `DAILY_LIMIT_EXCEEDED` / `USAGE_LIMIT_EXCEEDED` 这类外部额度失败，并给出恢复入口。
 
 - 工作台导入的小说原文文件已从临时目录迁移到 `.omx/uploads/` 持久保存，保证章节正文回看与引用跳转可持续使用。
+
+- 问答与检索功能已从阅读页内嵌区域升级为单独的“小说问答”页面入口。

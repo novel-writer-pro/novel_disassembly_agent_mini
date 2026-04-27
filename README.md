@@ -262,3 +262,5 @@ poetry run novel-analyzer db-capabilities
 - 若 `npm run build` 出现页面模块缺失（例如 `/ops`）但源码文件实际存在，先删除 `apps/web/.next` 再重新构建。
 
 - 当 provider 额度耗尽导致章节失败时，控制台首页会直接提示失败章节与恢复入口。
+
+- 工作台现已将“小说问答”拆为单独的导航页签，不再和章节阅读混在同一长页面里。

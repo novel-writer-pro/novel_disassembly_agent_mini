@@ -78,7 +78,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
       <Card bordered={false} className="reader-hero-card">
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <div>
-            <Typography.Text className="reader-eyebrow">小说问答 / 检索台</Typography.Text>
+            <Typography.Text className="reader-eyebrow">小说问答</Typography.Text>
             <Typography.Title level={3} style={{ margin: "8px 0 10px" }}>
               直接追问人物背景、冲突前因后果和线索走向
             </Typography.Title>

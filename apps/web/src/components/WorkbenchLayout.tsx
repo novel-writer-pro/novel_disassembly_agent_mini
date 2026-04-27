@@ -1,4 +1,4 @@
-import { BookOutlined, DashboardOutlined, ExportOutlined } from "@ant-design/icons";
+import { BookOutlined, DashboardOutlined, ExportOutlined, MessageOutlined } from "@ant-design/icons";
 import { Layout, Menu, Space, Tag, Typography } from "antd";
 import type { ReactNode } from "react";
 
@@ -22,6 +22,11 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, ch
       title: "章节阅读",
       subtitle: "围绕当前章节查看人物、事件、线索与原文，按作家的阅读习惯来组织。",
       tip: "按章节阅读与回看",
+    },
+    qa: {
+      title: "小说问答",
+      subtitle: "集中检索人物、事件、冲突与线索，并基于整本小说内容发起问答。",
+      tip: "检索与追问",
     },
     ops: {
       title: "导出与恢复",
@@ -52,6 +57,7 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, ch
           items={[
             { key: "control", icon: <DashboardOutlined />, label: "开始整理" },
             { key: "reader", icon: <BookOutlined />, label: "章节阅读" },
+            { key: "qa", icon: <MessageOutlined />, label: "小说问答" },
             { key: "ops", icon: <ExportOutlined />, label: "导出与恢复" },
           ]}
           className="workbench-main-menu"
