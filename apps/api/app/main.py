@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime
 import tempfile
 from dataclasses import asdict
@@ -165,11 +166,15 @@ def _stable_export_dir(run_id: str, branch_id: str) -> str:
     return str(base)
 
 def _persist_uploaded_text(file_item: Any) -> str:
-    suffix = Path(getattr(file_item, "filename", "upload.txt")).suffix or ".txt"
-    with tempfile.NamedTemporaryFile("wb", suffix=suffix, delete=False) as handle:
-        data = file_item.file.read()
-        handle.write(data)
-        return handle.name
+    filename = Path(getattr(file_item, "filename", "upload.txt")).name or "upload.txt"
+    target_dir = Path('.omx/uploads')
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target_path = target_dir / filename
+
+    with target_path.open("wb") as handle:
+        shutil.copyfileobj(file_item.file, handle)
+
+    return str(target_path.resolve())
 
 
 def _export_query_runtime(params: dict[str, str]) -> Any:
