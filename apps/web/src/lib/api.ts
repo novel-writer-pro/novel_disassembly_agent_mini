@@ -8,6 +8,7 @@ import type {
   RunSnapshot,
   RetrievalHit,
   BranchAskResult,
+  BranchAskStreamEvent,
 } from "@/types/workbench";
 
 const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
@@ -131,3 +132,65 @@ export const askBranch = (
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ branch_id: branchId, question, database_url: databaseUrl, limit }),
 });
+
+export const askBranchStream = async (
+  apiBase: string,
+  branchId: string,
+  question: string,
+  onEvent: (event: BranchAskStreamEvent) => void,
+  databaseUrl?: string,
+  limit = 6,
+) => {
+  const response = await fetch(`${apiBase}/api/ask-branch-stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({ branch_id: branchId, question, database_url: databaseUrl, limit }),
+  });
+
+  if (!response.ok) {
+    let payload: { error?: string } | null = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+    throw new Error(payload?.error || `backend returned ${response.status}`);
+  }
+
+  if (!response.body) {
+    throw new Error("当前浏览器未返回可读取的数据流");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() || "";
+
+    for (const chunk of chunks) {
+      const dataLine = chunk
+        .split("\n")
+        .find((line) => line.startsWith("data:"));
+      if (!dataLine) continue;
+      const raw = dataLine.slice(5).trim();
+      if (!raw) continue;
+      const event = JSON.parse(raw) as BranchAskStreamEvent;
+      onEvent(event);
+    }
+  }
+
+  if (buffer.trim()) {
+    const dataLine = buffer
+      .split("\n")
+      .find((line) => line.startsWith("data:"));
+    if (dataLine) {
+      const raw = dataLine.slice(5).trim();
+      if (raw) onEvent(JSON.parse(raw) as BranchAskStreamEvent);
+    }
+  }
+};

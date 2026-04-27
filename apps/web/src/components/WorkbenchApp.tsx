@@ -306,6 +306,15 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
         />
       ) : null}
 
+      {workspace === "qa" ? (
+        <BranchQaPanel
+          apiBase={state.apiBase}
+          branchId={state.branchId}
+          databaseUrl={state.databaseUrl}
+          onJumpChapter={(chapterIndex) => void openChapter(chapterIndex)}
+        />
+      ) : null}
+
       {workspace === "ops" ? (
         <OpsPage
           recoveryResultText={recoveryResultText}

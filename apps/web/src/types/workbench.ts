@@ -123,3 +123,12 @@ export interface BranchAskResult {
   confidence: number;
   insufficient_context: boolean;
 }
+
+export interface BranchAskStreamEvent {
+  type: "status" | "retrieval" | "delta" | "final" | "error";
+  message?: string;
+  delta?: string;
+  error?: string;
+  hits?: RetrievalHit[];
+  result?: BranchAskResult;
+}

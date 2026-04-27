@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import shutil
 from datetime import datetime
-import tempfile
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, cast
@@ -53,6 +52,28 @@ def _response(
         ],
     )
     return [body]
+
+
+def _stream_response(
+    start_response: StartResponse,
+    event_iterable: Any,
+) -> Any:
+    start_response(
+        "200 OK",
+        [
+            ("Content-Type", "text/event-stream; charset=utf-8"),
+            ("Cache-Control", "no-cache"),
+            ("Access-Control-Allow-Origin", "*"),
+            ("Access-Control-Allow-Headers", "Content-Type"),
+            ("Access-Control-Allow-Methods", "GET,POST,OPTIONS"),
+            ("X-Accel-Buffering", "no"),
+        ],
+    )
+    return event_iterable
+
+
+def _sse_event(payload: dict[str, Any]) -> bytes:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n".encode("utf-8")
 
 
 def _query(environ: dict[str, Any]) -> dict[str, str]:
@@ -263,6 +284,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-source",
                     "/api/search-branch",
                     "/api/ask-branch",
+                    "/api/ask-branch-stream",
                     "/api/branch-exports",
                     "/api/download",
                 ],
@@ -573,6 +595,45 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=result.model_dump(mode="json"))
+
+    if path == "/api/ask-branch-stream" and method == "POST":
+        body = _body(environ)
+        branch_id = str(body.get("branch_id") or "")
+        question = str(body.get("question") or "")
+        if not branch_id or not question:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "branch_id and question are required"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = str(body.get("database_url") or "") or None
+        if database_url:
+            runtime.database_url = database_url
+        limit = int(str(body.get("limit") or "6"))
+
+        def _event_iter() -> Any:
+            yield _sse_event({"type": "status", "message": "正在检索相关章节…"})
+            try:
+                factory = create_session_factory(runtime)
+                with factory() as session:
+                    hits = RetrievalService(session, runtime).search_branch(branch_id, question, limit)
+                    yield _sse_event(
+                        {
+                            "type": "retrieval",
+                            "hits": [asdict(hit) for hit in hits],
+                        }
+                    )
+                    yield _sse_event({"type": "status", "message": "正在结合证据与图谱线索组织回答…"})
+                    result = BranchQAService(session, runtime).answer_question(branch_id, question, limit)
+                answer_text = result.answer or ""
+                for index in range(0, len(answer_text), 20):
+                    yield _sse_event({"type": "delta", "delta": answer_text[index:index + 20]})
+                yield _sse_event({"type": "final", "result": result.model_dump(mode="json")})
+            except Exception as exc:  # noqa: BLE001
+                yield _sse_event({"type": "error", "error": str(exc)})
+
+        return _stream_response(start_response, _event_iter())
 
     if path == "/api/branch-exports":
         ok, missing = _require(params, "run_id", "branch_id")

@@ -223,6 +223,76 @@ a {
   color: rgba(234, 242, 255, 0.92);
 }
 
+.qa-chat-shell {
+  padding: 10px !important;
+}
+
+.qa-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 320px;
+}
+
+.qa-message-row {
+  display: flex;
+}
+
+.qa-message-row.is-user {
+  justify-content: flex-end;
+}
+
+.qa-message-row.is-assistant {
+  justify-content: flex-start;
+}
+
+.qa-message-bubble {
+  width: min(100%, 920px);
+}
+
+.qa-message-row.is-user .qa-message-bubble {
+  max-width: 72%;
+  background: linear-gradient(180deg, rgba(52, 94, 172, 0.95), rgba(31, 64, 126, 0.96)) !important;
+  border: 1px solid rgba(118, 165, 255, 0.4) !important;
+}
+
+.qa-message-row.is-assistant .qa-message-bubble {
+  max-width: 86%;
+  background: linear-gradient(180deg, rgba(15, 26, 43, 0.98), rgba(11, 20, 35, 0.98)) !important;
+  border: 1px solid rgba(74, 109, 162, 0.28) !important;
+}
+
+.qa-answer-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.qa-answer-section {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(8, 15, 28, 0.5);
+  border: 1px solid rgba(74, 109, 162, 0.18);
+}
+
+.qa-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.qa-cursor {
+  display: inline-block;
+  margin-left: 4px;
+  color: #8fb9ff;
+  animation: qa-blink 1s step-end infinite;
+}
+
+@keyframes qa-blink {
+  50% {
+    opacity: 0.15;
+  }
+}
+
 .source-mark {
   padding: 0 4px;
   border-radius: 6px;
@@ -254,6 +324,15 @@ a {
 
   .chapter-sidebar-list {
     max-height: 42vh;
+  }
+
+  .qa-message-row.is-user .qa-message-bubble,
+  .qa-message-row.is-assistant .qa-message-bubble {
+    max-width: 100%;
+  }
+
+  .qa-summary-grid {
+    grid-template-columns: 1fr;
   }
 }
 

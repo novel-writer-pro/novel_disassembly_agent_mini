@@ -25,6 +25,23 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 - 想看交付全貌：[`./docs/final-handoff.md`](./docs/final-handoff.md)
 - 想浏览全部文档：[`./docs/README.md`](./docs/README.md)
 
+## 当前工作台入口
+
+- `apps/web/`：Next.js + React + Ant Design 前端
+- `apps/api/`：本地工作台后端
+
+当前面向作家的主入口页面：
+- `/control`：导入与继续整理
+- `/reader`：章节阅读与原文回看
+- `/qa`：整本小说问答 / 人物事件检索
+- `/ops`：导出与恢复
+
+其中 `/qa` 已支持：
+- 聊天式问答输入
+- 流式回答展示
+- 引用章节跳转
+- 证据摘要、推理摘要、图谱信号分组渲染
+
 ## Environment
 
 ### PostgreSQL example

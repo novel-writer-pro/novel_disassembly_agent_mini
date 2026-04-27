@@ -27,11 +27,15 @@
 - `GET /api/chapter-source?branch_id=...&chapter_index=...`
 - `GET /api/branch-exports?run_id=...&branch_id=...`
 - `GET /api/download?path=...`
+- `POST /api/ask-branch-stream`
 
 说明：
 - 当前仍是轻量原型后端，不是完整生产 API
 - 已足够驱动本地工作台进行真实导入、章节查看、恢复与下载操作
 - 默认不考虑用户认证，按本地 / 内网单人使用场景设计
+- 问答接口当前分为两层：
+  - `POST /api/ask-branch`：返回完整 JSON 结果
+  - `POST /api/ask-branch-stream`：返回 `text/event-stream`，适合前端聊天式流式展示
 
 
 ## 推荐启动方式（当前）
@@ -61,3 +65,19 @@ set +a
 - 导出下载链接现在写入项目内 `.omx/runtime-exports/` 持久目录，避免 `/tmp` 临时路径失效导致前端下载失败。
 
 - `POST /api/import` 上传的原始小说文件现在持久化写入 `.omx/uploads/`，避免后续章节原文回看时因为 `/tmp` 被清理而报错。
+
+## 问答流式事件格式
+
+`POST /api/ask-branch-stream` 当前会按 SSE 连续发送：
+
+- `status`：当前阶段提示
+- `retrieval`：命中的章节检索结果
+- `delta`：逐段追加的回答文本
+- `final`：最终结构化问答结果
+- `error`：错误信息
+
+前端可以优先消费 `delta` 做实时聊天输出，再在 `final` 事件里渲染：
+- `used_chapters`
+- `evidence`
+- `reasoning_paths`
+- `graph_signals`
