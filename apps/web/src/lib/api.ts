@@ -9,6 +9,7 @@ import type {
   RetrievalHit,
   BranchAskResult,
   BranchAskStreamEvent,
+  LibraryItem,
 } from "@/types/workbench";
 
 const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
@@ -106,6 +107,12 @@ export const fetchBranchExports = (
   const query = new URLSearchParams({ run_id: runId, branch_id: branchId });
   if (databaseUrl) query.set("database_url", databaseUrl);
   return requestJson<BranchExports>(`${apiBase}/api/branch-exports?${query.toString()}`);
+};
+
+export const fetchLibrary = (apiBase: string, databaseUrl?: string, limit = 20) => {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<{ items: LibraryItem[] }>(`${apiBase}/api/library?${query.toString()}`);
 };
 
 

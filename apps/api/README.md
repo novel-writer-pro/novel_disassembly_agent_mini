@@ -25,6 +25,7 @@
 - `GET /api/chapter-bundle?branch_id=...&chapter_index=...`
 - `GET /api/chapter-qa-context?branch_id=...&chapter_index=...`
 - `GET /api/chapter-source?branch_id=...&chapter_index=...`
+- `GET /api/library`
 - `GET /api/branch-exports?run_id=...&branch_id=...`
 - `GET /api/download?path=...`
 - `POST /api/ask-branch-stream`
@@ -36,6 +37,22 @@
 - 问答接口当前分为两层：
   - `POST /api/ask-branch`：返回完整 JSON 结果
   - `POST /api/ask-branch-stream`：返回 `text/event-stream`，适合前端聊天式流式展示
+- 当前本地 WSGI 服务已改为**并发处理请求**，因此某个长拆书 / 问答请求运行时，其他读取型请求不再必然一起被卡死
+
+## 多作品说明
+
+当前后端数据模型本身就支持：
+- 多个 `novel_sources`
+- 多个 `analysis_runs`
+- 多个 `run_branches`
+
+新增：
+- `GET /api/library`：返回最近作品 / run / branch 列表，供前端做多作品切换或总览
+
+注意：
+- 目前“并行”仍主要是 **HTTP 请求层面的并发可处理**
+- 拆书任务本身仍是按 branch 串行推进
+- 如果要做到真正的后台多任务调度，还需要单独的 job queue / worker 层
 
 
 ## 推荐启动方式（当前）

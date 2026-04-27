@@ -105,6 +105,19 @@ export interface WorkbenchState {
   lastChapterIndex?: number | null;
 }
 
+export interface LibraryItem {
+  novel_id: string;
+  title: string;
+  run_id: string;
+  branch_id: string;
+  branch_name: string;
+  pipeline_state: string;
+  completed_chapters: number;
+  manifest_chapter_count: number;
+  next_chapter: number | null;
+  updated_at?: string | null;
+}
+
 
 export interface RetrievalHit {
   chapter_index: number;

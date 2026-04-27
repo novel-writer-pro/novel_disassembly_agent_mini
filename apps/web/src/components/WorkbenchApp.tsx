@@ -12,6 +12,7 @@ import {
   fetchChapterBundle,
   fetchChapterQaContext,
   fetchChapterSource,
+  fetchLibrary,
   fetchRunSnapshot,
   postImport,
   postRecovery,
@@ -24,6 +25,7 @@ import type {
   ChapterQaContext,
   ChapterSource,
   RunSnapshot,
+  LibraryItem,
 } from "@/types/workbench";
 import ChapterSidebar from "@/components/ChapterSidebar";
 import { useRouter } from "next/router";
@@ -50,6 +52,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [qa, setQa] = useState<ChapterQaContext | null>(null);
   const [source, setSource] = useState<ChapterSource | null>(null);
   const [exportsData, setExportsData] = useState<BranchExports | null>(null);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [recoveryResultText, setRecoveryResultText] = useState("");
   const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState({
@@ -66,6 +69,17 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const didBootstrapRef = useRef(false);
   const chapterRequestSeqRef = useRef(0);
 
+  const loadWorkspaceData = async (runId: string, branchId: string, databaseUrl: string, apiBase: string) => {
+    const [runData, branchData, libraryData] = await Promise.all([
+      fetchRunSnapshot(apiBase, runId, branchId, databaseUrl),
+      fetchBranchSnapshot(apiBase, runId, branchId, databaseUrl),
+      fetchLibrary(apiBase, databaseUrl),
+    ]);
+    setRunSnapshot(runData);
+    setBranchSnapshot(branchData);
+    setLibraryItems(libraryData.items || []);
+  };
+
   const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
     setWorkspace(nextWorkspace as "control" | "reader" | "qa" | "ops");
     const nextRoute = routeByWorkspace[nextWorkspace] || "/";
@@ -79,12 +93,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const refreshBranch = async () => {
     setLoading((current) => ({ ...current, refreshing: true }));
     try {
-      const [runData, branchData] = await Promise.all([
-        fetchRunSnapshot(state.apiBase, state.runId, state.branchId, state.databaseUrl),
-        fetchBranchSnapshot(state.apiBase, state.runId, state.branchId, state.databaseUrl),
-      ]);
-      setRunSnapshot(runData);
-      setBranchSnapshot(branchData);
+      await loadWorkspaceData(state.runId, state.branchId, state.databaseUrl, state.apiBase);
       setImportText("已读取当前真实分支数据。");
     } finally {
       setLoading((current) => ({ ...current, refreshing: false }));
@@ -163,6 +172,8 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       });
       setRunSnapshot(payload.run_snapshot);
       setBranchSnapshot(payload.branch_snapshot);
+      const libraryData = await fetchLibrary(state.apiBase, state.databaseUrl);
+      setLibraryItems(libraryData.items || []);
       message.success("作品已导入，可以开始阅读章节内容");
       navigateWorkspace("reader");
     } catch (error) {
@@ -287,12 +298,27 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           runSnapshot={runSnapshot}
           branchSnapshot={branchSnapshot}
           loading={loading}
+          libraryItems={libraryItems}
           onChange={patchState}
           onImport={handleImport}
           onSimulate={handleSimulate}
           onRefresh={refreshBranch}
           onStart={handleStart}
           onOpenRecovery={() => navigateWorkspace("ops")}
+          onSelectLibraryItem={(item) => {
+            patchState({
+              title: item.title,
+              runId: item.run_id,
+              branchId: item.branch_id,
+              lastChapterIndex: null,
+            });
+            setImportText(`已切换到《${item.title}》`);
+            setBundle(null);
+            setQa(null);
+            setSource(null);
+            setActiveChapterIndex(null);
+            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+          }}
         />
       ) : null}
 

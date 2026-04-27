@@ -14,7 +14,7 @@ import {
   Steps,
   Typography,
 } from "antd";
-import type { BranchSnapshot, ImportResult, PipelineProfile, RunSnapshot, WorkbenchState } from "@/types/workbench";
+import type { BranchSnapshot, ImportResult, LibraryItem, PipelineProfile, RunSnapshot, WorkbenchState } from "@/types/workbench";
 import { renderStateTag } from "@/lib/formatters";
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
   importText: string;
   runSnapshot?: RunSnapshot | null;
   branchSnapshot?: BranchSnapshot | null;
+  libraryItems?: LibraryItem[];
   loading?: {
     importing?: boolean;
     refreshing?: boolean;
@@ -33,6 +34,7 @@ interface Props {
   onRefresh: () => void;
   onStart: () => void;
   onOpenRecovery: () => void;
+  onSelectLibraryItem: (item: LibraryItem) => void;
 }
 
 function ProgressCard({ title, value, suffix, hint }: { title: string; value: string | number; suffix?: string; hint?: string }) {
@@ -54,6 +56,7 @@ export default function ControlPage(props: Props) {
     importText,
     runSnapshot,
     branchSnapshot,
+    libraryItems,
     loading,
     onChange,
     onImport,
@@ -61,6 +64,7 @@ export default function ControlPage(props: Props) {
     onRefresh,
     onStart,
     onOpenRecovery,
+    onSelectLibraryItem,
   } = props;
 
   let parsedImport: ImportResult | null = null;
@@ -185,6 +189,35 @@ export default function ControlPage(props: Props) {
 
         <Col xs={24} xl={13}>
           <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Card title="当前作品库" bordered={false} className="product-panel" extra={<Typography.Text type="secondary">多本切换</Typography.Text>}>
+              {libraryItems?.length ? (
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                    当前 UI 仍是“单工作台聚焦一个 branch”，但已经可以从这里切换不同小说/分支；后续可继续扩展为多作品总览页。
+                  </Typography.Paragraph>
+                  <Select
+                    showSearch
+                    style={{ width: "100%" }}
+                    value={state.branchId || undefined}
+                    optionFilterProp="label"
+                    options={libraryItems.map((item) => ({
+                      value: item.branch_id,
+                      label: `${item.title} · ${item.branch_name} · ${item.completed_chapters}/${item.manifest_chapter_count}`,
+                      item,
+                    }))}
+                    onChange={(value, option) => {
+                      const selected = (option as { item?: LibraryItem })?.item;
+                      if (selected) onSelectLibraryItem(selected);
+                    }}
+                  />
+                </Space>
+              ) : (
+                <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                  当前还没有读取到作品库。先导入一本，或刷新当前进度后，这里会列出最近可切换的作品与分支。
+                </Typography.Paragraph>
+              )}
+            </Card>
+
             <Card title="第二步：查看当前进度" bordered={false} className="product-panel" extra={<Typography.Text type="secondary">整体概览</Typography.Text>}>
               <Space wrap>
                 <Button type="primary" loading={loading?.refreshing} onClick={onRefresh}>刷新当前进度</Button>

@@ -7,9 +7,10 @@ import shutil
 from datetime import datetime
 from dataclasses import asdict
 from pathlib import Path
+from socketserver import ThreadingMixIn
 from typing import Any, cast
 from urllib.parse import parse_qs
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
 
 from novel_analyzer.application import (
@@ -20,12 +21,26 @@ from novel_analyzer.application import (
     recover_branch,
     start_pipeline,
 )
+from novel_analyzer.application.queries import _derive_pipeline_state
 from novel_analyzer.config.settings import get_settings
-from novel_analyzer.database.models import ChapterManifest, ChapterSegment, NovelSource, RunBranch
+from novel_analyzer.database.models import (
+    AnalysisRun,
+    ChapterManifest,
+    ChapterSegment,
+    NovelSource,
+    RunBranch,
+)
 from novel_analyzer.database.session import create_session_factory
 from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
+from novel_analyzer.services.status_service import StatusService
+
+
+class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
+    """Serve concurrent WSGI requests so long operations don't block the whole API."""
+
+    daemon_threads = True
 
 
 def _json_payload(value: Any) -> bytes:
@@ -245,6 +260,45 @@ def _chapter_source_payload(
         }
 
 
+def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    rows: list[dict[str, Any]] = []
+    with factory() as session:
+        branches = session.scalars(
+            session.query(RunBranch)
+            .order_by(RunBranch.updated_at.desc())
+            .limit(limit)
+            .statement
+        ).all()
+        for branch in branches:
+            run = session.get(AnalysisRun, branch.run_id)
+            if run is None:
+                continue
+            novel = session.get(NovelSource, run.novel_id)
+            manifest = session.get(ChapterManifest, run.manifest_id)
+            if novel is None or manifest is None:
+                continue
+            status = StatusService(session).get_run_status(run.id, branch.id)
+            rows.append(
+                {
+                    "novel_id": novel.id,
+                    "title": novel.title,
+                    "run_id": run.id,
+                    "branch_id": branch.id,
+                    "branch_name": branch.name,
+                    "pipeline_state": _derive_pipeline_state(session, run.id, branch.id, status.next_chapter),
+                    "completed_chapters": status.completed_chapters,
+                    "manifest_chapter_count": status.manifest_chapter_count,
+                    "next_chapter": status.next_chapter,
+                    "updated_at": branch.updated_at.isoformat() if branch.updated_at else None,
+                }
+            )
+    return {"items": rows}
+
+
 def application(environ: dict[str, Any], start_response: StartResponse) -> list[bytes]:
     method = environ.get("REQUEST_METHOD", "GET")
     path = environ.get("PATH_INFO", "/")
@@ -282,6 +336,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-bundle",
                     "/api/chapter-qa-context",
                     "/api/chapter-source",
+                    "/api/library",
                     "/api/search-branch",
                     "/api/ask-branch",
                     "/api/ask-branch-stream",
@@ -545,6 +600,19 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             )
         return _response(start_response, status="200 OK", payload=payload)
 
+    if path == "/api/library":
+        database_url = params.get("database_url")
+        limit = int(params.get("limit", "20"))
+        try:
+            payload = _library_payload(database_url, limit)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
     if path == "/api/search-branch":
         ok, missing = _require(params, "branch_id", "q")
         if not ok:
@@ -719,7 +787,7 @@ def main() -> None:
 
     host = "127.0.0.1"
     port = 8011
-    with make_server(host, port, application) as httpd:
+    with make_server(host, port, application, server_class=ThreadingWSGIServer) as httpd:
         print(f"apps/api running on http://{host}:{port}")
         httpd.serve_forever()
 
