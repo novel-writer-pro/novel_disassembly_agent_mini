@@ -106,3 +106,21 @@
 同时，当前失败恢复策略已经收口为：
 - 自动重试最多 5 次
 - 超过 5 次才需要人工介入
+
+---
+
+## 当前 release 建议阅读顺序
+
+如果你现在要接手这个“基础可用 release”，建议按下面顺序看：
+
+1. [`./release-handoff-brief.md`](./release-handoff-brief.md)
+2. [`./final-handoff.md`](./final-handoff.md)
+3. [`../apps/web/README.md`](../apps/web/README.md)
+4. [`../apps/api/README.md`](../apps/api/README.md)
+5. [`../CHANGELOG.md`](../CHANGELOG.md)
+
+这样可以先理解：
+- 当前 release 到了什么程度
+- 已经能做哪些事
+- 怎么启动前后端
+- 最近几轮到底改了什么
