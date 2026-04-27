@@ -32,6 +32,7 @@ interface Props {
   onSimulate: () => void;
   onRefresh: () => void;
   onStart: () => void;
+  onOpenRecovery: () => void;
 }
 
 function ProgressCard({ title, value, suffix, hint }: { title: string; value: string | number; suffix?: string; hint?: string }) {
@@ -59,9 +60,12 @@ export default function ControlPage(props: Props) {
     onSimulate,
     onRefresh,
     onStart,
+    onOpenRecovery,
   } = props;
 
   let parsedImport: ImportResult | null = null;
+
+  const quotaFailure = branchSnapshot?.failed_summary?.find((item) => item.error.includes("DAILY_LIMIT_EXCEEDED") || item.error.includes("USAGE_LIMIT_EXCEEDED")) || null;
   try {
     parsedImport = importText.startsWith("{") ? JSON.parse(importText) : null;
   } catch {
@@ -98,6 +102,23 @@ export default function ControlPage(props: Props) {
           ]}
         />
       </Card>
+
+      {quotaFailure ? (
+        <Alert
+          type="warning"
+          showIcon
+          message="当前拆书已遇到额度上限"
+          description={
+            <Space direction="vertical">
+              <span>第 {quotaFailure.chapter_index} 章因为 provider 当日额度耗尽而停止，恢复额度后请先进入“导出与恢复”页重试失败章节，再继续整理后续章节。</span>
+              <Space wrap>
+                <Button type="primary" onClick={onOpenRecovery}>前往恢复页</Button>
+                <Button onClick={onRefresh}>重新刷新进度</Button>
+              </Space>
+            </Space>
+          }
+        />
+      ) : null}
 
       {runSnapshot ? (
         <Row gutter={[16, 16]}>

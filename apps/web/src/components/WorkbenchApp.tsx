@@ -291,6 +291,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           onSimulate={handleSimulate}
           onRefresh={refreshBranch}
           onStart={handleStart}
+          onOpenRecovery={() => navigateWorkspace("ops")}
         />
       ) : null}
 

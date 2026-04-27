@@ -374,3 +374,5 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - 引用章节在界面内可直接跳转
 
 - Web 工作台导出链路已从临时 `/tmp` 目录收口到项目内 `.omx/runtime-exports/` 持久目录，减少链接失效。
+
+- 控制台首页现在会显式提示 `DAILY_LIMIT_EXCEEDED` / `USAGE_LIMIT_EXCEEDED` 这类外部额度失败，并给出恢复入口。
