@@ -162,3 +162,13 @@ export interface RuntimeHealth {
   missing_from_cache: number;
   migrated_this_run: number;
 }
+
+export interface ProviderHealth {
+  provider_name: string;
+  model_name: string;
+  last_status: "unknown" | "ok" | "degraded" | string;
+  degraded_events: number;
+  success_events: number;
+  last_error?: string | null;
+  last_updated_at?: string | null;
+}

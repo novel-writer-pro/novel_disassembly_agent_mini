@@ -27,6 +27,7 @@
 - `GET /api/chapter-source?branch_id=...&chapter_index=...`
 - `GET /api/library`
 - `GET /api/runtime-health`
+- `GET /api/provider-health`
 - `GET /api/branch-exports?run_id=...&branch_id=...`
 - `GET /api/download?path=...`
 - `POST /api/ask-branch-stream`
@@ -55,6 +56,7 @@
   - `setup_status`
   便于小说空间 / 多作品管理页直接显示每本书的运行状态
 - `GET /api/runtime-health`：返回 `.cache/novel-analyzer/` 与历史 `.omx/` 运行时文件的数量与迁移状态，便于排查重启后文件问题
+- `GET /api/provider-health`：返回最近一次 ask/ask-stream 使用的 provider 状态，便于前端系统健康面板展示 503 / 降级情况
 
 注意：
 - 目前“并行”仍主要是 **HTTP 请求层面的并发可处理**

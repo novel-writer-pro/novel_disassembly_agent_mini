@@ -16,6 +16,7 @@ import {
   fetchChapterQaContext,
   fetchChapterSource,
   fetchLibrary,
+  fetchProviderHealth,
   fetchRuntimeHealth,
   fetchRunSnapshot,
   postImport,
@@ -30,6 +31,7 @@ import type {
   ChapterSource,
   RunSnapshot,
   LibraryItem,
+  ProviderHealth,
   RuntimeHealth,
 } from "@/types/workbench";
 import ChapterSidebar from "@/components/ChapterSidebar";
@@ -60,6 +62,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [exportsData, setExportsData] = useState<BranchExports | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealth | null>(null);
+  const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null);
   const [recoveryResultText, setRecoveryResultText] = useState("");
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
@@ -87,12 +90,16 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       fetchBranchSnapshot(apiBase, runId, branchId, databaseUrl),
       fetchLibrary(apiBase, databaseUrl),
     ]);
-    const runtimeHealthData = await fetchRuntimeHealth(apiBase).catch(() => null);
+    const [runtimeHealthData, providerHealthData] = await Promise.all([
+      fetchRuntimeHealth(apiBase).catch(() => null),
+      fetchProviderHealth(apiBase).catch(() => null),
+    ]);
     if (workspaceRequestSeqRef.current !== requestId) return;
     setRunSnapshot(runData);
     setBranchSnapshot(branchData);
     setLibraryItems(libraryData.items || []);
     setRuntimeHealth(runtimeHealthData);
+    setProviderHealth(providerHealthData);
     setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
   };
 
@@ -383,7 +390,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           void activateLibraryItem(item, "ops");
         }}
       />
-      <SystemHealthPanel runtimeHealth={runtimeHealth} lastRefreshedAt={lastRefreshedAt} />
+      <SystemHealthPanel runtimeHealth={runtimeHealth} providerHealth={providerHealth} lastRefreshedAt={lastRefreshedAt} />
     </Space>
   );
 

@@ -37,6 +37,7 @@ from novel_analyzer.runtime.storage import (
     migrate_legacy_runtime_dirs,
     runtime_cache_root,
 )
+from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -383,6 +384,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-source",
                     "/api/library",
                     "/api/runtime-health",
+                    "/api/provider-health",
                     "/api/search-branch",
                     "/api/ask-branch",
                     "/api/ask-branch-stream",
@@ -662,6 +664,17 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
     if path == "/api/runtime-health":
         try:
             report = describe_runtime_storage(get_settings())
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=asdict(report))
+
+    if path == "/api/provider-health":
+        try:
+            report = read_provider_health(get_settings())
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,

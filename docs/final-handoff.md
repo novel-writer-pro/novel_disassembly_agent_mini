@@ -153,6 +153,7 @@ flowchart TD
 - 工作台会按 branch 记住各自的最后阅读章节，减少多本小说切换时的上下文丢失
 - 可通过 `novel-analyzer runtime-storage --migrate` 或 `scripts/check_runtime_storage.py --migrate` 检查并迁移历史运行时文件
 - `/library` 与任务中心已能直接读取 `runtime-health`，用于排查运行时文件问题
+- `/library` 与任务中心现已同时显示 provider 健康状态，帮助识别 ask-stream 是否因上游 503 持续降级
 
 结论：当前版本已经具备“真实可操作工作台”的基础能力，而不只是单纯原型页。
 

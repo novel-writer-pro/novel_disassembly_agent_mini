@@ -12,6 +12,7 @@ from novel_analyzer.database.models import WindowArtifact
 from novel_analyzer.domain.schemas import BranchQAResult
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_branch_qa_prompt
+from novel_analyzer.runtime.provider_health import record_provider_health
 from novel_analyzer.services.analysis_service import AnalysisService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -197,7 +198,9 @@ class BranchQAService:
             response = model.invoke(prompt)
             raw = AnalysisService._extract_json_payload(response)
             result = BranchQAResult.model_validate(raw)
+            record_provider_health(ok=True, settings=self.settings)
         except Exception as exc:
+            record_provider_health(ok=False, error_message=str(exc), settings=self.settings)
             return self._degraded_answer(
                 question,
                 used_chapters,
