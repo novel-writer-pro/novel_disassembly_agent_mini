@@ -1,5 +1,6 @@
-import { Alert, Button, Card, Empty, List, Space, Tag, Typography } from "antd";
+import { Alert, Button, Card, Empty, List, Segmented, Space, Tag, Typography } from "antd";
 import type { LibraryItem } from "@/types/workbench";
+import { useMemo, useState } from "react";
 
 interface Props {
   items: LibraryItem[];
@@ -22,9 +23,15 @@ export default function TaskCenterPanel({
   onToggleAutoRefresh,
   lastRefreshedAt,
 }: Props) {
+  const [filter, setFilter] = useState<"focus" | "running" | "recovery">("focus");
   const runningItems = items.filter((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "auto_running");
   const recoveryItems = items.filter((item) => item.pipeline_state === "needs_recovery" || (item.failed_jobs || 0) > 0);
   const focusItems = [...runningItems, ...recoveryItems.filter((item) => !runningItems.find((run) => run.branch_id === item.branch_id))].slice(0, 12);
+  const visibleItems = useMemo(() => {
+    if (filter === "running") return runningItems;
+    if (filter === "recovery") return recoveryItems;
+    return focusItems;
+  }, [filter, focusItems, recoveryItems, runningItems]);
 
   return (
     <Card
@@ -50,10 +57,19 @@ export default function TaskCenterPanel({
           message="这里优先盯住正在跑和需要恢复的小说"
           description={`最近刷新：${lastRefreshedAt || "尚未刷新"}`}
         />
-        {focusItems.length ? (
+        <Segmented
+          value={filter}
+          onChange={(value) => setFilter(value as typeof filter)}
+          options={[
+            { label: `聚焦 ${focusItems.length}`, value: "focus" },
+            { label: `运行中 ${runningItems.length}`, value: "running" },
+            { label: `待恢复 ${recoveryItems.length}`, value: "recovery" },
+          ]}
+        />
+        {visibleItems.length ? (
           <List
             split={false}
-            dataSource={focusItems}
+            dataSource={visibleItems}
             renderItem={(item) => (
               <List.Item className="task-center-item">
                 <div className="task-center-main">

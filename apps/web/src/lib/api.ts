@@ -10,6 +10,7 @@ import type {
   BranchAskResult,
   BranchAskStreamEvent,
   LibraryItem,
+  RuntimeHealth,
 } from "@/types/workbench";
 
 const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
@@ -114,6 +115,9 @@ export const fetchLibrary = (apiBase: string, databaseUrl?: string, limit = 100)
   if (databaseUrl) query.set("database_url", databaseUrl);
   return requestJson<{ items: LibraryItem[] }>(`${apiBase}/api/library?${query.toString()}`);
 };
+
+export const fetchRuntimeHealth = (apiBase: string) =>
+  requestJson<RuntimeHealth>(`${apiBase}/api/runtime-health`);
 
 
 export const searchBranch = (

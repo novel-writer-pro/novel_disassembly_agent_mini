@@ -151,3 +151,14 @@ export interface BranchAskStreamEvent {
   hits?: RetrievalHit[];
   result?: BranchAskResult;
 }
+
+export interface RuntimeHealth {
+  cache_root: string;
+  legacy_root: string;
+  cache_upload_files: number;
+  cache_export_files: number;
+  legacy_upload_files: number;
+  legacy_export_files: number;
+  missing_from_cache: number;
+  migrated_this_run: number;
+}

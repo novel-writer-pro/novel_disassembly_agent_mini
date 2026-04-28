@@ -3,6 +3,7 @@ import { message, Space } from "antd";
 import WorkbenchLayout from "@/components/WorkbenchLayout";
 import LibraryPage from "@/components/LibraryPage";
 import TaskCenterPanel from "@/components/TaskCenterPanel";
+import SystemHealthPanel from "@/components/SystemHealthPanel";
 import ControlPage from "@/components/ControlPage";
 import ReaderPage from "@/components/ReaderPage";
 import BranchQaPanel from "@/components/BranchQaPanel";
@@ -15,6 +16,7 @@ import {
   fetchChapterQaContext,
   fetchChapterSource,
   fetchLibrary,
+  fetchRuntimeHealth,
   fetchRunSnapshot,
   postImport,
   postRecovery,
@@ -28,6 +30,7 @@ import type {
   ChapterSource,
   RunSnapshot,
   LibraryItem,
+  RuntimeHealth,
 } from "@/types/workbench";
 import ChapterSidebar from "@/components/ChapterSidebar";
 import { useRouter } from "next/router";
@@ -56,6 +59,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [source, setSource] = useState<ChapterSource | null>(null);
   const [exportsData, setExportsData] = useState<BranchExports | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
+  const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealth | null>(null);
   const [recoveryResultText, setRecoveryResultText] = useState("");
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
@@ -83,10 +87,12 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       fetchBranchSnapshot(apiBase, runId, branchId, databaseUrl),
       fetchLibrary(apiBase, databaseUrl),
     ]);
+    const runtimeHealthData = await fetchRuntimeHealth(apiBase).catch(() => null);
     if (workspaceRequestSeqRef.current !== requestId) return;
     setRunSnapshot(runData);
     setBranchSnapshot(branchData);
     setLibraryItems(libraryData.items || []);
+    setRuntimeHealth(runtimeHealthData);
     setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
   };
 
@@ -362,20 +368,23 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   };
 
   const taskCenter = (
-    <TaskCenterPanel
-      items={libraryItems}
-      activeBranchId={state.branchId}
-      onRefresh={refreshBranch}
-      autoRefreshEnabled={autoRefreshEnabled}
-      onToggleAutoRefresh={() => setAutoRefreshEnabled((current) => !current)}
-      lastRefreshedAt={lastRefreshedAt}
-      onActivate={(item) => {
-        void activateLibraryItem(item);
-      }}
-      onOpenRecovery={(item) => {
-        void activateLibraryItem(item, "ops");
-      }}
-    />
+    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+      <TaskCenterPanel
+        items={libraryItems}
+        activeBranchId={state.branchId}
+        onRefresh={refreshBranch}
+        autoRefreshEnabled={autoRefreshEnabled}
+        onToggleAutoRefresh={() => setAutoRefreshEnabled((current) => !current)}
+        lastRefreshedAt={lastRefreshedAt}
+        onActivate={(item) => {
+          void activateLibraryItem(item);
+        }}
+        onOpenRecovery={(item) => {
+          void activateLibraryItem(item, "ops");
+        }}
+      />
+      <SystemHealthPanel runtimeHealth={runtimeHealth} lastRefreshedAt={lastRefreshedAt} />
+    </Space>
   );
 
   return (
