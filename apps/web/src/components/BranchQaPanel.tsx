@@ -36,6 +36,13 @@ interface ChatMessage {
   progressText?: string;
 }
 
+const humanizeDegradedReason = (reason?: string | null) => {
+  if (!reason) return "上游问答模型暂时不可用，已改用检索证据生成保守回答。";
+  if (reason.includes("503")) return "上游问答服务暂时不可用（503），当前先用检索证据给出保守回答。";
+  if (reason.includes("429")) return "上游问答服务当前限流，当前先用检索证据给出保守回答。";
+  return "上游问答模型暂时不可用，已改用检索证据生成保守回答。";
+};
+
 const QUICK_QUESTIONS = [
   "卫图的人物背景是什么？",
   "当前主要冲突的前因后果是什么？",
@@ -331,7 +338,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
                                         type="warning"
                                         showIcon
                                         message="当前为降级回答"
-                                        description={message.result.degraded_reason || "上游模型暂时不可用，已改用检索证据生成保守回答。"}
+                                        description={humanizeDegradedReason(message.result.degraded_reason)}
                                       />
                                     ) : null}
                                     <Typography.Paragraph style={{ marginBottom: 0, lineHeight: 1.95 }}>
@@ -417,6 +424,17 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
                                           </Space>
                                         ),
                                       },
+                                      ...(message.result.answer_mode === "degraded"
+                                        ? [{
+                                          key: "degraded",
+                                          label: "降级说明",
+                                          children: (
+                                            <Typography.Paragraph style={{ marginBottom: 0 }}>
+                                              {message.result.degraded_reason || "本次回答因为上游模型暂时不可用，已切换为检索保底回答。"}
+                                            </Typography.Paragraph>
+                                          ),
+                                        }]
+                                        : []),
                                     ]}
                                   />
                                 ) : null}

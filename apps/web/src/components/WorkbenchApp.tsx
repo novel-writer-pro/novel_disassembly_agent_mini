@@ -383,6 +383,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
         autoRefreshEnabled={autoRefreshEnabled}
         onToggleAutoRefresh={() => setAutoRefreshEnabled((current) => !current)}
         lastRefreshedAt={lastRefreshedAt}
+        providerHealth={providerHealth}
         onActivate={(item) => {
           void activateLibraryItem(item);
         }}

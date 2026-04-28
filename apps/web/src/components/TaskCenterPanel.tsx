@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Empty, List, Segmented, Space, Tag, Typography } from "antd";
-import type { LibraryItem } from "@/types/workbench";
+import type { LibraryItem, ProviderHealth } from "@/types/workbench";
 import { useMemo, useState } from "react";
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
   autoRefreshEnabled: boolean;
   onToggleAutoRefresh: () => void;
   lastRefreshedAt?: string | null;
+  providerHealth?: ProviderHealth | null;
 }
 
 export default function TaskCenterPanel({
@@ -22,6 +23,7 @@ export default function TaskCenterPanel({
   autoRefreshEnabled,
   onToggleAutoRefresh,
   lastRefreshedAt,
+  providerHealth,
 }: Props) {
   const [filter, setFilter] = useState<"focus" | "running" | "recovery">("focus");
   const runningItems = items.filter((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "auto_running");
@@ -32,6 +34,7 @@ export default function TaskCenterPanel({
     if (filter === "recovery") return recoveryItems;
     return focusItems;
   }, [filter, focusItems, recoveryItems, runningItems]);
+  const providerDegraded = providerHealth?.last_status === "degraded";
 
   return (
     <Card
@@ -57,6 +60,14 @@ export default function TaskCenterPanel({
           message="这里优先盯住正在跑和需要恢复的小说"
           description={`最近刷新：${lastRefreshedAt || "尚未刷新"}`}
         />
+        {providerDegraded ? (
+          <Alert
+            type="warning"
+            showIcon
+            message="当前上游 provider 正处于降级期"
+            description={`最近 ask-stream / QA 请求出现过上游异常。当前更适合先观察运行任务与恢复任务，等服务恢复后再集中继续追问或批量恢复。${providerHealth?.last_error ? ` 最近错误：${providerHealth.last_error}` : ""}`}
+          />
+        ) : null}
         <Segmented
           value={filter}
           onChange={(value) => setFilter(value as typeof filter)}
