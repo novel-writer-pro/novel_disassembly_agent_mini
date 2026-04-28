@@ -175,6 +175,7 @@ def get_branch_job_rows(
         runtime.database_url = database_url
     factory = create_session_factory(runtime)
     with factory() as session:
+        RunService(session, runtime).fail_stalled_jobs(branch_id)
         rows = ChapterIndexService(session).list_job_rows(branch_id, limit)
         return [
             ApplicationChapterJobRow(

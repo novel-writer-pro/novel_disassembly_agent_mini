@@ -49,6 +49,7 @@ class StatusService:
         """Return a compact run/branch status snapshot."""
 
         run, branch = self.run_service.get_run_and_branch(run_id, branch_id)
+        self.run_service.fail_stalled_jobs(branch.id)
         manifest = self.session.scalar(
             select(ChapterManifest).where(ChapterManifest.id == run.manifest_id)
         )

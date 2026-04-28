@@ -68,6 +68,7 @@ def _runner_loop(pipeline_run_id: str, runtime: Settings) -> None:
         with factory() as session:
             runs = PipelineRunService(session)
             run = runs.get(pipeline_run_id)
+            RunService(session, runtime).fail_stalled_jobs(run.branch_id)
             if run.status == "cancelled":
                 break
             if run.status == "paused":

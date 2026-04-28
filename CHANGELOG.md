@@ -154,6 +154,12 @@
 - `/pipeline` 页面新增章节任务表，展示 `status / current_stage / progress_percent / attempts / heartbeat / failure_class`
 - `/pipeline` 页面自动刷新频率收紧为 5 秒，更适合盯运行中任务
 
+### 卡住任务保护（保守收口）
+- 新增 `chapter_job_stall_timeout_seconds` 配置项，默认 180 秒
+- 后端在 run status / chapter-jobs 查询以及 pipeline runner 循环中都会顺手扫描 stalled job
+- 超过心跳阈值的 running job 会被保守地标记为 `failed + failure_class=stalled`
+- `/pipeline` 页面新增 stalled 告警与汇总标签，优先让操作者看见“假 running / 真卡死”的问题
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

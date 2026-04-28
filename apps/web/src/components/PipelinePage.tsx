@@ -53,6 +53,9 @@ export default function PipelinePage(props: Props) {
   } = props;
 
   const latestRun = pipelineRuns[0] || null;
+  const stalledJobs = chapterJobs.filter((item) => item.failure_class === "stalled");
+  const activeRunningJobs = chapterJobs.filter((item) => item.status === "running");
+  const failedJobs = chapterJobs.filter((item) => item.status === "failed");
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
@@ -74,6 +77,15 @@ export default function PipelinePage(props: Props) {
           </Space>
         </Space>
       </Card>
+
+      {stalledJobs.length ? (
+        <Alert
+          type="warning"
+          showIcon
+          message="检测到疑似卡住的章节任务"
+          description={`当前有 ${stalledJobs.length} 个章节任务因心跳超时被标记为 stalled/failed。建议先观察事件流，必要时再到恢复页处理。`}
+        />
+      ) : null}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={10}>
@@ -107,6 +119,13 @@ export default function PipelinePage(props: Props) {
               <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
                 已完成 {completedChapters ?? 0} / {manifestChapterCount ?? 0} 章，启动后会从当前 next_chapter 顺序往后推进。
               </Typography.Paragraph>
+              <Space wrap>
+                <Tag color="processing">运行中任务 {activeRunningJobs.length}</Tag>
+                <Tag color="warning">失败任务 {failedJobs.length}</Tag>
+                <Tag color={stalledJobs.length ? "error" : "success"}>
+                  stalled {stalledJobs.length}
+                </Tag>
+              </Space>
             </Space>
           </Card>
         </Col>
@@ -226,6 +245,12 @@ export default function PipelinePage(props: Props) {
                 dataIndex: "failure_class",
                 width: 140,
                 render: (value?: string | null) => value ? <Tag color="error">{value}</Tag> : "-",
+              },
+              {
+                title: "结果",
+                dataIndex: "has_artifact",
+                width: 100,
+                render: (value: boolean) => value ? <Tag color="success">已产出</Tag> : <Tag>-</Tag>,
               },
             ]}
           />

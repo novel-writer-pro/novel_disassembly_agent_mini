@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select, update
@@ -195,6 +195,44 @@ class RunService:
             for item in self.list_failed_jobs(branch_id, limit)
             if item.attempts >= self.settings.chapter_failure_retry_limit
         ]
+
+    def fail_stalled_jobs(self, branch_id: str, *, timeout_seconds: int | None = None) -> int:
+        """Fail running jobs that have not heartbeated within the configured timeout."""
+
+        timeout = timeout_seconds or self.settings.chapter_job_stall_timeout_seconds
+        cutoff = datetime.now(UTC) - timedelta(seconds=timeout)
+        jobs = self.session.scalars(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch_id)
+            .where(ChapterJob.status == "running")
+            .where(
+                (ChapterJob.heartbeat_at.is_(None) & ChapterJob.started_at.is_not(None) & (ChapterJob.started_at < cutoff))
+                | (ChapterJob.heartbeat_at.is_not(None) & (ChapterJob.heartbeat_at < cutoff))
+            )
+            .order_by(ChapterJob.chapter_index)
+        ).all()
+        if not jobs:
+            return 0
+
+        for job in jobs:
+            job.status = "failed"
+            job.last_error = f"job stalled for more than {timeout} seconds"
+            job.failure_class = "stalled"
+            job.failure_code = "heartbeat_timeout"
+            job.finished_at = datetime.now(UTC)  # type: ignore[assignment]
+        self.session.commit()
+        for job in jobs:
+            self.record_job_event(
+                branch_id=branch_id,
+                chapter_index=job.chapter_index,
+                job_id=job.id,
+                event_type="job_stalled",
+                stage=job.current_stage,
+                level="warning",
+                message=job.last_error or "job stalled",
+                payload_json={"failure_class": "stalled", "failure_code": "heartbeat_timeout", "timeout_seconds": timeout},
+            )
+        return len(jobs)
 
     def reset_failed_job(self, branch_id: str, chapter_index: int) -> None:
         """Reset a failed chapter job back to pending-like state for retry."""

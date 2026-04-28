@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = Field(default=60.0)
     llm_max_retries: int = Field(default=2)
     chapter_failure_retry_limit: int = Field(default=5)
+    chapter_job_stall_timeout_seconds: int = Field(default=180)
     cross_chapter_window: int = Field(default=5)
     chapter_splitter_version: str = Field(default="heuristic-v1")
     skills_dir: str = Field(default="skills_dir")
