@@ -73,13 +73,17 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
 
   const didBootstrapRef = useRef(false);
   const chapterRequestSeqRef = useRef(0);
+  const workspaceRequestSeqRef = useRef(0);
 
   const loadWorkspaceData = async (runId: string, branchId: string, databaseUrl: string, apiBase: string) => {
+    const requestId = workspaceRequestSeqRef.current + 1;
+    workspaceRequestSeqRef.current = requestId;
     const [runData, branchData, libraryData] = await Promise.all([
       fetchRunSnapshot(apiBase, runId, branchId, databaseUrl),
       fetchBranchSnapshot(apiBase, runId, branchId, databaseUrl),
       fetchLibrary(apiBase, databaseUrl),
     ]);
+    if (workspaceRequestSeqRef.current !== requestId) return;
     setRunSnapshot(runData);
     setBranchSnapshot(branchData);
     setLibraryItems(libraryData.items || []);
@@ -331,12 +335,15 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   );
 
   const activateLibraryItem = async (item: LibraryItem, nextWorkspace?: "library" | "control" | "reader" | "qa" | "ops") => {
+    chapterRequestSeqRef.current += 1;
     patchState({
       title: item.title,
       runId: item.run_id,
       branchId: item.branch_id,
       lastChapterIndex: null,
     });
+    setRunSnapshot(null);
+    setBranchSnapshot(null);
     setBundle(null);
     setQa(null);
     setSource(null);

@@ -10,6 +10,7 @@ from pathlib import Path
 from socketserver import ThreadingMixIn
 from typing import Any, cast
 from urllib.parse import parse_qs
+from uuid import uuid4
 from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
 
@@ -196,21 +197,41 @@ def _mock_branch_snapshot(profile: str) -> dict[str, Any]:
 
 
 
+def _runtime_cache_root() -> Path:
+    root = get_settings().resolved_runtime_cache_dir
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
 def _stable_export_dir(run_id: str, branch_id: str) -> str:
-    base = Path('.omx/runtime-exports') / run_id / branch_id / datetime.now().strftime('%Y%m%dT%H%M%S')
+    base = _runtime_cache_root() / "runtime-exports" / run_id / branch_id / datetime.now().strftime('%Y%m%dT%H%M%S')
     base.mkdir(parents=True, exist_ok=True)
     return str(base)
 
 def _persist_uploaded_text(file_item: Any) -> str:
     filename = Path(getattr(file_item, "filename", "upload.txt")).name or "upload.txt"
-    target_dir = Path('.omx/uploads')
+    target_dir = _runtime_cache_root() / "uploads"
     target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / filename
+    target_path = target_dir / f"{uuid4().hex}-{filename}"
 
     with target_path.open("wb") as handle:
         shutil.copyfileobj(file_item.file, handle)
 
     return str(target_path.resolve())
+
+
+def _resolve_source_path(path_value: str) -> Path:
+    path = Path(path_value)
+    if path.exists():
+        return path
+
+    legacy_marker = ".omx/uploads"
+    if legacy_marker in path_value:
+        migrated = _runtime_cache_root() / "uploads" / path.name
+        if migrated.exists():
+            return migrated
+
+    raise FileNotFoundError(f"No such file or directory: '{path_value}'")
 
 
 def _export_query_runtime(params: dict[str, str]) -> Any:
@@ -248,7 +269,7 @@ def _chapter_source_payload(
         novel = session.get(NovelSource, manifest.novel_id)
         if novel is None:
             raise ValueError("novel source not found")
-        text = Path(novel.source_path).read_text(encoding="utf-8")
+        text = _resolve_source_path(novel.source_path).read_text(encoding="utf-8")
         content = text[segment.start_offset:segment.end_offset].strip()
         return {
             "chapter_index": chapter_index,

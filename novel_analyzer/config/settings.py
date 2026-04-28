@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import SplitResult, quote_plus, urlsplit, urlunsplit
 
 from pydantic import Field
@@ -50,6 +51,7 @@ class Settings(BaseSettings):
     embedding_backend: str = Field(default="onnx")
     embedding_model_path: str = Field(default="")
     embedding_cache_dir: str = Field(default=".cache/embeddings")
+    runtime_cache_dir: str = Field(default=".cache/novel-analyzer")
     embedding_max_length: int = Field(default=2048)
     embedding_stub_dim: int = Field(default=16)
     rerank_model_name: str = Field(default="")
@@ -144,6 +146,12 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{self.db_user}:***@"
             f"{self.db_host}:{self.db_port}/{self.db_name}"
         )
+
+    @property
+    def resolved_runtime_cache_dir(self) -> Path:
+        """Return the managed runtime cache root."""
+
+        return Path(self.runtime_cache_dir)
 
 
 def _netloc_without_auth(parts: SplitResult) -> str:

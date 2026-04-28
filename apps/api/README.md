@@ -84,9 +84,10 @@ set +a
 - 超过 5 次仍失败：才进入人工恢复态
 - 前端工作台中的“导出与恢复”页只负责处理已经超过自动恢复阈值的章节
 
-- 导出下载链接现在写入项目内 `.omx/runtime-exports/` 持久目录，避免 `/tmp` 临时路径失效导致前端下载失败。
+- 导出下载链接现在写入项目内 `.cache/novel-analyzer/runtime-exports/` 持久目录，避免 `/tmp` 临时路径失效导致前端下载失败。
 
-- `POST /api/import` 上传的原始小说文件现在持久化写入 `.omx/uploads/`，避免后续章节原文回看时因为 `/tmp` 被清理而报错。
+- `POST /api/import` 上传的原始小说文件现在持久化写入 `.cache/novel-analyzer/uploads/`，避免后续章节原文回看时因为 `/tmp` 被清理而报错。
+- 对旧的 `.omx/uploads/` 路径读取增加了兼容解析，便于平滑过渡到 `.cache/`。
 
 ## 问答流式事件格式
 
