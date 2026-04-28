@@ -180,6 +180,11 @@
 - reader / qa / ops / control / pipeline 路由现在会显式携带当前 `run_id + branch_id`
 - 拆书流水线不再单独占用左侧主栏目，改为收纳到“开始整理”内部，以 tab 方式区分“开始整理 / 拆书流水线”
 
+### 交接与下一步优化点补充
+- 在 `docs/final-handoff.md` 中补充了下一阶段优化优先级（P0/P1/P2）
+- 在 `docs/session-handoff-manual.md` 中补充了下一位继续开发者的执行优先级
+- 在 `docs/cli-operations-manual.md` 与 `docs/release-handoff-brief.md` 中补充了维护建议与下一步优化顺序
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

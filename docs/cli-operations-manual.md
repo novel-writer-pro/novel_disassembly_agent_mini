@@ -398,6 +398,31 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./examples/*.sample.json`](./examples/)
 - [`./final-handoff.md`](./final-handoff.md)
 
+---
+
+## 11. 当前维护建议（2026-04-28 之后）
+
+如果你接手当前版本，请优先遵守以下原则：
+
+1. **先保可用，再加功能**
+   - 优先修复上下文丢失、任务卡死、恢复不顺滑
+   - 不急着引入更激进的自动恢复与更复杂的调度
+
+2. **先保单一真相源**
+   - chapter job 状态以 `chapter_jobs` 为准
+   - 事件链以 `chapter_job_events` 为准
+   - 不要在前端再发明第二套任务状态缓存
+
+3. **优先沿现有入口演进**
+   - 高阶能力优先收纳在“开始整理”/“导出与恢复”内
+   - 不要轻易增加新的一级导航
+
+4. **下一步推荐**
+   - pipeline 当前 run 聚焦模式
+   - pipeline 排序和错误摘要
+   - ops <-> pipeline 回跳联动
+   - 最后再做 SSE
+
 
 ### 6.5 Web 工作台中的问答能力
 当前阅读页已经直接接入：

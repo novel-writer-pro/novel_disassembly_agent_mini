@@ -205,3 +205,21 @@ poetry run novel-analyzer analyze-range $RUN_ID $BRANCH_ID 13 15
 # 或者
 poetry run novel-analyzer export-branch-report $RUN_ID $BRANCH_ID ./branch.md
 ```
+
+---
+
+## 11. 当前续做优先级（面向下一位继续开发者）
+
+### 第一优先级：稳定性
+1. 检查跨小说跳转链路是否还存在 `run_id / branch_id` 丢失
+2. 验证 `/control` 内 tab 化后的 pipeline 入口是否在所有小说下都指向正确上下文
+3. 验证 stalled 检测不会误伤正常长章节
+
+### 第二优先级：任务台可读性
+4. 给 pipeline 增加“只看当前 run”聚焦模式
+5. 给章节任务表增加更清晰的排序
+6. 给单章详情补结构化错误摘要
+
+### 第三优先级：后续演进
+7. 在当前轮询稳定后再考虑 SSE
+8. 等控制面稳定后再继续拆 scheduler / worker
