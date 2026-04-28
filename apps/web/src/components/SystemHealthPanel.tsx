@@ -23,6 +23,11 @@ export default function SystemHealthPanel({ runtimeHealth, providerHealth, lastR
 
   const cacheHealthy = runtimeHealth ? runtimeHealth.missing_from_cache === 0 : true;
   const providerHealthy = providerHealth ? providerHealth.last_status !== "degraded" : true;
+  const recommendation = !providerHealthy
+    ? "当前更适合先观察 ask-stream / provider 恢复情况，再集中继续问答或批量恢复。"
+    : !cacheHealthy
+      ? "建议先完成历史 .omx 到 .cache 的迁移检查，避免重启后出现文件读取问题。"
+      : "当前系统没有明显健康阻塞，可按正常节奏继续阅读、问答和恢复。";
 
   return (
     <Card title="系统健康面板" bordered={false} className="product-panel">
@@ -74,6 +79,12 @@ export default function SystemHealthPanel({ runtimeHealth, providerHealth, lastR
         <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
           这个面板主要帮助判断：重启后遇到文件读取问题时，是否仍有旧 `.omx` 路径残留，`.cache/novel-analyzer` 是否已完全接管运行时文件，以及 ask-stream 最近是否因 provider 503 进入过降级状态。
         </Typography.Paragraph>
+        <Alert
+          type={cacheHealthy && providerHealthy ? "success" : "info"}
+          showIcon
+          message="当前建议"
+          description={recommendation}
+        />
       </Space>
     </Card>
   );
