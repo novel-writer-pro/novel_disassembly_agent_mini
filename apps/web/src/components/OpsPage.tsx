@@ -1,6 +1,6 @@
 import { Alert, Button, Card, Col, Row, Space, Tag, Typography } from "antd";
 import type { BranchExports, ProviderHealth } from "@/types/workbench";
-import { providerDegraded as isProviderDegraded, recoveryRecommendation } from "@/lib/formatters";
+import { providerDegraded as isProviderDegraded, providerOperationalNotice, recoveryActionPolicy, recoveryRecommendation } from "@/lib/formatters";
 
 interface Props {
   recoveryResultText: string;
@@ -32,6 +32,7 @@ export default function OpsPage(props: Props) {
     providerHealth,
   } = props;
   const providerDegraded = isProviderDegraded(providerHealth);
+  const recoveryPolicy = recoveryActionPolicy(providerHealth);
 
   let recoveryData: { message?: string; pipeline_state?: string; accepted_action?: string } | null = null;
   try {
@@ -64,13 +65,13 @@ export default function OpsPage(props: Props) {
                 showIcon
                 style={{ marginBottom: 16 }}
                 message="当前 provider 处于降级期"
-                description={recoveryRecommendation(providerHealth)}
+                description={providerOperationalNotice(providerHealth)}
               />
             ) : null}
             <Space direction="vertical" style={{ width: "100%" }}>
-              <Button block loading={loading?.retrying} onClick={onRetryFailed} type={providerDegraded ? "default" : "primary"}>重试失败章节</Button>
+              <Button block loading={loading?.retrying} onClick={onRetryFailed} type={recoveryPolicy.tone}>重试失败章节</Button>
               <Button block loading={loading?.clearing} onClick={onClearRunning}>清理卡住任务</Button>
-              <Button block type={providerDegraded ? "default" : "primary"} loading={loading?.repairing} onClick={onRepair}>修复章节清单</Button>
+              <Button block type={recoveryPolicy.tone} loading={loading?.repairing} onClick={onRepair}>修复章节清单</Button>
             </Space>
             <div style={{ marginTop: 18 }}>
               {recoveryData ? (

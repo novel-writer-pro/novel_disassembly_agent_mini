@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Empty, List, Segmented, Space, Tag, Typography } from "antd";
 import type { LibraryItem, ProviderHealth } from "@/types/workbench";
 import { useMemo, useState } from "react";
-import { libraryPriority, providerDegraded as isProviderDegraded, recoveryRecommendation } from "@/lib/formatters";
+import { libraryPriority, providerDegraded as isProviderDegraded, providerOperationalNotice, recoveryActionPolicy } from "@/lib/formatters";
 
 interface Props {
   items: LibraryItem[];
@@ -42,6 +42,7 @@ export default function TaskCenterPanel({
     return focusItems;
   }, [filter, focusItems, recoveryItems, runningItems]);
   const providerDegraded = isProviderDegraded(providerHealth);
+  const recoveryPolicy = recoveryActionPolicy(providerHealth);
 
   return (
     <Card
@@ -72,7 +73,7 @@ export default function TaskCenterPanel({
             type="warning"
             showIcon
             message="当前上游 provider 正处于降级期"
-            description={`${recoveryRecommendation(providerHealth)}${providerHealth?.last_error ? ` 最近错误：${providerHealth.last_error}` : ""}`}
+            description={providerOperationalNotice(providerHealth)}
           />
         ) : null}
         <Segmented
@@ -112,8 +113,8 @@ export default function TaskCenterPanel({
                 <Space wrap>
                   <Button size="small" onClick={() => onActivate(item)}>切换到这本</Button>
                   {(item.failed_jobs || 0) > 0 || item.pipeline_state === "needs_recovery" ? (
-                    <Button size="small" type={providerDegraded ? "default" : "primary"} onClick={() => onOpenRecovery(item)}>
-                      {providerDegraded ? "查看恢复建议" : "打开恢复"}
+                    <Button size="small" type={recoveryPolicy.tone} onClick={() => onOpenRecovery(item)}>
+                      {recoveryPolicy.buttonLabel}
                     </Button>
                   ) : null}
                 </Space>

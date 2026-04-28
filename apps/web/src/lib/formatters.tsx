@@ -42,6 +42,19 @@ export const recoveryRecommendation = (providerHealth?: ProviderHealth | null) =
     ? "如果只是 ask-stream / 问答异常，优先先观察与刷新；更适合等服务恢复后再重试失败章节。只有当章节任务本身持续失败、数据库状态异常，或运行态明显卡住时，才建议立刻手动恢复。"
     : "如果失败章节已经达到自动重试上限，或运行态明显卡住，再进入这里执行手动恢复。";
 
+export const recoveryActionPolicy = (
+  providerHealth?: ProviderHealth | null,
+): { emphasized: boolean; buttonLabel: string; tone: "default" | "primary" } => ({
+  emphasized: !providerDegraded(providerHealth),
+  buttonLabel: providerDegraded(providerHealth) ? "查看恢复建议" : "打开恢复",
+  tone: providerDegraded(providerHealth) ? "default" : "primary",
+});
+
+export const providerOperationalNotice = (providerHealth?: ProviderHealth | null) =>
+  providerDegraded(providerHealth)
+    ? `当前上游 provider 正处于降级期。${recoveryRecommendation(providerHealth)}${providerHealth?.last_error ? ` 最近错误：${providerHealth.last_error}` : ""}`
+    : "当前上游 provider 状态稳定，可按正常节奏处理运行中与待恢复任务。";
+
 export const libraryPriority = (
   item: {
     pipeline_state?: string;
