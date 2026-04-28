@@ -1,7 +1,8 @@
 import { BookOutlined, EyeOutlined, MessageOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Button, Card, Empty, Input, Pagination, Space, Statistic, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
-import type { LibraryItem } from "@/types/workbench";
+import type { LibraryItem, ProviderHealth } from "@/types/workbench";
+import { libraryPriority } from "@/lib/formatters";
 
 interface Props {
   items: LibraryItem[];
@@ -10,6 +11,7 @@ interface Props {
   onOpenReader: (item: LibraryItem) => void;
   onOpenQa: (item: LibraryItem) => void;
   onRefresh: () => void;
+  providerHealth?: ProviderHealth | null;
 }
 
 const statusColor = (item: LibraryItem) => {
@@ -19,20 +21,27 @@ const statusColor = (item: LibraryItem) => {
   return "blue";
 };
 
-export default function LibraryPage({ items, activeBranchId, onActivate, onOpenReader, onOpenQa, onRefresh }: Props) {
+export default function LibraryPage({ items, activeBranchId, onActivate, onOpenReader, onOpenQa, onRefresh, providerHealth }: Props) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
+  const prioritizedItems = useMemo(
+    () => [...items]
+      .map((item) => ({ ...item, ...libraryPriority(item, providerHealth) }))
+      .sort((a, b) => b.score - a.score || (a.next_chapter || 999999) - (b.next_chapter || 999999)),
+    [items, providerHealth],
+  );
+
   const filteredItems = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    if (!keyword) return items;
-    return items.filter((item) =>
+    if (!keyword) return prioritizedItems;
+    return prioritizedItems.filter((item) =>
       [item.title, item.branch_name, item.pipeline_state, item.run_id, item.branch_id]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(keyword)),
     );
-  }, [items, query]);
+  }, [prioritizedItems, query]);
 
   const pagedItems = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -122,6 +131,9 @@ export default function LibraryPage({ items, activeBranchId, onActivate, onOpenR
                   </div>
 
                   <Space wrap>
+                    <Tag color={item.score >= 100 ? "error" : item.score >= 70 ? "processing" : item.score >= 40 ? "blue" : "default"}>
+                      {item.reason}
+                    </Tag>
                     <Tag color={statusColor(item)}>{item.pipeline_state}</Tag>
                     <Tag color="blue">{item.completed_chapters}/{item.manifest_chapter_count} 章</Tag>
                     <Tag color="warning">失败 {item.failed_jobs || 0}</Tag>

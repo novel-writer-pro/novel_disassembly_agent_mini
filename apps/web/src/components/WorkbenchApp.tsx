@@ -442,6 +442,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
             items={libraryItems}
             activeBranchId={state.branchId}
             onRefresh={refreshBranch}
+            providerHealth={providerHealth}
             onActivate={(item) => {
               void activateLibraryItem(item);
             }}
