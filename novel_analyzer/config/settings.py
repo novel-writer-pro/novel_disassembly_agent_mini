@@ -153,6 +153,12 @@ class Settings(BaseSettings):
 
         return Path(self.runtime_cache_dir)
 
+    @property
+    def legacy_runtime_dir(self) -> Path:
+        """Return the previous runtime root kept for compatibility/migration."""
+
+        return Path(".omx")
+
 
 def _netloc_without_auth(parts: SplitResult) -> str:
     """Return the original netloc stripped of any username/password prefix."""

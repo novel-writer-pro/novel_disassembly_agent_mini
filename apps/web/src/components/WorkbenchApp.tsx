@@ -115,7 +115,13 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     chapterRequestSeqRef.current = requestId;
     const row = branchSnapshot?.chapter_rows?.find((item) => item.chapter_index === chapterIndex) || null;
     setActiveChapterIndex(chapterIndex);
-    patchState({ lastChapterIndex: chapterIndex });
+    patchState({
+      lastChapterIndex: chapterIndex,
+      lastChapterIndexByBranch: {
+        ...(state.lastChapterIndexByBranch || {}),
+        [state.branchId]: chapterIndex,
+      },
+    });
 
     if (options?.navigate) {
       navigateWorkspace("reader", { chapterIndex });
@@ -272,7 +278,8 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     if (workspace !== "reader") return;
     if (loading.chapter) return;
     const chapterFromQuery = Number(router.query.chapter || "");
-    const chapterFromState = state.lastChapterIndex || null;
+    const chapterFromBranchMemory = state.branchId ? (state.lastChapterIndexByBranch || {})[state.branchId] : null;
+    const chapterFromState = chapterFromBranchMemory ?? state.lastChapterIndex ?? null;
     const candidate = Number.isFinite(chapterFromQuery) && chapterFromQuery > 0 ? chapterFromQuery : chapterFromState;
     if (candidate && candidate !== activeChapterIndex) {
       void loadChapter(candidate);
@@ -336,18 +343,19 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
 
   const activateLibraryItem = async (item: LibraryItem, nextWorkspace?: "library" | "control" | "reader" | "qa" | "ops") => {
     chapterRequestSeqRef.current += 1;
+    const rememberedChapter = (state.lastChapterIndexByBranch || {})[item.branch_id] ?? null;
     patchState({
       title: item.title,
       runId: item.run_id,
       branchId: item.branch_id,
-      lastChapterIndex: null,
+      lastChapterIndex: rememberedChapter,
     });
     setRunSnapshot(null);
     setBranchSnapshot(null);
     setBundle(null);
     setQa(null);
     setSource(null);
-    setActiveChapterIndex(null);
+    setActiveChapterIndex(rememberedChapter);
     setImportText(`已切换到《${item.title}》`);
     await loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
     if (nextWorkspace) navigateWorkspace(nextWorkspace);

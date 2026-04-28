@@ -12,6 +12,7 @@ const defaultState: WorkbenchState = {
   profile: "auto-lite",
   maxChapters: "",
   lastChapterIndex: null,
+  lastChapterIndexByBranch: {},
 };
 
 export function useWorkbenchState() {

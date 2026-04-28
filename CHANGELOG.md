@@ -36,6 +36,8 @@
 - 导出文件迁移到 `.cache/novel-analyzer/runtime-exports/`
 - 上传小说原文迁移到 `.cache/novel-analyzer/uploads/`
 - 补充旧 `.omx/uploads/` 路径的兼容读取，减少重启或历史数据切换时出现“文件不存在”
+- 后端启动时会自动迁移历史 `.omx/uploads/` 与 `.omx/runtime-exports/` 内容到 `.cache/novel-analyzer/`
+- 工作台按 branch 记住独立的最后阅读章节，切回同一本小说时优先恢复各自阅读位置
 
 ### 小说问答页修复与产品化增强
 - 修复 `/qa` 页面实际未挂载问答组件、进入后无内容的问题

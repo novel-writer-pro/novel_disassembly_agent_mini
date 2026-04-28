@@ -44,6 +44,9 @@ class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
     daemon_threads = True
 
 
+_RUNTIME_MIGRATED = False
+
+
 def _json_payload(value: Any) -> bytes:
     if hasattr(value, "__dataclass_fields__") and not isinstance(value, type):
         value = asdict(value)
@@ -203,12 +206,46 @@ def _runtime_cache_root() -> Path:
     return root
 
 
+def _migrate_legacy_runtime_dirs() -> None:
+    global _RUNTIME_MIGRATED
+    if _RUNTIME_MIGRATED:
+        return
+
+    settings = get_settings()
+    legacy_root = settings.legacy_runtime_dir
+    cache_root = settings.resolved_runtime_cache_dir
+    cache_root.mkdir(parents=True, exist_ok=True)
+
+    migration_pairs = [
+        (legacy_root / "uploads", cache_root / "uploads"),
+        (legacy_root / "runtime-exports", cache_root / "runtime-exports"),
+    ]
+
+    for legacy_dir, target_dir in migration_pairs:
+        if not legacy_dir.exists():
+            continue
+        target_dir.mkdir(parents=True, exist_ok=True)
+        for source in legacy_dir.rglob("*"):
+            if not source.is_file():
+                continue
+            relative = source.relative_to(legacy_dir)
+            destination = target_dir / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.exists():
+                continue
+            shutil.copy2(source, destination)
+
+    _RUNTIME_MIGRATED = True
+
+
 def _stable_export_dir(run_id: str, branch_id: str) -> str:
+    _migrate_legacy_runtime_dirs()
     base = _runtime_cache_root() / "runtime-exports" / run_id / branch_id / datetime.now().strftime('%Y%m%dT%H%M%S')
     base.mkdir(parents=True, exist_ok=True)
     return str(base)
 
 def _persist_uploaded_text(file_item: Any) -> str:
+    _migrate_legacy_runtime_dirs()
     filename = Path(getattr(file_item, "filename", "upload.txt")).name or "upload.txt"
     target_dir = _runtime_cache_root() / "uploads"
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -221,6 +258,7 @@ def _persist_uploaded_text(file_item: Any) -> str:
 
 
 def _resolve_source_path(path_value: str) -> Path:
+    _migrate_legacy_runtime_dirs()
     path = Path(path_value)
     if path.exists():
         return path
@@ -230,6 +268,9 @@ def _resolve_source_path(path_value: str) -> Path:
         migrated = _runtime_cache_root() / "uploads" / path.name
         if migrated.exists():
             return migrated
+        legacy_path = get_settings().legacy_runtime_dir / "uploads" / path.name
+        if legacy_path.exists():
+            return legacy_path
 
     raise FileNotFoundError(f"No such file or directory: '{path_value}'")
 
@@ -811,6 +852,7 @@ def main() -> None:
 
     host = "127.0.0.1"
     port = 8011
+    _migrate_legacy_runtime_dirs()
     with make_server(host, port, application, server_class=ThreadingWSGIServer) as httpd:
         print(f"apps/api running on http://{host}:{port}")
         httpd.serve_forever()

@@ -103,6 +103,7 @@ export interface WorkbenchState {
   profile: PipelineProfile;
   maxChapters: string;
   lastChapterIndex?: number | null;
+  lastChapterIndexByBranch?: Record<string, number | null>;
 }
 
 export interface LibraryItem {

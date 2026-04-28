@@ -88,6 +88,7 @@ set +a
 
 - `POST /api/import` 上传的原始小说文件现在持久化写入 `.cache/novel-analyzer/uploads/`，避免后续章节原文回看时因为 `/tmp` 被清理而报错。
 - 对旧的 `.omx/uploads/` 路径读取增加了兼容解析，便于平滑过渡到 `.cache/`。
+- 后端启动时会自动尝试把历史 `.omx/uploads/` 与 `.omx/runtime-exports/` 复制迁移到 `.cache/novel-analyzer/` 下。
 
 ## 问答流式事件格式
 
