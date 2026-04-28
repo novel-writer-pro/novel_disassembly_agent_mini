@@ -115,6 +115,9 @@ export interface LibraryItem {
   completed_chapters: number;
   manifest_chapter_count: number;
   next_chapter: number | null;
+  failed_jobs?: number;
+  running_jobs?: number;
+  setup_status?: string;
   updated_at?: string | null;
 }
 

@@ -109,7 +109,7 @@ export const fetchBranchExports = (
   return requestJson<BranchExports>(`${apiBase}/api/branch-exports?${query.toString()}`);
 };
 
-export const fetchLibrary = (apiBase: string, databaseUrl?: string, limit = 20) => {
+export const fetchLibrary = (apiBase: string, databaseUrl?: string, limit = 100) => {
   const query = new URLSearchParams({ limit: String(limit) });
   if (databaseUrl) query.set("database_url", databaseUrl);
   return requestJson<{ items: LibraryItem[] }>(`${apiBase}/api/library?${query.toString()}`);

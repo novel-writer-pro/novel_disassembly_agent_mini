@@ -293,6 +293,9 @@ def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
                     "completed_chapters": status.completed_chapters,
                     "manifest_chapter_count": status.manifest_chapter_count,
                     "next_chapter": status.next_chapter,
+                    "failed_jobs": status.failed_jobs,
+                    "running_jobs": status.running_jobs,
+                    "setup_status": _setup_status(session, run.id),
                     "updated_at": branch.updated_at.isoformat() if branch.updated_at else None,
                 }
             )
@@ -602,7 +605,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
 
     if path == "/api/library":
         database_url = params.get("database_url")
-        limit = int(params.get("limit", "20"))
+        limit = int(params.get("limit", "100"))
         try:
             payload = _library_payload(database_url, limit)
         except Exception as exc:  # noqa: BLE001

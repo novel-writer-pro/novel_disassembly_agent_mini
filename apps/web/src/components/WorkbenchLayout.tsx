@@ -1,4 +1,4 @@
-import { BookOutlined, DashboardOutlined, ExportOutlined, MessageOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, BookOutlined, DashboardOutlined, ExportOutlined, MessageOutlined } from "@ant-design/icons";
 import { Layout, Menu, Space, Tag, Typography } from "antd";
 import type { ReactNode } from "react";
 
@@ -19,6 +19,11 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
       title: "开始整理作品",
       subtitle: "导入作品、查看整理进度，并决定接下来继续拆到哪里。",
       tip: "先导入，再阅读章节",
+    },
+    library: {
+      title: "小说空间",
+      subtitle: "先选当前生效的小说，再进入章节阅读、问答与导出流程。",
+      tip: "多本管理",
     },
     reader: {
       title: "章节阅读",
@@ -57,6 +62,7 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
           selectedKeys={[activeKey]}
           onClick={({ key }) => onNavigate(String(key))}
           items={[
+            { key: "library", icon: <AppstoreOutlined />, label: "小说空间" },
             { key: "control", icon: <DashboardOutlined />, label: "开始整理" },
             { key: "reader", icon: <BookOutlined />, label: "章节阅读" },
             { key: "qa", icon: <MessageOutlined />, label: "小说问答" },

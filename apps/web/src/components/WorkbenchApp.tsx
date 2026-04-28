@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { message } from "antd";
 import WorkbenchLayout from "@/components/WorkbenchLayout";
+import LibraryPage from "@/components/LibraryPage";
 import ControlPage from "@/components/ControlPage";
 import ReaderPage from "@/components/ReaderPage";
 import BranchQaPanel from "@/components/BranchQaPanel";
@@ -31,6 +32,7 @@ import ChapterSidebar from "@/components/ChapterSidebar";
 import { useRouter } from "next/router";
 
 const routeByWorkspace: Record<string, string> = {
+  library: "/library",
   control: "/control",
   reader: "/reader",
   qa: "/qa",
@@ -38,7 +40,7 @@ const routeByWorkspace: Record<string, string> = {
 };
 
 interface Props {
-  initialWorkspace: "control" | "reader" | "qa" | "ops";
+  initialWorkspace: "library" | "control" | "reader" | "qa" | "ops";
 }
 
 export default function WorkbenchApp({ initialWorkspace }: Props) {
@@ -81,7 +83,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   };
 
   const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
-    setWorkspace(nextWorkspace as "control" | "reader" | "qa" | "ops");
+    setWorkspace(nextWorkspace as "library" | "control" | "reader" | "qa" | "ops");
     const nextRoute = routeByWorkspace[nextWorkspace] || "/";
     const nextQuery: Record<string, string> = {};
     if (options?.chapterIndex) nextQuery.chapter = String(options.chapterIndex);
@@ -330,6 +332,52 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
             setSource(null);
             setActiveChapterIndex(null);
             void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+          }}
+        />
+      ) : null}
+
+      {workspace === "library" ? (
+        <LibraryPage
+          items={libraryItems}
+          activeBranchId={state.branchId}
+          onRefresh={refreshBranch}
+          onActivate={(item) => {
+            patchState({
+              title: item.title,
+              runId: item.run_id,
+              branchId: item.branch_id,
+              lastChapterIndex: null,
+            });
+            setBundle(null);
+            setQa(null);
+            setSource(null);
+            setActiveChapterIndex(null);
+            setImportText(`已切换到《${item.title}》`);
+            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+          }}
+          onOpenReader={(item) => {
+            patchState({
+              title: item.title,
+              runId: item.run_id,
+              branchId: item.branch_id,
+              lastChapterIndex: null,
+            });
+            setBundle(null);
+            setQa(null);
+            setSource(null);
+            setActiveChapterIndex(null);
+            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+            navigateWorkspace("reader");
+          }}
+          onOpenQa={(item) => {
+            patchState({
+              title: item.title,
+              runId: item.run_id,
+              branchId: item.branch_id,
+              lastChapterIndex: null,
+            });
+            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+            navigateWorkspace("qa");
           }}
         />
       ) : null}
