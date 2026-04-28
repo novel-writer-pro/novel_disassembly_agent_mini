@@ -115,6 +115,11 @@
 - 现在左侧目录、章节内引用跳转、问答引用跳转都会优先同步 reader 路由参数，再加载对应章节
 - 切换章节时会先清空上一章内容，避免出现“左侧高亮和 URL 已切换，但右侧正文还短暂显示旧章节”的闪烁错位
 
+### 当前作品状态持久化修复
+- 修复进入 `/library`、`/ops` 等页面时，工作台在 hydration 前被默认示例小说状态覆盖的问题
+- 修复因此导致“明明已选中别的小说，但页面一刷新/一跳转又回到默认示例小说”的问题
+- 现在只有在本地 workbench 状态完成加载后，才会开始自动写入 localStorage 和执行首次分支刷新
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

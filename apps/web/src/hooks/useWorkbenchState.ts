@@ -17,24 +17,29 @@ const defaultState: WorkbenchState = {
 
 export function useWorkbenchState() {
   const [state, setState] = useState<WorkbenchState>(defaultState);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    try {
-      setState({ ...defaultState, ...JSON.parse(raw) });
-    } catch {
-      // ignore bad cache
+    if (raw) {
+      try {
+        setState({ ...defaultState, ...JSON.parse(raw) });
+      } catch {
+        // ignore bad cache
+      }
     }
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+  }, [state, hydrated]);
 
   return {
     state,
     setState,
+    hydrated,
     patchState: (patch: Partial<WorkbenchState>) =>
       setState((current) => ({ ...current, ...patch })),
   };

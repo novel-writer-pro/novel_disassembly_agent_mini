@@ -52,7 +52,7 @@ interface Props {
 
 export default function WorkbenchApp({ initialWorkspace }: Props) {
   const router = useRouter();
-  const { state, patchState } = useWorkbenchState();
+  const { state, patchState, hydrated } = useWorkbenchState();
   const [workspace, setWorkspace] = useState(initialWorkspace);
   const [importText, setImportText] = useState("");
   const [runSnapshot, setRunSnapshot] = useState<RunSnapshot | null>(null);
@@ -305,11 +305,12 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   }, [initialWorkspace]);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (didBootstrapRef.current) return;
     if (!state.runId || !state.branchId) return;
     didBootstrapRef.current = true;
     void refreshBranch();
-  }, [state.apiBase, state.branchId, state.databaseUrl, state.runId]);
+  }, [hydrated, state.apiBase, state.branchId, state.databaseUrl, state.runId]);
 
   useEffect(() => {
     if (workspace !== "reader") return;
@@ -340,6 +341,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const providerDegraded = providerHealth?.last_status === "degraded";
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!autoRefreshEnabled) return;
     if (!state.runId || !state.branchId) return;
     const intervalMs = providerDegraded ? 60000 : hasActiveTasks ? 15000 : 45000;
@@ -349,6 +351,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     }, intervalMs);
     return () => window.clearInterval(timer);
   }, [
+    hydrated,
     autoRefreshEnabled,
     hasActiveTasks,
     loading.clearing,

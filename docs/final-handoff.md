@@ -166,6 +166,7 @@ flowchart TD
 - 前端运行态规则现已集中到 `apps/web/src/lib/operations.ts`，后续若要调整 provider/cache/恢复/排序逻辑，应优先改这一层，而不是在多个页面分别写分支判断
 - `/library`、`/control`、`/reader`、`/qa`、`/ops` 当前已按 SSR 动态页构建，避免产品工作台在 `next build` 时被误当作纯静态页 prerender
 - `reader` 内部章节跳转现在也会同步更新路由参数，减少因 `router.query.chapter` 与界面状态分裂而出现的跳错章/跳回旧章
+- workbench 本地状态现在会等待 hydration 完成后再写回与刷新，避免跨页进入 `/library`、`/ops` 时被默认示例小说状态覆盖
 
 结论：当前版本已经具备“真实可操作工作台”的基础能力，而不只是单纯原型页。
 

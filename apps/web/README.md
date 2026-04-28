@@ -107,6 +107,7 @@ npm run start
 - 这些 provider/cache/恢复/优先级 规则现在统一收口在 `src/lib/operations.ts`，后续打磨时优先修改这一层
 - `/library`、`/control`、`/reader`、`/qa`、`/ops` 现按 SSR 动态页构建，避免工作台在 `next build` 时因为强行静态 prerender 而报路由错误
 - reader 页内部的章节切换现在会同步更新 URL 参数，避免“页面看似切章成功、但又被旧 query 拉回去”的跳转错乱
+- workbench 当前选中的小说状态会在 hydration 完成后再落盘/刷新，避免进入 library / ops 时被默认示例小说抢回
 
 也就是说，当前版本适合：
 - 多本小说存在于同一数据库
