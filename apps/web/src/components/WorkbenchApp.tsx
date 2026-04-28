@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { message } from "antd";
+import { message, Space } from "antd";
 import WorkbenchLayout from "@/components/WorkbenchLayout";
 import LibraryPage from "@/components/LibraryPage";
+import TaskCenterPanel from "@/components/TaskCenterPanel";
 import ControlPage from "@/components/ControlPage";
 import ReaderPage from "@/components/ReaderPage";
 import BranchQaPanel from "@/components/BranchQaPanel";
@@ -56,6 +57,8 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [exportsData, setExportsData] = useState<BranchExports | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [recoveryResultText, setRecoveryResultText] = useState("");
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState({
     importing: false,
@@ -80,6 +83,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     setRunSnapshot(runData);
     setBranchSnapshot(branchData);
     setLibraryItems(libraryData.items || []);
+    setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
   };
 
   const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
@@ -281,6 +285,35 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     }
   }, [activeChapterIndex, branchSnapshot, loading.chapter, router.query.chapter, state.lastChapterIndex, workspace]);
 
+  const hasActiveTasks = useMemo(
+    () => libraryItems.some((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "needs_recovery" || item.pipeline_state === "auto_running"),
+    [libraryItems],
+  );
+
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+    if (!state.runId || !state.branchId) return;
+    const intervalMs = hasActiveTasks ? 15000 : 45000;
+    const timer = window.setInterval(() => {
+      if (loading.importing || loading.starting || loading.retrying || loading.clearing || loading.repairing || loading.exporting) return;
+      void loadWorkspaceData(state.runId, state.branchId, state.databaseUrl, state.apiBase);
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [
+    autoRefreshEnabled,
+    hasActiveTasks,
+    loading.clearing,
+    loading.exporting,
+    loading.importing,
+    loading.repairing,
+    loading.retrying,
+    loading.starting,
+    state.apiBase,
+    state.branchId,
+    state.databaseUrl,
+    state.runId,
+  ]);
+
   const chapterMenu = useMemo(
     () => (
       <ChapterSidebar
@@ -295,6 +328,39 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const currentLibraryItem = useMemo(
     () => libraryItems.find((item) => item.branch_id === state.branchId) || null,
     [libraryItems, state.branchId],
+  );
+
+  const activateLibraryItem = async (item: LibraryItem, nextWorkspace?: "library" | "control" | "reader" | "qa" | "ops") => {
+    patchState({
+      title: item.title,
+      runId: item.run_id,
+      branchId: item.branch_id,
+      lastChapterIndex: null,
+    });
+    setBundle(null);
+    setQa(null);
+    setSource(null);
+    setActiveChapterIndex(null);
+    setImportText(`已切换到《${item.title}》`);
+    await loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+    if (nextWorkspace) navigateWorkspace(nextWorkspace);
+  };
+
+  const taskCenter = (
+    <TaskCenterPanel
+      items={libraryItems}
+      activeBranchId={state.branchId}
+      onRefresh={refreshBranch}
+      autoRefreshEnabled={autoRefreshEnabled}
+      onToggleAutoRefresh={() => setAutoRefreshEnabled((current) => !current)}
+      lastRefreshedAt={lastRefreshedAt}
+      onActivate={(item) => {
+        void activateLibraryItem(item);
+      }}
+      onOpenRecovery={(item) => {
+        void activateLibraryItem(item, "ops");
+      }}
+    />
   );
 
   return (
@@ -320,66 +386,29 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           onStart={handleStart}
           onOpenRecovery={() => navigateWorkspace("ops")}
           onSelectLibraryItem={(item) => {
-            patchState({
-              title: item.title,
-              runId: item.run_id,
-              branchId: item.branch_id,
-              lastChapterIndex: null,
-            });
-            setImportText(`已切换到《${item.title}》`);
-            setBundle(null);
-            setQa(null);
-            setSource(null);
-            setActiveChapterIndex(null);
-            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+            void activateLibraryItem(item);
           }}
         />
       ) : null}
 
       {workspace === "library" ? (
-        <LibraryPage
-          items={libraryItems}
-          activeBranchId={state.branchId}
-          onRefresh={refreshBranch}
-          onActivate={(item) => {
-            patchState({
-              title: item.title,
-              runId: item.run_id,
-              branchId: item.branch_id,
-              lastChapterIndex: null,
-            });
-            setBundle(null);
-            setQa(null);
-            setSource(null);
-            setActiveChapterIndex(null);
-            setImportText(`已切换到《${item.title}》`);
-            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
-          }}
-          onOpenReader={(item) => {
-            patchState({
-              title: item.title,
-              runId: item.run_id,
-              branchId: item.branch_id,
-              lastChapterIndex: null,
-            });
-            setBundle(null);
-            setQa(null);
-            setSource(null);
-            setActiveChapterIndex(null);
-            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
-            navigateWorkspace("reader");
-          }}
-          onOpenQa={(item) => {
-            patchState({
-              title: item.title,
-              runId: item.run_id,
-              branchId: item.branch_id,
-              lastChapterIndex: null,
-            });
-            void loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
-            navigateWorkspace("qa");
-          }}
-        />
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <LibraryPage
+            items={libraryItems}
+            activeBranchId={state.branchId}
+            onRefresh={refreshBranch}
+            onActivate={(item) => {
+              void activateLibraryItem(item);
+            }}
+            onOpenReader={(item) => {
+              void activateLibraryItem(item, "reader");
+            }}
+            onOpenQa={(item) => {
+              void activateLibraryItem(item, "qa");
+            }}
+          />
+          {taskCenter}
+        </Space>
       ) : null}
 
       {workspace === "reader" ? (
@@ -402,32 +431,35 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       ) : null}
 
       {workspace === "ops" ? (
-        <OpsPage
-          recoveryResultText={recoveryResultText}
-          exportsData={exportsData}
-          loading={loading}
-          onRetryFailed={() => handleRecovery("retry-failed")}
-          onClearRunning={() => handleRecovery("clear-running")}
-          onRepair={() => handleRecovery("repair")}
-          onLoadExports={async () => {
-            setLoading((current) => ({ ...current, exporting: true }));
-            try {
-              const payload = await fetchBranchExports(
-                state.apiBase,
-                state.runId,
-                state.branchId,
-                state.databaseUrl,
-              );
-              setExportsData(payload);
-              message.success("导出文件已准备好");
-            } catch (error) {
-              message.error(error instanceof Error ? error.message : "导出生成失败");
-            } finally {
-              setLoading((current) => ({ ...current, exporting: false }));
-            }
-          }}
-          apiBase={state.apiBase}
-        />
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          {taskCenter}
+          <OpsPage
+            recoveryResultText={recoveryResultText}
+            exportsData={exportsData}
+            loading={loading}
+            onRetryFailed={() => handleRecovery("retry-failed")}
+            onClearRunning={() => handleRecovery("clear-running")}
+            onRepair={() => handleRecovery("repair")}
+            onLoadExports={async () => {
+              setLoading((current) => ({ ...current, exporting: true }));
+              try {
+                const payload = await fetchBranchExports(
+                  state.apiBase,
+                  state.runId,
+                  state.branchId,
+                  state.databaseUrl,
+                );
+                setExportsData(payload);
+                message.success("导出文件已准备好");
+              } catch (error) {
+                message.error(error instanceof Error ? error.message : "导出生成失败");
+              } finally {
+                setLoading((current) => ({ ...current, exporting: false }));
+              }
+            }}
+            apiBase={state.apiBase}
+          />
+        </Space>
       ) : null}
     </WorkbenchLayout>
   );
