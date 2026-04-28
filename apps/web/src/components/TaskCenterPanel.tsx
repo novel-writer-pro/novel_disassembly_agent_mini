@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Empty, List, Segmented, Space, Tag, Typography } from "antd";
 import type { LibraryItem, ProviderHealth } from "@/types/workbench";
 import { useMemo, useState } from "react";
-import { libraryPriority, providerDegraded as isProviderDegraded, providerOperationalNotice, recoveryActionPolicy } from "@/lib/formatters";
+import { libraryPriority, providerDegraded as isProviderDegraded, providerOperationalNotice, recoveryActionPolicy, providerStatusSummary } from "@/lib/operations";
 
 interface Props {
   items: LibraryItem[];
@@ -43,6 +43,7 @@ export default function TaskCenterPanel({
   }, [filter, focusItems, recoveryItems, runningItems]);
   const providerDegraded = isProviderDegraded(providerHealth);
   const recoveryPolicy = recoveryActionPolicy(providerHealth);
+  const providerSummary = providerStatusSummary(providerHealth);
 
   return (
     <Card
@@ -68,14 +69,12 @@ export default function TaskCenterPanel({
           message="这里优先盯住正在跑和需要恢复的小说"
           description={`最近刷新：${lastRefreshedAt || "尚未刷新"}`}
         />
-        {providerDegraded ? (
-          <Alert
-            type="warning"
-            showIcon
-            message="当前上游 provider 正处于降级期"
-            description={providerOperationalNotice(providerHealth)}
-          />
-        ) : null}
+        <Alert
+          type={providerSummary.tone}
+          showIcon
+          message={providerSummary.label}
+          description={providerDegraded ? providerOperationalNotice(providerHealth) : "当前更适合把精力放在运行中或待恢复的小说上。"}
+        />
         <Segmented
           value={filter}
           onChange={(value) => setFilter(value as typeof filter)}

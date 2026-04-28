@@ -1,8 +1,8 @@
 import { BookOutlined, EyeOutlined, MessageOutlined, ReloadOutlined } from "@ant-design/icons";
-import { Button, Card, Empty, Input, Pagination, Space, Statistic, Tag, Typography } from "antd";
+import { Alert, Button, Card, Empty, Input, Pagination, Space, Statistic, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import type { LibraryItem, ProviderHealth } from "@/types/workbench";
-import { libraryPriority } from "@/lib/formatters";
+import { libraryPriority, libraryStatusTone, providerStatusSummary } from "@/lib/operations";
 
 interface Props {
   items: LibraryItem[];
@@ -13,13 +13,6 @@ interface Props {
   onRefresh: () => void;
   providerHealth?: ProviderHealth | null;
 }
-
-const statusColor = (item: LibraryItem) => {
-  if (item.pipeline_state === "needs_recovery") return "error";
-  if (item.running_jobs) return "processing";
-  if (item.pipeline_state === "completed") return "success";
-  return "blue";
-};
 
 export default function LibraryPage({ items, activeBranchId, onActivate, onOpenReader, onOpenQa, onRefresh, providerHealth }: Props) {
   const [query, setQuery] = useState("");
@@ -47,6 +40,8 @@ export default function LibraryPage({ items, activeBranchId, onActivate, onOpenR
     const start = (page - 1) * pageSize;
     return filteredItems.slice(start, start + pageSize);
   }, [filteredItems, page]);
+
+  const providerSummary = providerStatusSummary(providerHealth);
 
   const summary = useMemo(() => ({
     total: items.length,
@@ -93,6 +88,12 @@ export default function LibraryPage({ items, activeBranchId, onActivate, onOpenR
 
       <Card bordered={false} className="product-panel" extra={<Button icon={<ReloadOutlined />} onClick={onRefresh}>刷新作品库</Button>}>
         <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <Alert
+            type={providerSummary.tone}
+            showIcon
+            message={providerSummary.label}
+            description="先在这里选中当前生效小说，再进入阅读、问答或恢复页，会更不容易在多本小说间走丢。"
+          />
           <Input
             value={query}
             onChange={(event) => {
@@ -134,7 +135,7 @@ export default function LibraryPage({ items, activeBranchId, onActivate, onOpenR
                     <Tag color={item.score >= 100 ? "error" : item.score >= 70 ? "processing" : item.score >= 40 ? "blue" : "default"}>
                       {item.reason}
                     </Tag>
-                    <Tag color={statusColor(item)}>{item.pipeline_state}</Tag>
+                    <Tag color={item.pipeline_state === "completed" ? "success" : libraryStatusTone(item)}>{item.pipeline_state}</Tag>
                     <Tag color="blue">{item.completed_chapters}/{item.manifest_chapter_count} 章</Tag>
                     <Tag color="warning">失败 {item.failed_jobs || 0}</Tag>
                     <Tag color="processing">运行中 {item.running_jobs || 0}</Tag>

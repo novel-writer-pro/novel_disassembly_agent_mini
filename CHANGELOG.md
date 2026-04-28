@@ -93,6 +93,27 @@
 - `cd apps/web && npm run build`
 - `.venv/bin/python -m py_compile apps/api/app/main.py novel_analyzer/services/qa_service.py`
 
+## 2026-04-28
+
+### 工作台运行态规则进一步收口
+- 新增 `apps/web/src/lib/operations.ts`，把 provider/cache/恢复/优先级 相关规则从纯展示格式化中拆出
+- 系统状态条、小说空间、任务中心、健康面板、恢复页开始复用同一套运行态摘要与建议文案
+- 进一步降低 provider degraded 时的界面噪音，把“该等待还是该恢复”统一成更稳定的产品文案
+
+### Next.js 页面构建修复
+- 为 `/library`、`/control`、`/reader`、`/qa`、`/ops` 等工作台页面补充 SSR 入口
+- 修复 `npm run build` 时 `/reader`、`/qa` 等页面 prerender 阶段报 `Cannot find module for page` 的问题
+- 当前工作台页面已明确作为动态产品界面按需服务，而不是强行静态导出
+
+### 文档同步
+- 更新 `apps/web/README.md`
+- 更新 `docs/final-handoff.md`
+
+### 本轮验证
+- `cd apps/web && npm exec tsc --noEmit`
+- `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`
+- `python3 -m compileall apps/api/app/main.py novel_analyzer/runtime/storage.py novel_analyzer/runtime/provider_health.py novel_analyzer/services/qa_service.py`
+
 ## 2026-04-25
 
 ### 拆书能力与导出层增强

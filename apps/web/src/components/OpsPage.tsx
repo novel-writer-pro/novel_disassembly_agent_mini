@@ -1,6 +1,6 @@
 import { Alert, Button, Card, Col, Row, Space, Tag, Typography } from "antd";
 import type { BranchExports, ProviderHealth } from "@/types/workbench";
-import { providerDegraded as isProviderDegraded, providerOperationalNotice, recoveryActionPolicy, recoveryRecommendation } from "@/lib/formatters";
+import { providerDegraded as isProviderDegraded, providerOperationalNotice, providerStatusSummary, recoveryActionPolicy, recoveryRecommendation } from "@/lib/operations";
 
 interface Props {
   recoveryResultText: string;
@@ -33,6 +33,7 @@ export default function OpsPage(props: Props) {
   } = props;
   const providerDegraded = isProviderDegraded(providerHealth);
   const recoveryPolicy = recoveryActionPolicy(providerHealth);
+  const providerSummary = providerStatusSummary(providerHealth);
 
   let recoveryData: { message?: string; pipeline_state?: string; accepted_action?: string } | null = null;
   try {
@@ -59,15 +60,13 @@ export default function OpsPage(props: Props) {
             <Typography.Paragraph type="secondary">
               失败会先自动重试；只有达到重试上限后，才需要你在这里手动恢复。
             </Typography.Paragraph>
-            {providerDegraded ? (
-              <Alert
-                type="warning"
-                showIcon
-                style={{ marginBottom: 16 }}
-                message="当前 provider 处于降级期"
-                description={providerOperationalNotice(providerHealth)}
-              />
-            ) : null}
+            <Alert
+              type={providerSummary.tone}
+              showIcon
+              style={{ marginBottom: 16 }}
+              message={providerSummary.label}
+              description={providerDegraded ? providerOperationalNotice(providerHealth) : recoveryRecommendation(providerHealth)}
+            />
             <Space direction="vertical" style={{ width: "100%" }}>
               <Button block loading={loading?.retrying} onClick={onRetryFailed} type={recoveryPolicy.tone}>重试失败章节</Button>
               <Button block loading={loading?.clearing} onClick={onClearRunning}>清理卡住任务</Button>

@@ -1,6 +1,6 @@
 import { Alert, Card, Descriptions, Space, Tag, Typography } from "antd";
 import type { ProviderHealth, RuntimeHealth } from "@/types/workbench";
-import { providerDegraded, runtimeNeedsAttention, systemRecommendation } from "@/lib/formatters";
+import { cacheStatusSummary, providerStatusSummary, runtimeNeedsAttention, systemRecommendation } from "@/lib/operations";
 
 interface Props {
   runtimeHealth: RuntimeHealth | null;
@@ -23,7 +23,9 @@ export default function SystemHealthPanel({ runtimeHealth, providerHealth, lastR
   }
 
   const cacheHealthy = !runtimeNeedsAttention(runtimeHealth);
-  const providerHealthy = !providerDegraded(providerHealth);
+  const providerSummary = providerStatusSummary(providerHealth);
+  const cacheSummary = cacheStatusSummary(runtimeHealth);
+  const providerHealthy = providerSummary.tone !== "warning";
   const recommendation = systemRecommendation(providerHealth, runtimeHealth);
 
   return (
@@ -63,14 +65,12 @@ export default function SystemHealthPanel({ runtimeHealth, providerHealth, lastR
               <Descriptions.Item label="降级次数">{providerHealth.degraded_events}</Descriptions.Item>
               <Descriptions.Item label="最近更新时间">{providerHealth.last_updated_at || "未知"}</Descriptions.Item>
             </Descriptions>
-            {providerHealth.last_error ? (
-              <Alert
-                type={providerHealthy ? "info" : "warning"}
-                showIcon
-                message={providerHealthy ? "最近 provider 状态已恢复" : "最近 ask-stream 发生 provider 降级"}
-                description={providerHealth.last_error}
-              />
-            ) : null}
+            <Alert
+              type={providerSummary.tone}
+              showIcon
+              message={providerSummary.label}
+              description={providerHealth.last_error || providerSummary.detail}
+            />
           </>
         ) : null}
         <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
@@ -79,7 +79,7 @@ export default function SystemHealthPanel({ runtimeHealth, providerHealth, lastR
         <Alert
           type={cacheHealthy && providerHealthy ? "success" : "info"}
           showIcon
-          message="当前建议"
+          message={`当前建议｜${cacheSummary.label}`}
           description={recommendation}
         />
       </Space>
