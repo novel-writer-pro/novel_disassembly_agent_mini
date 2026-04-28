@@ -314,11 +314,12 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     () => libraryItems.some((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "needs_recovery" || item.pipeline_state === "auto_running"),
     [libraryItems],
   );
+  const providerDegraded = providerHealth?.last_status === "degraded";
 
   useEffect(() => {
     if (!autoRefreshEnabled) return;
     if (!state.runId || !state.branchId) return;
-    const intervalMs = hasActiveTasks ? 15000 : 45000;
+    const intervalMs = providerDegraded ? 60000 : hasActiveTasks ? 15000 : 45000;
     const timer = window.setInterval(() => {
       if (loading.importing || loading.starting || loading.retrying || loading.clearing || loading.repairing || loading.exporting) return;
       void loadWorkspaceData(state.runId, state.branchId, state.databaseUrl, state.apiBase);
@@ -333,6 +334,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     loading.repairing,
     loading.retrying,
     loading.starting,
+    providerDegraded,
     state.apiBase,
     state.branchId,
     state.databaseUrl,

@@ -11,6 +11,7 @@ interface Props {
 export default function SystemStatusBar({ runtimeHealth, providerHealth, autoRefreshEnabled, lastRefreshedAt }: Props) {
   const providerDegraded = providerHealth?.last_status === "degraded";
   const runtimeNeedsAttention = runtimeHealth ? runtimeHealth.missing_from_cache > 0 : false;
+  const refreshPolicy = providerDegraded ? "退避刷新" : autoRefreshEnabled ? "自动刷新开启" : "自动刷新关闭";
 
   return (
     <Alert
@@ -25,8 +26,8 @@ export default function SystemStatusBar({ runtimeHealth, providerHealth, autoRef
           <Tag color={runtimeNeedsAttention ? "warning" : "success"}>
             cache: {runtimeNeedsAttention ? "待迁移" : "正常"}
           </Tag>
-          <Tag color={autoRefreshEnabled ? "processing" : "default"}>
-            {autoRefreshEnabled ? "自动刷新开启" : "自动刷新关闭"}
+          <Tag color={providerDegraded ? "warning" : autoRefreshEnabled ? "processing" : "default"}>
+            {refreshPolicy}
           </Tag>
           {lastRefreshedAt ? <Tag>最近刷新 {lastRefreshedAt}</Tag> : null}
         </Space>
