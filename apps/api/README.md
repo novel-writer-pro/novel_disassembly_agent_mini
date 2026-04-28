@@ -48,6 +48,11 @@
 
 新增：
 - `GET /api/library`：返回最近作品 / run / branch 列表，供前端做多作品切换或总览
+- `GET /api/library` 当前也会返回：
+  - `failed_jobs`
+  - `running_jobs`
+  - `setup_status`
+  便于小说空间 / 多作品管理页直接显示每本书的运行状态
 
 注意：
 - 目前“并行”仍主要是 **HTTP 请求层面的并发可处理**

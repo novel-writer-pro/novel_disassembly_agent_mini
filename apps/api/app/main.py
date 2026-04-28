@@ -21,7 +21,7 @@ from novel_analyzer.application import (
     recover_branch,
     start_pipeline,
 )
-from novel_analyzer.application.queries import _derive_pipeline_state
+from novel_analyzer.application.queries import _derive_pipeline_state, _setup_status
 from novel_analyzer.config.settings import get_settings
 from novel_analyzer.database.models import (
     AnalysisRun,
