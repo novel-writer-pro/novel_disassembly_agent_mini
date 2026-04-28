@@ -102,8 +102,8 @@ export default function TaskCenterPanel({
                 <Space wrap>
                   <Button size="small" onClick={() => onActivate(item)}>切换到这本</Button>
                   {(item.failed_jobs || 0) > 0 || item.pipeline_state === "needs_recovery" ? (
-                    <Button size="small" type="primary" onClick={() => onOpenRecovery(item)}>
-                      打开恢复
+                    <Button size="small" type={providerDegraded ? "default" : "primary"} onClick={() => onOpenRecovery(item)}>
+                      {providerDegraded ? "查看恢复建议" : "打开恢复"}
                     </Button>
                   ) : null}
                 </Space>

@@ -34,6 +34,7 @@ interface ChatMessage {
   retrievalHits?: RetrievalHit[];
   errorText?: string;
   progressText?: string;
+  degradedNoticeShown?: boolean;
 }
 
 const humanizeDegradedReason = (reason?: string | null) => {
@@ -160,6 +161,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
           content: event.result.answer,
           result: event.result,
           progressText: "",
+          degradedNoticeShown: event.result.answer_mode === "degraded",
           status: "done",
         });
         return;
@@ -181,6 +183,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
         content: "",
         result: payload,
         retrievalHits: [],
+        degradedNoticeShown: payload.answer_mode === "degraded",
         status: "streaming",
       });
       for (const chunk of chunkText(payload.answer)) {
@@ -424,7 +427,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
                                           </Space>
                                         ),
                                       },
-                                      ...(message.result.answer_mode === "degraded"
+                                      ...(message.result.answer_mode === "degraded" && !message.degradedNoticeShown
                                         ? [{
                                           key: "degraded",
                                           label: "降级说明",
