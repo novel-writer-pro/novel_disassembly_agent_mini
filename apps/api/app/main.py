@@ -32,6 +32,11 @@ from novel_analyzer.database.models import (
     RunBranch,
 )
 from novel_analyzer.database.session import create_session_factory
+from novel_analyzer.runtime.storage import (
+    describe_runtime_storage,
+    migrate_legacy_runtime_dirs,
+    runtime_cache_root,
+)
 from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -201,9 +206,7 @@ def _mock_branch_snapshot(profile: str) -> dict[str, Any]:
 
 
 def _runtime_cache_root() -> Path:
-    root = get_settings().resolved_runtime_cache_dir
-    root.mkdir(parents=True, exist_ok=True)
-    return root
+    return runtime_cache_root(get_settings())
 
 
 def _migrate_legacy_runtime_dirs() -> None:
@@ -211,30 +214,7 @@ def _migrate_legacy_runtime_dirs() -> None:
     if _RUNTIME_MIGRATED:
         return
 
-    settings = get_settings()
-    legacy_root = settings.legacy_runtime_dir
-    cache_root = settings.resolved_runtime_cache_dir
-    cache_root.mkdir(parents=True, exist_ok=True)
-
-    migration_pairs = [
-        (legacy_root / "uploads", cache_root / "uploads"),
-        (legacy_root / "runtime-exports", cache_root / "runtime-exports"),
-    ]
-
-    for legacy_dir, target_dir in migration_pairs:
-        if not legacy_dir.exists():
-            continue
-        target_dir.mkdir(parents=True, exist_ok=True)
-        for source in legacy_dir.rglob("*"):
-            if not source.is_file():
-                continue
-            relative = source.relative_to(legacy_dir)
-            destination = target_dir / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            if destination.exists():
-                continue
-            shutil.copy2(source, destination)
-
+    migrate_legacy_runtime_dirs(get_settings())
     _RUNTIME_MIGRATED = True
 
 
@@ -402,6 +382,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-qa-context",
                     "/api/chapter-source",
                     "/api/library",
+                    "/api/runtime-health",
                     "/api/search-branch",
                     "/api/ask-branch",
                     "/api/ask-branch-stream",
@@ -677,6 +658,17 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/runtime-health":
+        try:
+            report = describe_runtime_storage(get_settings())
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=asdict(report))
 
     if path == "/api/search-branch":
         ok, missing = _require(params, "branch_id", "q")

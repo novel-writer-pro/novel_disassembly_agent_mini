@@ -38,6 +38,8 @@
 - 补充旧 `.omx/uploads/` 路径的兼容读取，减少重启或历史数据切换时出现“文件不存在”
 - 后端启动时会自动迁移历史 `.omx/uploads/` 与 `.omx/runtime-exports/` 内容到 `.cache/novel-analyzer/`
 - 工作台按 branch 记住独立的最后阅读章节，切回同一本小说时优先恢复各自阅读位置
+- 新增 `novel-analyzer runtime-storage` 与 `scripts/check_runtime_storage.py`，用于检查/迁移历史运行时文件
+- 新增 `GET /api/runtime-health`，便于后续工作台或排障流程直接查看运行时文件状态
 
 ### 小说问答页修复与产品化增强
 - 修复 `/qa` 页面实际未挂载问答组件、进入后无内容的问题

@@ -20,6 +20,7 @@ from novel_analyzer.database.session import (
     database_healthcheck,
     ensure_database_exists,
 )
+from novel_analyzer.runtime.storage import describe_runtime_storage, migrate_legacy_runtime_dirs
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -202,6 +203,21 @@ def db_capabilities(database_url: str | None = None) -> None:
     echo(f"ok={str(report.ok).lower()}")
     if not report.ok:
         raise typer.Exit(code=1)
+
+
+@app.command()
+def runtime_storage(migrate: bool = typer.Option(False, "--migrate")) -> None:
+    """Inspect managed runtime storage roots and optionally migrate legacy .omx files."""
+
+    report = migrate_legacy_runtime_dirs(get_settings()) if migrate else describe_runtime_storage(get_settings())
+    echo(f"cache_root={report.cache_root}")
+    echo(f"legacy_root={report.legacy_root}")
+    echo(f"cache_upload_files={report.cache_upload_files}")
+    echo(f"cache_export_files={report.cache_export_files}")
+    echo(f"legacy_upload_files={report.legacy_upload_files}")
+    echo(f"legacy_export_files={report.legacy_export_files}")
+    echo(f"missing_from_cache={report.missing_from_cache}")
+    echo(f"migrated_this_run={report.migrated_this_run}")
 
 
 @app.command()
