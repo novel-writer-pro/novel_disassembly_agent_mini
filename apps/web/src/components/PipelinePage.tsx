@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Col, Drawer, Empty, InputNumber, List, Progress, Row, Segmented, Select, Space, Table, Tag, Timeline, Typography } from "antd";
+import { Alert, Button, Card, Col, Drawer, Empty, InputNumber, List, Progress, Row, Segmented, Select, Space, Statistic, Table, Tag, Timeline, Typography } from "antd";
 import type { ChapterJobRow, JobEventItem, PipelineRunSnapshot } from "@/types/workbench";
 import { useMemo, useState } from "react";
 
@@ -61,17 +61,24 @@ export default function PipelinePage(props: Props) {
   } = props;
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
   const [jobFilter, setJobFilter] = useState<"all" | "running" | "failed" | "stalled">("all");
+  const [eventFilter, setEventFilter] = useState<"all" | "error" | "warning">("all");
 
   const latestRun = pipelineRuns[0] || null;
   const stalledJobs = chapterJobs.filter((item) => item.failure_class === "stalled");
   const activeRunningJobs = chapterJobs.filter((item) => item.status === "running");
   const failedJobs = chapterJobs.filter((item) => item.status === "failed");
+  const completedJobCount = chapterJobs.filter((item) => item.has_artifact || item.status === "validated").length;
   const filteredChapterJobs = useMemo(() => {
     if (jobFilter === "running") return chapterJobs.filter((item) => item.status === "running");
     if (jobFilter === "failed") return chapterJobs.filter((item) => item.status === "failed");
     if (jobFilter === "stalled") return chapterJobs.filter((item) => item.failure_class === "stalled");
     return chapterJobs;
   }, [chapterJobs, jobFilter]);
+  const filteredEvents = useMemo(() => {
+    if (eventFilter === "error") return events.filter((item) => item.level === "error");
+    if (eventFilter === "warning") return events.filter((item) => item.level === "warning");
+    return events;
+  }, [eventFilter, events]);
   const chapterEventTitle = useMemo(
     () => (selectedChapterIndex ? `第 ${selectedChapterIndex} 章任务详情` : "章节任务详情"),
     [selectedChapterIndex],
@@ -108,6 +115,38 @@ export default function PipelinePage(props: Props) {
           showIcon
           message="检测到疑似卡住的章节任务"
           description={`当前有 ${stalledJobs.length} 个章节任务因心跳超时被标记为 stalled/failed。建议先观察事件流，必要时再到恢复页处理。`}
+        />
+      ) : null}
+
+      <Row gutter={[16, 16]}>
+        <Col xs={12} md={6}>
+          <Card bordered={false} className="product-panel stat-panel">
+            <Statistic title="已完成章节任务" value={completedJobCount} valueStyle={{ color: "#eaf2ff" }} />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card bordered={false} className="product-panel stat-panel">
+            <Statistic title="运行中任务" value={activeRunningJobs.length} valueStyle={{ color: "#eaf2ff" }} />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card bordered={false} className="product-panel stat-panel">
+            <Statistic title="失败任务" value={failedJobs.length} valueStyle={{ color: "#eaf2ff" }} />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card bordered={false} className="product-panel stat-panel">
+            <Statistic title="Stalled" value={stalledJobs.length} valueStyle={{ color: "#eaf2ff" }} />
+          </Card>
+        </Col>
+      </Row>
+
+      {latestRun?.summary_json?.last_error ? (
+        <Alert
+          type={latestRun.status === "failed" ? "error" : "warning"}
+          showIcon
+          message="最近一次后台流水线有错误摘要"
+          description={`最近错误：${String(latestRun.summary_json.last_error)}${latestRun.summary_json.retrying_chapter ? ` ｜ 重试章节：第 ${latestRun.summary_json.retrying_chapter} 章` : ""}`}
         />
       ) : null}
 
@@ -194,8 +233,18 @@ export default function PipelinePage(props: Props) {
 
       <Card title="最近章节事件流" bordered={false} className="product-panel">
         {events.length ? (
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            <Segmented
+              value={eventFilter}
+              onChange={(value) => setEventFilter(value as typeof eventFilter)}
+              options={[
+                { label: `全部 ${events.length}`, value: "all" },
+                { label: `错误 ${events.filter((item) => item.level === "error").length}`, value: "error" },
+                { label: `警告 ${events.filter((item) => item.level === "warning").length}`, value: "warning" },
+              ]}
+            />
           <Timeline
-            items={events.map((item) => ({
+            items={filteredEvents.map((item) => ({
               color: item.level === "error" ? "red" : item.level === "warning" ? "orange" : "blue",
               children: (
                 <div className="pipeline-event-item">
@@ -212,6 +261,7 @@ export default function PipelinePage(props: Props) {
               ),
             }))}
           />
+          </Space>
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前还没有章节事件流" />
         )}

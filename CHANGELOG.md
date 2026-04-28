@@ -170,6 +170,11 @@
 - 单章任务详情抽屉新增失败摘要展示
 - 当章节已有失败分类时，可直接从详情抽屉跳转到恢复页继续处理
 
+### Pipeline 总览统计增强
+- `/pipeline` 顶部新增章节任务统计卡：已完成 / 运行中 / 失败 / stalled
+- 最近章节事件流新增错误/警告筛选，便于更快聚焦异常信号
+- 当最近一次后台 run 已记录错误摘要时，会在页面顶部显式提醒
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`
