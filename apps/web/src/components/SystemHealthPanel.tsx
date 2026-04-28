@@ -1,5 +1,6 @@
 import { Alert, Card, Descriptions, Space, Tag, Typography } from "antd";
 import type { ProviderHealth, RuntimeHealth } from "@/types/workbench";
+import { providerDegraded, runtimeNeedsAttention, systemRecommendation } from "@/lib/formatters";
 
 interface Props {
   runtimeHealth: RuntimeHealth | null;
@@ -21,13 +22,9 @@ export default function SystemHealthPanel({ runtimeHealth, providerHealth, lastR
     );
   }
 
-  const cacheHealthy = runtimeHealth ? runtimeHealth.missing_from_cache === 0 : true;
-  const providerHealthy = providerHealth ? providerHealth.last_status !== "degraded" : true;
-  const recommendation = !providerHealthy
-    ? "当前更适合先观察 ask-stream / provider 恢复情况，再集中继续问答或批量恢复。"
-    : !cacheHealthy
-      ? "建议先完成历史 .omx 到 .cache 的迁移检查，避免重启后出现文件读取问题。"
-      : "当前系统没有明显健康阻塞，可按正常节奏继续阅读、问答和恢复。";
+  const cacheHealthy = !runtimeNeedsAttention(runtimeHealth);
+  const providerHealthy = !providerDegraded(providerHealth);
+  const recommendation = systemRecommendation(providerHealth, runtimeHealth);
 
   return (
     <Card title="系统健康面板" bordered={false} className="product-panel">

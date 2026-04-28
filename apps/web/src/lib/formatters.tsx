@@ -1,4 +1,4 @@
-import type { BranchSnapshot, ChapterBundle, ChapterQaContext, ChapterSource, RunSnapshot } from "@/types/workbench";
+import type { BranchSnapshot, ChapterBundle, ChapterQaContext, ChapterSource, ProviderHealth, RunSnapshot, RuntimeHealth } from "@/types/workbench";
 import { Tag } from "antd";
 import React from "react";
 
@@ -18,6 +18,29 @@ export const stateColor = (state?: string) => {
 };
 
 export const renderStateTag = (state?: string) => <Tag color={stateColor(state)}>{state || "unknown"}</Tag>;
+
+export const providerDegraded = (providerHealth?: ProviderHealth | null) => providerHealth?.last_status === "degraded";
+
+export const runtimeNeedsAttention = (runtimeHealth?: RuntimeHealth | null) =>
+  runtimeHealth ? runtimeHealth.missing_from_cache > 0 : false;
+
+export const systemRecommendation = (
+  providerHealth?: ProviderHealth | null,
+  runtimeHealth?: RuntimeHealth | null,
+) => {
+  if (providerDegraded(providerHealth)) {
+    return "当前更适合先观察 ask-stream / provider 恢复情况，再集中继续问答或批量恢复。";
+  }
+  if (runtimeNeedsAttention(runtimeHealth)) {
+    return "建议先完成历史 .omx 到 .cache 的迁移检查，避免重启后出现文件读取问题。";
+  }
+  return "当前系统没有明显健康阻塞，可按正常节奏继续阅读、问答和恢复。";
+};
+
+export const recoveryRecommendation = (providerHealth?: ProviderHealth | null) =>
+  providerDegraded(providerHealth)
+    ? "如果只是 ask-stream / 问答异常，优先先观察与刷新；更适合等服务恢复后再重试失败章节。只有当章节任务本身持续失败、数据库状态异常，或运行态明显卡住时，才建议立刻手动恢复。"
+    : "如果失败章节已经达到自动重试上限，或运行态明显卡住，再进入这里执行手动恢复。";
 
 export const summarizeRun = (run: RunSnapshot) => [
   { label: "当前状态", value: run.pipeline_state },

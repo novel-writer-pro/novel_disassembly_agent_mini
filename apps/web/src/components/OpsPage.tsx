@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Col, Row, Space, Tag, Typography } from "antd";
 import type { BranchExports, ProviderHealth } from "@/types/workbench";
+import { providerDegraded as isProviderDegraded, recoveryRecommendation } from "@/lib/formatters";
 
 interface Props {
   recoveryResultText: string;
@@ -30,7 +31,7 @@ export default function OpsPage(props: Props) {
     apiBase,
     providerHealth,
   } = props;
-  const providerDegraded = providerHealth?.last_status === "degraded";
+  const providerDegraded = isProviderDegraded(providerHealth);
 
   let recoveryData: { message?: string; pipeline_state?: string; accepted_action?: string } | null = null;
   try {
@@ -63,7 +64,7 @@ export default function OpsPage(props: Props) {
                 showIcon
                 style={{ marginBottom: 16 }}
                 message="当前 provider 处于降级期"
-                description="建议优先先刷新和观察任务状态；如果只是 ask-stream/问答异常，不一定要立刻执行恢复。更适合等服务恢复后再重试失败章节。只有当章节任务本身持续失败、数据库状态异常，或运行态明显卡住时，才建议立刻手动恢复。"
+                description={recoveryRecommendation(providerHealth)}
               />
             ) : null}
             <Space direction="vertical" style={{ width: "100%" }}>

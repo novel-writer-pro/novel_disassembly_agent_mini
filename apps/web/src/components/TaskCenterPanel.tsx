@@ -1,6 +1,7 @@
 import { Alert, Button, Card, Empty, List, Segmented, Space, Tag, Typography } from "antd";
 import type { LibraryItem, ProviderHealth } from "@/types/workbench";
 import { useMemo, useState } from "react";
+import { providerDegraded as isProviderDegraded, recoveryRecommendation } from "@/lib/formatters";
 
 interface Props {
   items: LibraryItem[];
@@ -34,7 +35,7 @@ export default function TaskCenterPanel({
     if (filter === "recovery") return recoveryItems;
     return focusItems;
   }, [filter, focusItems, recoveryItems, runningItems]);
-  const providerDegraded = providerHealth?.last_status === "degraded";
+  const providerDegraded = isProviderDegraded(providerHealth);
 
   return (
     <Card
@@ -65,7 +66,7 @@ export default function TaskCenterPanel({
             type="warning"
             showIcon
             message="当前上游 provider 正处于降级期"
-            description={`最近 ask-stream / QA 请求出现过上游异常。当前更适合先观察运行任务与恢复任务，等服务恢复后再集中继续追问或批量恢复。${providerHealth?.last_error ? ` 最近错误：${providerHealth.last_error}` : ""}`}
+            description={`${recoveryRecommendation(providerHealth)}${providerHealth?.last_error ? ` 最近错误：${providerHealth.last_error}` : ""}`}
           />
         ) : null}
         <Segmented
