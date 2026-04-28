@@ -6,6 +6,7 @@ import TaskCenterPanel from "@/components/TaskCenterPanel";
 import SystemHealthPanel from "@/components/SystemHealthPanel";
 import SystemStatusBar from "@/components/SystemStatusBar";
 import ControlPage from "@/components/ControlPage";
+import PipelinePage from "@/components/PipelinePage";
 import ReaderPage from "@/components/ReaderPage";
 import BranchQaPanel from "@/components/BranchQaPanel";
 import OpsPage from "@/components/OpsPage";
@@ -17,9 +18,15 @@ import {
   fetchChapterQaContext,
   fetchChapterSource,
   fetchLibrary,
+  fetchJobEvents,
+  fetchPipelineRuns,
   fetchProviderHealth,
   fetchRuntimeHealth,
   fetchRunSnapshot,
+  postPipelineCancel,
+  postPipelinePause,
+  postPipelineResume,
+  postPipelineStartRange,
   postImport,
   postRecovery,
   postStart,
@@ -30,6 +37,8 @@ import type {
   ChapterBundle,
   ChapterQaContext,
   ChapterSource,
+  JobEventItem,
+  PipelineRunSnapshot,
   RunSnapshot,
   LibraryItem,
   ProviderHealth,
@@ -41,13 +50,14 @@ import { useRouter } from "next/router";
 const routeByWorkspace: Record<string, string> = {
   library: "/library",
   control: "/control",
+  pipeline: "/pipeline",
   reader: "/reader",
   qa: "/qa",
   ops: "/ops",
 };
 
 interface Props {
-  initialWorkspace: "library" | "control" | "reader" | "qa" | "ops";
+  initialWorkspace: "library" | "control" | "pipeline" | "reader" | "qa" | "ops";
 }
 
 export default function WorkbenchApp({ initialWorkspace }: Props) {
@@ -64,6 +74,10 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealth | null>(null);
   const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null);
+  const [pipelineRuns, setPipelineRuns] = useState<PipelineRunSnapshot[]>([]);
+  const [jobEvents, setJobEvents] = useState<JobEventItem[]>([]);
+  const [pipelineTargetToChapter, setPipelineTargetToChapter] = useState<number | null>(null);
+  const [pipelineProviderProfile, setPipelineProviderProfile] = useState("default");
   const [recoveryResultText, setRecoveryResultText] = useState("");
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
@@ -72,6 +86,8 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     importing: false,
     refreshing: false,
     starting: false,
+    pipelineStarting: false,
+    pipelineActing: false,
     retrying: false,
     clearing: false,
     repairing: false,
@@ -111,11 +127,18 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     setLibraryItems(libraryData.items || []);
     setRuntimeHealth(runtimeHealthData);
     setProviderHealth(providerHealthData);
+    const [eventsData, pipelineRunsData] = await Promise.all([
+      fetchJobEvents(apiBase, branchId, databaseUrl, 50).catch(() => ({ items: [] })),
+      fetchPipelineRuns(apiBase, branchId, databaseUrl, 10).catch(() => ({ items: [] })),
+    ]);
+    if (workspaceRequestSeqRef.current !== requestId) return;
+    setJobEvents(eventsData.items || []);
+    setPipelineRuns(pipelineRunsData.items || []);
     setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
   };
 
   const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
-    setWorkspace(nextWorkspace as "library" | "control" | "reader" | "qa" | "ops");
+    setWorkspace(nextWorkspace as "library" | "control" | "pipeline" | "reader" | "qa" | "ops");
     const nextRoute = routeByWorkspace[nextWorkspace] || "/";
     const nextQuery: Record<string, string> = {};
     if (options?.chapterIndex) nextQuery.chapter = String(options.chapterIndex);
@@ -424,6 +447,46 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     </Space>
   );
 
+  const handlePipelineStart = async () => {
+    setLoading((current) => ({ ...current, pipelineStarting: true }));
+    try {
+      const payload = await postPipelineStartRange(state.apiBase, {
+        run_id: state.runId,
+        branch_id: state.branchId,
+        to_chapter: pipelineTargetToChapter,
+        concurrency: 1,
+        provider_profile: pipelineProviderProfile,
+        database_url: state.databaseUrl,
+      });
+      message.success(`后台拆书任务已启动：${payload.id.slice(0, 8)}`);
+      await refreshBranch();
+      navigateWorkspace("pipeline");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "启动后台拆书失败");
+    } finally {
+      setLoading((current) => ({ ...current, pipelineStarting: false }));
+    }
+  };
+
+  const handlePipelineAction = async (action: "pause" | "resume" | "cancel", pipelineRunId: string) => {
+    setLoading((current) => ({ ...current, pipelineActing: true }));
+    try {
+      if (action === "pause") {
+        await postPipelinePause(state.apiBase, pipelineRunId, state.databaseUrl);
+      } else if (action === "resume") {
+        await postPipelineResume(state.apiBase, pipelineRunId, state.databaseUrl);
+      } else {
+        await postPipelineCancel(state.apiBase, pipelineRunId, state.databaseUrl);
+      }
+      message.success(`后台任务已${action === "pause" ? "暂停" : action === "resume" ? "恢复" : "取消"}`);
+      await refreshBranch();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "后台任务操作失败");
+    } finally {
+      setLoading((current) => ({ ...current, pipelineActing: false }));
+    }
+  };
+
   const statusBar = (
     <SystemStatusBar
       runtimeHealth={runtimeHealth}
@@ -459,6 +522,28 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           onSelectLibraryItem={(item) => {
             void activateLibraryItem(item);
           }}
+        />
+      ) : null}
+
+      {workspace === "pipeline" ? (
+        <PipelinePage
+          runId={state.runId}
+          branchId={state.branchId}
+          nextChapter={runSnapshot?.next_chapter ?? null}
+          completedChapters={runSnapshot?.completed_chapters}
+          manifestChapterCount={runSnapshot?.manifest_chapter_count}
+          loading={loading.pipelineStarting || loading.pipelineActing || loading.refreshing}
+          pipelineRuns={pipelineRuns}
+          events={jobEvents}
+          onRefresh={refreshBranch}
+          targetToChapter={pipelineTargetToChapter}
+          onChangeTargetToChapter={setPipelineTargetToChapter}
+          providerProfile={pipelineProviderProfile}
+          onChangeProviderProfile={setPipelineProviderProfile}
+          onStart={() => void handlePipelineStart()}
+          onPause={(pipelineRunId) => void handlePipelineAction("pause", pipelineRunId)}
+          onResume={(pipelineRunId) => void handlePipelineAction("resume", pipelineRunId)}
+          onCancel={(pipelineRunId) => void handlePipelineAction("cancel", pipelineRunId)}
         />
       ) : null}
 

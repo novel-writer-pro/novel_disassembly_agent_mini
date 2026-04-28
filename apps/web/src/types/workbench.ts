@@ -174,3 +174,32 @@ export interface ProviderHealth {
   last_error?: string | null;
   last_updated_at?: string | null;
 }
+
+export interface PipelineRunSnapshot {
+  id: string;
+  run_id: string;
+  branch_id: string;
+  status: "pending" | "running" | "paused" | "completed" | "failed" | "cancelled" | string;
+  target_from_chapter: number | null;
+  target_to_chapter: number | null;
+  concurrency: number;
+  provider_profile?: string | null;
+  summary_json: Record<string, any>;
+  started_at?: string | null;
+  finished_at?: string | null;
+  paused_at?: string | null;
+  cancelled_at?: string | null;
+}
+
+export interface JobEventItem {
+  id: string;
+  run_id: string;
+  branch_id: string;
+  chapter_index: number;
+  event_type: string;
+  stage?: string | null;
+  level: "info" | "warning" | "error" | string;
+  message: string;
+  payload_json: Record<string, any>;
+  created_at: string;
+}

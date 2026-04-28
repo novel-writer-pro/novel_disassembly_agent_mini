@@ -10,6 +10,8 @@ import type {
   BranchAskResult,
   BranchAskStreamEvent,
   LibraryItem,
+  JobEventItem,
+  PipelineRunSnapshot,
   RuntimeHealth,
   ProviderHealth,
 } from "@/types/workbench";
@@ -122,6 +124,61 @@ export const fetchRuntimeHealth = (apiBase: string) =>
 
 export const fetchProviderHealth = (apiBase: string) =>
   requestJson<ProviderHealth>(`${apiBase}/api/provider-health`);
+
+export const fetchJobEvents = (apiBase: string, branchId: string, databaseUrl?: string, limit = 100) => {
+  const query = new URLSearchParams({ branch_id: branchId, limit: String(limit) });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<{ items: JobEventItem[] }>(`${apiBase}/api/job-events?${query.toString()}`);
+};
+
+export const fetchPipelineRuns = (apiBase: string, branchId: string, databaseUrl?: string, limit = 20) => {
+  const query = new URLSearchParams({ branch_id: branchId, limit: String(limit) });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<{ items: PipelineRunSnapshot[] }>(`${apiBase}/api/pipeline/runs?${query.toString()}`);
+};
+
+export const fetchPipelineStatus = (apiBase: string, pipelineRunId: string, databaseUrl?: string) => {
+  const query = new URLSearchParams({ pipeline_run_id: pipelineRunId });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<PipelineRunSnapshot>(`${apiBase}/api/pipeline/status?${query.toString()}`);
+};
+
+export const postPipelineStartRange = (
+  apiBase: string,
+  payload: {
+    run_id: string;
+    branch_id: string;
+    from_chapter?: number | null;
+    to_chapter?: number | null;
+    concurrency?: number;
+    provider_profile?: string | null;
+    database_url?: string;
+  },
+) => requestJson<PipelineRunSnapshot>(`${apiBase}/api/pipeline/start-range`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+
+const postPipelineAction = (
+  apiBase: string,
+  path: "pause" | "resume" | "cancel",
+  pipelineRunId: string,
+  databaseUrl?: string,
+) => requestJson<PipelineRunSnapshot>(`${apiBase}/api/pipeline/${path}`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ pipeline_run_id: pipelineRunId, database_url: databaseUrl }),
+});
+
+export const postPipelinePause = (apiBase: string, pipelineRunId: string, databaseUrl?: string) =>
+  postPipelineAction(apiBase, "pause", pipelineRunId, databaseUrl);
+
+export const postPipelineResume = (apiBase: string, pipelineRunId: string, databaseUrl?: string) =>
+  postPipelineAction(apiBase, "resume", pipelineRunId, databaseUrl);
+
+export const postPipelineCancel = (apiBase: string, pipelineRunId: string, databaseUrl?: string) =>
+  postPipelineAction(apiBase, "cancel", pipelineRunId, databaseUrl);
 
 
 export const searchBranch = (

@@ -1,4 +1,4 @@
-import { AppstoreOutlined, BookOutlined, DashboardOutlined, ExportOutlined, MessageOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, BookOutlined, DashboardOutlined, DeploymentUnitOutlined, ExportOutlined, MessageOutlined } from "@ant-design/icons";
 import { Layout, Menu, Space, Tag, Typography } from "antd";
 import type { ReactNode } from "react";
 
@@ -36,6 +36,11 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
       subtitle: "集中检索人物、事件、冲突与线索，并基于整本小说内容发起问答。",
       tip: "检索与追问",
     },
+    pipeline: {
+      title: "拆书流水线",
+      subtitle: "以后台任务方式持续推进拆书，并观察章节级事件与运行状态。",
+      tip: "后台任务控制",
+    },
     ops: {
       title: "导出与恢复",
       subtitle: "把结果导出成手册；只有遇到异常时，才需要在这里处理恢复。",
@@ -65,6 +70,7 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
           items={[
             { key: "library", icon: <AppstoreOutlined />, label: "小说空间" },
             { key: "control", icon: <DashboardOutlined />, label: "开始整理" },
+            { key: "pipeline", icon: <DeploymentUnitOutlined />, label: "拆书流水线" },
             { key: "reader", icon: <BookOutlined />, label: "章节阅读" },
             { key: "qa", icon: <MessageOutlined />, label: "小说问答" },
             { key: "ops", icon: <ExportOutlined />, label: "导出与恢复" },
