@@ -82,3 +82,20 @@ class ExportRefs:
     branch_bundle_path: str
     branch_qa_context_path: str
     branch_report_path: str
+
+
+@dataclass(frozen=True, slots=True)
+class PipelineRunSnapshot:
+    id: str
+    run_id: str
+    branch_id: str
+    status: str
+    target_from_chapter: int | None
+    target_to_chapter: int | None
+    concurrency: int
+    provider_profile: str | None
+    summary_json: dict[str, object]
+    started_at: str | None = None
+    finished_at: str | None = None
+    paused_at: str | None = None
+    cancelled_at: str | None = None

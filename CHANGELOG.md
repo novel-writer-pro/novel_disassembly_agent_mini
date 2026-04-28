@@ -132,6 +132,18 @@
 - 新增 `novel-analyzer list-job-events` CLI 命令
 - 新增 `GET /api/job-events` 接口，便于后续前端任务控制台接入
 
+### 异步可观测流水线 Phase 1 后端骨架
+- 新增 `pipeline_runs` 表，用于持久化一次后台拆书区间任务
+- 新增最小可用的后台 daemon pipeline runner：支持从当前 `next_chapter` 连续推进到目标章数
+- 新增 API：
+  - `POST /api/pipeline/start-range`
+  - `GET /api/pipeline/status`
+  - `GET /api/pipeline/runs`
+  - `POST /api/pipeline/pause`
+  - `POST /api/pipeline/resume`
+  - `POST /api/pipeline/cancel`
+- 当前版本仍是单进程原型级异步执行，但已经完成“控制面/API 与执行线程解耦”的第一步
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

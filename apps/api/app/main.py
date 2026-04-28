@@ -15,11 +15,17 @@ from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
 
 from novel_analyzer.application import (
+    cancel_pipeline_run,
     export_branch_refs,
     get_branch_snapshot,
+    get_pipeline_run_status,
     get_run_snapshot,
     ingest_and_start_pipeline,
+    list_pipeline_runs,
+    pause_pipeline_run,
     recover_branch,
+    resume_pipeline_run,
+    start_pipeline_run_async,
     start_pipeline,
 )
 from novel_analyzer.application.queries import _derive_pipeline_state, _setup_status
@@ -411,6 +417,12 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-source",
                     "/api/library",
                     "/api/job-events",
+                    "/api/pipeline/start-range",
+                    "/api/pipeline/status",
+                    "/api/pipeline/runs",
+                    "/api/pipeline/pause",
+                    "/api/pipeline/resume",
+                    "/api/pipeline/cancel",
                     "/api/runtime-health",
                     "/api/provider-health",
                     "/api/search-branch",
@@ -708,6 +720,90 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/pipeline/start-range" and method == "POST":
+        body = _body(environ)
+        run_id = str(body.get("run_id") or "")
+        branch_id = str(body.get("branch_id") or "")
+        if not run_id or not branch_id:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "run_id and branch_id are required"},
+            )
+        try:
+            snapshot = start_pipeline_run_async(
+                run_id=run_id,
+                branch_id=branch_id,
+                target_from_chapter=int(str(body.get("from_chapter"))) if body.get("from_chapter") else None,
+                target_to_chapter=int(str(body.get("to_chapter"))) if body.get("to_chapter") else None,
+                concurrency=int(str(body.get("concurrency") or "1")),
+                provider_profile=str(body.get("provider_profile") or "") or None,
+                created_by="api",
+                database_url=str(body.get("database_url") or "") or None,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=asdict(snapshot))
+
+    if path == "/api/pipeline/status":
+        ok, missing = _require(params, "pipeline_run_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        try:
+            snapshot = get_pipeline_run_status(
+                pipeline_run_id=params["pipeline_run_id"],
+                database_url=params.get("database_url"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(start_response, status="500 Internal Server Error", payload={"error": str(exc)})
+        return _response(start_response, status="200 OK", payload=asdict(snapshot))
+
+    if path == "/api/pipeline/runs":
+        ok, missing = _require(params, "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        try:
+            rows = list_pipeline_runs(
+                branch_id=params["branch_id"],
+                limit=int(params.get("limit", "20")),
+                database_url=params.get("database_url"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(start_response, status="500 Internal Server Error", payload={"error": str(exc)})
+        return _response(start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]})
+
+    if path in {"/api/pipeline/pause", "/api/pipeline/resume", "/api/pipeline/cancel"} and method == "POST":
+        body = _body(environ)
+        pipeline_run_id = str(body.get("pipeline_run_id") or "")
+        if not pipeline_run_id:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "pipeline_run_id is required"},
+            )
+        try:
+            if path.endswith("/pause"):
+                snapshot = pause_pipeline_run(pipeline_run_id=pipeline_run_id, database_url=str(body.get("database_url") or "") or None)
+            elif path.endswith("/resume"):
+                snapshot = resume_pipeline_run(pipeline_run_id=pipeline_run_id, database_url=str(body.get("database_url") or "") or None)
+            else:
+                snapshot = cancel_pipeline_run(pipeline_run_id=pipeline_run_id, database_url=str(body.get("database_url") or "") or None)
+        except Exception as exc:  # noqa: BLE001
+            return _response(start_response, status="500 Internal Server Error", payload={"error": str(exc)})
+        return _response(start_response, status="200 OK", payload=asdict(snapshot))
 
     if path == "/api/runtime-health":
         try:

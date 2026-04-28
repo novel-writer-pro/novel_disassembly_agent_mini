@@ -99,6 +99,7 @@ class RunBranch(TimestampSoftDeleteMixin, Base):
     windows: Mapped[list[WindowArtifact]] = relationship(back_populates="branch")
     graph_nodes: Mapped[list[GraphNode]] = relationship(back_populates="branch")
     graph_edges: Mapped[list[GraphEdge]] = relationship(back_populates="branch")
+    pipeline_runs: Mapped[list[PipelineRun]] = relationship(back_populates="branch")
 
 
 class RunCheckpoint(TimestampSoftDeleteMixin, Base):
@@ -173,6 +174,27 @@ class ChapterJobEvent(TimestampSoftDeleteMixin, Base):
     level: Mapped[str] = mapped_column(String(16), default="info")
     message: Mapped[str] = mapped_column(Text())
     payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+
+
+class PipelineRun(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "pipeline_runs"
+
+    run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    mode: Mapped[str] = mapped_column(String(32), default="range")
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    target_from_chapter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    target_to_chapter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    concurrency: Mapped[int] = mapped_column(Integer, default=1)
+    provider_profile: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    started_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paused_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    summary_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+
+    branch: Mapped[RunBranch] = relationship(back_populates="pipeline_runs")
 
 
 class ChapterRawOutput(TimestampSoftDeleteMixin, Base):
