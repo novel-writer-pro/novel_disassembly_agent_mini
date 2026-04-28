@@ -39,6 +39,7 @@ from novel_analyzer.runtime.storage import (
 )
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.services.export_service import ExportService
+from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.status_service import StatusService
@@ -345,6 +346,32 @@ def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
     return {"items": rows}
 
 
+def _job_events_payload(branch_id: str, database_url: str | None, limit: int) -> dict[str, Any]:
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    with factory() as session:
+        rows = JobEventService(session).list_for_branch(branch_id, limit)
+    return {
+        "items": [
+            {
+                "id": row.id,
+                "run_id": row.run_id,
+                "branch_id": row.branch_id,
+                "chapter_index": row.chapter_index,
+                "event_type": row.event_type,
+                "stage": row.stage,
+                "level": row.level,
+                "message": row.message,
+                "payload_json": row.payload_json,
+                "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else str(row.created_at),
+            }
+            for row in rows
+        ]
+    }
+
+
 def application(environ: dict[str, Any], start_response: StartResponse) -> list[bytes]:
     method = environ.get("REQUEST_METHOD", "GET")
     path = environ.get("PATH_INFO", "/")
@@ -383,6 +410,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-qa-context",
                     "/api/chapter-source",
                     "/api/library",
+                    "/api/job-events",
                     "/api/runtime-health",
                     "/api/provider-health",
                     "/api/search-branch",
@@ -653,6 +681,26 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         limit = int(params.get("limit", "100"))
         try:
             payload = _library_payload(database_url, limit)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/job-events":
+        ok, missing = _require(params, "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        database_url = params.get("database_url")
+        limit = int(params.get("limit", "100"))
+        try:
+            payload = _job_events_payload(params["branch_id"], database_url, limit)
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,

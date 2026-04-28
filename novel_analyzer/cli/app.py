@@ -423,6 +423,28 @@ def retry_chapter(
             echo(f"artifact_id={artifact_id}")
 
 
+@app.command()
+def list_job_events(
+    branch_id: str,
+    limit: int = typer.Option(50, '--limit'),
+    database_url: str | None = None,
+) -> None:
+    """List recent job events for one branch."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    from novel_analyzer.services.job_event_service import JobEventService
+
+    with factory() as session:
+        rows = JobEventService(session).list_for_branch(branch_id, limit)
+        echo(f"job_event_count={len(rows)}")
+        for item in rows:
+            echo(
+                f"event=chapter:{item.chapter_index}|type:{item.event_type}|stage:{item.stage or '-'}|"
+                f"level:{item.level}|message:{item.message}"
+            )
+
+
 
 @app.command()
 def list_chapters(

@@ -125,6 +125,13 @@
 - 将进度区按钮文案从“继续整理后续章节”改为更直白的“继续拆书到后续章节”
 - 减少“功能存在但入口不明显”带来的误判，方便直接进入下一轮批量拆书
 
+### 异步可观测流水线 Phase 0 启动
+- 扩展 `chapter_jobs` 可观测字段：`current_stage`、`progress_percent`、`heartbeat_at`、`failure_class` 等
+- 新增 `chapter_job_events` 表，用于记录章节任务过程事件
+- 现有同步拆书流程开始写入基础事件：`job_started`、`stage_started`、`stage_completed`、`stage_failed`、`artifact_saved`、`job_completed`、`job_failed`
+- 新增 `novel-analyzer list-job-events` CLI 命令
+- 新增 `GET /api/job-events` 接口，便于后续前端任务控制台接入
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

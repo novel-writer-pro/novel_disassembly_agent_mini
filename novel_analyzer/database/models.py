@@ -143,10 +143,36 @@ class ChapterJob(TimestampSoftDeleteMixin, Base):
     status: Mapped[str] = mapped_column(String(32), default="pending")
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    current_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0)
+    worker_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    heartbeat_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_retry_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_class: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    provider_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    queue_name: Mapped[str] = mapped_column(String(64), default="default")
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    control_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     started_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     branch: Mapped[RunBranch] = relationship(back_populates="jobs")
+
+
+class ChapterJobEvent(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "chapter_job_events"
+
+    run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    job_id: Mapped[str | None] = mapped_column(ForeignKey("chapter_jobs.id"), nullable=True, index=True)
+    event_type: Mapped[str] = mapped_column(String(64))
+    stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    level: Mapped[str] = mapped_column(String(16), default="info")
+    message: Mapped[str] = mapped_column(Text())
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
 
 
 class ChapterRawOutput(TimestampSoftDeleteMixin, Base):
