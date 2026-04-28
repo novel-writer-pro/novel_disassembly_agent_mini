@@ -88,6 +88,17 @@ export default function ControlPage(props: Props) {
             <Typography.Paragraph type="secondary" style={{ fontSize: 15, marginBottom: 0 }}>
               这里负责“开始”和“继续”。导入作品后，你就可以去左侧目录按章节阅读；如果效果满意，也可以继续批量往后拆。
             </Typography.Paragraph>
+            <Space wrap style={{ marginTop: 18 }}>
+              <Button type="primary" loading={loading?.starting} onClick={onStart}>
+                继续拆书
+              </Button>
+              <Button loading={loading?.refreshing} onClick={onRefresh}>
+                刷新进度
+              </Button>
+              <Button onClick={onOpenRecovery}>
+                导出 / 恢复
+              </Button>
+            </Space>
           </Col>
           <Col xs={24} xl={9}>
             <Alert showIcon type="info" message="推荐流程" description="导入作品 → 先看前几章效果 → 继续整理更多章节 → 最后导出手册。" />
@@ -244,7 +255,7 @@ export default function ControlPage(props: Props) {
             <Card title="第二步：查看当前进度" bordered={false} className="product-panel" extra={<Typography.Text type="secondary">整体概览</Typography.Text>}>
               <Space wrap>
                 <Button type="primary" loading={loading?.refreshing} onClick={onRefresh}>刷新当前进度</Button>
-                <Button loading={loading?.starting} onClick={onStart}>继续整理后续章节</Button>
+                <Button type="primary" ghost loading={loading?.starting} onClick={onStart}>继续拆书到后续章节</Button>
               </Space>
               <Alert
                 type="info"
