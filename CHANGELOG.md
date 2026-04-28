@@ -165,6 +165,11 @@
 - `/pipeline` 页面支持点击章节打开任务详情抽屉，查看该章事件链
 - 进一步强化“先看清楚再处理”的操作体验，优先保证可读性与维护性
 
+### Pipeline 过滤与恢复联动增强
+- `/pipeline` 章节任务表新增过滤器：全部 / 运行中 / 失败 / stalled
+- 单章任务详情抽屉新增失败摘要展示
+- 当章节已有失败分类时，可直接从详情抽屉跳转到恢复页继续处理
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

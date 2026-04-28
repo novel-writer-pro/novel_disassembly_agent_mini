@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Col, Drawer, Empty, InputNumber, List, Progress, Row, Select, Space, Table, Tag, Timeline, Typography } from "antd";
+import { Alert, Button, Card, Col, Drawer, Empty, InputNumber, List, Progress, Row, Segmented, Select, Space, Table, Tag, Timeline, Typography } from "antd";
 import type { ChapterJobRow, JobEventItem, PipelineRunSnapshot } from "@/types/workbench";
 import { useMemo, useState } from "react";
 
@@ -24,6 +24,7 @@ interface Props {
   onCancel: (pipelineRunId: string) => void;
   onOpenChapterDetail: (chapterIndex: number) => void;
   onCloseChapterDetail: () => void;
+  onOpenRecovery: () => void;
 }
 
 const runTone = (status: string) => {
@@ -59,14 +60,25 @@ export default function PipelinePage(props: Props) {
     onCloseChapterDetail,
   } = props;
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
+  const [jobFilter, setJobFilter] = useState<"all" | "running" | "failed" | "stalled">("all");
 
   const latestRun = pipelineRuns[0] || null;
   const stalledJobs = chapterJobs.filter((item) => item.failure_class === "stalled");
   const activeRunningJobs = chapterJobs.filter((item) => item.status === "running");
   const failedJobs = chapterJobs.filter((item) => item.status === "failed");
+  const filteredChapterJobs = useMemo(() => {
+    if (jobFilter === "running") return chapterJobs.filter((item) => item.status === "running");
+    if (jobFilter === "failed") return chapterJobs.filter((item) => item.status === "failed");
+    if (jobFilter === "stalled") return chapterJobs.filter((item) => item.failure_class === "stalled");
+    return chapterJobs;
+  }, [chapterJobs, jobFilter]);
   const chapterEventTitle = useMemo(
     () => (selectedChapterIndex ? `第 ${selectedChapterIndex} 章任务详情` : "章节任务详情"),
     [selectedChapterIndex],
+  );
+  const selectedChapter = useMemo(
+    () => chapterJobs.find((item) => item.chapter_index === selectedChapterIndex) || null,
+    [chapterJobs, selectedChapterIndex],
   );
 
   return (
@@ -207,10 +219,21 @@ export default function PipelinePage(props: Props) {
 
       <Card title="章节任务表" bordered={false} className="product-panel">
         {chapterJobs.length ? (
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            <Segmented
+              value={jobFilter}
+              onChange={(value) => setJobFilter(value as typeof jobFilter)}
+              options={[
+                { label: `全部 ${chapterJobs.length}`, value: "all" },
+                { label: `运行中 ${activeRunningJobs.length}`, value: "running" },
+                { label: `失败 ${failedJobs.length}`, value: "failed" },
+                { label: `Stalled ${stalledJobs.length}`, value: "stalled" },
+              ]}
+            />
           <Table
             rowKey={(row) => String(row.chapter_index)}
             pagination={{ pageSize: 12 }}
-            dataSource={chapterJobs}
+            dataSource={filteredChapterJobs}
             columns={[
               {
                 title: "章节",
@@ -277,6 +300,7 @@ export default function PipelinePage(props: Props) {
               },
             ]}
           />
+          </Space>
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前还没有章节任务表数据" />
         )}
@@ -293,26 +317,53 @@ export default function PipelinePage(props: Props) {
       >
         {selectedChapterIndex === null ? (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请选择章节" />
-        ) : chapterEventItems.length ? (
-          <Timeline
-            items={chapterEventItems.map((item) => ({
-              color: item.level === "error" ? "red" : item.level === "warning" ? "orange" : "blue",
-              children: (
-                <div className="pipeline-event-item">
-                  <Space wrap>
-                    <Tag>{item.event_type}</Tag>
-                    {item.stage ? <Tag color="purple">{item.stage}</Tag> : null}
-                    <Typography.Text type="secondary">{item.created_at}</Typography.Text>
-                  </Space>
-                  <Typography.Paragraph style={{ margin: "6px 0 0" }}>
-                    {item.message}
-                  </Typography.Paragraph>
-                </div>
-              ),
-            }))}
-          />
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前还没有这章的事件记录" />
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            {selectedChapter ? (
+              <>
+                <Space wrap>
+                  <Tag color="processing">状态 {selectedChapter.status}</Tag>
+                  {selectedChapter.current_stage ? <Tag color="purple">{selectedChapter.current_stage}</Tag> : null}
+                  <Tag>尝试 {selectedChapter.attempts}</Tag>
+                  {selectedChapter.failure_class ? <Tag color="error">{selectedChapter.failure_class}</Tag> : null}
+                </Space>
+                {selectedChapter.last_error ? (
+                  <Alert
+                    type={selectedChapter.failure_class ? "warning" : "info"}
+                    showIcon
+                    message="最近错误摘要"
+                    description={selectedChapter.last_error}
+                  />
+                ) : null}
+                {selectedChapter.failure_class ? (
+                  <Button onClick={props.onOpenRecovery}>
+                    前往恢复页处理
+                  </Button>
+                ) : null}
+              </>
+            ) : null}
+            {chapterEventItems.length ? (
+              <Timeline
+                items={chapterEventItems.map((item) => ({
+                  color: item.level === "error" ? "red" : item.level === "warning" ? "orange" : "blue",
+                  children: (
+                    <div className="pipeline-event-item">
+                      <Space wrap>
+                        <Tag>{item.event_type}</Tag>
+                        {item.stage ? <Tag color="purple">{item.stage}</Tag> : null}
+                        <Typography.Text type="secondary">{item.created_at}</Typography.Text>
+                      </Space>
+                      <Typography.Paragraph style={{ margin: "6px 0 0" }}>
+                        {item.message}
+                      </Typography.Paragraph>
+                    </div>
+                  ),
+                }))}
+              />
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前还没有这章的事件记录" />
+            )}
+          </Space>
         )}
       </Drawer>
     </Space>

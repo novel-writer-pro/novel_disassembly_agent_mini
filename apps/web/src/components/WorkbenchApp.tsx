@@ -564,6 +564,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
             }
           }}
           onCloseChapterDetail={() => setChapterEventItems([])}
+          onOpenRecovery={() => navigateWorkspace("ops")}
         />
       ) : null}
 
