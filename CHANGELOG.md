@@ -175,6 +175,11 @@
 - 最近章节事件流新增错误/警告筛选，便于更快聚焦异常信号
 - 当最近一次后台 run 已记录错误摘要时，会在页面顶部显式提醒
 
+### 多小说上下文与栏目收口修复
+- 修复切换到其他小说后，进入章节阅读时偶发丢失 `run_id / branch_id` 上下文并落回默认书第一章的问题
+- reader / qa / ops / control / pipeline 路由现在会显式携带当前 `run_id + branch_id`
+- 拆书流水线不再单独占用左侧主栏目，改为收纳到“开始整理”内部，以 tab 方式区分“开始整理 / 拆书流水线”
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

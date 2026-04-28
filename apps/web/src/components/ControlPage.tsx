@@ -33,6 +33,7 @@ interface Props {
   onSimulate: () => void;
   onRefresh: () => void;
   onStart: () => void;
+  onOpenPipeline: () => void;
   onOpenRecovery: () => void;
   onSelectLibraryItem: (item: LibraryItem) => void;
 }
@@ -63,6 +64,7 @@ export default function ControlPage(props: Props) {
     onSimulate,
     onRefresh,
     onStart,
+    onOpenPipeline,
     onOpenRecovery,
     onSelectLibraryItem,
   } = props;
@@ -91,6 +93,9 @@ export default function ControlPage(props: Props) {
             <Space wrap style={{ marginTop: 18 }}>
               <Button type="primary" loading={loading?.starting} onClick={onStart}>
                 继续拆书
+              </Button>
+              <Button onClick={onOpenPipeline}>
+                后台拆书流水线
               </Button>
               <Button loading={loading?.refreshing} onClick={onRefresh}>
                 刷新进度

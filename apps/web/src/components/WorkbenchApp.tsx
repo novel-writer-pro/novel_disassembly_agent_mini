@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { message, Space } from "antd";
+import { message, Space, Tabs } from "antd";
 import WorkbenchLayout from "@/components/WorkbenchLayout";
 import LibraryPage from "@/components/LibraryPage";
 import TaskCenterPanel from "@/components/TaskCenterPanel";
@@ -53,7 +53,7 @@ import { useRouter } from "next/router";
 const routeByWorkspace: Record<string, string> = {
   library: "/library",
   control: "/control",
-  pipeline: "/pipeline",
+  pipeline: "/control",
   reader: "/reader",
   qa: "/qa",
   ops: "/ops",
@@ -105,7 +105,11 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const workspaceRequestSeqRef = useRef(0);
 
   const syncReaderChapterRoute = (chapterIndex: number, mode: "push" | "replace" = "replace") => {
-    const nextQuery = { chapter: String(chapterIndex) };
+    const nextQuery = {
+      chapter: String(chapterIndex),
+      run_id: state.runId,
+      branch_id: state.branchId,
+    };
     if (router.pathname !== "/reader") {
       void router.push({ pathname: "/reader", query: nextQuery });
       return;
@@ -144,12 +148,36 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
   };
 
-  const navigateWorkspace = (nextWorkspace: string, options?: { chapterIndex?: number | null }) => {
+  const navigateWorkspace = (
+    nextWorkspace: string,
+    options?: {
+      chapterIndex?: number | null;
+      runId?: string;
+      branchId?: string;
+    },
+  ) => {
     setWorkspace(nextWorkspace as "library" | "control" | "pipeline" | "reader" | "qa" | "ops");
     const nextRoute = routeByWorkspace[nextWorkspace] || "/";
     const nextQuery: Record<string, string> = {};
+    const effectiveRunId = options?.runId || state.runId;
+    const effectiveBranchId = options?.branchId || state.branchId;
+    if (nextWorkspace !== "library") {
+      if (effectiveRunId) nextQuery.run_id = effectiveRunId;
+      if (effectiveBranchId) nextQuery.branch_id = effectiveBranchId;
+    }
     if (options?.chapterIndex) nextQuery.chapter = String(options.chapterIndex);
-    if (router.pathname !== nextRoute || (options?.chapterIndex && router.query.chapter !== String(options.chapterIndex))) {
+    if (nextWorkspace === "pipeline") nextQuery.section = "pipeline";
+    const nextQueryString = new URLSearchParams(nextQuery).toString();
+    const currentQueryString = new URLSearchParams(
+      Object.entries(router.query).flatMap(([key, value]) =>
+        typeof value === "string" ? [[key, value]] : []
+      ),
+    ).toString();
+    if (
+      router.pathname !== nextRoute ||
+      (options?.chapterIndex && router.query.chapter !== String(options.chapterIndex)) ||
+      nextQueryString !== currentQueryString
+    ) {
       void router.push({ pathname: nextRoute, query: nextQuery });
     }
   };
@@ -336,6 +364,19 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
 
   useEffect(() => {
     if (!hydrated) return;
+    if (!router.isReady) return;
+    const routeRunId = typeof router.query.run_id === "string" ? router.query.run_id : "";
+    const routeBranchId = typeof router.query.branch_id === "string" ? router.query.branch_id : "";
+    if (routeBranchId && (routeBranchId !== state.branchId || (routeRunId && routeRunId !== state.runId))) {
+      patchState({
+        runId: routeRunId || state.runId,
+        branchId: routeBranchId,
+      });
+    }
+  }, [hydrated, router.isReady, router.query.branch_id, router.query.run_id, state.branchId, state.runId]);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (didBootstrapRef.current) return;
     if (!state.runId || !state.branchId) return;
     didBootstrapRef.current = true;
@@ -414,7 +455,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     [libraryItems, state.branchId],
   );
 
-  const activateLibraryItem = async (item: LibraryItem, nextWorkspace?: "library" | "control" | "reader" | "qa" | "ops") => {
+  const activateLibraryItem = async (item: LibraryItem, nextWorkspace?: "library" | "control" | "pipeline" | "reader" | "qa" | "ops") => {
     chapterRequestSeqRef.current += 1;
     const rememberedChapter = (state.lastChapterIndexByBranch || {})[item.branch_id] ?? null;
     patchState({
@@ -431,7 +472,13 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     setActiveChapterIndex(rememberedChapter);
     setImportText(`已切换到《${item.title}》`);
     await loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
-    if (nextWorkspace) navigateWorkspace(nextWorkspace);
+    if (nextWorkspace) {
+      navigateWorkspace(nextWorkspace, {
+        runId: item.run_id,
+        branchId: item.branch_id,
+        chapterIndex: nextWorkspace === "reader" ? rememberedChapter : null,
+      });
+    }
   };
 
   const taskCenter = (
@@ -506,67 +553,84 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
 
   return (
     <WorkbenchLayout
-      activeKey={workspace}
+      activeKey={workspace === "pipeline" ? "control" : workspace}
       chapterMenu={chapterMenu}
       onNavigate={navigateWorkspace}
       currentNovelTitle={currentLibraryItem?.title || state.title}
       currentBranchId={state.branchId}
       statusBar={statusBar}
     >
-      {workspace === "control" ? (
-        <ControlPage
-          state={state}
-          importText={importText}
-          runSnapshot={runSnapshot}
-          branchSnapshot={branchSnapshot}
-          loading={loading}
-          libraryItems={libraryItems}
-          onChange={patchState}
-          onImport={handleImport}
-          onSimulate={handleSimulate}
-          onRefresh={refreshBranch}
-          onStart={handleStart}
-          onOpenRecovery={() => navigateWorkspace("ops")}
-          onSelectLibraryItem={(item) => {
-            void activateLibraryItem(item);
-          }}
+      {(workspace === "control" || workspace === "pipeline") ? (
+        <Tabs
+          activeKey={workspace === "pipeline" ? "pipeline" : "control"}
+          onChange={(key) => navigateWorkspace(key === "pipeline" ? "pipeline" : "control")}
+          items={[
+            {
+              key: "control",
+              label: "开始整理",
+              children: (
+                <ControlPage
+                  state={state}
+                  importText={importText}
+                  runSnapshot={runSnapshot}
+                  branchSnapshot={branchSnapshot}
+                  loading={loading}
+                  libraryItems={libraryItems}
+                  onChange={patchState}
+                  onImport={handleImport}
+                  onSimulate={handleSimulate}
+                  onRefresh={refreshBranch}
+                  onStart={handleStart}
+                  onOpenPipeline={() => navigateWorkspace("pipeline")}
+                  onOpenRecovery={() => navigateWorkspace("ops")}
+                  onSelectLibraryItem={(item) => {
+                    void activateLibraryItem(item);
+                  }}
+                />
+              ),
+            },
+            {
+              key: "pipeline",
+              label: "拆书流水线",
+              children: (
+                <PipelinePage
+                  runId={state.runId}
+                  branchId={state.branchId}
+                  nextChapter={runSnapshot?.next_chapter ?? null}
+                  completedChapters={runSnapshot?.completed_chapters}
+                  manifestChapterCount={runSnapshot?.manifest_chapter_count}
+                  loading={loading.pipelineStarting || loading.pipelineActing || loading.refreshing}
+                  pipelineRuns={pipelineRuns}
+                  events={jobEvents}
+                  chapterJobs={chapterJobs}
+                  chapterEventItems={chapterEventItems}
+                  onRefresh={refreshBranch}
+                  targetToChapter={pipelineTargetToChapter}
+                  onChangeTargetToChapter={setPipelineTargetToChapter}
+                  providerProfile={pipelineProviderProfile}
+                  onChangeProviderProfile={setPipelineProviderProfile}
+                  onStart={() => void handlePipelineStart()}
+                  onPause={(pipelineRunId) => void handlePipelineAction("pause", pipelineRunId)}
+                  onResume={(pipelineRunId) => void handlePipelineAction("resume", pipelineRunId)}
+                  onCancel={(pipelineRunId) => void handlePipelineAction("cancel", pipelineRunId)}
+                  onOpenChapterDetail={async (chapterIndex) => {
+                    try {
+                      const payload = await fetchChapterJobEvents(state.apiBase, state.branchId, chapterIndex, state.databaseUrl, 100);
+                      setChapterEventItems(payload.items || []);
+                    } catch (error) {
+                      message.error(error instanceof Error ? error.message : "读取章节任务详情失败");
+                      setChapterEventItems([]);
+                    }
+                  }}
+                  onCloseChapterDetail={() => setChapterEventItems([])}
+                  onOpenRecovery={() => navigateWorkspace("ops")}
+                />
+              ),
+            },
+          ]}
         />
       ) : null}
 
-      {workspace === "pipeline" ? (
-        <PipelinePage
-          runId={state.runId}
-          branchId={state.branchId}
-          nextChapter={runSnapshot?.next_chapter ?? null}
-          completedChapters={runSnapshot?.completed_chapters}
-          manifestChapterCount={runSnapshot?.manifest_chapter_count}
-          loading={loading.pipelineStarting || loading.pipelineActing || loading.refreshing}
-          pipelineRuns={pipelineRuns}
-          events={jobEvents}
-          chapterJobs={chapterJobs}
-          chapterEventItems={chapterEventItems}
-          onRefresh={refreshBranch}
-          targetToChapter={pipelineTargetToChapter}
-          onChangeTargetToChapter={setPipelineTargetToChapter}
-          providerProfile={pipelineProviderProfile}
-          onChangeProviderProfile={setPipelineProviderProfile}
-          onStart={() => void handlePipelineStart()}
-          onPause={(pipelineRunId) => void handlePipelineAction("pause", pipelineRunId)}
-          onResume={(pipelineRunId) => void handlePipelineAction("resume", pipelineRunId)}
-          onCancel={(pipelineRunId) => void handlePipelineAction("cancel", pipelineRunId)}
-          onOpenChapterDetail={async (chapterIndex) => {
-            try {
-              const payload = await fetchChapterJobEvents(state.apiBase, state.branchId, chapterIndex, state.databaseUrl, 100);
-              setChapterEventItems(payload.items || []);
-            } catch (error) {
-              message.error(error instanceof Error ? error.message : "读取章节任务详情失败");
-              setChapterEventItems([]);
-            }
-          }}
-          onCloseChapterDetail={() => setChapterEventItems([])}
-          onOpenRecovery={() => navigateWorkspace("ops")}
-        />
-      ) : null}
 
       {workspace === "library" ? (
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
