@@ -83,6 +83,16 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const chapterRequestSeqRef = useRef(0);
   const workspaceRequestSeqRef = useRef(0);
 
+  const syncReaderChapterRoute = (chapterIndex: number, mode: "push" | "replace" = "replace") => {
+    const nextQuery = { chapter: String(chapterIndex) };
+    if (router.pathname !== "/reader") {
+      void router.push({ pathname: "/reader", query: nextQuery });
+      return;
+    }
+    if (router.query.chapter === String(chapterIndex)) return;
+    void router[mode]({ pathname: "/reader", query: nextQuery }, undefined, { shallow: true });
+  };
+
   const loadWorkspaceData = async (runId: string, branchId: string, databaseUrl: string, apiBase: string) => {
     const requestId = workspaceRequestSeqRef.current + 1;
     workspaceRequestSeqRef.current = requestId;
@@ -124,7 +134,10 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     }
   };
 
-  const loadChapter = async (chapterIndex: number, options?: { navigate?: boolean }) => {
+  const loadChapter = async (
+    chapterIndex: number,
+    options?: { navigate?: boolean; syncUrl?: boolean; syncUrlMode?: "push" | "replace" },
+  ) => {
     const requestId = chapterRequestSeqRef.current + 1;
     chapterRequestSeqRef.current = requestId;
     const row = branchSnapshot?.chapter_rows?.find((item) => item.chapter_index === chapterIndex) || null;
@@ -139,6 +152,8 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
 
     if (options?.navigate) {
       navigateWorkspace("reader", { chapterIndex });
+    } else if (options?.syncUrl) {
+      syncReaderChapterRoute(chapterIndex, options.syncUrlMode);
     }
 
     if (row && !row.has_artifact) {
@@ -151,6 +166,9 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       return;
     }
 
+    setBundle(null);
+    setQa(null);
+    setSource(null);
     setLoading((current) => ({ ...current, chapter: true }));
     try {
       const [bundleData, qaData, sourceData] = await Promise.all([
@@ -176,7 +194,12 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   };
 
   const openChapter = async (chapterIndex: number) => {
-    await loadChapter(chapterIndex, { navigate: true });
+    const shouldPush = router.pathname !== "/reader";
+    await loadChapter(chapterIndex, {
+      navigate: shouldPush,
+      syncUrl: !shouldPush,
+      syncUrlMode: "replace",
+    });
   };
 
   const handleImport = async () => {
@@ -463,7 +486,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           qa={qa}
           source={source}
           loading={loading.chapter}
-          onJumpChapter={(chapterIndex) => void loadChapter(chapterIndex)}
+          onJumpChapter={(chapterIndex) => void loadChapter(chapterIndex, { syncUrl: true, syncUrlMode: "replace" })}
         />
       ) : null}
 

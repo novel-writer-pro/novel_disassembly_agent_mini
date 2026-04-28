@@ -109,6 +109,12 @@
 - 更新 `apps/web/README.md`
 - 更新 `docs/final-handoff.md`
 
+### 章节跳转状态同步修复
+- 修复 reader 内部章节跳转时“界面切到新章节，但 URL 仍停留旧章节”的状态分裂问题
+- 修复因此引发的章节被 `router.query.chapter` 回拉到旧值、点击后跳错章/跳回旧章的问题
+- 现在左侧目录、章节内引用跳转、问答引用跳转都会优先同步 reader 路由参数，再加载对应章节
+- 切换章节时会先清空上一章内容，避免出现“左侧高亮和 URL 已切换，但右侧正文还短暂显示旧章节”的闪烁错位
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`
