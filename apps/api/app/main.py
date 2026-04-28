@@ -379,6 +379,32 @@ def _job_events_payload(branch_id: str, database_url: str | None, limit: int) ->
     }
 
 
+def _chapter_job_events_payload(branch_id: str, chapter_index: int, database_url: str | None, limit: int) -> dict[str, Any]:
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    with factory() as session:
+        rows = JobEventService(session).list_for_chapter(branch_id, chapter_index, limit)
+    return {
+        "items": [
+            {
+                "id": row.id,
+                "run_id": row.run_id,
+                "branch_id": row.branch_id,
+                "chapter_index": row.chapter_index,
+                "event_type": row.event_type,
+                "stage": row.stage,
+                "level": row.level,
+                "message": row.message,
+                "payload_json": row.payload_json,
+                "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else str(row.created_at),
+            }
+            for row in rows
+        ]
+    }
+
+
 def application(environ: dict[str, Any], start_response: StartResponse) -> list[bytes]:
     method = environ.get("REQUEST_METHOD", "GET")
     path = environ.get("PATH_INFO", "/")
@@ -417,6 +443,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-qa-context",
                     "/api/chapter-source",
                     "/api/chapter-jobs",
+                    "/api/chapter-job-events",
                     "/api/library",
                     "/api/job-events",
                     "/api/pipeline/start-range",
@@ -737,6 +764,31 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         limit = int(params.get("limit", "100"))
         try:
             payload = _job_events_payload(params["branch_id"], database_url, limit)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/chapter-job-events":
+        ok, missing = _require(params, "branch_id", "chapter_index")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        database_url = params.get("database_url")
+        limit = int(params.get("limit", "100"))
+        try:
+            payload = _chapter_job_events_payload(
+                params["branch_id"],
+                int(params["chapter_index"]),
+                database_url,
+                limit,
+            )
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,

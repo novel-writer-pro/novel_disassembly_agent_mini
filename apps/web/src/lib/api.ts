@@ -132,6 +132,22 @@ export const fetchJobEvents = (apiBase: string, branchId: string, databaseUrl?: 
   return requestJson<{ items: JobEventItem[] }>(`${apiBase}/api/job-events?${query.toString()}`);
 };
 
+export const fetchChapterJobEvents = (
+  apiBase: string,
+  branchId: string,
+  chapterIndex: number,
+  databaseUrl?: string,
+  limit = 100,
+) => {
+  const query = new URLSearchParams({
+    branch_id: branchId,
+    chapter_index: String(chapterIndex),
+    limit: String(limit),
+  });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<{ items: JobEventItem[] }>(`${apiBase}/api/chapter-job-events?${query.toString()}`);
+};
+
 export const fetchPipelineRuns = (apiBase: string, branchId: string, databaseUrl?: string, limit = 20) => {
   const query = new URLSearchParams({ branch_id: branchId, limit: String(limit) });
   if (databaseUrl) query.set("database_url", databaseUrl);

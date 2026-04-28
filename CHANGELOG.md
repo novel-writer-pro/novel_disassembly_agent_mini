@@ -160,6 +160,11 @@
 - 超过心跳阈值的 running job 会被保守地标记为 `failed + failure_class=stalled`
 - `/pipeline` 页面新增 stalled 告警与汇总标签，优先让操作者看见“假 running / 真卡死”的问题
 
+### Pipeline 任务详情增强
+- 新增 `GET /api/chapter-job-events?branch_id=...&chapter_index=...`
+- `/pipeline` 页面支持点击章节打开任务详情抽屉，查看该章事件链
+- 进一步强化“先看清楚再处理”的操作体验，优先保证可读性与维护性
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

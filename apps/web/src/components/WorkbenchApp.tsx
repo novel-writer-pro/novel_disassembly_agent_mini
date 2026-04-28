@@ -14,6 +14,7 @@ import { useWorkbenchState } from "@/hooks/useWorkbenchState";
 import {
   fetchBranchExports,
   fetchBranchSnapshot,
+  fetchChapterJobEvents,
   fetchChapterJobs,
   fetchChapterBundle,
   fetchChapterQaContext,
@@ -79,6 +80,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [pipelineRuns, setPipelineRuns] = useState<PipelineRunSnapshot[]>([]);
   const [jobEvents, setJobEvents] = useState<JobEventItem[]>([]);
   const [chapterJobs, setChapterJobs] = useState<ChapterJobRow[]>([]);
+  const [chapterEventItems, setChapterEventItems] = useState<JobEventItem[]>([]);
   const [pipelineTargetToChapter, setPipelineTargetToChapter] = useState<number | null>(null);
   const [pipelineProviderProfile, setPipelineProviderProfile] = useState("default");
   const [recoveryResultText, setRecoveryResultText] = useState("");
@@ -542,6 +544,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           pipelineRuns={pipelineRuns}
           events={jobEvents}
           chapterJobs={chapterJobs}
+          chapterEventItems={chapterEventItems}
           onRefresh={refreshBranch}
           targetToChapter={pipelineTargetToChapter}
           onChangeTargetToChapter={setPipelineTargetToChapter}
@@ -551,6 +554,16 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           onPause={(pipelineRunId) => void handlePipelineAction("pause", pipelineRunId)}
           onResume={(pipelineRunId) => void handlePipelineAction("resume", pipelineRunId)}
           onCancel={(pipelineRunId) => void handlePipelineAction("cancel", pipelineRunId)}
+          onOpenChapterDetail={async (chapterIndex) => {
+            try {
+              const payload = await fetchChapterJobEvents(state.apiBase, state.branchId, chapterIndex, state.databaseUrl, 100);
+              setChapterEventItems(payload.items || []);
+            } catch (error) {
+              message.error(error instanceof Error ? error.message : "读取章节任务详情失败");
+              setChapterEventItems([]);
+            }
+          }}
+          onCloseChapterDetail={() => setChapterEventItems([])}
         />
       ) : null}
 

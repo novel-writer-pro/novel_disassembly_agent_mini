@@ -64,6 +64,7 @@
 - `POST /api/pipeline/pause|resume|cancel`：暂停 / 恢复 / 取消后台 pipeline run
 - `GET /api/chapter-jobs?branch_id=...&limit=200`：返回章节级任务表，用于 pipeline 控制台展示当前 stage / 进度 / 尝试次数 / 心跳 / 失败分类
 - 当前后端会在若干读取路径中顺手扫描长时间无 heartbeat 的 running job，并将其标记为 `failure_class=stalled`，避免控制台长期看到“假 running”
+- `GET /api/chapter-job-events?branch_id=...&chapter_index=...&limit=100`：返回单章任务事件链，适合 pipeline 控制台详情抽屉查看
 
 注意：
 - 目前“并行”仍主要是 **HTTP 请求层面的并发可处理**

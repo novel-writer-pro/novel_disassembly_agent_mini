@@ -84,3 +84,28 @@ class JobEventService:
             )
             for row in rows
         ]
+
+    def list_for_chapter(self, branch_id: str, chapter_index: int, limit: int = 100) -> list[JobEventInfo]:
+        rows = self.session.scalars(
+            select(ChapterJobEvent)
+            .where(ChapterJobEvent.branch_id == branch_id)
+            .where(ChapterJobEvent.chapter_index == chapter_index)
+            .where(ChapterJobEvent.deleted_at.is_(None))
+            .order_by(ChapterJobEvent.created_at.desc())
+            .limit(limit)
+        ).all()
+        return [
+            JobEventInfo(
+                id=row.id,
+                run_id=row.run_id,
+                branch_id=row.branch_id,
+                chapter_index=row.chapter_index,
+                event_type=row.event_type,
+                stage=row.stage,
+                level=row.level,
+                message=row.message,
+                payload_json=row.payload_json,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
