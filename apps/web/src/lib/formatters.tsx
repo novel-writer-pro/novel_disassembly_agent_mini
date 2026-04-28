@@ -42,6 +42,40 @@ export const recoveryRecommendation = (providerHealth?: ProviderHealth | null) =
     ? "如果只是 ask-stream / 问答异常，优先先观察与刷新；更适合等服务恢复后再重试失败章节。只有当章节任务本身持续失败、数据库状态异常，或运行态明显卡住时，才建议立刻手动恢复。"
     : "如果失败章节已经达到自动重试上限，或运行态明显卡住，再进入这里执行手动恢复。";
 
+export const libraryPriority = (
+  item: {
+    pipeline_state?: string;
+    failed_jobs?: number;
+    running_jobs?: number;
+    next_chapter?: number | null;
+    completed_chapters?: number;
+  },
+  providerHealth?: ProviderHealth | null,
+) => {
+  if (item.pipeline_state === "needs_recovery" || (item.failed_jobs || 0) > 0) {
+    return {
+      score: 100 + (item.failed_jobs || 0),
+      reason: providerDegraded(providerHealth) ? "待恢复（建议先观察 provider）" : "待恢复（优先处理）",
+    };
+  }
+  if ((item.running_jobs || 0) > 0 || item.pipeline_state === "auto_running") {
+    return {
+      score: 70 + (item.running_jobs || 0),
+      reason: "运行中（持续跟踪）",
+    };
+  }
+  if ((item.next_chapter || 0) > 0) {
+    return {
+      score: 40 + Math.min(item.completed_chapters || 0, 30),
+      reason: "可继续推进",
+    };
+  }
+  return {
+    score: 10,
+    reason: "已完成或暂不紧急",
+  };
+};
+
 export const summarizeRun = (run: RunSnapshot) => [
   { label: "当前状态", value: run.pipeline_state },
   { label: "已整理章节", value: String(run.completed_chapters) },

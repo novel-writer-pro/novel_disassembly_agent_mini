@@ -120,6 +120,8 @@ export interface LibraryItem {
   running_jobs?: number;
   setup_status?: string;
   updated_at?: string | null;
+  priority_score?: number;
+  priority_reason?: string;
 }
 
 

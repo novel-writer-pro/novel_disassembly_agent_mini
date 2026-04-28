@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Empty, List, Segmented, Space, Tag, Typography } from "antd";
 import type { LibraryItem, ProviderHealth } from "@/types/workbench";
 import { useMemo, useState } from "react";
-import { providerDegraded as isProviderDegraded, recoveryRecommendation } from "@/lib/formatters";
+import { libraryPriority, providerDegraded as isProviderDegraded, recoveryRecommendation } from "@/lib/formatters";
 
 interface Props {
   items: LibraryItem[];
@@ -27,9 +27,15 @@ export default function TaskCenterPanel({
   providerHealth,
 }: Props) {
   const [filter, setFilter] = useState<"focus" | "running" | "recovery">("focus");
-  const runningItems = items.filter((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "auto_running");
-  const recoveryItems = items.filter((item) => item.pipeline_state === "needs_recovery" || (item.failed_jobs || 0) > 0);
-  const focusItems = [...runningItems, ...recoveryItems.filter((item) => !runningItems.find((run) => run.branch_id === item.branch_id))].slice(0, 12);
+  const prioritizedItems = useMemo(
+    () => [...items]
+      .map((item) => ({ ...item, ...libraryPriority(item, providerHealth) }))
+      .sort((a, b) => b.score - a.score || (a.next_chapter || 999999) - (b.next_chapter || 999999)),
+    [items, providerHealth],
+  );
+  const runningItems = prioritizedItems.filter((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "auto_running");
+  const recoveryItems = prioritizedItems.filter((item) => item.pipeline_state === "needs_recovery" || (item.failed_jobs || 0) > 0);
+  const focusItems = prioritizedItems.filter((item) => item.score >= 40).slice(0, 12);
   const visibleItems = useMemo(() => {
     if (filter === "running") return runningItems;
     if (filter === "recovery") return recoveryItems;
@@ -92,6 +98,9 @@ export default function TaskCenterPanel({
                     </Typography.Paragraph>
                   </div>
                   <Space wrap>
+                    <Tag color={item.score >= 100 ? "error" : item.score >= 70 ? "processing" : item.score >= 40 ? "blue" : "default"}>
+                      {item.reason}
+                    </Tag>
                     {item.branch_id === activeBranchId ? <Tag color="success">当前生效</Tag> : null}
                     <Tag color={(item.running_jobs || 0) > 0 ? "processing" : item.pipeline_state === "needs_recovery" ? "error" : "blue"}>
                       {item.pipeline_state}
