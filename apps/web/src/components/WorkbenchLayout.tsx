@@ -10,10 +10,11 @@ interface Props {
   onNavigate: (key: string) => void;
   currentNovelTitle?: string;
   currentBranchId?: string;
+  statusBar?: ReactNode;
   children: ReactNode;
 }
 
-export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, currentNovelTitle, currentBranchId, children }: Props) {
+export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, currentNovelTitle, currentBranchId, statusBar, children }: Props) {
   const metaByKey: Record<string, { title: string; subtitle: string; tip: string }> = {
     control: {
       title: "开始整理作品",
@@ -95,6 +96,7 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
               {currentBranchId ? <Tag color="processing">branch: {currentBranchId.slice(0, 8)}</Tag> : null}
             </div>
           </div>
+          {statusBar ? <div className="workbench-status-bar">{statusBar}</div> : null}
         </Header>
         <Content className="workbench-content">{children}</Content>
       </Layout>

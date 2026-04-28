@@ -4,6 +4,7 @@ import WorkbenchLayout from "@/components/WorkbenchLayout";
 import LibraryPage from "@/components/LibraryPage";
 import TaskCenterPanel from "@/components/TaskCenterPanel";
 import SystemHealthPanel from "@/components/SystemHealthPanel";
+import SystemStatusBar from "@/components/SystemStatusBar";
 import ControlPage from "@/components/ControlPage";
 import ReaderPage from "@/components/ReaderPage";
 import BranchQaPanel from "@/components/BranchQaPanel";
@@ -395,6 +396,15 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     </Space>
   );
 
+  const statusBar = (
+    <SystemStatusBar
+      runtimeHealth={runtimeHealth}
+      providerHealth={providerHealth}
+      autoRefreshEnabled={autoRefreshEnabled}
+      lastRefreshedAt={lastRefreshedAt}
+    />
+  );
+
   return (
     <WorkbenchLayout
       activeKey={workspace}
@@ -402,6 +412,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       onNavigate={navigateWorkspace}
       currentNovelTitle={currentLibraryItem?.title || state.title}
       currentBranchId={state.branchId}
+      statusBar={statusBar}
     >
       {workspace === "control" ? (
         <ControlPage
@@ -490,6 +501,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
               }
             }}
             apiBase={state.apiBase}
+            providerHealth={providerHealth}
           />
         </Space>
       ) : null}

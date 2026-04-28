@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Col, Row, Space, Tag, Typography } from "antd";
-import type { BranchExports } from "@/types/workbench";
+import type { BranchExports, ProviderHealth } from "@/types/workbench";
 
 interface Props {
   recoveryResultText: string;
@@ -15,6 +15,7 @@ interface Props {
   onRepair: () => void;
   onLoadExports: () => void;
   apiBase: string;
+  providerHealth?: ProviderHealth | null;
 }
 
 export default function OpsPage(props: Props) {
@@ -27,7 +28,9 @@ export default function OpsPage(props: Props) {
     onRepair,
     onLoadExports,
     apiBase,
+    providerHealth,
   } = props;
+  const providerDegraded = providerHealth?.last_status === "degraded";
 
   let recoveryData: { message?: string; pipeline_state?: string; accepted_action?: string } | null = null;
   try {
@@ -54,10 +57,19 @@ export default function OpsPage(props: Props) {
             <Typography.Paragraph type="secondary">
               失败会先自动重试；只有达到重试上限后，才需要你在这里手动恢复。
             </Typography.Paragraph>
+            {providerDegraded ? (
+              <Alert
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="当前 provider 处于降级期"
+                description="建议优先先刷新和观察任务状态；如果只是 ask-stream/问答异常，不一定要立刻执行恢复。更适合等服务恢复后再重试失败章节。"
+              />
+            ) : null}
             <Space direction="vertical" style={{ width: "100%" }}>
-              <Button block loading={loading?.retrying} onClick={onRetryFailed}>重试失败章节</Button>
+              <Button block loading={loading?.retrying} onClick={onRetryFailed} type={providerDegraded ? "default" : "primary"}>重试失败章节</Button>
               <Button block loading={loading?.clearing} onClick={onClearRunning}>清理卡住任务</Button>
-              <Button block type="primary" loading={loading?.repairing} onClick={onRepair}>修复章节清单</Button>
+              <Button block type={providerDegraded ? "default" : "primary"} loading={loading?.repairing} onClick={onRepair}>修复章节清单</Button>
             </Space>
             <div style={{ marginTop: 18 }}>
               {recoveryData ? (
