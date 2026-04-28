@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.application.dto import (
+    ApplicationChapterJobRow,
     ApplicationChapterRow,
     BranchSnapshot,
     RunSnapshot,
@@ -158,3 +159,36 @@ def get_branch_snapshot(
                 for item in failed
             ],
         )
+
+
+def get_branch_job_rows(
+    *,
+    branch_id: str,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    limit: int = 200,
+) -> list[ApplicationChapterJobRow]:
+    """Return detailed chapter job rows for pipeline monitoring."""
+
+    runtime = (settings or get_settings()).model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    with factory() as session:
+        rows = ChapterIndexService(session).list_job_rows(branch_id, limit)
+        return [
+            ApplicationChapterJobRow(
+                chapter_index=row.chapter_index,
+                title=row.title,
+                status=row.status,
+                current_stage=row.current_stage,
+                progress_percent=row.progress_percent,
+                attempts=row.attempts,
+                heartbeat_at=row.heartbeat_at.isoformat() if hasattr(row.heartbeat_at, "isoformat") else None,
+                failure_class=row.failure_class,
+                failure_code=row.failure_code,
+                last_error=row.last_error,
+                has_artifact=row.has_artifact,
+            )
+            for row in rows
+        ]

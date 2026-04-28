@@ -170,6 +170,7 @@ flowchart TD
 - 异步可观测流水线已进入 Phase 0：后端开始具备章节任务事件流与更细粒度 job 运行字段，为下一阶段 `/pipeline` 控制台与 scheduler / worker 重构做准备
 - 异步可观测流水线现已进入 Phase 1 后端骨架：数据库已支持 `pipeline_runs`，API 已可启动/暂停/恢复/取消一个最小后台拆书任务，下一步重点是前端 `/pipeline` 控制台与更稳健的 scheduler/worker 抽象
 - `/pipeline` 前端控制台现已接入 Phase 1 API，可直接观察后台 run 状态与章节事件流；当前仍是“最小可用原型级控制台”，后续需要继续补充更细的 job 表格、实时 SSE 与 worker/watchdog 维度
+- `/pipeline` 现已具备章节任务表，并会以更高频率自动刷新，适合作为当前阶段的后台拆书监控入口
 
 结论：当前版本已经具备“真实可操作工作台”的基础能力，而不只是单纯原型页。
 

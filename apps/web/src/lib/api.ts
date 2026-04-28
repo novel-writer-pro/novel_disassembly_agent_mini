@@ -1,6 +1,7 @@
 import type {
   BranchExports,
   BranchSnapshot,
+  ChapterJobRow,
   ChapterBundle,
   ChapterQaContext,
   ChapterSource,
@@ -135,6 +136,12 @@ export const fetchPipelineRuns = (apiBase: string, branchId: string, databaseUrl
   const query = new URLSearchParams({ branch_id: branchId, limit: String(limit) });
   if (databaseUrl) query.set("database_url", databaseUrl);
   return requestJson<{ items: PipelineRunSnapshot[] }>(`${apiBase}/api/pipeline/runs?${query.toString()}`);
+};
+
+export const fetchChapterJobs = (apiBase: string, branchId: string, databaseUrl?: string, limit = 200) => {
+  const query = new URLSearchParams({ branch_id: branchId, limit: String(limit) });
+  if (databaseUrl) query.set("database_url", databaseUrl);
+  return requestJson<{ items: ChapterJobRow[] }>(`${apiBase}/api/chapter-jobs?${query.toString()}`);
 };
 
 export const fetchPipelineStatus = (apiBase: string, pipelineRunId: string, databaseUrl?: string) => {

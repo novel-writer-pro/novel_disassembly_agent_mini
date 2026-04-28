@@ -15,6 +15,7 @@ from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
 
 from novel_analyzer.application import (
+    get_branch_job_rows,
     cancel_pipeline_run,
     export_branch_refs,
     get_branch_snapshot,
@@ -415,6 +416,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-bundle",
                     "/api/chapter-qa-context",
                     "/api/chapter-source",
+                    "/api/chapter-jobs",
                     "/api/library",
                     "/api/job-events",
                     "/api/pipeline/start-range",
@@ -687,6 +689,28 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/chapter-jobs":
+        ok, missing = _require(params, "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        try:
+            rows = get_branch_job_rows(
+                branch_id=params["branch_id"],
+                database_url=params.get("database_url"),
+                limit=int(params.get("limit", "200")),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]})
 
     if path == "/api/library":
         database_url = params.get("database_url")

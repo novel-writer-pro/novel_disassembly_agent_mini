@@ -20,6 +20,21 @@ class ApplicationChapterRow:
 
 
 @dataclass(frozen=True, slots=True)
+class ApplicationChapterJobRow:
+    chapter_index: int
+    title: str
+    status: str
+    current_stage: str | None
+    progress_percent: int
+    attempts: int
+    heartbeat_at: str | None
+    failure_class: str | None
+    failure_code: str | None
+    last_error: str | None
+    has_artifact: bool
+
+
+@dataclass(frozen=True, slots=True)
 class AutoRunResult:
     """Result for a high-level ingest/start/advance orchestration."""
 

@@ -2,6 +2,7 @@
 
 from novel_analyzer.application.bootstrap import ingest_and_start_pipeline
 from novel_analyzer.application.dto import (
+    ApplicationChapterJobRow,
     ApplicationChapterRow,
     AutoRunResult,
     BranchSnapshot,
@@ -21,10 +22,12 @@ from novel_analyzer.application.pipeline_async import (
 )
 from novel_analyzer.application.pipeline import advance_pipeline, start_pipeline
 from novel_analyzer.application.queries import get_branch_snapshot, get_run_snapshot
+from novel_analyzer.application.queries import get_branch_job_rows
 from novel_analyzer.application.recovery import recover_branch
 
 __all__ = [
     "ApplicationChapterRow",
+    "ApplicationChapterJobRow",
     "AutoRunResult",
     "BranchSnapshot",
     "ExportRefs",
@@ -35,6 +38,7 @@ __all__ = [
     "advance_pipeline",
     "export_branch_refs",
     "get_branch_snapshot",
+    "get_branch_job_rows",
     "get_pipeline_run_status",
     "get_run_snapshot",
     "ingest_and_start_pipeline",

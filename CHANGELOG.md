@@ -149,6 +149,11 @@
 - 前端已接入后台流水线 API：启动、暂停、恢复、取消、查看最近 runs、查看章节事件流
 - 当前控制台先聚焦“从 next_chapter 连续往后跑”的最小版本，用于先验证后台异步控制链路和事件可视化
 
+### 拆书流水线任务台增强
+- 新增 `GET /api/chapter-jobs`，返回章节级任务监控数据
+- `/pipeline` 页面新增章节任务表，展示 `status / current_stage / progress_percent / attempts / heartbeat / failure_class`
+- `/pipeline` 页面自动刷新频率收紧为 5 秒，更适合盯运行中任务
+
 ### 本轮验证
 - `cd apps/web && npm exec tsc --noEmit`
 - `cd apps/web && NEXT_TELEMETRY_DISABLED=1 npm run build`

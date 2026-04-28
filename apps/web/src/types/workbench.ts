@@ -203,3 +203,17 @@ export interface JobEventItem {
   payload_json: Record<string, any>;
   created_at: string;
 }
+
+export interface ChapterJobRow {
+  chapter_index: number;
+  title: string;
+  status: string;
+  current_stage?: string | null;
+  progress_percent: number;
+  attempts: number;
+  heartbeat_at?: string | null;
+  failure_class?: string | null;
+  failure_code?: string | null;
+  last_error?: string | null;
+  has_artifact: boolean;
+}

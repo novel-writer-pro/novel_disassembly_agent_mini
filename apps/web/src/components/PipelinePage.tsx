@@ -1,5 +1,5 @@
-import { Alert, Button, Card, Col, Empty, InputNumber, List, Row, Select, Space, Tag, Timeline, Typography } from "antd";
-import type { JobEventItem, PipelineRunSnapshot } from "@/types/workbench";
+import { Alert, Button, Card, Col, Empty, InputNumber, List, Progress, Row, Select, Space, Table, Tag, Timeline, Typography } from "antd";
+import type { ChapterJobRow, JobEventItem, PipelineRunSnapshot } from "@/types/workbench";
 
 interface Props {
   runId: string;
@@ -10,6 +10,7 @@ interface Props {
   loading?: boolean;
   pipelineRuns: PipelineRunSnapshot[];
   events: JobEventItem[];
+  chapterJobs: ChapterJobRow[];
   onRefresh: () => void;
   targetToChapter: number | null;
   onChangeTargetToChapter: (value: number | null) => void;
@@ -39,6 +40,7 @@ export default function PipelinePage(props: Props) {
     loading,
     pipelineRuns,
     events,
+    chapterJobs,
     onRefresh,
     targetToChapter,
     onChangeTargetToChapter,
@@ -169,6 +171,66 @@ export default function PipelinePage(props: Props) {
           />
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前还没有章节事件流" />
+        )}
+      </Card>
+
+      <Card title="章节任务表" bordered={false} className="product-panel">
+        {chapterJobs.length ? (
+          <Table
+            rowKey={(row) => String(row.chapter_index)}
+            pagination={{ pageSize: 12 }}
+            dataSource={chapterJobs}
+            columns={[
+              {
+                title: "章节",
+                dataIndex: "chapter_index",
+                width: 88,
+                render: (value: number) => <Tag color="processing">第 {value} 章</Tag>,
+              },
+              {
+                title: "标题",
+                dataIndex: "title",
+                ellipsis: true,
+              },
+              {
+                title: "状态",
+                dataIndex: "status",
+                width: 120,
+                render: (value: string) => <Tag color={runTone(value)}>{value}</Tag>,
+              },
+              {
+                title: "当前阶段",
+                dataIndex: "current_stage",
+                width: 160,
+                render: (value?: string | null) => value ? <Tag color="purple">{value}</Tag> : <Tag>-</Tag>,
+              },
+              {
+                title: "进度",
+                dataIndex: "progress_percent",
+                width: 180,
+                render: (value: number) => <Progress percent={value || 0} size="small" />,
+              },
+              {
+                title: "尝试次数",
+                dataIndex: "attempts",
+                width: 100,
+              },
+              {
+                title: "最近心跳",
+                dataIndex: "heartbeat_at",
+                width: 180,
+                render: (value?: string | null) => value || "-",
+              },
+              {
+                title: "失败分类",
+                dataIndex: "failure_class",
+                width: 140,
+                render: (value?: string | null) => value ? <Tag color="error">{value}</Tag> : "-",
+              },
+            ]}
+          />
+        ) : (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前还没有章节任务表数据" />
         )}
       </Card>
     </Space>

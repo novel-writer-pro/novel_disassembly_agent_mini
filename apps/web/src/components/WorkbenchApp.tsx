@@ -14,6 +14,7 @@ import { useWorkbenchState } from "@/hooks/useWorkbenchState";
 import {
   fetchBranchExports,
   fetchBranchSnapshot,
+  fetchChapterJobs,
   fetchChapterBundle,
   fetchChapterQaContext,
   fetchChapterSource,
@@ -34,6 +35,7 @@ import {
 import type {
   BranchExports,
   BranchSnapshot,
+  ChapterJobRow,
   ChapterBundle,
   ChapterQaContext,
   ChapterSource,
@@ -76,6 +78,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
   const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null);
   const [pipelineRuns, setPipelineRuns] = useState<PipelineRunSnapshot[]>([]);
   const [jobEvents, setJobEvents] = useState<JobEventItem[]>([]);
+  const [chapterJobs, setChapterJobs] = useState<ChapterJobRow[]>([]);
   const [pipelineTargetToChapter, setPipelineTargetToChapter] = useState<number | null>(null);
   const [pipelineProviderProfile, setPipelineProviderProfile] = useState("default");
   const [recoveryResultText, setRecoveryResultText] = useState("");
@@ -131,9 +134,11 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       fetchJobEvents(apiBase, branchId, databaseUrl, 50).catch(() => ({ items: [] })),
       fetchPipelineRuns(apiBase, branchId, databaseUrl, 10).catch(() => ({ items: [] })),
     ]);
+    const chapterJobsData = await fetchChapterJobs(apiBase, branchId, databaseUrl, 200).catch(() => ({ items: [] }));
     if (workspaceRequestSeqRef.current !== requestId) return;
     setJobEvents(eventsData.items || []);
     setPipelineRuns(pipelineRunsData.items || []);
+    setChapterJobs(chapterJobsData.items || []);
     setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
   };
 
@@ -367,7 +372,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     if (!hydrated) return;
     if (!autoRefreshEnabled) return;
     if (!state.runId || !state.branchId) return;
-    const intervalMs = providerDegraded ? 60000 : hasActiveTasks ? 15000 : 45000;
+    const intervalMs = workspace === "pipeline" ? 5000 : providerDegraded ? 60000 : hasActiveTasks ? 15000 : 45000;
     const timer = window.setInterval(() => {
       if (loading.importing || loading.starting || loading.retrying || loading.clearing || loading.repairing || loading.exporting) return;
       void loadWorkspaceData(state.runId, state.branchId, state.databaseUrl, state.apiBase);
@@ -377,6 +382,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     hydrated,
     autoRefreshEnabled,
     hasActiveTasks,
+    workspace,
     loading.clearing,
     loading.exporting,
     loading.importing,
@@ -535,6 +541,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
           loading={loading.pipelineStarting || loading.pipelineActing || loading.refreshing}
           pipelineRuns={pipelineRuns}
           events={jobEvents}
+          chapterJobs={chapterJobs}
           onRefresh={refreshBranch}
           targetToChapter={pipelineTargetToChapter}
           onChangeTargetToChapter={setPipelineTargetToChapter}
