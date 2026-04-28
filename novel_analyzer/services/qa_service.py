@@ -147,6 +147,8 @@ class BranchQAService:
             graph_signals=graph_signals[:6] + [f"服务降级: {error_message[:80]}"],
             confidence=0.35,
             insufficient_context=True,
+            answer_mode="degraded",
+            degraded_reason=error_message[:240],
         )
 
     def answer_question(self, branch_id: str, question: str, limit: int = 5) -> BranchQAResult:

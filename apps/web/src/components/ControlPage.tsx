@@ -133,6 +133,15 @@ export default function ControlPage(props: Props) {
         </Row>
       ) : null}
 
+      <Card bordered={false} className="product-panel">
+        <Descriptions column={2} bordered size="small">
+          <Descriptions.Item label="当前作品">{state.title || "未命名作品"}</Descriptions.Item>
+          <Descriptions.Item label="当前分支">{state.branchId || "未选择"}</Descriptions.Item>
+          <Descriptions.Item label="当前 Run">{state.runId || "未选择"}</Descriptions.Item>
+          <Descriptions.Item label="当前模式">{state.profile}</Descriptions.Item>
+        </Descriptions>
+      </Card>
+
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={11}>
           <Card title="第一步：导入作品" bordered={false} className="product-panel" extra={<Typography.Text type="secondary">开始入口</Typography.Text>}>
@@ -210,6 +219,20 @@ export default function ControlPage(props: Props) {
                       if (selected) onSelectLibraryItem(selected);
                     }}
                   />
+                  <div className="library-quick-grid">
+                    {libraryItems.slice(0, 6).map((item) => (
+                      <button
+                        key={`${item.run_id}-${item.branch_id}`}
+                        type="button"
+                        className={`library-quick-card ${state.branchId === item.branch_id ? "active" : ""}`}
+                        onClick={() => onSelectLibraryItem(item)}
+                      >
+                        <strong>{item.title}</strong>
+                        <span>{item.completed_chapters}/{item.manifest_chapter_count} 章</span>
+                        <span>{item.pipeline_state}</span>
+                      </button>
+                    ))}
+                  </div>
                 </Space>
               ) : (
                 <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>

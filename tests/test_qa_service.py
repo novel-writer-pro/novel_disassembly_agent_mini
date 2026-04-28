@@ -250,4 +250,6 @@ def test_branch_qa_falls_back_when_llm_temporarily_unavailable(tmp_path: Path, m
         assert result.insufficient_context is True
         assert result.used_chapters == [1]
         assert '当前问答模型暂时不可用' in result.answer
+        assert result.answer_mode == 'degraded'
+        assert result.degraded_reason is not None
         assert any(item.startswith('服务降级:') for item in result.graph_signals)

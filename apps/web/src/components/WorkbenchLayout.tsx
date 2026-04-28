@@ -8,10 +8,12 @@ interface Props {
   activeKey: string;
   chapterMenu: ReactNode;
   onNavigate: (key: string) => void;
+  currentNovelTitle?: string;
+  currentBranchId?: string;
   children: ReactNode;
 }
 
-export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, children }: Props) {
+export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, currentNovelTitle, currentBranchId, children }: Props) {
   const metaByKey: Record<string, { title: string; subtitle: string; tip: string }> = {
     control: {
       title: "开始整理作品",
@@ -67,16 +69,25 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, ch
       </Sider>
       <Layout>
         <Header className="workbench-header">
-          <div>
-            <Space size={10} align="center" wrap>
-              <Typography.Title level={3} style={{ color: "#eaf2ff", margin: 0 }}>
-                {meta.title}
+          <div className="workbench-header-row">
+            <div>
+              <Space size={10} align="center" wrap>
+                <Typography.Title level={3} style={{ color: "#eaf2ff", margin: 0 }}>
+                  {meta.title}
+                </Typography.Title>
+                <Tag color="blue">{meta.tip}</Tag>
+              </Space>
+              <Typography.Paragraph style={{ color: "#9bb2d1", margin: "8px 0 0" }}>
+                {meta.subtitle}
+              </Typography.Paragraph>
+            </div>
+            <div className="workbench-current-novel">
+              <Typography.Text className="workbench-current-label">当前作品</Typography.Text>
+              <Typography.Title level={5} style={{ color: "#eaf2ff", margin: "6px 0 0" }}>
+                {currentNovelTitle || "未选择作品"}
               </Typography.Title>
-              <Tag color="blue">{meta.tip}</Tag>
-            </Space>
-            <Typography.Paragraph style={{ color: "#9bb2d1", margin: "8px 0 0" }}>
-              {meta.subtitle}
-            </Typography.Paragraph>
+              {currentBranchId ? <Tag color="processing">branch: {currentBranchId.slice(0, 8)}</Tag> : null}
+            </div>
           </div>
         </Header>
         <Content className="workbench-content">{children}</Content>

@@ -167,6 +167,7 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
       const payload = await postImport(state.apiBase, formData);
       setImportText("作品已导入，当前结果已同步到工作台。");
       patchState({
+        title: state.title || payload.import_result.title || file.name.replace(/\.[^.]+$/, ""),
         runId: payload.import_result.run_id || state.runId,
         branchId: payload.import_result.branch_id || state.branchId,
       });
@@ -289,8 +290,19 @@ export default function WorkbenchApp({ initialWorkspace }: Props) {
     [activeChapterIndex, branchSnapshot],
   );
 
+  const currentLibraryItem = useMemo(
+    () => libraryItems.find((item) => item.branch_id === state.branchId) || null,
+    [libraryItems, state.branchId],
+  );
+
   return (
-    <WorkbenchLayout activeKey={workspace} chapterMenu={chapterMenu} onNavigate={navigateWorkspace}>
+    <WorkbenchLayout
+      activeKey={workspace}
+      chapterMenu={chapterMenu}
+      onNavigate={navigateWorkspace}
+      currentNovelTitle={currentLibraryItem?.title || state.title}
+      currentBranchId={state.branchId}
+    >
       {workspace === "control" ? (
         <ControlPage
           state={state}

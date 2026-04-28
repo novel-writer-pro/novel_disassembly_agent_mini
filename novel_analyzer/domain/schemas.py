@@ -331,6 +331,8 @@ class BranchQAResult(BaseModel):
     graph_signals: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     insufficient_context: bool = Field(default=False)
+    answer_mode: str = Field(default="normal")
+    degraded_reason: str | None = Field(default=None)
 
 
 class ChapterNoteRow(BaseModel):

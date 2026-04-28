@@ -312,6 +312,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
                                   </Tag>
                                   {message.status === "streaming" ? <Tag color="processing">生成中</Tag> : null}
                                   {message.status === "error" ? <Tag color="error">失败</Tag> : null}
+                                  {message.result?.answer_mode === "degraded" ? <Tag color="warning">降级回答</Tag> : null}
                                   {message.result ? (
                                     <Tag color={message.result.insufficient_context ? "warning" : "success"}>
                                       {message.result.insufficient_context
@@ -324,12 +325,22 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
                                 {message.status === "error" ? (
                                   <Alert type="error" showIcon message={message.errorText || "问答失败"} />
                                 ) : (
-                                  <Typography.Paragraph style={{ marginBottom: 0, lineHeight: 1.95 }}>
-                                    {message.content
-                                      ? jumpify(message.content, onJumpChapter)
-                                      : message.progressText || <Spin size="small" />}
-                                    {message.status === "streaming" ? <span className="qa-cursor">▍</span> : null}
-                                  </Typography.Paragraph>
+                                  <Space direction="vertical" style={{ width: "100%" }} size="small">
+                                    {message.result?.answer_mode === "degraded" ? (
+                                      <Alert
+                                        type="warning"
+                                        showIcon
+                                        message="当前为降级回答"
+                                        description={message.result.degraded_reason || "上游模型暂时不可用，已改用检索证据生成保守回答。"}
+                                      />
+                                    ) : null}
+                                    <Typography.Paragraph style={{ marginBottom: 0, lineHeight: 1.95 }}>
+                                      {message.content
+                                        ? jumpify(message.content, onJumpChapter)
+                                        : message.progressText || <Spin size="small" />}
+                                      {message.status === "streaming" ? <span className="qa-cursor">▍</span> : null}
+                                    </Typography.Paragraph>
+                                  </Space>
                                 )}
 
                                 {message.retrievalHits?.length ? (

@@ -135,6 +135,8 @@ export interface BranchAskResult {
   graph_signals: string[];
   confidence: number;
   insufficient_context: boolean;
+  answer_mode?: "normal" | "degraded";
+  degraded_reason?: string | null;
 }
 
 export interface BranchAskStreamEvent {
