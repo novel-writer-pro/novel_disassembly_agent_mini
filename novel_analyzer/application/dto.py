@@ -17,6 +17,8 @@ class ApplicationChapterRow:
     hook_score: float | None
     needs_human_review: bool
     summary: str
+    risk_level: str | None
+    risk_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,7 +79,8 @@ class BranchSnapshot:
     pipeline_state: str
     allowed_actions: list[str]
     chapter_rows: list[ApplicationChapterRow]
-    failed_summary: list[dict[str, str | int]]
+    failed_summary: list[dict[str, str | int | None]]
+    risk_summary: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

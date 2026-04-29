@@ -1,0 +1,13 @@
+{
+  "review_storage_mode": "db",
+  "cluster_count": 1,
+  "by_status": {
+    "reviewed": 1
+  },
+  "by_result": {
+    "confirmed-benign": 1
+  },
+  "by_owner": {
+    "editor-a": 1
+  }
+}

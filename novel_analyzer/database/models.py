@@ -362,3 +362,53 @@ class GraphEdge(TimestampSoftDeleteMixin, Base):
         back_populates="incoming_edges",
         foreign_keys=[target_node_id],
     )
+
+
+class GateCheckerResultRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "gate_checker_results"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    checker_name: Mapped[str] = mapped_column(String(64), index=True)
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(32), default="ready")
+    visibility: Mapped[str] = mapped_column(String(32), default="active")
+
+
+class ChapterRiskCardRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "chapter_risk_cards"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(32), default="ready")
+    visibility: Mapped[str] = mapped_column(String(32), default="active")
+
+
+class ClusterReviewRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "cluster_review_records"
+    __table_args__ = (
+        UniqueConstraint("branch_id", "cluster_key", name="uq_cluster_review_branch_key"),
+    )
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    cluster_key: Mapped[str] = mapped_column(String(255), index=True)
+    cluster_status: Mapped[str] = mapped_column(String(32), default="open")
+    review_result: Mapped[str] = mapped_column(String(64), default="")
+    review_notes: Mapped[str] = mapped_column(Text(), default="")
+    review_owner: Mapped[str] = mapped_column(String(255), default="")
+    resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
+    visibility: Mapped[str] = mapped_column(String(32), default="active")
+
+
+class ClusterReviewEventRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "cluster_review_event_records"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    cluster_key: Mapped[str] = mapped_column(String(255), index=True)
+    cluster_status: Mapped[str] = mapped_column(String(32), default="open")
+    review_result: Mapped[str] = mapped_column(String(64), default="")
+    review_notes: Mapped[str] = mapped_column(Text(), default="")
+    review_owner: Mapped[str] = mapped_column(String(255), default="")
+    resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
+    event_type: Mapped[str] = mapped_column(String(64), default="status_update")

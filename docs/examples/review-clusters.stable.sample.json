@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "cluster_key": "character_ooc|::|human_review_candidate",
+      "cluster_title": "人物连续性复核簇",
+      "checker_names": ["character_ooc"],
+      "risk_types": ["human_review_candidate"],
+      "review_priority": "P2",
+      "cluster_status": "needs_review",
+      "review_result": "deferred",
+      "review_result_label": "暂缓判断",
+      "chapter_span": "96-102",
+      "review_owner": "system-reset"
+    }
+  ]
+}

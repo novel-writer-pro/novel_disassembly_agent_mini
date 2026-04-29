@@ -359,6 +359,7 @@ def test_application_pipeline_auto_retries_until_manual_recovery_threshold(
 
     assert run_snapshot.pipeline_state == "needs_recovery"
     assert branch_snapshot.failed_summary[0]["chapter_index"] == 1
+    assert branch_snapshot.failed_summary[0]["failure_class"] is None
 
 
 
@@ -438,3 +439,72 @@ def test_failed_job_requires_manual_recovery_after_five_attempts(
     assert snapshot.failed_jobs == 1
     assert branch_snapshot.failed_summary[0]["chapter_index"] == 1
 
+
+def test_branch_snapshot_maps_provider_balance_failure_class(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    engine, db_url = _patch_application_sqlite(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+
+    result = ingest_and_start_pipeline(
+        path=str(novel_path),
+        pipeline_profile="manual",
+        max_chapters=0,
+        database_url=db_url,
+    )
+    assert result.run_id is not None
+    assert result.branch_id is not None
+
+    with Session(engine) as session:
+        service = RunService(session)
+        for _ in range(5):
+            service.start_chapter_job(result.branch_id, 1)
+            service.fail_chapter_job(
+                result.branch_id,
+                1,
+                "Error code: 402 - {'error': {'message': 'Insufficient Balance'}}",
+            )
+
+    branch_snapshot = get_branch_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+    assert branch_snapshot.failed_summary[0]["failure_class"] == "provider_balance"
+
+
+def test_branch_snapshot_maps_provider_connection_failure_class(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    engine, db_url = _patch_application_sqlite(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+
+    result = ingest_and_start_pipeline(
+        path=str(novel_path),
+        pipeline_profile="manual",
+        max_chapters=0,
+        database_url=db_url,
+    )
+    assert result.run_id is not None
+    assert result.branch_id is not None
+
+    with Session(engine) as session:
+        service = RunService(session)
+        for _ in range(5):
+            service.start_chapter_job(result.branch_id, 1)
+            service.fail_chapter_job(
+                result.branch_id,
+                1,
+                "Connection error.",
+            )
+
+    branch_snapshot = get_branch_snapshot(
+        run_id=result.run_id,
+        branch_id=result.branch_id,
+        database_url=db_url,
+    )
+    assert branch_snapshot.failed_summary[0]["failure_class"] == "provider_connection"

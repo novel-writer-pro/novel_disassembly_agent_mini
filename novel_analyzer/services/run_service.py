@@ -31,6 +31,8 @@ class FailedJobInfo:
     chapter_index: int
     attempts: int
     last_error: str
+    failure_class: str | None = None
+    failure_code: str | None = None
 
 
 class RunService:
@@ -47,8 +49,12 @@ class RunService:
             return 'provider_503', 'http_503'
         if '429' in lowered or 'rate limit' in lowered:
             return 'rate_limit', 'http_429'
+        if '402' in lowered or 'insufficient balance' in lowered or 'billing_error' in lowered:
+            return 'provider_balance', 'http_402'
         if 'timeout' in lowered:
             return 'timeout', 'timeout'
+        if 'connection error' in lowered or 'remote end closed connection' in lowered:
+            return 'provider_connection', 'provider_connection'
         if 'json' in lowered:
             return 'invalid_json', 'json_parse'
         if 'sparse result' in lowered:
@@ -174,6 +180,8 @@ class RunService:
                 chapter_index=job.chapter_index,
                 attempts=job.attempts,
                 last_error=job.last_error or '',
+                failure_class=job.failure_class,
+                failure_code=job.failure_code,
             )
             for job in jobs
         ]

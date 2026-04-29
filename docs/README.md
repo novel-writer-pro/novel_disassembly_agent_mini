@@ -89,6 +89,36 @@
 7. [`./api-contract.md`](./api-contract.md)
 8. [`./storage-lifecycle.md`](./storage-lifecycle.md)
 
+### 风险审查体系文档
+1. [`./risk-audit-docs-index.md`](./risk-audit-docs-index.md)
+2. [`./risk-audit-system-overview.md`](./risk-audit-system-overview.md)
+3. [`./risk-audit-delivery-summary.md`](./risk-audit-delivery-summary.md)
+4. [`./risk-audit-capability.md`](./risk-audit-capability.md)
+5. [`./risk-audit-runtime-architecture.md`](./risk-audit-runtime-architecture.md)
+6. [`./risk-audit-runtime-boundary.md`](./risk-audit-runtime-boundary.md)
+7. [`./skills-vs-risk-checkers-boundary.md`](./skills-vs-risk-checkers-boundary.md)
+8. [`./risk-audit-checker-roadmap.md`](./risk-audit-checker-roadmap.md)
+9. [`./reader-experience-capability.md`](./reader-experience-capability.md)
+10. [`./risk-audit-doc-consistency-checklist.md`](./risk-audit-doc-consistency-checklist.md)
+11. [`./risk-audit-doc-source-of-truth-matrix.md`](./risk-audit-doc-source-of-truth-matrix.md)
+12. [`./risk-audit-doc-stability-matrix.md`](./risk-audit-doc-stability-matrix.md)
+13. [`./risk-audit-code-stability-matrix.md`](./risk-audit-code-stability-matrix.md)
+14. [`./risk-audit-phase-completion-checklist.md`](./risk-audit-phase-completion-checklist.md)
+15. [`./risk-audit-next-phase-30-60-90.md`](./risk-audit-next-phase-30-60-90.md)
+16. [`./risk-audit-team-sync-brief.md`](./risk-audit-team-sync-brief.md)
+17. [`./risk-audit-phase-1-freeze-declaration.md`](./risk-audit-phase-1-freeze-declaration.md)
+18. [`./cluster-status-semantics.md`](./cluster-status-semantics.md)
+19. [`./minimal-review-workflow-guide.md`](./minimal-review-workflow-guide.md)
+20. [`./risk-audit-artifact-manifest.md`](./risk-audit-artifact-manifest.md)
+21. [`./minimal-review-workflow-state-machine.md`](./minimal-review-workflow-state-machine.md)
+22. [`./review-workflow-phase2-design.md`](./review-workflow-phase2-design.md)
+23. [`./review-workflow-api.md`](./review-workflow-api.md)
+24. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
+25. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
+26. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
+27. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
+24. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
+
 ### 前端 / 部署补充
 - `apps/web/README.md`：前端开发、构建、npm 源
 - `apps/api/README.md`：后端原型启动与接口说明

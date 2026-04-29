@@ -37,6 +37,8 @@ export interface ChapterRow {
   hook_score?: number | null;
   needs_human_review: boolean;
   summary?: string;
+  risk_level?: string | null;
+  risk_count?: number;
 }
 
 export interface BranchSnapshot {
@@ -44,7 +46,8 @@ export interface BranchSnapshot {
   pipeline_state: string;
   allowed_actions: string[];
   chapter_rows: ChapterRow[];
-  failed_summary: Array<{ chapter_index: number; error: string }>;
+  failed_summary: Array<{ chapter_index: number; error: string; failure_class?: string | null; failure_code?: string | null }>;
+  risk_summary?: BranchRiskSummary;
 }
 
 export interface ChapterBundle {
@@ -54,6 +57,7 @@ export interface ChapterBundle {
   retrieval: Record<string, any>;
   reasoning_graph: Record<string, any>;
   state_summary: Record<string, any>;
+  risk_card?: ChapterRiskCard | null;
 }
 
 export interface ChapterQaContext {
@@ -92,6 +96,42 @@ export interface BranchExports {
   branch_bundle: { download_ref: string; content_type: string };
   branch_qa_context: { download_ref: string; content_type: string };
   branch_report: { download_ref: string; content_type: string };
+}
+
+export interface GateRiskItem {
+  checker_name: string;
+  risk_domain: string;
+  risk_type: string;
+  severity: string;
+  confidence: number;
+  summary: string;
+  supporting_evidence: string[];
+  counter_evidence: string[];
+  related_entities: string[];
+  related_chapters: number[];
+  needs_human_review: boolean;
+  risk_key: string;
+}
+
+export interface ChapterRiskCard {
+  branch_id: string;
+  chapter_index: number;
+  overall_risk_level: string;
+  top_risks: GateRiskItem[];
+  risk_counts_by_domain: Record<string, number>;
+  risk_counts_by_severity: Record<string, number>;
+  review_status: string;
+  generated_at?: string | null;
+  checker_statuses: Record<string, string>;
+  coverage_gaps: string[];
+}
+
+export interface BranchRiskSummary {
+  risk_card_count: number;
+  checker_result_count: number;
+  high_risk_chapters: number[];
+  risk_counts_by_domain: Record<string, number>;
+  risk_counts_by_severity: Record<string, number>;
 }
 
 export interface WorkbenchState {

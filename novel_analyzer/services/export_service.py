@@ -6,19 +6,26 @@ from collections.abc import Sequence
 from typing import cast
 
 from sqlalchemy import select
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import (
     ChapterArtifact,
+    ClusterReviewRecord,
+    ChapterRiskCardRecord,
     FactRecord,
+    GateCheckerResultRecord,
     GraphEdge,
     GraphNode,
     RetrievalDocument,
     WindowArtifact,
 )
 from novel_analyzer.domain.schemas import BranchQAContextOutput, ChapterQAContextOutput
+from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state
+from novel_analyzer.services.cluster_review_service import ClusterReviewService
 from novel_analyzer.services.chapter_index_service import ChapterIndexService
 from novel_analyzer.services.graph_service import GraphService
+from novel_analyzer.services.run_service import RunService
 from novel_analyzer.services.status_service import StatusService
 
 
@@ -30,6 +37,395 @@ class ExportService:
         self.status_service = StatusService(session)
         self.chapter_index_service = ChapterIndexService(session)
         self.graph_service = GraphService(session)
+        self.run_service = RunService(session)
+        self.cluster_review_service = ClusterReviewService(session)
+
+    @staticmethod
+    def _is_missing_relation_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return "relation" in message and "does not exist" in message
+
+    @staticmethod
+    def _severity_rank(level: str | None) -> int:
+        return {
+            None: -1,
+            "low": 0,
+            "medium": 1,
+            "high": 2,
+            "critical": 3,
+        }.get(level, -1)
+
+    @staticmethod
+    def _risk_specificity_rank(risk_type: str | None) -> int:
+        normalized = str(risk_type or '').strip()
+        if normalized in {'human_review_candidate', 'rule_review_candidate', 'logic_review_candidate', 'timeline_review_candidate', 'power_review_candidate'}:
+            return 0
+        if normalized in {'title_only_inference_candidate'}:
+            return -1
+        if normalized.endswith('_candidate'):
+            return 1
+        return 2
+
+    @staticmethod
+    def _dedupe_preview(items: list[object], limit: int) -> list[str]:
+        seen: set[str] = set()
+        result: list[str] = []
+        for item in items:
+            text = str(item).strip()
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            result.append(text)
+            if len(result) >= limit:
+                break
+        return result
+
+    @classmethod
+    def _suppress_generic_review_candidates(
+        cls,
+        risks: list[dict[str, object]],
+    ) -> list[dict[str, object]]:
+        if not risks:
+            return []
+        has_specific = any(
+            cls._risk_specificity_rank(cast(str | None, risk.get('risk_type'))) > 0
+            for risk in risks
+        )
+        if not has_specific:
+            return risks
+        filtered = [
+            risk for risk in risks
+            if cls._risk_specificity_rank(cast(str | None, risk.get('risk_type'))) > 0
+        ]
+        return filtered or risks
+
+    @staticmethod
+    def _derive_cluster_status(
+        *,
+        chapter_count: int,
+        max_confidence: float,
+        review_priority_value: str,
+    ) -> str:
+        """Derive a minimal runtime status for one cluster.
+
+        Current semantics are runtime-only heuristics:
+        - needs_review: should be surfaced first to humans
+        - open: candidate cluster exists but urgency is lower
+        - resolved: reserved for future workflow write-back
+        """
+        if review_priority_value == 'P1':
+            return 'needs_review'
+        if chapter_count >= 3 or max_confidence >= 0.5:
+            return 'needs_review'
+        return 'open'
+
+    @staticmethod
+    def _cluster_pattern_rank(pattern_label: str | None) -> int:
+        return {
+            '持续型问题': 2,
+            '集中爆发型问题': 1,
+            '单点问题': 0,
+        }.get(str(pattern_label or '').strip(), -1)
+
+    @staticmethod
+    def _review_result_label(review_result: str | None) -> str | None:
+        return {
+            'confirmed-issue': '确认有问题',
+            'confirmed-benign': '确认无问题',
+            'needs-escalation': '需要升级处理',
+            'deferred': '暂缓判断',
+            '': None,
+        }.get(str(review_result or '').strip(), str(review_result or '').strip() or None)
+
+    @classmethod
+    def _chapter_continuity_preview(
+        cls,
+        chapter_index: int,
+        chapter_output_summary: dict[str, object],
+        state_summary: dict[str, object],
+        reasoning_graph: dict[str, object],
+    ) -> tuple[list[str], list[str]]:
+        chapter_signals: list[str] = []
+        branch_signals: list[str] = []
+
+        for key, label in [
+            ('state_transition_notes', '推进'),
+            ('evidence_backed_resolutions', '解决'),
+            ('unresolved_threads', '未解'),
+        ]:
+            rows = cast(list[object], chapter_output_summary.get(key, []))
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                if int(row.get('chapter_index', 0) or 0) != chapter_index:
+                    continue
+                note = str(row.get('note') or '').strip()
+                if note:
+                    chapter_signals.append(f'{label}: {note}')
+
+        branch_signals.extend(
+            f'活跃冲突: {item}'
+            for item in cast(list[object], reasoning_graph.get('active_conflicts', []))[:2]
+            if str(item).strip()
+        )
+        branch_signals.extend(
+            f'未回收伏笔: {item}'
+            for item in cast(list[object], reasoning_graph.get('open_foreshadowing', []))[:2]
+            if str(item).strip()
+        )
+        branch_signals.extend(
+            f'近期时间线: {item}'
+            for item in cast(list[object], reasoning_graph.get('recent_timeline', []))[-2:]
+            if str(item).strip()
+        )
+        branch_signals.extend(
+            f'规则约束: {item}'
+            for item in cast(list[object], state_summary.get('constraining_world_rules', []))[:2]
+            if str(item).strip()
+        )
+
+        return cls._dedupe_preview(chapter_signals, 3), cls._dedupe_preview(branch_signals, 4)
+
+    @classmethod
+    def _cluster_review_candidates(
+        cls,
+        review_candidates_summary: list[dict[str, object]],
+    ) -> list[dict[str, object]]:
+        def cluster_title(checkers: list[str], risk_types: list[str]) -> str:
+            checker = checkers[0] if checkers else 'unknown'
+            risk_type = risk_types[0] if risk_types else 'review_candidate'
+            if checker == 'character_ooc':
+                return '人物连续性复核簇' if risk_type == 'human_review_candidate' else f'人物风险簇：{risk_type}'
+            if checker == 'plot_logic_consistency':
+                return '剧情因果复核簇' if 'candidate' in risk_type else f'剧情逻辑风险簇：{risk_type}'
+            if checker == 'timeline_consistency':
+                return '时间线复核簇' if 'candidate' in risk_type else f'时间线风险簇：{risk_type}'
+            if checker == 'power_scaling_consistency':
+                return '战力能力复核簇' if 'candidate' in risk_type else f'战力能力风险簇：{risk_type}'
+            if checker == 'world_rule_consistency':
+                return '规则一致性复核簇' if 'candidate' in risk_type else f'规则风险簇：{risk_type}'
+            return f'风险问题簇：{risk_type}'
+
+        def suggested_review_action(checkers: list[str], risk_types: list[str]) -> str:
+            checker = checkers[0] if checkers else 'unknown'
+            risk_type = risk_types[0] if risk_types else 'review_candidate'
+            if checker == 'character_ooc':
+                return '优先核对人物动机、关系与行为是否有前文支撑，避免只依据标题或摘要推断人物变化。'
+            if checker == 'plot_logic_consistency':
+                if 'resolution' in risk_type:
+                    return '优先核对“已解决/已兑现”类表述是否真的有正文证据链闭合。'
+                return '优先核对关键行动、结果与中间因果链是否缺少必要过渡或支撑。'
+            if checker == 'timeline_consistency':
+                return '优先核对事件先后顺序、恢复时长与同日多地切换是否存在时序冲突。'
+            if checker == 'power_scaling_consistency':
+                return '优先核对能力跃迁、越阶压制和新招式掌握是否有明确铺垫或限制条件。'
+            if checker == 'world_rule_consistency':
+                return '优先核对既有世界规则、约束条件和例外触发是否前后一致。'
+            return '优先回看相关章节与证据预览，确认该候选是否仅为弱信号噪音。'
+
+        def review_priority(chapter_count: int, max_confidence: float, checkers: list[str]) -> str:
+            if max_confidence >= 0.75 or chapter_count >= 5:
+                return 'P1'
+            if max_confidence >= 0.5 or chapter_count >= 3:
+                return 'P2'
+            if 'character_ooc' in checkers and chapter_count >= 2:
+                return 'P2'
+            return 'P3'
+
+        def cluster_pattern(chapters: list[int]) -> str:
+            if len(chapters) <= 1:
+                return '单点问题'
+            span = max(chapters) - min(chapters)
+            if span <= 3:
+                return '集中爆发型问题'
+            return '持续型问题'
+
+        clusters: dict[str, dict[str, object]] = {}
+        for item in review_candidates_summary:
+            checker_names = cls._dedupe_preview(cast(list[object], item.get('checker_names', [])), 6)
+            risk_types = cls._dedupe_preview(cast(list[object], item.get('risk_types', [])), 6)
+            cluster_key = "|".join(checker_names + ["::"] + risk_types)
+            cluster = clusters.setdefault(
+                cluster_key,
+                {
+                    'cluster_key': cluster_key,
+                    'checker_names': checker_names,
+                    'risk_types': risk_types,
+                    'cluster_title': cluster_title(checker_names, risk_types),
+                    'suggested_review_action': suggested_review_action(checker_names, risk_types),
+                    'review_priority': 'P3',
+                    'cluster_status': 'open',
+                    'chapter_count': 0,
+                    'chapters': [],
+                    'first_chapter': None,
+                    'last_chapter': None,
+                    'max_confidence': 0.0,
+                    'titles': [],
+                    'sample_summary': '',
+                },
+            )
+            preferred_risk_type = next(
+                iter(
+                    sorted(
+                        risk_types,
+                        key=lambda risk_type: (
+                            -cls._risk_specificity_rank(risk_type),
+                            risk_type,
+                        ),
+                    )
+                ),
+                '',
+            )
+            if preferred_risk_type:
+                cluster['cluster_title'] = cluster_title(checker_names, [preferred_risk_type])
+                cluster['suggested_review_action'] = suggested_review_action(checker_names, [preferred_risk_type])
+            chapter_index = int(item.get('chapter_index', 0))
+            cluster['chapter_count'] = int(cluster.get('chapter_count', 0)) + 1
+            cluster['chapters'] = sorted(set(cast(list[int], cluster.get('chapters', [])) + [chapter_index]))
+            cluster['first_chapter'] = (
+                chapter_index
+                if cluster.get('first_chapter') is None
+                else min(int(cluster.get('first_chapter', chapter_index)), chapter_index)
+            )
+            cluster['last_chapter'] = (
+                chapter_index
+                if cluster.get('last_chapter') is None
+                else max(int(cluster.get('last_chapter', chapter_index)), chapter_index)
+            )
+            first_chapter = int(cluster.get('first_chapter', chapter_index) or chapter_index)
+            last_chapter = int(cluster.get('last_chapter', chapter_index) or chapter_index)
+            chapters = cast(list[int], cluster.get('chapters', []))
+            cluster['chapter_span'] = (
+                str(first_chapter)
+                if first_chapter == last_chapter
+                else f'{first_chapter}-{last_chapter}'
+            )
+            cluster['pattern_label'] = cluster_pattern(chapters)
+            cluster['max_confidence'] = max(
+                float(cluster.get('max_confidence', 0.0)),
+                float(item.get('confidence') or 0.0),
+            )
+            cluster['review_priority'] = review_priority(
+                int(cluster.get('chapter_count', 0)),
+                float(cluster.get('max_confidence', 0.0)),
+                checker_names,
+            )
+            cluster['cluster_status'] = cls._derive_cluster_status(
+                chapter_count=int(cluster.get('chapter_count', 0)),
+                max_confidence=float(cluster.get('max_confidence', 0.0)),
+                review_priority_value=cast(str, cluster.get('review_priority', 'P3')),
+            )
+            cluster['titles'] = cls._dedupe_preview(
+                cast(list[object], cluster.get('titles', [])) + [item.get('title')],
+                4,
+            )
+            if item.get('summary'):
+                current_summary = str(cluster.get('sample_summary') or '')
+                next_summary = str(item.get('summary') or '')
+                current_specificity = max(
+                    (cls._risk_specificity_rank(risk_type) for risk_type in cast(list[str], cluster.get('risk_types', []))),
+                    default=-1,
+                )
+                next_specificity = max(
+                    (cls._risk_specificity_rank(risk_type) for risk_type in risk_types),
+                    default=-1,
+                )
+                if (
+                    not current_summary
+                    or next_specificity > current_specificity
+                    or (next_specificity == current_specificity and len(next_summary) > len(current_summary))
+                ):
+                    cluster['sample_summary'] = next_summary
+        clustered = list(clusters.values())
+        has_specific_cluster = any(
+            max((cls._risk_specificity_rank(risk_type) for risk_type in cast(list[str], item.get('risk_types', []))), default=-1) > 0
+            for item in clustered
+        )
+        if has_specific_cluster:
+            filtered = [
+                item for item in clustered
+                if max((cls._risk_specificity_rank(risk_type) for risk_type in cast(list[str], item.get('risk_types', []))), default=-1) > 0
+            ]
+            clustered = filtered or clustered
+        clustered.sort(
+            key=lambda item: (
+                {'needs_review': 0, 'reopened': 1, 'escalated': 2, 'reviewed': 3, 'open': 4, 'resolved': 5}.get(cast(str, item.get('cluster_status', 'open')), 6),
+                {'P1': 0, 'P2': 1, 'P3': 2}.get(cast(str, item.get('review_priority', 'P3')), 3),
+                -cls._cluster_pattern_rank(cast(str | None, item.get('pattern_label'))),
+                -max((cls._risk_specificity_rank(risk_type) for risk_type in cast(list[str], item.get('risk_types', []))), default=-1),
+                -int(item.get('chapter_count', 0)),
+                -float(item.get('max_confidence', 0.0)),
+                int(item.get('first_chapter', 0) or 0),
+            )
+        )
+        return clustered[:20]
+
+    @staticmethod
+    def _build_audit_conclusion(
+        *,
+        completed_chapters: int,
+        manifest_chapter_count: int,
+        failed_summary: list[dict[str, object]],
+        high_risk_chapters: list[int],
+        review_candidate_count: int,
+    ) -> dict[str, str]:
+        completion_ratio = (
+            (completed_chapters / manifest_chapter_count)
+            if manifest_chapter_count > 0
+            else 0.0
+        )
+        if failed_summary:
+            content_judgement = (
+                "当前分支已形成阶段性审查结果，但审查覆盖仍停留在已完成章节，"
+                "尚不能覆盖后续未完成章节。"
+            )
+            risk_judgement = (
+                "当前已完成章节未见明确高风险，但存在需人工复核的候选章节。"
+                if review_candidate_count
+                else "当前已完成章节未见明确高风险。"
+            )
+            blocking_judgement = "当前存在执行阻塞，阻塞主因是失败章节尚未恢复。"
+            recommended_action = "先处理失败章节恢复执行，再结合风险候选章节做人工复核。"
+        elif high_risk_chapters:
+            content_judgement = (
+                "当前分支已形成可用审查结果，且当前覆盖范围足以支撑阶段性内容判断。"
+                if completion_ratio >= 0.8
+                else "当前分支已形成可用的阶段性审查结果。"
+            )
+            risk_judgement = "当前分支存在高风险章节，后续使用结论前应优先人工复核。"
+            blocking_judgement = "当前无执行阻塞。"
+            recommended_action = "优先复核高风险章节，再决定是否继续使用下游结论。"
+        elif review_candidate_count >= 5:
+            content_judgement = (
+                "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。"
+            )
+            risk_judgement = "当前未发现明确高风险，但人工复核候选较多，需谨慎使用整体稳定结论。"
+            blocking_judgement = "当前无执行阻塞。"
+            recommended_action = "按章节优先级批量复核候选章节，再决定是否给出整体稳定判断。"
+        elif review_candidate_count > 0:
+            content_judgement = (
+                "当前分支已形成可用审查结果。"
+                if completion_ratio >= 0.3
+                else "当前分支已形成早期阶段审查结果。"
+            )
+            risk_judgement = "当前未发现明确高风险，但存在低/中风险人工复核候选。"
+            blocking_judgement = "当前无执行阻塞。"
+            recommended_action = "优先复核候选章节，再结合上下文决定是否继续推进。"
+        else:
+            content_judgement = (
+                "当前分支已形成可用审查结果，章节连续性判断整体稳定。"
+                if completion_ratio >= 0.3
+                else "当前分支已形成早期阶段审查结果，目前未见明显风险候选。"
+            )
+            risk_judgement = "当前未发现明确风险候选，章节连续性结果整体稳定。"
+            blocking_judgement = "当前无执行阻塞。"
+            recommended_action = "可继续使用当前审查结果，并在新增章节后持续复查。"
+        return {
+            'content_judgement': content_judgement,
+            'risk_judgement': risk_judgement,
+            'blocking_judgement': blocking_judgement,
+            'recommended_action': recommended_action,
+        }
 
     @staticmethod
     def _recommended_questions_for_chapter(
@@ -518,14 +914,259 @@ class ExportService:
             .order_by(GraphEdge.edge_type)
         ).all()
         reasoning_graph = self.graph_service.reasoning_snapshot(branch_id)
+        chapter_rows = [
+            {key: getattr(row, key) for key in row.__dataclass_fields__}
+            for row in self.chapter_index_service.list_rows(branch_id)
+        ]
+        chapter_row_by_index = {
+            int(row.get('chapter_index', 0)): row for row in chapter_rows
+        }
+        try:
+            risk_cards = self.session.scalars(
+                select(ChapterRiskCardRecord)
+                .where(ChapterRiskCardRecord.branch_id == branch_id)
+                .where(ChapterRiskCardRecord.visibility == 'active')
+                .order_by(ChapterRiskCardRecord.chapter_index)
+            ).all()
+            checker_results = self.session.scalars(
+                select(GateCheckerResultRecord)
+                .where(GateCheckerResultRecord.branch_id == branch_id)
+                .where(GateCheckerResultRecord.visibility == 'active')
+                .order_by(GateCheckerResultRecord.chapter_index, GateCheckerResultRecord.checker_name)
+            ).all()
+        except ProgrammingError as exc:
+            if not self._is_missing_relation_error(exc):
+                raise
+            self.session.rollback()
+            risk_cards = []
+            checker_results = []
+        state_summary = self.graph_service.state_summary_from_snapshot(reasoning_graph)
+        chapter_output_summary = self._aggregate_chapter_output_summaries(artifacts)
+        risk_counts_by_domain: dict[str, int] = {}
+        risk_counts_by_severity: dict[str, int] = {}
+        high_risk_chapters: list[int] = []
+        review_candidates_summary_by_chapter: dict[int, dict[str, object]] = {}
+        for record in risk_cards:
+            payload = cast(dict[str, object], record.payload_json)
+            chapter_index = int(payload.get('chapter_index', 0))
+            if str(payload.get('overall_risk_level', '')) == 'high':
+                high_risk_chapters.append(chapter_index)
+            for key, value in cast(dict[str, object], payload.get('risk_counts_by_domain', {})).items():
+                risk_counts_by_domain[key] = risk_counts_by_domain.get(key, 0) + int(value)
+            for key, value in cast(dict[str, object], payload.get('risk_counts_by_severity', {})).items():
+                risk_counts_by_severity[key] = risk_counts_by_severity.get(key, 0) + int(value)
+            top_risks = cast(list[dict[str, object]], payload.get('top_risks', []))
+            top_risks = self._suppress_generic_review_candidates(top_risks)
+            if top_risks:
+                merged = review_candidates_summary_by_chapter.setdefault(
+                    chapter_index,
+                    {
+                        'chapter_index': chapter_index,
+                        'title': chapter_row_by_index.get(chapter_index, {}).get('title'),
+                        'overall_risk_level': payload.get('overall_risk_level'),
+                        'risk_count': 0,
+                        'risk_types': [],
+                        'checker_names': [],
+                        'confidence': 0.0,
+                        'summary': '',
+                        'supporting_evidence_preview': [],
+                        'counter_evidence_preview': [],
+                        'needs_human_review': False,
+                    },
+                )
+                merged['risk_count'] = max(int(merged.get('risk_count', 0)), len(top_risks))
+                merged['overall_risk_level'] = (
+                    payload.get('overall_risk_level')
+                    if self._severity_rank(cast(str | None, payload.get('overall_risk_level')))
+                    >= self._severity_rank(cast(str | None, merged.get('overall_risk_level')))
+                    else merged.get('overall_risk_level')
+                )
+                merged['confidence'] = max(
+                    float(merged.get('confidence', 0.0)),
+                    max(float(risk.get('confidence') or 0.0) for risk in top_risks),
+                )
+                merged['needs_human_review'] = bool(merged.get('needs_human_review')) or any(
+                    bool(risk.get('needs_human_review', True)) for risk in top_risks
+                )
+                merged['risk_types'] = self._dedupe_preview(
+                    cast(list[object], merged.get('risk_types', []))
+                    + [risk.get('risk_type') for risk in top_risks],
+                    4,
+                )
+                merged['checker_names'] = self._dedupe_preview(
+                    cast(list[object], merged.get('checker_names', []))
+                    + [risk.get('checker_name') for risk in top_risks],
+                    4,
+                )
+                top_risk = max(
+                    top_risks,
+                    key=lambda risk: (
+                        self._risk_specificity_rank(cast(str | None, risk.get('risk_type'))),
+                        self._severity_rank(cast(str | None, risk.get('severity'))),
+                        float(risk.get('confidence') or 0.0),
+                    ),
+                )
+                if not merged.get('summary') or len(str(top_risk.get('summary') or '')) > len(str(merged.get('summary') or '')):
+                    merged['summary'] = top_risk.get('summary')
+                merged['supporting_evidence_preview'] = self._dedupe_preview(
+                    cast(list[object], merged.get('supporting_evidence_preview', []))
+                    + [e for risk in top_risks for e in cast(list[object], risk.get('supporting_evidence', []))],
+                    3,
+                )
+                merged['counter_evidence_preview'] = self._dedupe_preview(
+                    cast(list[object], merged.get('counter_evidence_preview', []))
+                    + [e for risk in top_risks for e in cast(list[object], risk.get('counter_evidence', []))],
+                    2,
+                )
+                continuity_preview, branch_preview = self._chapter_continuity_preview(
+                    chapter_index,
+                    chapter_output_summary,
+                    state_summary,
+                    reasoning_graph,
+                )
+                merged['continuity_evidence_preview'] = continuity_preview
+                merged['branch_signal_preview'] = branch_preview
+        review_candidates_summary = list(review_candidates_summary_by_chapter.values())
+        review_candidates_summary.sort(
+            key=lambda item: (
+                -self._severity_rank(cast(str | None, item.get('overall_risk_level'))),
+                -max((self._risk_specificity_rank(risk_type) for risk_type in cast(list[str], item.get('risk_types', []))), default=-1),
+                -int(item.get('risk_count', 0)),
+                0 if bool(item.get('needs_human_review')) else 1,
+                int(item.get('chapter_index', 0)),
+            )
+        )
+        failed_summary = [
+            {
+                'chapter_index': item.chapter_index,
+                'attempts': item.attempts,
+                'error': item.last_error,
+                'failure_class': item.failure_class,
+                'failure_code': item.failure_code,
+            }
+            for item in self.run_service.list_failed_jobs(branch_id, limit=1000)
+        ]
+        audit_conclusion = self._build_audit_conclusion(
+            completed_chapters=int(getattr(status, 'completed_chapters', 0)),
+            manifest_chapter_count=int(getattr(status, 'manifest_chapter_count', 0)),
+            failed_summary=failed_summary,
+            high_risk_chapters=high_risk_chapters,
+            review_candidate_count=len(review_candidates_summary),
+        )
+        review_candidate_clusters = self._cluster_review_candidates(review_candidates_summary)
+        review_storage_mode = "db"
+        try:
+            persisted_cluster_states = self.cluster_review_service.read_branch(branch_id)
+            history_by_cluster = {
+                str(cluster.get('cluster_key') or ''): self.cluster_review_service.read_history(branch_id, str(cluster.get('cluster_key') or ''))
+                for cluster in review_candidate_clusters
+            }
+        except ProgrammingError as exc:
+            if not self._is_missing_relation_error(exc):
+                raise
+            self.session.rollback()
+            persisted_cluster_states = read_cluster_review_state(branch_id)
+            history_by_cluster = {}
+            review_storage_mode = "file-fallback"
+        for cluster in review_candidate_clusters:
+            cluster_key = str(cluster.get('cluster_key') or '')
+            override = persisted_cluster_states.get(str(cluster.get('cluster_key') or ''))
+            if not override:
+                override = {}
+            if override.get('cluster_status'):
+                cluster['cluster_status'] = override['cluster_status']
+            if override.get('review_notes'):
+                cluster['review_notes'] = override['review_notes']
+            if override.get('review_owner'):
+                cluster['review_owner'] = override['review_owner']
+            if override.get('resolved_at'):
+                cluster['resolved_at'] = override['resolved_at']
+            if override.get('review_result'):
+                cluster['review_result'] = override['review_result']
+                cluster['review_result_label'] = self._review_result_label(override['review_result'])
+            history = history_by_cluster.get(cluster_key, [])
+            if history:
+                cluster['review_history_count'] = len(history)
+                cluster['review_history'] = history
+                cluster['latest_review_event'] = history[-1]
+        resolved_cluster_count = sum(
+            1 for cluster in review_candidate_clusters
+            if str(cluster.get('cluster_status') or '') == 'resolved'
+        )
+        needs_review_cluster_count = sum(
+            1 for cluster in review_candidate_clusters
+            if str(cluster.get('cluster_status') or '') == 'needs_review'
+        )
+        review_result_counts: dict[str, int] = {}
+        review_owner_counts: dict[str, int] = {}
+        latest_review_event_overall: dict[str, object] | None = None
+        for cluster in review_candidate_clusters:
+            result = str(cluster.get('review_result') or '').strip()
+            if result:
+                review_result_counts[result] = review_result_counts.get(result, 0) + 1
+            owner = str(cluster.get('review_owner') or '').strip()
+            if owner:
+                review_owner_counts[owner] = review_owner_counts.get(owner, 0) + 1
+            latest_event = cluster.get('latest_review_event')
+            if isinstance(latest_event, dict) and latest_event:
+                if latest_review_event_overall is None:
+                    latest_review_event_overall = latest_event
+                elif str(latest_event.get('review_owner') or '') and not str(latest_review_event_overall.get('review_owner') or ''):
+                    latest_review_event_overall = latest_event
+        effective_unresolved_cluster_count = sum(
+            1
+            for cluster in review_candidate_clusters
+            if str(cluster.get('cluster_status') or '') != 'resolved'
+            and str(cluster.get('review_result') or '') != 'confirmed-benign'
+        )
+        if resolved_cluster_count or needs_review_cluster_count:
+            note_parts: list[str] = []
+            if resolved_cluster_count:
+                note_parts.append(f'已人工处理问题簇 {resolved_cluster_count} 个')
+            if needs_review_cluster_count:
+                note_parts.append(f'仍待人工复核问题簇 {needs_review_cluster_count} 个')
+            audit_conclusion['review_progress_note'] = '；'.join(note_parts) + '。'
+        if review_result_counts:
+            result_note_parts: list[str] = []
+            labels = {
+                'confirmed-issue': '已确认有问题',
+                'confirmed-benign': '已确认无问题',
+                'needs-escalation': '需升级处理',
+                'deferred': '暂缓判断',
+            }
+            for key in ['confirmed-issue', 'confirmed-benign', 'needs-escalation', 'deferred']:
+                count = review_result_counts.get(key, 0)
+                if count:
+                    result_note_parts.append(f"{labels[key]} {count} 个")
+            if result_note_parts:
+                audit_conclusion['review_result_note'] = '；'.join(result_note_parts) + '。'
+        audit_conclusion['review_storage_note'] = (
+            '当前 review 数据来自数据库主路径。'
+            if review_storage_mode == 'db'
+            else '当前 review 数据来自兼容 fallback 路径。'
+        )
+        if review_owner_counts:
+            owner, count = sorted(review_owner_counts.items(), key=lambda item: (-item[1], item[0]))[0]
+            audit_conclusion['review_owner_note'] = f'当前已记录复核人中，{owner} 处理了 {count} 个问题簇。'
+        if latest_review_event_overall:
+            audit_conclusion['latest_review_note'] = (
+                f"最近一次复核记录：状态={latest_review_event_overall.get('cluster_status')}，"
+                f"结果={latest_review_event_overall.get('review_result')}，"
+                f"处理人={latest_review_event_overall.get('review_owner') or 'unknown'}。"
+            )
+        if (
+            not failed_summary
+            and not high_risk_chapters
+            and review_candidate_clusters
+            and effective_unresolved_cluster_count == 0
+        ):
+            audit_conclusion['risk_judgement'] = '当前候选问题簇已完成人工复核，未见需继续升级的明确风险。'
+            audit_conclusion['recommended_action'] = '可保留复核记录并继续后续章节审查。'
         return {
             'status': {
                 key: getattr(status, key) for key in status.__dataclass_fields__
             },
-            'chapter_index': [
-                {key: getattr(row, key) for key in row.__dataclass_fields__}
-                for row in self.chapter_index_service.list_rows(branch_id)
-            ],
+            'chapter_index': chapter_rows,
             'windows': [window.payload_json for window in windows],
             'graph_nodes': [
                 {
@@ -551,8 +1192,21 @@ class ExportService:
                 for edge in edges
             ],
             'reasoning_graph': reasoning_graph,
-            'state_summary': self.graph_service.state_summary_from_snapshot(reasoning_graph),
-            'chapter_output_summary': self._aggregate_chapter_output_summaries(artifacts),
+            'state_summary': state_summary,
+            'chapter_output_summary': chapter_output_summary,
+            'failed_summary': failed_summary,
+            'audit_conclusion': audit_conclusion,
+            'review_storage_mode': review_storage_mode,
+            'risk_summary': {
+                'risk_card_count': len(risk_cards),
+                'checker_result_count': len(checker_results),
+                'review_candidate_count': len(review_candidates_summary),
+                'high_risk_chapters': high_risk_chapters,
+                'risk_counts_by_domain': risk_counts_by_domain,
+                'risk_counts_by_severity': risk_counts_by_severity,
+                'review_candidates_summary': review_candidates_summary[:20],
+                'review_candidate_clusters': review_candidate_clusters,
+            },
         }
 
     def export_chapter_bundle(self, branch_id: str, chapter_index: int) -> dict[str, object]:
@@ -603,6 +1257,19 @@ class ExportService:
             reasoning_graph,
             chapter_index=chapter_index,
         )
+        try:
+            risk_card = self.session.scalar(
+                select(ChapterRiskCardRecord)
+                .where(ChapterRiskCardRecord.branch_id == branch_id)
+                .where(ChapterRiskCardRecord.chapter_index == chapter_index)
+                .where(ChapterRiskCardRecord.visibility == 'active')
+                .order_by(ChapterRiskCardRecord.created_at.desc())
+            )
+        except ProgrammingError as exc:
+            if not self._is_missing_relation_error(exc):
+                raise
+            self.session.rollback()
+            risk_card = None
         artifact_payload = {
             **artifact.payload_json,
             'state_summary': state_summary,
@@ -655,6 +1322,7 @@ class ExportService:
             ],
             'reasoning_graph': reasoning_graph,
             'state_summary': state_summary,
+            'risk_card': risk_card.payload_json if risk_card is not None else None,
         }
 
     def export_chapter_qa_context(self, branch_id: str, chapter_index: int) -> dict[str, object]:

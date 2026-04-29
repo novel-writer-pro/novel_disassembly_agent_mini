@@ -22,6 +22,13 @@ const statusLabel = (row: ChapterRow) => {
   return "处理中";
 };
 
+const riskTone = (value?: string | null) => {
+  if (value === "high") return "error" as const;
+  if (value === "medium") return "warning" as const;
+  if (value === "low") return "processing" as const;
+  return "default" as const;
+};
+
 export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "review" | "failed" | "unfinished">("all");
@@ -102,6 +109,7 @@ export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: P
           <Tag color="blue">共 {rows.length} 章</Tag>
           <Tag color="warning">待复核 {reviewCount}</Tag>
           <Tag color="error">失败 {failedCount}</Tag>
+          <Tag color="processing">含风险卡 {rows.filter((row) => (row.risk_count || 0) > 0).length}</Tag>
         </Space>
         {activeChapterIndex ? (
           <Typography.Text style={{ display: "block", color: "#68a7ff", marginTop: 12 }}>
@@ -198,6 +206,11 @@ export default function ChapterSidebar({ rows, activeChapterIndex, onSelect }: P
                     {row.hook_score !== null && row.hook_score !== undefined ? (
                       <Tag bordered={false} color="processing">
                         吸引度 {row.hook_score}
+                      </Tag>
+                    ) : null}
+                    {row.risk_level ? (
+                      <Tag bordered={false} color={riskTone(row.risk_level)}>
+                        风险 {row.risk_level}{row.risk_count ? ` · ${row.risk_count}` : ""}
                       </Tag>
                     ) : null}
                   </div>

@@ -128,6 +128,13 @@ function InsightCard({ title, subtitle, children }: { title: string; subtitle?: 
   );
 }
 
+const riskTone = (value?: string | null) => {
+  if (value === "high") return "error";
+  if (value === "medium") return "warning";
+  if (value === "low") return "processing";
+  return "default";
+};
+
 function ChapterDataModal({
   state,
   bundle,
@@ -289,6 +296,7 @@ export default function ReaderPage({ bundle, qa, source, loading, onJumpChapter 
 
   const artifact = bundle?.artifact || {};
   const stateSummary = bundle?.state_summary || {};
+  const riskCard = bundle?.risk_card || null;
   const facts = bundle?.facts || [];
   const entities = artifact.key_entities || [];
   const events = artifact.key_events || [];
@@ -366,6 +374,14 @@ export default function ReaderPage({ bundle, qa, source, loading, onJumpChapter 
               label: "阅读提要",
               children: (
                 <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                  {riskCard ? (
+                    <Alert
+                      type={riskCard.overall_risk_level === "high" ? "warning" : "info"}
+                      showIcon
+                      message={`章节风险卡：${riskCard.overall_risk_level.toUpperCase()}`}
+                      description={`本章已生成统一风险审查结果，共 ${riskCard.top_risks.length} 条重点风险，默认仅作提示，不阻断章节提交。`}
+                    />
+                  ) : null}
                   <Alert
                     type="info"
                     showIcon
@@ -404,7 +420,117 @@ export default function ReaderPage({ bundle, qa, source, loading, onJumpChapter 
                       </InsightCard>
                     </Col>
                   </Row>
+                  {riskCard ? (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} lg={10}>
+                        <InsightCard title="风险总览" subtitle="统一风险审查体系给出的章节级概览。">
+                          <Space wrap>
+                            <Tag color={riskTone(riskCard.overall_risk_level)}>{riskCard.overall_risk_level}</Tag>
+                            {Object.entries(riskCard.risk_counts_by_domain || {}).map(([key, value]) => (
+                              <Tag key={key}>{key}: {value}</Tag>
+                            ))}
+                            {riskCard.coverage_gaps?.length ? <Tag color="warning">coverage gaps {riskCard.coverage_gaps.length}</Tag> : null}
+                          </Space>
+                        </InsightCard>
+                      </Col>
+                      <Col xs={24} lg={14}>
+                        <InsightCard title="重点风险" subtitle="优先展开查看最值得人工复核的风险点。">
+                          {riskCard.top_risks.length ? (
+                            <List
+                              split={false}
+                              dataSource={riskCard.top_risks}
+                              renderItem={(item, index) => (
+                                <List.Item className="reader-list-item">
+                                  <span className="reader-list-index">{String(index + 1).padStart(2, "0")}</span>
+                                  <span className="reader-list-content">
+                                    <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                                      <Space wrap>
+                                        <Tag color={riskTone(item.severity)}>{item.severity}</Tag>
+                                        <Tag>{item.checker_name}</Tag>
+                                        <Tag>{item.risk_type}</Tag>
+                                        {item.related_entities?.map((entity) => <Tag key={entity}>{entity}</Tag>)}
+                                      </Space>
+                                      <Typography.Text>{item.summary}</Typography.Text>
+                                    </Space>
+                                  </span>
+                                </List.Item>
+                              )}
+                            />
+                          ) : (
+                            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                              当前章节没有重点风险。
+                            </Typography.Paragraph>
+                          )}
+                        </InsightCard>
+                      </Col>
+                    </Row>
+                  ) : null}
                 </Space>
+              ),
+            },
+            {
+              key: "risk",
+              label: "风险审查",
+              children: riskCard ? (
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} xl={8}>
+                    <InsightCard title="风险卡摘要" subtitle="统一聚合后的章节风险卡。">
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="总体等级">
+                          <Tag color={riskTone(riskCard.overall_risk_level)}>{riskCard.overall_risk_level}</Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="检查器状态">
+                          <Space wrap>
+                            {Object.entries(riskCard.checker_statuses || {}).map(([key, value]) => (
+                              <Tag key={key} color={value === "ready" ? "success" : value === "failed" ? "error" : "warning"}>
+                                {key}: {value}
+                              </Tag>
+                            ))}
+                          </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="覆盖缺口">
+                          {riskCard.coverage_gaps?.length ? riskCard.coverage_gaps.join("；") : "无"}
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </InsightCard>
+                  </Col>
+                  <Col xs={24} xl={16}>
+                    <InsightCard title="风险细节" subtitle="逐条查看支持证据与反证。">
+                      <List
+                        split
+                        dataSource={riskCard.top_risks}
+                        renderItem={(item) => (
+                          <List.Item>
+                            <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                              <Space wrap>
+                                <Tag color={riskTone(item.severity)}>{item.severity}</Tag>
+                                <Tag>{item.risk_domain}</Tag>
+                                <Tag>{item.risk_type}</Tag>
+                                <Tag>{item.checker_name}</Tag>
+                              </Space>
+                              <Typography.Text strong>{item.summary}</Typography.Text>
+                              <div>
+                                <Typography.Text type="secondary">支持证据</Typography.Text>
+                                {renderJumpList(item.supporting_evidence || [], onJumpChapter, "暂无支持证据。")}
+                              </div>
+                              <div>
+                                <Typography.Text type="secondary">反证 / 解释</Typography.Text>
+                                {renderJumpList(item.counter_evidence || [], onJumpChapter, "暂无反证说明。")}
+                              </div>
+                            </Space>
+                          </List.Item>
+                        )}
+                      />
+                    </InsightCard>
+                  </Col>
+                </Row>
+              ) : (
+                <Alert
+                  type="info"
+                  showIcon
+                  message="当前章节尚未生成风险卡"
+                  description="后端已支持统一风险审查结果输出；当下游风险审查阶段完成后，这里会展示章节风险卡与风险细节。"
+                />
               ),
             },
             {

@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "cluster_status": "reviewed",
+      "review_result": "confirmed-benign",
+      "review_notes": "API 示例：已人工复核。",
+      "review_owner": "editor-a",
+      "resolved_at": "2026-04-29T02:00:00Z",
+      "event_type": "status_update"
+    }
+  ]
+}

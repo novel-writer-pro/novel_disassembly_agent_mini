@@ -81,12 +81,62 @@
 - `reasoning_graph`
 - `state_summary`
 - `chapter_output_summary`
+- `failed_summary`
+- `audit_conclusion`
+- `risk_summary`
 
 ### 2.1 chapter_output_summary
 用于整本/整分支级汇总：
 - `state_transition_notes: list[{chapter_index, note}]`
 - `evidence_backed_resolutions: list[{chapter_index, note}]`
 - `unresolved_threads: list[{chapter_index, note}]`
+
+### 2.2 risk_summary
+当前已扩展包含：
+- `risk_card_count`
+- `checker_result_count`
+- `review_candidate_count`
+- `high_risk_chapters`
+- `risk_counts_by_domain`
+- `risk_counts_by_severity`
+- `review_candidates_summary`
+- `review_candidate_clusters`
+
+### 2.3 audit_conclusion
+当前已扩展包含：
+- `content_judgement`
+- `risk_judgement`
+- `blocking_judgement`
+- `recommended_action`
+- `review_progress_note`
+- `review_result_note`
+- `review_owner_note`
+- `latest_review_note`
+
+### 2.4 review workflow stability note
+
+对于 review workflow 相关字段，当前建议：
+
+- 稳定对外字段：
+  - `cluster_key`
+  - `cluster_title`
+  - `checker_names`
+  - `risk_types`
+  - `review_priority`
+  - `cluster_status`
+  - `review_result`
+  - `review_result_label`
+  - `chapter_span`
+  - `review_owner`
+
+- 更偏内部 / 实验字段：
+  - `review_history`
+  - `review_history_count`
+  - `latest_review_event`
+  - `review_progress_note`
+  - `review_result_note`
+  - `review_owner_note`
+  - `latest_review_note`
 
 ---
 
@@ -231,3 +281,7 @@
 - [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
 - [`./examples/chapter-qa-context.sample.json`](./examples/chapter-qa-context.sample.json)
 - [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)
+- [`./examples/review-clusters.stable.sample.json`](./examples/review-clusters.stable.sample.json)
+- [`./examples/review-cluster-history.stable.sample.json`](./examples/review-cluster-history.stable.sample.json)
+- [`./examples/review-cluster-summary.sample.json`](./examples/review-cluster-summary.sample.json)
+- [`./examples/review-cluster-summary.stable.sample.json`](./examples/review-cluster-summary.stable.sample.json)

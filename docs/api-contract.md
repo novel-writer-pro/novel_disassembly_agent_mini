@@ -167,6 +167,102 @@
   "pipeline_state": "auto_running",
   "message": "retry accepted"
 }
+
+### 2.12 GET /branches/{branch_id}/review-clusters
+返回当前 branch 的问题簇列表。
+
+**Query filters (optional)**
+- `cluster_status`
+- `review_owner`
+- `review_result`
+
+**Response schema**
+```json
+{
+  "items": [
+    {
+      "cluster_key": "...",
+      "cluster_title": "人物连续性复核簇",
+      "checker_names": ["character_ooc"],
+      "risk_types": ["human_review_candidate"],
+      "review_priority": "P2",
+      "cluster_status": "needs_review",
+      "review_result": "deferred",
+      "review_result_label": "暂缓判断"
+    }
+  ]
+}
+```
+
+### 2.13 GET /branches/{branch_id}/review-clusters/{cluster_key}/history
+返回某个问题簇的 review history。
+
+**Response schema**
+```json
+{
+  "items": [
+    {
+      "cluster_status": "reviewed",
+      "review_result": "confirmed-benign",
+      "review_notes": "...",
+      "review_owner": "editor-a",
+      "resolved_at": "...",
+      "event_type": "status_update"
+    }
+  ]
+}
+```
+
+### 2.14 GET /branches/{branch_id}/review-clusters/summary
+返回当前 branch 的问题簇汇总统计。
+
+**Response schema**
+```json
+{
+  "review_storage_mode": "db",
+  "cluster_count": 1,
+  "history_event_count": 2,
+  "latest_review_at": "2026-04-29T03:00:00Z",
+  "latest_review_owner": "editor-a",
+  "latest_review_result": "confirmed-benign",
+  "by_status": {"reviewed": 1},
+  "by_result": {"confirmed-benign": 1},
+  "by_owner": {"editor-a": 1}
+}
+```
+
+### 2.15 POST /branches/{branch_id}/review-clusters/{cluster_key}
+更新某个问题簇的当前 review 状态。
+
+**Request**
+```json
+{
+  "cluster_status": "reviewed",
+  "review_result": "confirmed-benign",
+  "review_notes": "...",
+  "review_owner": "editor-a",
+  "resolved_at": "2026-04-29T02:00:00Z"
+}
+```
+
+**Response**
+```json
+{
+  "branch_id": "...",
+  "cluster_key": "...",
+  "cluster_status": "reviewed",
+  "review_result": "confirmed-benign",
+  "review_notes": "...",
+  "review_owner": "editor-a",
+  "resolved_at": "2026-04-29T02:00:00Z"
+}
+```
+
+**Validation error**
+```json
+{
+  "error": "cluster_status=resolved requires a non-empty review_result"
+}
 ```
 
 ## 3. Pipeline state 判定表（Target）

@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "cluster_status": "reviewed",
+      "review_result": "confirmed-benign",
+      "review_notes": "DB E2E: 已完成一轮人工复核。",
+      "review_owner": "editor-db",
+      "resolved_at": "",
+      "event_type": "status_update",
+      "created_at": "2026-04-29T02:00:00Z"
+    },
+    {
+      "cluster_status": "reviewed",
+      "review_result": "confirmed-benign",
+      "review_notes": "API E2E: 已通过 API 写回。",
+      "review_owner": "api-editor",
+      "resolved_at": "",
+      "event_type": "status_update",
+      "created_at": "2026-04-29T03:00:00Z"
+    }
+  ]
+}

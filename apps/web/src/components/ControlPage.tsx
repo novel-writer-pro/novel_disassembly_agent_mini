@@ -149,6 +149,39 @@ export default function ControlPage(props: Props) {
         </Row>
       ) : null}
 
+      {branchSnapshot?.risk_summary ? (
+        <Row gutter={[16, 16]}>
+          <Col xs={12} md={6}>
+            <ProgressCard
+              title="风险卡"
+              value={branchSnapshot.risk_summary.risk_card_count || 0}
+              hint="已生成的章节风险卡数量"
+            />
+          </Col>
+          <Col xs={12} md={6}>
+            <ProgressCard
+              title="高风险章节"
+              value={branchSnapshot.risk_summary.high_risk_chapters?.length || 0}
+              hint="需要优先人工复核"
+            />
+          </Col>
+          <Col xs={12} md={6}>
+            <ProgressCard
+              title="角色风险"
+              value={branchSnapshot.risk_summary.risk_counts_by_domain?.character || 0}
+              hint="OOC/人物连续性类风险"
+            />
+          </Col>
+          <Col xs={12} md={6}>
+            <ProgressCard
+              title="规则风险"
+              value={branchSnapshot.risk_summary.risk_counts_by_domain?.rules || 0}
+              hint="世界规则一致性类风险"
+            />
+          </Col>
+        </Row>
+      ) : null}
+
       <Card bordered={false} className="product-panel">
         <Descriptions column={2} bordered size="small">
           <Descriptions.Item label="当前作品">{state.title || "未命名作品"}</Descriptions.Item>

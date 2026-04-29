@@ -46,6 +46,7 @@ from novel_analyzer.runtime.storage import (
 )
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.services.export_service import ExportService
+from novel_analyzer.services.cluster_review_service import ClusterReviewService
 from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -206,9 +207,18 @@ def _mock_branch_snapshot(profile: str) -> dict[str, Any]:
                 "hook_score": 0.82,
                 "needs_human_review": False,
                 "summary": "样例章节摘要",
+                "risk_level": "medium",
+                "risk_count": 2,
             }
         ],
         "failed_summary": [],
+        "risk_summary": {
+            "risk_card_count": 1,
+            "checker_result_count": 2,
+            "high_risk_chapters": [],
+            "risk_counts_by_domain": {"character": 1, "rules": 1},
+            "risk_counts_by_severity": {"medium": 2},
+        },
     }
 
 
@@ -444,6 +454,10 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/api/chapter-source",
                     "/api/chapter-jobs",
                     "/api/chapter-job-events",
+                    "/api/review-clusters",
+                    "/api/review-cluster-summary",
+                    "/api/review-cluster-history",
+                    "/api/review-cluster-update",
                     "/api/library",
                     "/api/job-events",
                     "/api/pipeline/start-range",
@@ -796,6 +810,193 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/review-clusters":
+        ok, missing = _require(params, "run_id", "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        if params.get("database_url"):
+            runtime.database_url = params["database_url"]
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                bundle = ExportService(session).export_branch_bundle(
+                    params["run_id"],
+                    params["branch_id"],
+                )
+                items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
+                status_filter = str(params.get("cluster_status") or "").strip()
+                owner_filter = str(params.get("review_owner") or "").strip()
+                result_filter = str(params.get("review_result") or "").strip()
+                if status_filter:
+                    items = [item for item in items if str(item.get("cluster_status") or "") == status_filter]
+                if owner_filter:
+                    items = [item for item in items if str(item.get("review_owner") or "") == owner_filter]
+                if result_filter:
+                    items = [item for item in items if str(item.get("review_result") or "") == result_filter]
+                payload = {
+                    "review_storage_mode": bundle.get("review_storage_mode"),
+                    "items": items,
+                }
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/review-cluster-summary":
+        ok, missing = _require(params, "run_id", "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        if params.get("database_url"):
+            runtime.database_url = params["database_url"]
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                bundle = ExportService(session).export_branch_bundle(
+                    params["run_id"],
+                    params["branch_id"],
+                )
+                items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
+                by_status: dict[str, int] = {}
+                by_result: dict[str, int] = {}
+                by_owner: dict[str, int] = {}
+                for item in items:
+                    status_key = str(item.get("cluster_status") or "")
+                    result_key = str(item.get("review_result") or "")
+                    owner_key = str(item.get("review_owner") or "")
+                    if status_key:
+                        by_status[status_key] = by_status.get(status_key, 0) + 1
+                    if result_key:
+                        by_result[result_key] = by_result.get(result_key, 0) + 1
+                    if owner_key:
+                        by_owner[owner_key] = by_owner.get(owner_key, 0) + 1
+                latest_review_at = max(
+                    [
+                        str(item.get("latest_review_event", {}).get("created_at") or "")
+                        for item in items
+                        if isinstance(item.get("latest_review_event"), dict)
+                        and str(item.get("latest_review_event", {}).get("created_at") or "")
+                    ]
+                    or [""]
+                )
+                latest_review_owner = next(
+                    (
+                        str(item.get("latest_review_event", {}).get("review_owner") or "")
+                        for item in items
+                        if isinstance(item.get("latest_review_event"), dict)
+                        and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+                    ),
+                    "",
+                )
+                latest_review_result = next(
+                    (
+                        str(item.get("latest_review_event", {}).get("review_result") or "")
+                        for item in items
+                        if isinstance(item.get("latest_review_event"), dict)
+                        and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+                    ),
+                    "",
+                )
+                payload = {
+                    "review_storage_mode": bundle.get("review_storage_mode"),
+                    "cluster_count": len(items),
+                    "by_status": by_status,
+                    "by_result": by_result,
+                    "by_owner": by_owner,
+                    "history_event_count": sum(int(item.get("review_history_count", 0) or 0) for item in items),
+                    "latest_review_at": latest_review_at,
+                    "latest_review_owner": latest_review_owner,
+                    "latest_review_result": latest_review_result,
+                }
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/review-cluster-history":
+        ok, missing = _require(params, "branch_id", "cluster_key")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        if params.get("database_url"):
+            runtime.database_url = params["database_url"]
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                payload = {
+                    "items": ClusterReviewService(session).read_history(
+                        params["branch_id"],
+                        params["cluster_key"],
+                    )
+                }
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/review-cluster-update" and method == "POST":
+        body = _body(environ)
+        branch_id = str(body.get("branch_id") or "")
+        cluster_key = str(body.get("cluster_key") or "")
+        cluster_status = str(body.get("cluster_status") or "")
+        if not branch_id or not cluster_key or not cluster_status:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "branch_id, cluster_key and cluster_status are required"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = str(body.get("database_url") or "") or None
+        if database_url:
+            runtime.database_url = database_url
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                state = ClusterReviewService(session).write(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    cluster_status=cluster_status,
+                    review_notes=str(body.get("review_notes") or ""),
+                    review_owner=str(body.get("review_owner") or ""),
+                    resolved_at=str(body.get("resolved_at") or ""),
+                    review_result=str(body.get("review_result") or ""),
+                )
+        except ValueError as exc:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": str(exc)},
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=asdict(state))
 
     if path == "/api/pipeline/start-range" and method == "POST":
         body = _body(environ)

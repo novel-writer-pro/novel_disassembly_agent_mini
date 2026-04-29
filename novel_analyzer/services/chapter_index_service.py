@@ -6,11 +6,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import (
     ChapterArtifact,
     ChapterJob,
+    ChapterRiskCardRecord,
     ChapterManifest,
     ChapterSegment,
     RetrievalDocument,
@@ -30,6 +32,8 @@ class ChapterIndexRow:
     hook_score: float | None
     needs_human_review: bool
     summary: str
+    risk_level: str | None
+    risk_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +58,11 @@ class ChapterIndexService:
 
     def __init__(self, session: Session) -> None:
         self.session = session
+
+    @staticmethod
+    def _is_missing_relation_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return "relation" in message and "does not exist" in message
 
     def list_rows(self, branch_id: str, limit: int = 200) -> list[ChapterIndexRow]:
         """Return per-chapter rows for one branch, including not-yet-processed chapters."""
@@ -104,9 +113,25 @@ class ChapterIndexService:
                 .limit(limit)
             ).all()
         }
+        try:
+            risk_cards = {
+                record.chapter_index: record
+                for record in self.session.scalars(
+                    select(ChapterRiskCardRecord)
+                    .where(ChapterRiskCardRecord.branch_id == branch_id)
+                    .where(ChapterRiskCardRecord.visibility == 'active')
+                    .order_by(ChapterRiskCardRecord.chapter_index)
+                    .limit(limit)
+                ).all()
+            }
+        except ProgrammingError as exc:
+            if not self._is_missing_relation_error(exc):
+                raise
+            self.session.rollback()
+            risk_cards = {}
 
         all_indexes = sorted(
-            set(segments) | set(jobs) | set(artifacts) | set(retrieval_docs)
+            set(segments) | set(jobs) | set(artifacts) | set(retrieval_docs) | set(risk_cards)
         )[:limit]
         rows: list[ChapterIndexRow] = []
         for chapter_index in all_indexes:
@@ -115,6 +140,11 @@ class ChapterIndexService:
             job = jobs.get(chapter_index)
             retrieval = retrieval_docs.get(chapter_index)
             segment = segments.get(chapter_index)
+            risk_card_record = risk_cards.get(chapter_index)
+            risk_payload: dict[str, Any] = (
+                risk_card_record.payload_json if risk_card_record is not None else {}
+            )
+            top_risks = risk_payload.get('top_risks', [])
             title = str(
                 payload.get('normalized_title')
                 or (retrieval.title if retrieval else '')
@@ -131,6 +161,8 @@ class ChapterIndexService:
                     hook_score=payload.get('hook_score'),
                     needs_human_review=bool(payload.get('needs_human_review', False)),
                     summary=summary,
+                    risk_level=str(risk_payload.get('overall_risk_level')) if risk_payload else None,
+                    risk_count=len(top_risks) if isinstance(top_risks, list) else 0,
                 )
             )
         return rows

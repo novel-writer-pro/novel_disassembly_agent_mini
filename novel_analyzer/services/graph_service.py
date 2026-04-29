@@ -363,6 +363,7 @@ class GraphService:
 
     def _rebuild_branch_graph(self, branch_id: str) -> tuple[list[GraphNode], list[GraphEdge]]:
         self.session.execute(delete(GraphEdge).where(GraphEdge.branch_id == branch_id))
+        self.session.flush()
         self.session.execute(delete(GraphNode).where(GraphNode.branch_id == branch_id))
         self.session.flush()
 

@@ -21,6 +21,7 @@ from novel_analyzer.database.session import (
     ensure_database_exists,
 )
 from novel_analyzer.runtime.storage import describe_runtime_storage, migrate_legacy_runtime_dirs
+from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state, write_cluster_review_state
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -1000,6 +1001,82 @@ def export_branch_report(
         bundle = _export_service(session).export_branch_bundle(run_id, branch_id)
         output_path.write_text(_render_branch_report(bundle), encoding='utf-8')
         echo(f"report_path={output_path}")
+
+
+@app.command()
+def set_cluster_status(
+    branch_id: str,
+    cluster_key: str,
+    cluster_status: str,
+    review_notes: str = typer.Option('', '--review-notes'),
+    review_owner: str = typer.Option('', '--review-owner'),
+    resolved_at: str = typer.Option('', '--resolved-at'),
+    review_result: str = typer.Option('', '--review-result'),
+    database_url: str | None = None,
+) -> None:
+    """Persist a minimal manual status override for one risk cluster."""
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    try:
+        with factory() as session:
+            from novel_analyzer.services.cluster_review_service import ClusterReviewService
+            state = ClusterReviewService(session).write(
+                branch_id=branch_id,
+                cluster_key=cluster_key,
+                cluster_status=cluster_status,
+                review_notes=review_notes,
+                review_owner=review_owner,
+                resolved_at=resolved_at,
+                review_result=review_result,
+            )
+    except Exception:
+        state = write_cluster_review_state(
+            branch_id=branch_id,
+            cluster_key=cluster_key,
+            cluster_status=cluster_status,
+            review_notes=review_notes,
+            review_owner=review_owner,
+            resolved_at=resolved_at,
+            review_result=review_result,
+            settings=settings,
+        )
+    echo(f"branch_id={state.branch_id}")
+    echo(f"cluster_key={state.cluster_key}")
+    echo(f"cluster_status={state.cluster_status}")
+    echo(f"review_notes={state.review_notes}")
+    echo(f"review_owner={state.review_owner}")
+    echo(f"resolved_at={state.resolved_at}")
+    echo(f"review_result={state.review_result}")
+
+
+@app.command()
+def show_cluster_status(branch_id: str, database_url: str | None = None) -> None:
+    """Show persisted manual status overrides for one branch's risk clusters."""
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    try:
+        with factory() as session:
+            from novel_analyzer.services.cluster_review_service import ClusterReviewService
+            payload = ClusterReviewService(session).read_branch(branch_id)
+    except Exception:
+        payload = read_cluster_review_state(branch_id, settings)
+    echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def show_cluster_history(
+    branch_id: str,
+    cluster_key: str,
+    database_url: str | None = None,
+) -> None:
+    """Show review history for one cluster."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        from novel_analyzer.services.cluster_review_service import ClusterReviewService
+        payload = ClusterReviewService(session).read_history(branch_id, cluster_key)
+    echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 

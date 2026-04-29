@@ -15,6 +15,7 @@ from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import AnalysisRun, NovelSource, RunBranch
 from novel_analyzer.database.session import create_session_factory
 from novel_analyzer.services.chapter_index_service import ChapterIndexService
+from novel_analyzer.services.risk_audit_service import RiskAuditService
 from novel_analyzer.services.run_service import RunService
 from novel_analyzer.services.status_service import StatusService
 
@@ -144,6 +145,8 @@ def get_branch_snapshot(
                 hook_score=row.hook_score,
                 needs_human_review=row.needs_human_review,
                 summary=row.summary,
+                risk_level=row.risk_level,
+                risk_count=row.risk_count,
             )
             for row in ChapterIndexService(session).list_rows(branch_id)
         ]
@@ -155,9 +158,27 @@ def get_branch_snapshot(
             allowed_actions=_allowed_actions(pipeline_state),
             chapter_rows=rows,
             failed_summary=[
-                {"chapter_index": item.chapter_index, "error": item.last_error}
+                {
+                    "chapter_index": item.chapter_index,
+                    "error": item.last_error,
+                    "failure_class": (
+                        item.failure_class
+                        if item.failure_class and item.failure_class != "unknown"
+                        else (
+                        "provider_balance"
+                        if "Insufficient Balance" in item.last_error
+                        else "provider_connection"
+                        if "Connection error" in item.last_error
+                        else "provider_timeout"
+                        if "Request timed out" in item.last_error
+                        else None
+                        )
+                    ),
+                    "failure_code": item.failure_code,
+                }
                 for item in failed
             ],
+            risk_summary=RiskAuditService(session).load_risk_summary(run_id, branch_id),
         )
 
 
