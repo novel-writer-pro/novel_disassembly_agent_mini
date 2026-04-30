@@ -46,12 +46,7 @@ class ExportService:
     @staticmethod
     def _is_missing_relation_error(exc: Exception) -> bool:
         message = str(exc).lower()
-        return (
-            "relation" in message
-            and "does not exist" in message
-            or "no such table" in message
-            and "cluster_review" in message
-        )
+        return ("relation" in message and "does not exist" in message) or "no such table" in message
 
     @staticmethod
     def _severity_rank(level: str | None) -> int:
@@ -942,7 +937,7 @@ class ExportService:
                 .where(GateCheckerResultRecord.visibility == 'active')
                 .order_by(GateCheckerResultRecord.chapter_index, GateCheckerResultRecord.checker_name)
             ).all()
-        except ProgrammingError as exc:
+        except (OperationalError, ProgrammingError) as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -1069,10 +1064,6 @@ class ExportService:
                 str(cluster.get('cluster_key') or ''): self.cluster_review_service.read_history(branch_id, str(cluster.get('cluster_key') or ''))
                 for cluster in review_candidate_clusters
             }
-        except ClusterReviewStorageUnavailable:
-            persisted_cluster_states = read_cluster_review_state(branch_id)
-            history_by_cluster = {}
-            review_storage_mode = "file-fallback"
         except (OperationalError, ProgrammingError) as exc:
             if not self._is_missing_relation_error(exc):
                 raise
@@ -1277,7 +1268,7 @@ class ExportService:
                 .where(ChapterRiskCardRecord.visibility == 'active')
                 .order_by(ChapterRiskCardRecord.created_at.desc())
             )
-        except ProgrammingError as exc:
+        except (OperationalError, ProgrammingError) as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()

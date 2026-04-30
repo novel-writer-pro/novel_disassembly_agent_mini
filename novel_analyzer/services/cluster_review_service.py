@@ -39,12 +39,7 @@ class ClusterReviewService:
     @staticmethod
     def _is_missing_relation_error(exc: Exception) -> bool:
         message = str(exc).lower()
-        return (
-            "relation" in message
-            and "does not exist" in message
-            or "no such table" in message
-            and "cluster_review" in message
-        )
+        return ("relation" in message and "does not exist" in message) or "no such table" in message
 
     @staticmethod
     def _validate(cluster_status: str, review_result: str, review_notes: str) -> None:
