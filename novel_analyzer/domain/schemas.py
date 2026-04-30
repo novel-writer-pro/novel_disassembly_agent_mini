@@ -42,6 +42,8 @@ class ChapterIntakeOutput(BaseModel):
             return value
         if 'chapter_index' not in value and 'chapter_no' in value:
             value['chapter_index'] = value['chapter_no']
+        if 'chapter_index' not in value and 'chapter_number' in value:
+            value['chapter_index'] = value['chapter_number']
         if 'normalized_title' not in value and 'chapter_title' in value:
             value['normalized_title'] = value['chapter_title']
         if 'cleaned_text' not in value and 'paragraph_blocks' in value:
@@ -153,6 +155,36 @@ class EvidenceBindingOutput(BaseModel):
     def _normalize_retained_items(cls, value: Any) -> Any:
         return ChapterFactExtractionOutput._normalize_notes(value)
 
+    @field_validator('unsupported_items', mode='before')
+    @classmethod
+    def _normalize_unsupported_items(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                candidate = (
+                    item.get('label')
+                    or item.get('summary')
+                    or item.get('message')
+                    or item.get('reason')
+                    or item.get('note')
+                )
+                if candidate in (None, ''):
+                    for value_item in item.values():
+                        if isinstance(value_item, str) and value_item.strip():
+                            candidate = value_item
+                            break
+                text = str(candidate or '').strip()
+                if text:
+                    normalized.append(text)
+        return normalized
+
     def ensure_from_facts(self, facts: ChapterFactExtractionOutput) -> EvidenceBindingOutput:
         """If the binder returned nothing, promote low-risk fact records into retained_items."""
 
@@ -248,6 +280,44 @@ class WriterLearningLensOutput(BaseModel):
     scene_efficiency_notes: list[str] = Field(default_factory=list)
     transferable_lessons: list[str] = Field(default_factory=list)
 
+    @field_validator(
+        'hook_notes',
+        'conflict_notes',
+        'reveal_order_notes',
+        'scene_efficiency_notes',
+        'transferable_lessons',
+        mode='before',
+    )
+    @classmethod
+    def _normalize_stringish_list(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                candidate = (
+                    item.get('lesson')
+                    or item.get('text')
+                    or item.get('content')
+                    or item.get('label')
+                    or item.get('summary')
+                    or item.get('note')
+                )
+                if candidate in (None, ''):
+                    for value_item in item.values():
+                        if isinstance(value_item, str) and value_item.strip():
+                            candidate = value_item
+                            break
+                text = str(candidate or '').strip()
+                if text:
+                    normalized.append(text)
+        return normalized
+
     def ensure_minimum_writer_notes(
         self,
         title: str,
@@ -290,6 +360,41 @@ class AntiFabricationGuardOutput(BaseModel):
     overclaim_flags: list[str] = Field(default_factory=list)
     needs_human_review: bool = Field(default=False)
 
+    @field_validator(
+        'unsupported_inferences',
+        'ambiguous_points',
+        'overclaim_flags',
+        mode='before',
+    )
+    @classmethod
+    def _normalize_string_issue_list(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                candidate = (
+                    item.get('message')
+                    or item.get('summary')
+                    or item.get('note')
+                    or item.get('reason')
+                    or item.get('target')
+                )
+                if candidate in (None, ''):
+                    for value_item in item.values():
+                        if isinstance(value_item, str) and value_item.strip():
+                            candidate = value_item
+                            break
+                text = str(candidate or '').strip()
+                if text:
+                    normalized.append(text)
+        return normalized
+
 
 class DimensionResult(BaseModel):
     """One dimension's extracted result."""
@@ -331,6 +436,8 @@ class BranchQAResult(BaseModel):
     graph_signals: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     insufficient_context: bool = Field(default=False)
+    answer_mode: str = Field(default="normal")
+    degraded_reason: str | None = Field(default=None)
 
 
 class ChapterNoteRow(BaseModel):
@@ -425,3 +532,46 @@ class BranchQAContextOutput(BaseModel):
     reasoning_graph: dict[str, object] = Field(default_factory=dict)
     retrieval_documents: list[dict[str, object]] = Field(default_factory=list)
     thematic_contexts: dict[str, ThematicContextOutput] = Field(default_factory=dict)
+
+
+class GateRiskItem(BaseModel):
+    """One normalized downstream risk item produced by a checker."""
+
+    checker_name: str
+    risk_domain: str
+    risk_type: str
+    severity: str
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    summary: str
+    supporting_evidence: list[str] = Field(default_factory=list)
+    counter_evidence: list[str] = Field(default_factory=list)
+    related_entities: list[str] = Field(default_factory=list)
+    related_chapters: list[int] = Field(default_factory=list)
+    needs_human_review: bool = Field(default=True)
+    risk_key: str
+
+
+class CheckerResult(BaseModel):
+    """Normalized output contract for one downstream risk checker."""
+
+    checker_name: str
+    chapter_index: int
+    status: str = Field(default='ready')
+    risks: list[GateRiskItem] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+    latency_ms: int | None = Field(default=None, ge=0)
+
+
+class ChapterRiskCard(BaseModel):
+    """Unified chapter-level downstream risk card."""
+
+    branch_id: str
+    chapter_index: int
+    overall_risk_level: str = Field(default='low')
+    top_risks: list[GateRiskItem] = Field(default_factory=list)
+    risk_counts_by_domain: dict[str, int] = Field(default_factory=dict)
+    risk_counts_by_severity: dict[str, int] = Field(default_factory=dict)
+    review_status: str = Field(default='pending')
+    generated_at: str | None = None
+    checker_statuses: dict[str, str] = Field(default_factory=dict)
+    coverage_gaps: list[str] = Field(default_factory=list)

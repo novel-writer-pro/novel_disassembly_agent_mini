@@ -2,16 +2,19 @@ from pathlib import Path
 
 import pytest
 from langchain_core.messages import AIMessage
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
+from novel_analyzer.database.models import ChapterJob
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.domain.schemas import (
     AnalysisSummary,
     AntiFabricationGuardOutput,
     ChapterAnalysisLayerOutput,
     ChapterFactExtractionOutput,
+    ChapterIntakeOutput,
+    EvidenceBindingOutput,
     EvidenceNote,
     WriterLearningLensOutput,
 )
@@ -44,6 +47,85 @@ def test_extract_json_payload_repairs_trailing_comma() -> None:
         "chapter_index": 1,
         "normalized_title": "X",
     }
+
+
+def test_chapter_intake_output_accepts_chapter_number_alias() -> None:
+    output = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_number": 12,
+            "chapter_title": "测试章",
+            "paragraph_blocks": ["第一段", "第二段"],
+        }
+    )
+    assert output.chapter_index == 12
+    assert output.normalized_title == "测试章"
+    assert output.cleaned_text
+
+
+def test_stage_chapter_content_trims_large_input() -> None:
+    text = "A" * 5000
+    trimmed = AnalysisService._stage_chapter_content(text, max_chars=1000)
+    assert len(trimmed) < len(text)
+    assert "[... 中间内容已为阶段模型省略" in trimmed
+    assert trimmed.startswith("A")
+    assert trimmed.endswith("A")
+
+
+def test_writer_learning_lens_accepts_dict_transferable_lessons() -> None:
+    output = WriterLearningLensOutput.model_validate(
+        {
+            'transferable_lessons': [
+                {'lesson': '通过未解线索制造后续期待', 'category': 'pacing'},
+                {'summary': '让人物关系在冲突中递进'},
+                {'lesson_id': 3, 'category': 'character_relationship', 'content': '把冲突线索埋入日常互动。'},
+            ]
+        }
+    )
+    assert output.transferable_lessons == [
+        '通过未解线索制造后续期待',
+        '让人物关系在冲突中递进',
+        '把冲突线索埋入日常互动。',
+    ]
+
+
+def test_anti_fabrication_guard_accepts_dict_issue_items() -> None:
+    output = AntiFabricationGuardOutput.model_validate(
+        {
+            'unsupported_inferences': [
+                {'target': 'themes[2]', 'message': '该主题结论缺乏直接支撑。'},
+                {'summary': '把准备状态说成完成状态。'},
+            ],
+            'ambiguous_points': [
+                {'note': '角色动机仍可有两种解释。'},
+            ],
+            'overclaim_flags': [
+                {'reason': '结论强度超过证据强度。'},
+            ],
+        }
+    )
+    assert output.unsupported_inferences == [
+        '该主题结论缺乏直接支撑。',
+        '把准备状态说成完成状态。',
+    ]
+    assert output.ambiguous_points == ['角色动机仍可有两种解释。']
+    assert output.overclaim_flags == ['结论强度超过证据强度。']
+
+
+def test_evidence_binding_accepts_dict_unsupported_items() -> None:
+    output = EvidenceBindingOutput.model_validate(
+        {
+            'retained_items': [],
+            'unsupported_items': [
+                {'label': '巫仙师的动机缺乏原文直接支撑。'},
+                {'summary': '把筹备状态误写成已完成。'},
+            ],
+            'coverage_summary': 'ok',
+        }
+    )
+    assert output.unsupported_items == [
+        '巫仙师的动机缺乏原文直接支撑。',
+        '把筹备状态误写成已完成。',
+    ]
 
 
 def test_analysis_summary_compact_prefers_short_and_truncates() -> None:
@@ -151,6 +233,86 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
         service.context_service.fact_context_json = _boom  # type: ignore[method-assign]
         with pytest.raises(RuntimeError, match='boom'):
             service.analyze_range(run.id, branch.id, 1, 1)
+
+
+def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        monkeypatch.setattr(
+            service,
+            '_invoke_stage',
+            lambda model, prompt, schema: schema.model_validate(
+                {
+                    'chapter_index': 1,
+                    'normalized_title': '一',
+                    'cleaned_text': '第1章 一\n卫图觉醒命格。',
+                    'paragraph_blocks': [{'order': 1, 'text': '卫图觉醒命格。'}],
+                }
+                if schema.__name__ == 'ChapterIntakeOutput'
+                else (
+                    {
+                        'characters': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                        'events': [{'label': '卫图觉醒命格', 'evidence': ['觉醒命格'], 'confidence': 0.9}],
+                        'relations': [],
+                        'conflicts': [],
+                        'foreshadowing': [],
+                        'worldbuilding_facts': [],
+                    }
+                    if schema.__name__ == 'ChapterFactExtractionOutput'
+                    else (
+                        {
+                            'retained_items': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                            'unsupported_items': [],
+                            'coverage_summary': 'ok',
+                        }
+                        if schema.__name__ == 'EvidenceBindingOutput'
+                        else (
+                            {
+                                'summary': {'short': '卫图觉醒命格。'},
+                                'themes': [],
+                                'pacing': {},
+                                'emotional_curve': {},
+                                'continuity_notes': ['主线开启。'],
+                            }
+                            if schema.__name__ == 'ChapterAnalysisLayerOutput'
+                            else (
+                                {
+                                    'hook_notes': [],
+                                    'conflict_notes': [],
+                                    'reveal_order_notes': [],
+                                    'scene_efficiency_notes': [],
+                                    'transferable_lessons': [],
+                                }
+                                if schema.__name__ == 'WriterLearningLensOutput'
+                                else {'overclaim_flags': [], 'ambiguous_points': [], 'needs_human_review': False}
+                            )
+                        )
+                    )
+                )
+            ),
+        )
+
+        monkeypatch.setattr(
+            service.risk_audit_service,
+            'generate_for_chapter',
+            lambda branch_id, chapter_index: (_ for _ in ()).throw(RuntimeError('audit boom')),
+        )
+
+        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
+        assert len(artifact_ids) == 1
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'validated'
 
 
 def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() -> None:

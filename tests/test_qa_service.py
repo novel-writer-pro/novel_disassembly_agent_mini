@@ -1,7 +1,11 @@
+from pathlib import Path
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
+from novel_analyzer.domain.schemas import BranchQAResult
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.ingest_service import IngestService
@@ -13,11 +17,15 @@ class _DummyQAService(BranchQAService):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Settings(llm_api_key='test-key'))
 
-    def answer_question(self, branch_id: str, question: str, limit: int = 5):
+    def answer_question(
+        self,
+        branch_id: str,
+        question: str,
+        limit: int = 5,
+    ) -> BranchQAResult:
         hits = self.retrieval_service.search_branch(branch_id, question, limit)
         if not hits:
             return super().answer_question(branch_id, question, limit)
-        from novel_analyzer.domain.schemas import BranchQAResult
         return BranchQAResult(
             answer=(
                 f"根据第{hits[0].chapter_index}章，可直接确认：{hits[0].summary_text}"
@@ -39,7 +47,7 @@ def _session() -> Session:
     return Session(engine)
 
 
-def test_branch_qa_returns_grounded_answer(tmp_path) -> None:
+def test_branch_qa_requires_postgresql_retrieval_runtime(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 命格初现\n卫图觉醒命格，并决定先修养生功。\n', encoding='utf-8')
 
@@ -66,16 +74,11 @@ def test_branch_qa_returns_grounded_answer(tmp_path) -> None:
         )
         from novel_analyzer.services.retrieval_service import RetrievalService
         RetrievalService(session, settings).materialize_for_artifact(artifact.id)
-        result = _DummyQAService(session).answer_question(branch.id, '卫图为什么要修养生功？')
-        assert not result.insufficient_context
-        assert result.used_chapters == [1]
-        assert '根据第1章' in result.answer
-        assert '卫图觉醒命格' in result.answer
-        assert result.reasoning_paths
-        assert result.graph_signals
+        with pytest.raises(RuntimeError, match='Only PostgreSQL is supported'):
+            _DummyQAService(session).answer_question(branch.id, '卫图为什么要修养生功？')
 
 
-def test_branch_qa_window_context_is_available(tmp_path) -> None:
+def test_branch_qa_window_context_is_available(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
     with _session() as session:
@@ -112,7 +115,7 @@ def test_branch_qa_window_context_is_available(tmp_path) -> None:
         assert '窗口 1-5' in lines[0]
 
 
-def test_branch_qa_graph_reasoning_snapshot_is_available(tmp_path) -> None:
+def test_branch_qa_graph_reasoning_snapshot_is_available(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
     with _session() as session:
@@ -183,3 +186,70 @@ def test_branch_qa_graph_reasoning_snapshot_is_available(tmp_path) -> None:
         assert any('advances_to' in item for item in reasoning_paths)
         assert graph_signals
         assert any(item.startswith('活跃冲突:') for item in graph_signals)
+
+
+def test_branch_qa_falls_back_when_llm_temporarily_unavailable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 命格初现\n卫图觉醒命格，并决定先修养生功。\n', encoding='utf-8')
+
+    with _session() as session:
+        settings = Settings(llm_api_key='test-key')
+        novel, manifest = IngestService(session, settings).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session, settings).create_run(novel.id, manifest.id)
+        artifact = RunService(session, settings).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '命格初现',
+                'chapter_summary': '卫图觉醒命格，并决定先修养生功。',
+                'key_entities': ['卫图', '命格', '养生功'],
+                'key_events': ['卫图觉醒命格'],
+                'continuity_notes': ['主线进入修行筹备阶段。'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'dimensions': [],
+            },
+        )
+        service = BranchQAService(session, settings)
+
+        monkeypatch.setattr(
+            service.retrieval_service,
+            'search_branch',
+            lambda branch_id, question, limit: [
+                type(
+                    'Hit',
+                    (),
+                    {
+                        'chapter_index': 1,
+                        'title': '命格初现',
+                        'summary_text': '卫图觉醒命格，并决定先修养生功。',
+                        'score': 1.0,
+                        'keyword_list': ['卫图', '命格', '养生功'],
+                    },
+                )()
+            ],
+        )
+        monkeypatch.setattr(service, '_window_context', lambda branch_id, chapters: ['[窗口 1-1] 卫图开始筹备修行。'])
+        monkeypatch.setattr(service, '_graph_context', lambda branch_id, chapters: ['[图推理] 卫图觉醒命格 -> 决定修行'])
+        monkeypatch.setattr(
+            service,
+            '_graph_reasoning_snapshot',
+            lambda branch_id, chapters: (['卫图觉醒命格 -[advances_to]-> 卫图决定先修养生功'], ['活跃冲突: 卫图受限于出身']),
+        )
+
+        class _BoomModel:
+            def invoke(self, _prompt: str):
+                raise RuntimeError('503 Service temporarily unavailable')
+
+        monkeypatch.setattr('novel_analyzer.services.qa_service.build_chat_model', lambda *args, **kwargs: _BoomModel())
+
+        result = service.answer_question(branch.id, '卫图为什么要修养生功？')
+        assert result.insufficient_context is True
+        assert result.used_chapters == [1]
+        assert '当前问答模型暂时不可用' in result.answer
+        assert result.answer_mode == 'degraded'
+        assert result.degraded_reason is not None
+        assert any(item.startswith('服务降级:') for item in result.graph_signals)

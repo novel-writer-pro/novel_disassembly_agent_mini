@@ -357,38 +357,7 @@ class RetrievalService:
                 return [self._row_to_hit(row) for row in like_rows]
             return self._keyword_overlap_fallback(branch_id, query, limit)
 
-        tokens = [token.strip() for token in query.split() if token.strip()]
-        if not tokens:
-            tokens = [query]
-        clauses = []
-        sqlite_params: dict[str, object] = {"branch_id": branch_id, "limit": limit}
-        score_terms = []
-        for index, token in enumerate(tokens):
-            key = f"like_token_{index}"
-            sqlite_params[key] = f"%{token}%"
-            clauses.append(f"title LIKE :{key} OR bm25_text LIKE :{key}")
-            score_terms.append(
-                f"CASE WHEN title LIKE :{key} THEN 2.0 "
-                f"WHEN bm25_text LIKE :{key} THEN 1.0 ELSE 0.0 END"
-            )
-        rows = self.session.execute(
-            text(
-                f"""
-                SELECT
-                    chapter_index,
-                    title,
-                    summary_text,
-                    keyword_list,
-                    ({' + '.join(score_terms)}) AS score
-                FROM retrieval_documents
-                WHERE branch_id = :branch_id
-                  AND ({' OR '.join(clauses)})
-                ORDER BY score DESC, chapter_index ASC
-                LIMIT :limit
-                """
-            ),
-            sqlite_params,
-        ).mappings().all()
-        if rows:
-            return [self._row_to_hit(row) for row in rows]
-        return self._keyword_overlap_fallback(branch_id, query, limit)
+        raise RuntimeError(
+            "Only PostgreSQL is supported for retrieval search; "
+            "SQLite fallback has been removed."
+        )

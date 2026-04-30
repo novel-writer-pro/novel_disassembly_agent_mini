@@ -1,0 +1,709 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { message, Space, Tabs } from "antd";
+import WorkbenchLayout from "@/components/WorkbenchLayout";
+import LibraryPage from "@/components/LibraryPage";
+import TaskCenterPanel from "@/components/TaskCenterPanel";
+import SystemHealthPanel from "@/components/SystemHealthPanel";
+import SystemStatusBar from "@/components/SystemStatusBar";
+import ControlPage from "@/components/ControlPage";
+import PipelinePage from "@/components/PipelinePage";
+import ReaderPage from "@/components/ReaderPage";
+import BranchQaPanel from "@/components/BranchQaPanel";
+import OpsPage from "@/components/OpsPage";
+import { useWorkbenchState } from "@/hooks/useWorkbenchState";
+import {
+  fetchBranchExports,
+  fetchBranchSnapshot,
+  fetchChapterJobEvents,
+  fetchChapterJobs,
+  fetchChapterBundle,
+  fetchChapterQaContext,
+  fetchChapterSource,
+  fetchLibrary,
+  fetchJobEvents,
+  fetchPipelineRuns,
+  fetchProviderHealth,
+  fetchRuntimeHealth,
+  fetchRunSnapshot,
+  postPipelineCancel,
+  postPipelinePause,
+  postPipelineResume,
+  postPipelineStartRange,
+  postImport,
+  postRecovery,
+  postStart,
+} from "@/lib/api";
+import type {
+  BranchExports,
+  BranchSnapshot,
+  ChapterJobRow,
+  ChapterBundle,
+  ChapterQaContext,
+  ChapterSource,
+  JobEventItem,
+  PipelineRunSnapshot,
+  RunSnapshot,
+  LibraryItem,
+  ProviderHealth,
+  RuntimeHealth,
+} from "@/types/workbench";
+import ChapterSidebar from "@/components/ChapterSidebar";
+import { useRouter } from "next/router";
+
+const routeByWorkspace: Record<string, string> = {
+  library: "/library",
+  control: "/control",
+  pipeline: "/control",
+  reader: "/reader",
+  qa: "/qa",
+  ops: "/ops",
+};
+
+interface Props {
+  initialWorkspace: "library" | "control" | "pipeline" | "reader" | "qa" | "ops";
+}
+
+export default function WorkbenchApp({ initialWorkspace }: Props) {
+  const router = useRouter();
+  const { state, patchState, hydrated } = useWorkbenchState();
+  const [workspace, setWorkspace] = useState(initialWorkspace);
+  const [importText, setImportText] = useState("");
+  const [runSnapshot, setRunSnapshot] = useState<RunSnapshot | null>(null);
+  const [branchSnapshot, setBranchSnapshot] = useState<BranchSnapshot | null>(null);
+  const [bundle, setBundle] = useState<ChapterBundle | null>(null);
+  const [qa, setQa] = useState<ChapterQaContext | null>(null);
+  const [source, setSource] = useState<ChapterSource | null>(null);
+  const [exportsData, setExportsData] = useState<BranchExports | null>(null);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
+  const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealth | null>(null);
+  const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null);
+  const [pipelineRuns, setPipelineRuns] = useState<PipelineRunSnapshot[]>([]);
+  const [jobEvents, setJobEvents] = useState<JobEventItem[]>([]);
+  const [chapterJobs, setChapterJobs] = useState<ChapterJobRow[]>([]);
+  const [chapterEventItems, setChapterEventItems] = useState<JobEventItem[]>([]);
+  const [pipelineTargetToChapter, setPipelineTargetToChapter] = useState<number | null>(null);
+  const [pipelineProviderProfile, setPipelineProviderProfile] = useState("default");
+  const [recoveryResultText, setRecoveryResultText] = useState("");
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState({
+    importing: false,
+    refreshing: false,
+    starting: false,
+    pipelineStarting: false,
+    pipelineActing: false,
+    retrying: false,
+    clearing: false,
+    repairing: false,
+    exporting: false,
+    chapter: false,
+  });
+
+  const didBootstrapRef = useRef(false);
+  const chapterRequestSeqRef = useRef(0);
+  const workspaceRequestSeqRef = useRef(0);
+
+  const syncReaderChapterRoute = (chapterIndex: number, mode: "push" | "replace" = "replace") => {
+    const nextQuery = {
+      chapter: String(chapterIndex),
+      run_id: state.runId,
+      branch_id: state.branchId,
+    };
+    if (router.pathname !== "/reader") {
+      void router.push({ pathname: "/reader", query: nextQuery });
+      return;
+    }
+    if (router.query.chapter === String(chapterIndex)) return;
+    void router[mode]({ pathname: "/reader", query: nextQuery }, undefined, { shallow: true });
+  };
+
+  const loadWorkspaceData = async (runId: string, branchId: string, databaseUrl: string, apiBase: string) => {
+    const requestId = workspaceRequestSeqRef.current + 1;
+    workspaceRequestSeqRef.current = requestId;
+    const [runData, branchData, libraryData] = await Promise.all([
+      fetchRunSnapshot(apiBase, runId, branchId, databaseUrl),
+      fetchBranchSnapshot(apiBase, runId, branchId, databaseUrl),
+      fetchLibrary(apiBase, databaseUrl),
+    ]);
+    const [runtimeHealthData, providerHealthData] = await Promise.all([
+      fetchRuntimeHealth(apiBase).catch(() => null),
+      fetchProviderHealth(apiBase).catch(() => null),
+    ]);
+    if (workspaceRequestSeqRef.current !== requestId) return;
+    setRunSnapshot(runData);
+    setBranchSnapshot(branchData);
+    setLibraryItems(libraryData.items || []);
+    setRuntimeHealth(runtimeHealthData);
+    setProviderHealth(providerHealthData);
+    const [eventsData, pipelineRunsData] = await Promise.all([
+      fetchJobEvents(apiBase, branchId, databaseUrl, 50).catch(() => ({ items: [] })),
+      fetchPipelineRuns(apiBase, branchId, databaseUrl, 10).catch(() => ({ items: [] })),
+    ]);
+    const chapterJobsData = await fetchChapterJobs(apiBase, branchId, databaseUrl, 200).catch(() => ({ items: [] }));
+    if (workspaceRequestSeqRef.current !== requestId) return;
+    setJobEvents(eventsData.items || []);
+    setPipelineRuns(pipelineRunsData.items || []);
+    setChapterJobs(chapterJobsData.items || []);
+    setLastRefreshedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
+  };
+
+  const navigateWorkspace = (
+    nextWorkspace: string,
+    options?: {
+      chapterIndex?: number | null;
+      runId?: string;
+      branchId?: string;
+    },
+  ) => {
+    setWorkspace(nextWorkspace as "library" | "control" | "pipeline" | "reader" | "qa" | "ops");
+    const nextRoute = routeByWorkspace[nextWorkspace] || "/";
+    const nextQuery: Record<string, string> = {};
+    const effectiveRunId = options?.runId || state.runId;
+    const effectiveBranchId = options?.branchId || state.branchId;
+    if (nextWorkspace !== "library") {
+      if (effectiveRunId) nextQuery.run_id = effectiveRunId;
+      if (effectiveBranchId) nextQuery.branch_id = effectiveBranchId;
+    }
+    if (options?.chapterIndex) nextQuery.chapter = String(options.chapterIndex);
+    if (nextWorkspace === "pipeline") nextQuery.section = "pipeline";
+    const nextQueryString = new URLSearchParams(nextQuery).toString();
+    const currentQueryString = new URLSearchParams(
+      Object.entries(router.query).flatMap(([key, value]) =>
+        typeof value === "string" ? [[key, value]] : []
+      ),
+    ).toString();
+    if (
+      router.pathname !== nextRoute ||
+      (options?.chapterIndex && router.query.chapter !== String(options.chapterIndex)) ||
+      nextQueryString !== currentQueryString
+    ) {
+      void router.push({ pathname: nextRoute, query: nextQuery });
+    }
+  };
+
+  const refreshBranch = async () => {
+    setLoading((current) => ({ ...current, refreshing: true }));
+    try {
+      await loadWorkspaceData(state.runId, state.branchId, state.databaseUrl, state.apiBase);
+      setImportText("已读取当前真实分支数据。");
+    } finally {
+      setLoading((current) => ({ ...current, refreshing: false }));
+    }
+  };
+
+  const loadChapter = async (
+    chapterIndex: number,
+    options?: { navigate?: boolean; syncUrl?: boolean; syncUrlMode?: "push" | "replace" },
+  ) => {
+    const requestId = chapterRequestSeqRef.current + 1;
+    chapterRequestSeqRef.current = requestId;
+    const row = branchSnapshot?.chapter_rows?.find((item) => item.chapter_index === chapterIndex) || null;
+    setActiveChapterIndex(chapterIndex);
+    patchState({
+      lastChapterIndex: chapterIndex,
+      lastChapterIndexByBranch: {
+        ...(state.lastChapterIndexByBranch || {}),
+        [state.branchId]: chapterIndex,
+      },
+    });
+
+    if (options?.navigate) {
+      navigateWorkspace("reader", { chapterIndex });
+    } else if (options?.syncUrl) {
+      syncReaderChapterRoute(chapterIndex, options.syncUrlMode);
+    }
+
+    if (row && !row.has_artifact) {
+      if (chapterRequestSeqRef.current === requestId) {
+        setBundle(null);
+        setQa(null);
+        setSource(null);
+        message.info(row.job_status === "running" ? `第 ${chapterIndex} 章正在整理中，请稍后再看。` : `第 ${chapterIndex} 章还没有拆书结果，请先继续整理。`);
+      }
+      return;
+    }
+
+    setBundle(null);
+    setQa(null);
+    setSource(null);
+    setLoading((current) => ({ ...current, chapter: true }));
+    try {
+      const [bundleData, qaData, sourceData] = await Promise.all([
+        fetchChapterBundle(state.apiBase, state.branchId, chapterIndex, state.databaseUrl),
+        fetchChapterQaContext(state.apiBase, state.branchId, chapterIndex, state.databaseUrl),
+        fetchChapterSource(state.apiBase, state.branchId, chapterIndex, state.databaseUrl),
+      ]);
+      if (chapterRequestSeqRef.current !== requestId) return;
+      setBundle(bundleData);
+      setQa(qaData);
+      setSource(sourceData);
+    } catch (error) {
+      if (chapterRequestSeqRef.current !== requestId) return;
+      setBundle(null);
+      setQa(null);
+      setSource(null);
+      message.error(error instanceof Error ? error.message : "章节读取失败");
+    } finally {
+      if (chapterRequestSeqRef.current === requestId) {
+        setLoading((current) => ({ ...current, chapter: false }));
+      }
+    }
+  };
+
+  const openChapter = async (chapterIndex: number) => {
+    const shouldPush = router.pathname !== "/reader";
+    await loadChapter(chapterIndex, {
+      navigate: shouldPush,
+      syncUrl: !shouldPush,
+      syncUrlMode: "replace",
+    });
+  };
+
+  const handleImport = async () => {
+    const input = document.getElementById("novel-file") as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) {
+      message.error("请先选择小说文件");
+      return;
+    }
+    setLoading((current) => ({ ...current, importing: true }));
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      formData.set("title", state.title || "");
+      formData.set("pipeline_profile", state.profile);
+      if (state.databaseUrl) formData.set("database_url", state.databaseUrl);
+      if (state.maxChapters) formData.set("max_chapters", state.maxChapters);
+      const payload = await postImport(state.apiBase, formData);
+      setImportText("作品已导入，当前结果已同步到工作台。");
+      patchState({
+        title: state.title || payload.import_result.title || file.name.replace(/\.[^.]+$/, ""),
+        runId: payload.import_result.run_id || state.runId,
+        branchId: payload.import_result.branch_id || state.branchId,
+      });
+      setRunSnapshot(payload.run_snapshot);
+      setBranchSnapshot(payload.branch_snapshot);
+      const libraryData = await fetchLibrary(state.apiBase, state.databaseUrl);
+      setLibraryItems(libraryData.items || []);
+      message.success("作品已导入，可以开始阅读章节内容");
+      navigateWorkspace("reader");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "导入失败");
+    } finally {
+      setLoading((current) => ({ ...current, importing: false }));
+    }
+  };
+
+  const handleSimulate = async () => {
+    const branchData = await fetchBranchSnapshot(
+      state.apiBase,
+      state.runId,
+      state.branchId,
+      state.databaseUrl,
+    ).catch(() => null);
+    if (branchData) {
+      setBranchSnapshot(branchData);
+      setImportText("已载入当前示例数据。");
+      message.success("已载入当前示例数据");
+      return;
+    }
+    setImportText("当前没有可载入的示例数据，请先读取真实分支。");
+    message.warning("当前没有可载入的示例数据");
+  };
+
+  const handleStart = async () => {
+    setLoading((current) => ({ ...current, starting: true }));
+    try {
+      const formData = new FormData();
+      formData.set("run_id", state.runId);
+      formData.set("branch_id", state.branchId);
+      formData.set("pipeline_profile", state.profile);
+      if (state.databaseUrl) formData.set("database_url", state.databaseUrl);
+      if (state.maxChapters) formData.set("max_chapters", state.maxChapters);
+      const payload = await postStart(state.apiBase, formData);
+      setImportText(`已继续整理，当前处理结果：${payload.pipeline_state}`);
+      message.success("已继续整理后续章节");
+      await refreshBranch();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "继续整理失败");
+    } finally {
+      setLoading((current) => ({ ...current, starting: false }));
+    }
+  };
+
+  const handleRecovery = async (action: string) => {
+    const key =
+      action === "retry-failed"
+        ? "retrying"
+        : action === "clear-running"
+          ? "clearing"
+          : "repairing";
+    setLoading((current) => ({ ...current, [key]: true }));
+    try {
+      const formData = new FormData();
+      formData.set("run_id", state.runId);
+      formData.set("branch_id", state.branchId);
+      formData.set("action", action);
+      if (state.databaseUrl) formData.set("database_url", state.databaseUrl);
+      const payload = await postRecovery(state.apiBase, formData);
+      setRecoveryResultText(JSON.stringify(payload, null, 2));
+      message.success(payload.message || "处理完成");
+      await refreshBranch();
+      navigateWorkspace("ops");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "处理失败");
+    } finally {
+      setLoading((current) => ({ ...current, [key]: false }));
+    }
+  };
+
+  useEffect(() => {
+    setWorkspace(initialWorkspace);
+  }, [initialWorkspace]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!router.isReady) return;
+    const routeRunId = typeof router.query.run_id === "string" ? router.query.run_id : "";
+    const routeBranchId = typeof router.query.branch_id === "string" ? router.query.branch_id : "";
+    if (routeBranchId && (routeBranchId !== state.branchId || (routeRunId && routeRunId !== state.runId))) {
+      patchState({
+        runId: routeRunId || state.runId,
+        branchId: routeBranchId,
+      });
+    }
+  }, [hydrated, router.isReady, router.query.branch_id, router.query.run_id, state.branchId, state.runId]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (didBootstrapRef.current) return;
+    if (!state.runId || !state.branchId) return;
+    didBootstrapRef.current = true;
+    void refreshBranch();
+  }, [hydrated, state.apiBase, state.branchId, state.databaseUrl, state.runId]);
+
+  useEffect(() => {
+    if (workspace !== "reader") return;
+    if (loading.chapter) return;
+    const chapterFromQuery = Number(router.query.chapter || "");
+    const chapterFromBranchMemory = state.branchId ? (state.lastChapterIndexByBranch || {})[state.branchId] : null;
+    const chapterFromState = chapterFromBranchMemory ?? state.lastChapterIndex ?? null;
+    const candidate = Number.isFinite(chapterFromQuery) && chapterFromQuery > 0 ? chapterFromQuery : chapterFromState;
+    if (candidate && candidate !== activeChapterIndex) {
+      void loadChapter(candidate);
+      return;
+    }
+    if (!candidate && branchSnapshot?.chapter_rows?.length) {
+      const preferred =
+        branchSnapshot.chapter_rows.find((row) => row.has_artifact) ||
+        branchSnapshot.chapter_rows.find((row) => row.job_status !== "failed") ||
+        branchSnapshot.chapter_rows[0];
+      if (preferred && preferred.chapter_index !== activeChapterIndex) {
+        void loadChapter(preferred.chapter_index);
+      }
+    }
+  }, [activeChapterIndex, branchSnapshot, loading.chapter, router.query.chapter, state.lastChapterIndex, workspace]);
+
+  const hasActiveTasks = useMemo(
+    () => libraryItems.some((item) => (item.running_jobs || 0) > 0 || item.pipeline_state === "needs_recovery" || item.pipeline_state === "auto_running"),
+    [libraryItems],
+  );
+  const providerDegraded = providerHealth?.last_status === "degraded";
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!autoRefreshEnabled) return;
+    if (!state.runId || !state.branchId) return;
+    const intervalMs = workspace === "pipeline" ? 5000 : providerDegraded ? 60000 : hasActiveTasks ? 15000 : 45000;
+    const timer = window.setInterval(() => {
+      if (loading.importing || loading.starting || loading.retrying || loading.clearing || loading.repairing || loading.exporting) return;
+      void loadWorkspaceData(state.runId, state.branchId, state.databaseUrl, state.apiBase);
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [
+    hydrated,
+    autoRefreshEnabled,
+    hasActiveTasks,
+    workspace,
+    loading.clearing,
+    loading.exporting,
+    loading.importing,
+    loading.repairing,
+    loading.retrying,
+    loading.starting,
+    providerDegraded,
+    state.apiBase,
+    state.branchId,
+    state.databaseUrl,
+    state.runId,
+  ]);
+
+  const chapterMenu = useMemo(
+    () => (
+      <ChapterSidebar
+        rows={branchSnapshot?.chapter_rows || []}
+        activeChapterIndex={activeChapterIndex}
+        onSelect={openChapter}
+      />
+    ),
+    [activeChapterIndex, branchSnapshot],
+  );
+
+  const currentLibraryItem = useMemo(
+    () => libraryItems.find((item) => item.branch_id === state.branchId) || null,
+    [libraryItems, state.branchId],
+  );
+
+  const activateLibraryItem = async (item: LibraryItem, nextWorkspace?: "library" | "control" | "pipeline" | "reader" | "qa" | "ops") => {
+    chapterRequestSeqRef.current += 1;
+    const rememberedChapter = (state.lastChapterIndexByBranch || {})[item.branch_id] ?? null;
+    patchState({
+      title: item.title,
+      runId: item.run_id,
+      branchId: item.branch_id,
+      lastChapterIndex: rememberedChapter,
+    });
+    setRunSnapshot(null);
+    setBranchSnapshot(null);
+    setBundle(null);
+    setQa(null);
+    setSource(null);
+    setActiveChapterIndex(rememberedChapter);
+    setImportText(`已切换到《${item.title}》`);
+    await loadWorkspaceData(item.run_id, item.branch_id, state.databaseUrl, state.apiBase);
+    if (nextWorkspace) {
+      navigateWorkspace(nextWorkspace, {
+        runId: item.run_id,
+        branchId: item.branch_id,
+        chapterIndex: nextWorkspace === "reader" ? rememberedChapter : null,
+      });
+    }
+  };
+
+  const taskCenter = (
+    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+      <TaskCenterPanel
+        items={libraryItems}
+        activeBranchId={state.branchId}
+        onRefresh={refreshBranch}
+        autoRefreshEnabled={autoRefreshEnabled}
+        onToggleAutoRefresh={() => setAutoRefreshEnabled((current) => !current)}
+        lastRefreshedAt={lastRefreshedAt}
+        providerHealth={providerHealth}
+        onActivate={(item) => {
+          void activateLibraryItem(item);
+        }}
+        onOpenRecovery={(item) => {
+          void activateLibraryItem(item, "ops");
+        }}
+      />
+      <SystemHealthPanel runtimeHealth={runtimeHealth} providerHealth={providerHealth} lastRefreshedAt={lastRefreshedAt} />
+    </Space>
+  );
+
+  const handlePipelineStart = async () => {
+    setLoading((current) => ({ ...current, pipelineStarting: true }));
+    try {
+      const payload = await postPipelineStartRange(state.apiBase, {
+        run_id: state.runId,
+        branch_id: state.branchId,
+        to_chapter: pipelineTargetToChapter,
+        concurrency: 1,
+        provider_profile: pipelineProviderProfile,
+        database_url: state.databaseUrl,
+      });
+      message.success(`后台拆书任务已启动：${payload.id.slice(0, 8)}`);
+      await refreshBranch();
+      navigateWorkspace("pipeline");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "启动后台拆书失败");
+    } finally {
+      setLoading((current) => ({ ...current, pipelineStarting: false }));
+    }
+  };
+
+  const handlePipelineAction = async (action: "pause" | "resume" | "cancel", pipelineRunId: string) => {
+    setLoading((current) => ({ ...current, pipelineActing: true }));
+    try {
+      if (action === "pause") {
+        await postPipelinePause(state.apiBase, pipelineRunId, state.databaseUrl);
+      } else if (action === "resume") {
+        await postPipelineResume(state.apiBase, pipelineRunId, state.databaseUrl);
+      } else {
+        await postPipelineCancel(state.apiBase, pipelineRunId, state.databaseUrl);
+      }
+      message.success(`后台任务已${action === "pause" ? "暂停" : action === "resume" ? "恢复" : "取消"}`);
+      await refreshBranch();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "后台任务操作失败");
+    } finally {
+      setLoading((current) => ({ ...current, pipelineActing: false }));
+    }
+  };
+
+  const statusBar = (
+    <SystemStatusBar
+      runtimeHealth={runtimeHealth}
+      providerHealth={providerHealth}
+      autoRefreshEnabled={autoRefreshEnabled}
+      lastRefreshedAt={lastRefreshedAt}
+    />
+  );
+
+  return (
+    <WorkbenchLayout
+      activeKey={workspace === "pipeline" ? "control" : workspace}
+      chapterMenu={chapterMenu}
+      onNavigate={navigateWorkspace}
+      currentNovelTitle={currentLibraryItem?.title || state.title}
+      currentBranchId={state.branchId}
+      statusBar={statusBar}
+    >
+      {(workspace === "control" || workspace === "pipeline") ? (
+        <Tabs
+          activeKey={workspace === "pipeline" ? "pipeline" : "control"}
+          onChange={(key) => navigateWorkspace(key === "pipeline" ? "pipeline" : "control")}
+          items={[
+            {
+              key: "control",
+              label: "开始整理",
+              children: (
+                <ControlPage
+                  state={state}
+                  importText={importText}
+                  runSnapshot={runSnapshot}
+                  branchSnapshot={branchSnapshot}
+                  loading={loading}
+                  libraryItems={libraryItems}
+                  onChange={patchState}
+                  onImport={handleImport}
+                  onSimulate={handleSimulate}
+                  onRefresh={refreshBranch}
+                  onStart={handleStart}
+                  onOpenPipeline={() => navigateWorkspace("pipeline")}
+                  onOpenRecovery={() => navigateWorkspace("ops")}
+                  onSelectLibraryItem={(item) => {
+                    void activateLibraryItem(item);
+                  }}
+                />
+              ),
+            },
+            {
+              key: "pipeline",
+              label: "拆书流水线",
+              children: (
+                <PipelinePage
+                  runId={state.runId}
+                  branchId={state.branchId}
+                  nextChapter={runSnapshot?.next_chapter ?? null}
+                  completedChapters={runSnapshot?.completed_chapters}
+                  manifestChapterCount={runSnapshot?.manifest_chapter_count}
+                  loading={loading.pipelineStarting || loading.pipelineActing || loading.refreshing}
+                  pipelineRuns={pipelineRuns}
+                  events={jobEvents}
+                  chapterJobs={chapterJobs}
+                  chapterEventItems={chapterEventItems}
+                  onRefresh={refreshBranch}
+                  targetToChapter={pipelineTargetToChapter}
+                  onChangeTargetToChapter={setPipelineTargetToChapter}
+                  providerProfile={pipelineProviderProfile}
+                  onChangeProviderProfile={setPipelineProviderProfile}
+                  onStart={() => void handlePipelineStart()}
+                  onPause={(pipelineRunId) => void handlePipelineAction("pause", pipelineRunId)}
+                  onResume={(pipelineRunId) => void handlePipelineAction("resume", pipelineRunId)}
+                  onCancel={(pipelineRunId) => void handlePipelineAction("cancel", pipelineRunId)}
+                  onOpenChapterDetail={async (chapterIndex) => {
+                    try {
+                      const payload = await fetchChapterJobEvents(state.apiBase, state.branchId, chapterIndex, state.databaseUrl, 100);
+                      setChapterEventItems(payload.items || []);
+                    } catch (error) {
+                      message.error(error instanceof Error ? error.message : "读取章节任务详情失败");
+                      setChapterEventItems([]);
+                    }
+                  }}
+                  onCloseChapterDetail={() => setChapterEventItems([])}
+                  onOpenRecovery={() => navigateWorkspace("ops")}
+                />
+              ),
+            },
+          ]}
+        />
+      ) : null}
+
+
+      {workspace === "library" ? (
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <LibraryPage
+            items={libraryItems}
+            activeBranchId={state.branchId}
+            onRefresh={refreshBranch}
+            providerHealth={providerHealth}
+            onActivate={(item) => {
+              void activateLibraryItem(item);
+            }}
+            onOpenReader={(item) => {
+              void activateLibraryItem(item, "reader");
+            }}
+            onOpenQa={(item) => {
+              void activateLibraryItem(item, "qa");
+            }}
+          />
+          {taskCenter}
+        </Space>
+      ) : null}
+
+      {workspace === "reader" ? (
+        <ReaderPage
+          bundle={bundle}
+          qa={qa}
+          source={source}
+          loading={loading.chapter}
+          onJumpChapter={(chapterIndex) => void loadChapter(chapterIndex, { syncUrl: true, syncUrlMode: "replace" })}
+        />
+      ) : null}
+
+      {workspace === "qa" ? (
+        <BranchQaPanel
+          apiBase={state.apiBase}
+          branchId={state.branchId}
+          databaseUrl={state.databaseUrl}
+          onJumpChapter={(chapterIndex) => void openChapter(chapterIndex)}
+        />
+      ) : null}
+
+      {workspace === "ops" ? (
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          {taskCenter}
+          <OpsPage
+            recoveryResultText={recoveryResultText}
+            exportsData={exportsData}
+            loading={loading}
+            onRetryFailed={() => handleRecovery("retry-failed")}
+            onClearRunning={() => handleRecovery("clear-running")}
+            onRepair={() => handleRecovery("repair")}
+            onLoadExports={async () => {
+              setLoading((current) => ({ ...current, exporting: true }));
+              try {
+                const payload = await fetchBranchExports(
+                  state.apiBase,
+                  state.runId,
+                  state.branchId,
+                  state.databaseUrl,
+                );
+                setExportsData(payload);
+                message.success("导出文件已准备好");
+              } catch (error) {
+                message.error(error instanceof Error ? error.message : "导出生成失败");
+              } finally {
+                setLoading((current) => ({ ...current, exporting: false }));
+              }
+            }}
+            apiBase={state.apiBase}
+            providerHealth={providerHealth}
+          />
+        </Space>
+      ) : null}
+    </WorkbenchLayout>
+  );
+}

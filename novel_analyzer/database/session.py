@@ -34,8 +34,6 @@ def ensure_database_exists(settings: Settings | None = None) -> None:
     """Create the target PostgreSQL database when absent."""
 
     runtime = settings or get_settings()
-    if runtime.db_dialect != "postgresql":
-        return
 
     admin_engine = create_engine(
         runtime.admin_database_url,
@@ -43,9 +41,12 @@ def ensure_database_exists(settings: Settings | None = None) -> None:
         isolation_level="AUTOCOMMIT",
     )
     query = text("SELECT 1 FROM pg_database WHERE datname = :db_name")
-    create_sql = text(f'CREATE DATABASE "{runtime.db_name}"')
+    create_sql = text(f'CREATE DATABASE "{runtime.effective_db_name}"')
     with admin_engine.connect() as connection:
-        exists = connection.execute(query, {"db_name": runtime.db_name}).scalar_one_or_none()
+        exists = connection.execute(
+            query,
+            {"db_name": runtime.effective_db_name},
+        ).scalar_one_or_none()
         if exists is None:
             connection.execute(create_sql)
 

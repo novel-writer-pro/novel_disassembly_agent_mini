@@ -40,6 +40,7 @@ from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.quality_gate_service import QualityGateService
 from novel_analyzer.services.retrieval_service import RetrievalService
+from novel_analyzer.services.risk_audit_service import RiskAuditService
 from novel_analyzer.services.run_service import RunService
 
 
@@ -54,6 +55,7 @@ class AnalysisService:
         self.context_service = ContextService(session)
         self.fact_service = FactService(session)
         self.graph_service = GraphService(session)
+        self.risk_audit_service = RiskAuditService(session)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -65,6 +67,17 @@ class AnalysisService:
                 part.get("text", "") if isinstance(part, dict) else str(part) for part in content
             )
         return str(content)
+
+    @staticmethod
+    def _stage_chapter_content(chapter_content: str, max_chars: int = 3600) -> str:
+        """Trim oversized chapter text for small-model staged prompts while preserving head/tail context."""
+
+        text = chapter_content.strip()
+        if len(text) <= max_chars:
+            return text
+        head = text[:2200].rstrip()
+        tail = text[-1200:].lstrip()
+        return f"{head}\n\n[... 中间内容已为阶段模型省略 {len(text) - len(head) - len(tail)} 字 ...]\n\n{tail}"
 
     @classmethod
     def _extract_json_payload(cls, message: BaseMessage) -> dict[str, object]:
@@ -139,6 +152,12 @@ class AnalysisService:
         response = self._invoke_with_retry(model, prompt)
         raw = self._extract_json_payload(response)
         return schema.model_validate(raw)  # type: ignore[attr-defined]
+
+    @staticmethod
+    def _should_skip_small_model_pipeline(job_attempts: int) -> bool:
+        """Escalate repeated problem chapters directly to monolithic fallback."""
+
+        return job_attempts >= 3
 
     @staticmethod
     def _labels_from_notes(notes: Sequence[object]) -> list[str]:
@@ -449,7 +468,15 @@ class AnalysisService:
             raw_result: dict[str, object] | None = None
             stage_payload: dict[str, object] = {}
             try:
+                self.run_service.update_job_progress(
+                    branch_id,
+                    segment.chapter_index,
+                    current_stage='chapter_intake',
+                    progress_percent=5,
+                    emit_event=True,
+                )
                 chapter_content = full_text[segment.start_offset : segment.end_offset].strip()
+                stage_chapter_content = self._stage_chapter_content(chapter_content)
                 previous_summary = self.context_service.previous_summary(
                     branch_id,
                     segment.chapter_index,
@@ -474,11 +501,20 @@ class AnalysisService:
                 graph_context_json = json.dumps(graph_context, ensure_ascii=False, indent=2)
                 state_summary_json = json.dumps(state_summary, ensure_ascii=False, indent=2)
                 try:
+                    if self._should_skip_small_model_pipeline(job.attempts):
+                        raise ValueError('skip staged pipeline after repeated retries')
+                    self.run_service.update_job_progress(
+                        branch_id,
+                        segment.chapter_index,
+                        current_stage='fact_extractor',
+                        progress_percent=15,
+                        emit_event=True,
+                    )
                     prompts = build_agent_stage_prompts(
                         ChapterAgentContext(
                             chapter_index=segment.chapter_index,
                             normalized_title=segment.normalized_title,
-                            chapter_content=chapter_content,
+                            chapter_content=stage_chapter_content,
                             previous_summary=previous_summary,
                             prior_context_json=prior_context_json,
                             graph_context_json=graph_context_json,
@@ -498,7 +534,7 @@ class AnalysisService:
                         ChapterAgentContext(
                             chapter_index=segment.chapter_index,
                             normalized_title=segment.normalized_title,
-                            chapter_content=chapter_content,
+                            chapter_content=stage_chapter_content,
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
@@ -511,16 +547,31 @@ class AnalysisService:
                     facts = cast(
                         ChapterFactExtractionOutput,
                         self._invoke_stage(
-                                    stage_model,
+                            stage_model,
                             fact_prompt_map['fact_extractor'],
                             ChapterFactExtractionOutput,
                         ),
                     ).ensure_minimum_facts(intake.cleaned_text)
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        job_id=job.id,
+                        event_type='stage_completed',
+                        stage='fact_extractor',
+                        message=f'chapter {segment.chapter_index} fact_extractor completed',
+                    )
+                    self.run_service.update_job_progress(
+                        branch_id,
+                        segment.chapter_index,
+                        current_stage='evidence_binder',
+                        progress_percent=30,
+                        emit_event=True,
+                    )
                     evidence_prompt_map = build_agent_stage_prompts(
                         ChapterAgentContext(
                             chapter_index=segment.chapter_index,
                             normalized_title=segment.normalized_title,
-                            chapter_content=chapter_content,
+                            chapter_content=stage_chapter_content,
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
@@ -539,11 +590,26 @@ class AnalysisService:
                             EvidenceBindingOutput,
                         ),
                     ).ensure_from_facts(facts)
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        job_id=job.id,
+                        event_type='stage_completed',
+                        stage='evidence_binder',
+                        message=f'chapter {segment.chapter_index} evidence_binder completed',
+                    )
+                    self.run_service.update_job_progress(
+                        branch_id,
+                        segment.chapter_index,
+                        current_stage='analysis_generator',
+                        progress_percent=50,
+                        emit_event=True,
+                    )
                     analysis_prompt_map = build_agent_stage_prompts(
                         ChapterAgentContext(
                             chapter_index=segment.chapter_index,
                             normalized_title=segment.normalized_title,
-                            chapter_content=chapter_content,
+                            chapter_content=stage_chapter_content,
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
@@ -563,6 +629,14 @@ class AnalysisService:
                             ChapterAnalysisLayerOutput,
                         ),
                     ).ensure_minimum_analysis(segment.normalized_title, evidence)
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        job_id=job.id,
+                        event_type='stage_completed',
+                        stage='analysis_generator',
+                        message=f'chapter {segment.chapter_index} analysis_generator completed',
+                    )
                     (
                         state_transition_notes,
                         evidence_backed_resolutions,
@@ -571,6 +645,13 @@ class AnalysisService:
                         state_summary,
                         facts,
                         analysis,
+                    )
+                    self.run_service.update_job_progress(
+                        branch_id,
+                        segment.chapter_index,
+                        current_stage='writer_learning_lens',
+                        progress_percent=65,
+                        emit_event=True,
                     )
                     writer = cast(
                         WriterLearningLensOutput,
@@ -586,10 +667,25 @@ class AnalysisService:
                         evidence_backed_resolutions,
                         unresolved_threads,
                     )
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        job_id=job.id,
+                        event_type='stage_completed',
+                        stage='writer_learning_lens',
+                        message=f'chapter {segment.chapter_index} writer_learning_lens completed',
+                    )
+                    self.run_service.update_job_progress(
+                        branch_id,
+                        segment.chapter_index,
+                        current_stage='anti_fabrication_guard',
+                        progress_percent=75,
+                        emit_event=True,
+                    )
                     guard_context = ChapterAgentContext(
                         chapter_index=segment.chapter_index,
                         normalized_title=segment.normalized_title,
-                        chapter_content=chapter_content,
+                        chapter_content=stage_chapter_content,
                         previous_summary=previous_summary,
                         intake_json=intake.model_dump_json(indent=2),
                         prior_context_json=prior_context_json,
@@ -628,6 +724,14 @@ class AnalysisService:
                         analysis,
                         guard,
                     )
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        job_id=job.id,
+                        event_type='stage_completed',
+                        stage='anti_fabrication_guard',
+                        message=f'chapter {segment.chapter_index} anti_fabrication_guard completed',
+                    )
                     result = self._merge_stage_outputs(
                         segment.chapter_index,
                         segment.normalized_title,
@@ -650,6 +754,22 @@ class AnalysisService:
                     if self._is_sparse_result(result):
                         raise ValueError('stage pipeline produced sparse result')
                 except Exception as stage_exc:
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        job_id=job.id,
+                        event_type='stage_failed',
+                        stage='small_model_pipeline',
+                        level='warning',
+                        message=str(stage_exc),
+                    )
+                    self.run_service.update_job_progress(
+                        branch_id,
+                        segment.chapter_index,
+                        current_stage='monolithic_fallback',
+                        progress_percent=55,
+                        emit_event=True,
+                    )
                     result = self._invoke_monolithic_analysis(
                         fallback_model,
                         segment.chapter_index,
@@ -679,18 +799,39 @@ class AnalysisService:
                         'pipeline': 'small-model-skills-v1',
                     },
                 )
+                self.run_service.update_job_progress(
+                    branch_id,
+                    segment.chapter_index,
+                    current_stage='quality_gate',
+                    progress_percent=85,
+                    emit_event=True,
+                )
                 gate = QualityGateService.evaluate(chapter_content, result)
                 result = result.model_copy(update={
                     'quality_gate_notes': gate.notes,
                     'hook_score': gate.hook_score,
                     'needs_human_review': result.needs_human_review or gate.needs_human_review,
                 })
+                self.run_service.update_job_progress(
+                    branch_id,
+                    segment.chapter_index,
+                    current_stage='artifact_persist',
+                    progress_percent=90,
+                    emit_event=True,
+                )
                 artifact = self.run_service.record_chapter_artifact(
                     branch_id,
                     segment.chapter_index,
                     result.model_dump(mode='json'),
                     source_kind='model',
                     participates_in_downstream=True,
+                )
+                self.run_service.update_job_progress(
+                    branch_id,
+                    segment.chapter_index,
+                    current_stage='materialization',
+                    progress_percent=95,
+                    emit_event=True,
                 )
                 self.retrieval_service.materialize_for_artifact(artifact.id)
                 self.fact_service.materialize_for_artifact(artifact.id)
@@ -701,6 +842,40 @@ class AnalysisService:
                     self.settings.cross_chapter_window,
                 )
                 self.run_service.complete_chapter_job(branch_id, segment.chapter_index)
+                try:
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        event_type="stage_started",
+                        stage="risk_aggregation",
+                        message=f"chapter {segment.chapter_index} entered risk_aggregation",
+                    )
+                    risk_card = self.risk_audit_service.generate_for_chapter(
+                        branch_id,
+                        segment.chapter_index,
+                    )
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        event_type="stage_completed",
+                        stage="risk_aggregation",
+                        message=f"chapter {segment.chapter_index} risk card generated",
+                        payload_json={
+                            "overall_risk_level": risk_card.overall_risk_level,
+                            "top_risk_count": len(risk_card.top_risks),
+                            "checker_statuses": risk_card.checker_statuses,
+                        },
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    self.run_service.record_job_event(
+                        branch_id=branch_id,
+                        chapter_index=segment.chapter_index,
+                        event_type="stage_failed",
+                        stage="risk_aggregation",
+                        level="warning",
+                        message=str(exc),
+                        payload_json={"non_blocking": True},
+                    )
                 artifact_ids.append(artifact.id)
                 previous_summary = result.chapter_summary
             except Exception as exc:

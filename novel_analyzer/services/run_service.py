@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select, update
@@ -14,12 +14,14 @@ from novel_analyzer.database.models import (
     AnalysisRun,
     ChapterArtifact,
     ChapterJob,
+    ChapterJobEvent,
     ChapterManifest,
     ChapterRawOutput,
     NovelSource,
     RunBranch,
     RunCheckpoint,
 )
+from novel_analyzer.services.job_event_service import JobEventService
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +31,8 @@ class FailedJobInfo:
     chapter_index: int
     attempts: int
     last_error: str
+    failure_class: str | None = None
+    failure_code: str | None = None
 
 
 class RunService:
@@ -37,6 +41,59 @@ class RunService:
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
         self.settings = settings or get_settings()
+        self.job_events = JobEventService(session)
+
+    def _classify_failure(self, error: str) -> tuple[str, str]:
+        lowered = error.lower()
+        if '503' in lowered or 'service temporarily unavailable' in lowered:
+            return 'provider_503', 'http_503'
+        if '429' in lowered or 'rate limit' in lowered:
+            return 'rate_limit', 'http_429'
+        if '402' in lowered or 'insufficient balance' in lowered or 'billing_error' in lowered:
+            return 'provider_balance', 'http_402'
+        if 'timeout' in lowered:
+            return 'timeout', 'timeout'
+        if 'connection error' in lowered or 'remote end closed connection' in lowered:
+            return 'provider_connection', 'provider_connection'
+        if 'json' in lowered:
+            return 'invalid_json', 'json_parse'
+        if 'sparse result' in lowered:
+            return 'sparse_result', 'sparse_result'
+        if 'sql' in lowered or 'database' in lowered:
+            return 'db_error', 'db_error'
+        return 'unknown', 'unknown'
+
+    def _run_id_for_branch(self, branch_id: str) -> str:
+        branch = self.session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
+        if branch is None:
+            raise ValueError(f"Unknown branch_id: {branch_id}")
+        return branch.run_id
+
+    def record_job_event(
+        self,
+        *,
+        branch_id: str,
+        chapter_index: int,
+        event_type: str,
+        message: str,
+        job_id: str | None = None,
+        stage: str | None = None,
+        level: str = "info",
+        payload_json: dict[str, object] | None = None,
+        commit: bool = True,
+    ) -> ChapterJobEvent:
+        return self.job_events.record(
+            run_id=self._run_id_for_branch(branch_id),
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            event_type=event_type,
+            message=message,
+            job_id=job_id,
+            stage=stage,
+            level=level,
+            payload_json=payload_json,
+            commit=commit,
+        )
 
     def create_run(
         self,
@@ -123,9 +180,67 @@ class RunService:
                 chapter_index=job.chapter_index,
                 attempts=job.attempts,
                 last_error=job.last_error or '',
+                failure_class=job.failure_class,
+                failure_code=job.failure_code,
             )
             for job in jobs
         ]
+
+    def list_retryable_failed_jobs(self, branch_id: str, limit: int = 20) -> list[FailedJobInfo]:
+        """Return failed jobs that are still below the manual-recovery threshold."""
+
+        return [
+            item
+            for item in self.list_failed_jobs(branch_id, limit)
+            if item.attempts < self.settings.chapter_failure_retry_limit
+        ]
+
+    def list_terminal_failed_jobs(self, branch_id: str, limit: int = 20) -> list[FailedJobInfo]:
+        """Return failed jobs that exhausted automatic retry budget."""
+
+        return [
+            item
+            for item in self.list_failed_jobs(branch_id, limit)
+            if item.attempts >= self.settings.chapter_failure_retry_limit
+        ]
+
+    def fail_stalled_jobs(self, branch_id: str, *, timeout_seconds: int | None = None) -> int:
+        """Fail running jobs that have not heartbeated within the configured timeout."""
+
+        timeout = timeout_seconds or self.settings.chapter_job_stall_timeout_seconds
+        cutoff = datetime.now(UTC) - timedelta(seconds=timeout)
+        jobs = self.session.scalars(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch_id)
+            .where(ChapterJob.status == "running")
+            .where(
+                (ChapterJob.heartbeat_at.is_(None) & ChapterJob.started_at.is_not(None) & (ChapterJob.started_at < cutoff))
+                | (ChapterJob.heartbeat_at.is_not(None) & (ChapterJob.heartbeat_at < cutoff))
+            )
+            .order_by(ChapterJob.chapter_index)
+        ).all()
+        if not jobs:
+            return 0
+
+        for job in jobs:
+            job.status = "failed"
+            job.last_error = f"job stalled for more than {timeout} seconds"
+            job.failure_class = "stalled"
+            job.failure_code = "heartbeat_timeout"
+            job.finished_at = datetime.now(UTC)  # type: ignore[assignment]
+        self.session.commit()
+        for job in jobs:
+            self.record_job_event(
+                branch_id=branch_id,
+                chapter_index=job.chapter_index,
+                job_id=job.id,
+                event_type="job_stalled",
+                stage=job.current_stage,
+                level="warning",
+                message=job.last_error or "job stalled",
+                payload_json={"failure_class": "stalled", "failure_code": "heartbeat_timeout", "timeout_seconds": timeout},
+            )
+        return len(jobs)
 
     def reset_failed_job(self, branch_id: str, chapter_index: int) -> None:
         """Reset a failed chapter job back to pending-like state for retry."""
@@ -139,8 +254,21 @@ class RunService:
             raise ValueError("chapter job missing")
         job.status = "pending"
         job.last_error = None
+        job.current_stage = None
+        job.progress_percent = 0
+        job.heartbeat_at = None
+        job.next_retry_at = None
+        job.failure_class = None
+        job.failure_code = None
         job.finished_at = None
         self.session.commit()
+        self.record_job_event(
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            job_id=job.id,
+            event_type="job_reset",
+            message=f"chapter {chapter_index} reset for retry",
+        )
 
 
     def clear_running_jobs(self, branch_id: str, reason: str) -> int:
@@ -155,8 +283,21 @@ class RunService:
         for job in jobs:
             job.status = "failed"
             job.last_error = reason
+            job.failure_class = "manual_cleanup"
+            job.failure_code = "manual_cleanup"
             job.finished_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
+        for job in jobs:
+            self.record_job_event(
+                branch_id=branch_id,
+                chapter_index=job.chapter_index,
+                job_id=job.id,
+                event_type="job_force_failed",
+                stage=job.current_stage,
+                level="warning",
+                message=reason,
+                payload_json={"status": "failed"},
+            )
         return len(jobs)
 
     def start_chapter_job(self, branch_id: str, chapter_index: int) -> ChapterJob:
@@ -174,17 +315,70 @@ class RunService:
                 chapter_index=chapter_index,
                 status="running",
                 attempts=1,
+                progress_percent=1,
+                current_stage="queued",
+                provider_name=self.settings.llm_provider_name,
+                model_name=self.settings.llm_model_name,
                 started_at=now,
+                heartbeat_at=now,
             )
             self.session.add(job)
         else:
             job.status = "running"
             job.attempts += 1
+            job.progress_percent = 1
+            job.current_stage = "queued"
             job.started_at = now  # type: ignore[assignment]
+            job.heartbeat_at = now  # type: ignore[assignment]
             job.finished_at = None
             job.last_error = None
+            job.failure_class = None
+            job.failure_code = None
         self.session.commit()
         self.session.refresh(job)
+        self.record_job_event(
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            job_id=job.id,
+            event_type="job_started",
+            stage=job.current_stage,
+            message=f"chapter {chapter_index} started",
+            payload_json={"attempts": job.attempts, "model_name": job.model_name or ""},
+        )
+        return job
+
+    def update_job_progress(
+        self,
+        branch_id: str,
+        chapter_index: int,
+        *,
+        current_stage: str,
+        progress_percent: int,
+        message: str | None = None,
+        emit_event: bool = False,
+    ) -> ChapterJob:
+        job = self.session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch_id)
+            .where(ChapterJob.chapter_index == chapter_index)
+        )
+        if job is None:
+            raise ValueError("chapter job missing")
+        job.current_stage = current_stage
+        job.progress_percent = progress_percent
+        job.heartbeat_at = datetime.now(UTC)  # type: ignore[assignment]
+        self.session.commit()
+        self.session.refresh(job)
+        if emit_event:
+            self.record_job_event(
+                branch_id=branch_id,
+                chapter_index=chapter_index,
+                job_id=job.id,
+                event_type="stage_started",
+                stage=current_stage,
+                message=message or f"chapter {chapter_index} entered {current_stage}",
+                payload_json={"progress_percent": progress_percent},
+            )
         return job
 
     def complete_chapter_job(self, branch_id: str, chapter_index: int) -> None:
@@ -198,8 +392,20 @@ class RunService:
         if job is None:
             raise ValueError("chapter job missing")
         job.status = "validated"
+        job.current_stage = "completed"
+        job.progress_percent = 100
+        job.heartbeat_at = datetime.now(UTC)  # type: ignore[assignment]
         job.finished_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
+        self.record_job_event(
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            job_id=job.id,
+            event_type="job_completed",
+            stage="completed",
+            message=f"chapter {chapter_index} completed",
+            payload_json={"attempts": job.attempts},
+        )
 
     def fail_chapter_job(self, branch_id: str, chapter_index: int, error: str) -> None:
         """Mark a chapter job as failed."""
@@ -211,10 +417,23 @@ class RunService:
         )
         if job is None:
             raise ValueError("chapter job missing")
+        failure_class, failure_code = self._classify_failure(error)
         job.status = "failed"
         job.last_error = error
+        job.failure_class = failure_class
+        job.failure_code = failure_code
         job.finished_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
+        self.record_job_event(
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            job_id=job.id,
+            event_type="job_failed",
+            stage=job.current_stage,
+            level="error",
+            message=error,
+            payload_json={"failure_class": failure_class, "failure_code": failure_code, "attempts": job.attempts},
+        )
 
     def record_raw_output(
         self,
@@ -304,6 +523,13 @@ class RunService:
         self.session.add(artifact)
         self.session.commit()
         self.session.refresh(artifact)
+        self.record_job_event(
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            event_type="artifact_saved",
+            message=f"chapter {chapter_index} artifact persisted",
+            payload_json={"artifact_id": artifact.id, "source_kind": source_kind},
+        )
         return artifact
 
     def add_manual_artifact(

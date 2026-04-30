@@ -5,6 +5,24 @@ from __future__ import annotations
 from typing import Any
 
 
+_RISK_SEVERITY_ORDER = {
+    None: -1,
+    'low': 0,
+    'medium': 1,
+    'high': 2,
+    'critical': 3,
+}
+
+_CLUSTER_STATUS_LABEL = {
+    'open': '待观察',
+    'needs_review': '待复核',
+    'reviewed': '已复核',
+    'escalated': '已升级',
+    'reopened': '重新打开',
+    'resolved': '已关闭',
+}
+
+
 def render_branch_report(bundle: dict[str, Any]) -> str:
     """Render a branch bundle into human-readable Markdown."""
 
@@ -30,6 +48,37 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
         'graph_edge_count',
     ]:
         lines.append(f'- {key}: {status.get(key)}')
+    audit_conclusion = bundle.get('audit_conclusion')
+    if audit_conclusion:
+        lines.extend(['', '## Audit Conclusion'])
+        if isinstance(audit_conclusion, dict):
+            mapping = [
+                ('content_judgement', 'Content Judgement'),
+                ('risk_judgement', 'Risk Judgement'),
+                ('blocking_judgement', 'Blocking Judgement'),
+                ('recommended_action', 'Recommended Action'),
+            ]
+            for key, label in mapping:
+                value = audit_conclusion.get(key)
+                if value:
+                    lines.append(f'- {label}: {value}')
+            progress_note = audit_conclusion.get('review_progress_note')
+            if progress_note:
+                lines.append(f'- Review Progress: {progress_note}')
+            result_note = audit_conclusion.get('review_result_note')
+            if result_note:
+                lines.append(f'- Review Result: {result_note}')
+            storage_note = audit_conclusion.get('review_storage_note')
+            if storage_note:
+                lines.append(f'- Review Storage: {storage_note}')
+            owner_note = audit_conclusion.get('review_owner_note')
+            if owner_note:
+                lines.append(f'- Review Owner: {owner_note}')
+            latest_review_note = audit_conclusion.get('latest_review_note')
+            if latest_review_note:
+                lines.append(f'- Latest Review: {latest_review_note}')
+        else:
+            lines.append(str(audit_conclusion))
 
     chapter_index = bundle.get('chapter_index', [])
     lines.extend(['', '## Chapter Index'])
@@ -41,8 +90,126 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
                 f"- chapter {row.get('chapter_index')}: {row.get('title')} | "
                 f"job={row.get('job_status')} | artifact={row.get('has_artifact')} | "
                 f"retrieval={row.get('has_retrieval')} | hook={row.get('hook_score')} | "
-                f"review={row.get('needs_human_review')}"
+                f"review={row.get('needs_human_review')} | "
+                f"risk={row.get('risk_level')} | risk_count={row.get('risk_count')}"
             )
+    failed_summary = bundle.get('failed_summary', [])
+    if isinstance(failed_summary, list):
+        lines.extend(['', '## Failed Summary'])
+        if not failed_summary:
+            lines.append('- none')
+        else:
+            for item in failed_summary[:20]:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"- chapter {item.get('chapter_index')}: attempts={item.get('attempts')} | "
+                    f"failure_class={item.get('failure_class')} | "
+                    f"failure_code={item.get('failure_code')} | "
+                    f"error={item.get('error')}"
+                )
+    risk_summary = bundle.get('risk_summary', {})
+    if isinstance(risk_summary, dict):
+        lines.extend(['', '## Risk Summary'])
+        for key in [
+            'risk_card_count',
+            'checker_result_count',
+            'review_candidate_count',
+            'high_risk_chapters',
+            'risk_counts_by_domain',
+            'risk_counts_by_severity',
+        ]:
+            lines.append(f'- {key}: {risk_summary.get(key)}')
+
+        high_risk_chapters = risk_summary.get('high_risk_chapters', [])
+        if isinstance(high_risk_chapters, list) and high_risk_chapters:
+            lines.append('')
+            lines.append('### High Risk Chapters')
+            for chapter in high_risk_chapters[:20]:
+                lines.append(f'- chapter {chapter}')
+
+        candidate_rows = [
+            row for row in chapter_index
+            if (row.get('risk_count') or 0) > 0 or row.get('needs_human_review')
+        ]
+        if candidate_rows:
+            candidate_rows = sorted(
+                candidate_rows,
+                key=lambda row: (
+                    -_RISK_SEVERITY_ORDER.get(row.get('risk_level'), -1),
+                    -(row.get('risk_count') or 0),
+                    0 if row.get('needs_human_review') else 1,
+                    row.get('chapter_index') or 0,
+                ),
+            )
+            lines.append('')
+            lines.append('### Human Review Candidates')
+            for row in candidate_rows[:20]:
+                lines.append(
+                    f"- chapter {row.get('chapter_index')}: risk={row.get('risk_level')} | "
+                    f"risk_count={row.get('risk_count')} | review={row.get('needs_human_review')} | "
+                    f"title={row.get('title')}"
+                )
+        review_candidates_summary = risk_summary.get('review_candidates_summary', [])
+        if isinstance(review_candidates_summary, list) and review_candidates_summary:
+            lines.append('')
+            lines.append('### Review Candidate Evidence Preview')
+            for item in review_candidates_summary[:12]:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"- chapter {item.get('chapter_index')} | checkers={item.get('checker_names')} | "
+                    f"types={item.get('risk_types')} | risk={item.get('overall_risk_level')} | "
+                    f"confidence={item.get('confidence')}"
+                )
+                summary = item.get('summary')
+                if summary:
+                    lines.append(f"  - summary: {summary}")
+                for evidence in item.get('supporting_evidence_preview', [])[:2]:
+                    lines.append(f"  - evidence: {evidence}")
+                for evidence in item.get('counter_evidence_preview', [])[:1]:
+                    lines.append(f"  - counter: {evidence}")
+                for evidence in item.get('continuity_evidence_preview', [])[:2]:
+                    lines.append(f"  - continuity: {evidence}")
+                for evidence in item.get('branch_signal_preview', [])[:2]:
+                    lines.append(f"  - branch-signal: {evidence}")
+        review_candidate_clusters = risk_summary.get('review_candidate_clusters', [])
+        if isinstance(review_candidate_clusters, list) and review_candidate_clusters:
+            lines.append('')
+            lines.append('### Review Candidate Clusters')
+            for item in review_candidate_clusters[:12]:
+                if not isinstance(item, dict):
+                    continue
+                status_value = str(item.get('cluster_status') or '')
+                status_label = _CLUSTER_STATUS_LABEL.get(status_value, status_value or '未知')
+                lines.append(
+                    f"- status={status_value} ({status_label}) | priority={item.get('review_priority')} | pattern={item.get('pattern_label')} | title={item.get('cluster_title')} | checkers={item.get('checker_names')} | types={item.get('risk_types')} | "
+                    f"chapters={item.get('chapters')} | span={item.get('chapter_span')} | chapter_count={item.get('chapter_count')} | "
+                    f"confidence={item.get('max_confidence')}"
+                )
+                if item.get('sample_summary'):
+                    lines.append(f"  - sample: {item.get('sample_summary')}")
+                if item.get('suggested_review_action'):
+                    lines.append(f"  - action: {item.get('suggested_review_action')}")
+                if item.get('review_owner'):
+                    lines.append(f"  - owner: {item.get('review_owner')}")
+                if item.get('resolved_at'):
+                    lines.append(f"  - resolved_at: {item.get('resolved_at')}")
+                if item.get('review_result'):
+                    lines.append(
+                        f"  - result: {item.get('review_result')} ({item.get('review_result_label') or '未映射'})"
+                    )
+                if item.get('review_notes'):
+                    lines.append(f"  - notes: {item.get('review_notes')}")
+                if item.get('review_history_count') is not None:
+                    lines.append(f"  - history_count: {item.get('review_history_count')}")
+                latest_event = item.get('latest_review_event')
+                if isinstance(latest_event, dict):
+                    lines.append(
+                        f"  - latest_event: from={latest_event.get('previous_cluster_status')}->{latest_event.get('cluster_status')} | "
+                        f"result={latest_event.get('review_result')} | owner={latest_event.get('review_owner')} | "
+                        f"created_at={latest_event.get('created_at')}"
+                    )
     windows = bundle.get('windows', [])
     lines.extend(['', '## Windows'])
     if not windows:

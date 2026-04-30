@@ -1,0 +1,10 @@
+{
+  "branch_id": "72da24e9-e65c-45a9-836d-957c4ae783ec",
+  "cluster_key": "character_ooc|::|human_review_candidate",
+  "cluster_status": "reviewed",
+  "review_notes": "API 示例：已人工复核。",
+  "review_owner": "editor-a",
+  "review_result": "confirmed-benign",
+  "resolved_at": "2026-04-29T02:00:00Z",
+  "database_url": "postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer"
+}

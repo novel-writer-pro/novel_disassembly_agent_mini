@@ -4,38 +4,24 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import typer
 from sqlalchemy import select, text
+from sqlalchemy.orm import Session
 from typer import echo
 
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.migrations import upgrade_database
 from novel_analyzer.database.models import ChapterManifest, WindowArtifact
+from novel_analyzer.database.postgres_checks import postgres_capability_report
 from novel_analyzer.database.session import (
     create_session_factory,
     database_healthcheck,
     ensure_database_exists,
 )
-from novel_analyzer.embedding.service import get_embedding_provider
-from novel_analyzer.preprocessing.chapter_splitter import inspect_text
-from novel_analyzer.reporting.branch_report import render_branch_report
-from novel_analyzer.services.analysis_service import AnalysisService
-from novel_analyzer.services.chapter_index_service import ChapterIndexService
-from novel_analyzer.services.consistency_service import ConsistencyService
-from novel_analyzer.services.context_service import ContextService
-from novel_analyzer.services.export_service import ExportService
-from novel_analyzer.services.fact_service import FactService
-from novel_analyzer.services.graph_service import GraphService
-from novel_analyzer.services.ingest_service import IngestService
-from novel_analyzer.services.package_service import PackageService
-from novel_analyzer.services.qa_service import BranchQAService
-from novel_analyzer.services.raw_output_service import RawOutputService
-from novel_analyzer.services.repair_service import RepairService
-from novel_analyzer.services.retrieval_service import RetrievalService
-from novel_analyzer.services.run_service import RunService
-from novel_analyzer.services.status_service import StatusService
-from novel_analyzer.skills.loader import list_skill_names
+from novel_analyzer.runtime.storage import describe_runtime_storage, migrate_legacy_runtime_dirs
+from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state, write_cluster_review_state
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -47,6 +33,136 @@ def _settings(database_url: str | None = None) -> Settings:
     return current
 
 
+def _safe_settings(database_url: str | None = None, *, require_admin: bool = False) -> Settings:
+    try:
+        current = _settings(database_url)
+        _ = current.admin_database_url if require_admin else current.resolved_database_url
+        return current
+    except ValueError as exc:
+        echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+def _list_skill_names(settings: Settings) -> list[str]:
+    from novel_analyzer.skills.loader import list_skill_names
+
+    return list_skill_names(settings)
+
+
+def _get_embedding_provider(settings: Settings) -> Any:
+    from novel_analyzer.embedding.service import get_embedding_provider
+
+    return get_embedding_provider(settings)
+
+
+def _inspect_text(text: str) -> Any:
+    from novel_analyzer.preprocessing.chapter_splitter import inspect_text
+
+    return inspect_text(text)
+
+
+def _render_branch_report(bundle: dict[str, object]) -> str:
+    from novel_analyzer.reporting.branch_report import render_branch_report
+
+    return render_branch_report(bundle)
+
+
+def _ingest_and_start_pipeline(**kwargs: Any) -> Any:
+    from novel_analyzer.application import ingest_and_start_pipeline
+
+    return ingest_and_start_pipeline(**kwargs)
+
+
+def _ingest_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.ingest_service import IngestService
+
+    return IngestService(session, settings)
+
+
+def _run_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.run_service import RunService
+
+    return RunService(session, settings)
+
+
+def _analysis_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.analysis_service import AnalysisService
+
+    return AnalysisService(session, settings)
+
+
+def _chapter_index_service(session: Session) -> Any:
+    from novel_analyzer.services.chapter_index_service import ChapterIndexService
+
+    return ChapterIndexService(session)
+
+
+def _status_service(session: Session) -> Any:
+    from novel_analyzer.services.status_service import StatusService
+
+    return StatusService(session)
+
+
+def _retrieval_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.retrieval_service import RetrievalService
+
+    return RetrievalService(session, settings)
+
+
+def _qa_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.qa_service import BranchQAService
+
+    return BranchQAService(session, settings)
+
+
+def _raw_output_service(session: Session) -> Any:
+    from novel_analyzer.services.raw_output_service import RawOutputService
+
+    return RawOutputService(session)
+
+
+def _context_service(session: Session) -> Any:
+    from novel_analyzer.services.context_service import ContextService
+
+    return ContextService(session)
+
+
+def _export_service(session: Session) -> Any:
+    from novel_analyzer.services.export_service import ExportService
+
+    return ExportService(session)
+
+
+def _repair_service(session: Session) -> Any:
+    from novel_analyzer.services.repair_service import RepairService
+
+    return RepairService(session)
+
+
+def _consistency_service(session: Session) -> Any:
+    from novel_analyzer.services.consistency_service import ConsistencyService
+
+    return ConsistencyService(session)
+
+
+def _fact_service(session: Session) -> Any:
+    from novel_analyzer.services.fact_service import FactService
+
+    return FactService(session)
+
+
+def _package_service(session: Session) -> Any:
+    from novel_analyzer.services.package_service import PackageService
+
+    return PackageService(session)
+
+
+def _graph_service(session: Session) -> Any:
+    from novel_analyzer.services.graph_service import GraphService
+
+    return GraphService(session)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -54,7 +170,7 @@ def init_db(
 ) -> None:
     """Create or upgrade the database schema via Alembic."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url, require_admin=True)
     if ensure_db:
         ensure_database_exists(settings)
     upgrade_database(settings)
@@ -65,18 +181,52 @@ def init_db(
 def db_health(database_url: str | None = None) -> None:
     """Run a simple database connectivity check."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     report = database_healthcheck(settings)
     for key, value in report.items():
         echo(f"{key}={value}")
 
 
 @app.command()
+def db_capabilities(database_url: str | None = None) -> None:
+    """Check PostgreSQL database existence, schema initialization, and extensions."""
+
+    settings = _safe_settings(database_url, require_admin=True)
+    report = postgres_capability_report(settings)
+    echo(f"database_exists={str(report.database_exists).lower()}")
+    echo(f"can_connect={str(report.can_connect).lower()}")
+    echo(f"initialized_schema={str(report.initialized_schema).lower()}")
+    echo(f"server_version={report.server_version}")
+    echo(f"installed_extensions={','.join(report.installed_extensions)}")
+    echo(f"available_text_search_configs={','.join(report.available_text_search_configs)}")
+    echo(f"missing_tables={','.join(report.missing_tables)}")
+    echo(f"missing_extensions={','.join(report.missing_extensions)}")
+    echo(f"ok={str(report.ok).lower()}")
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def runtime_storage(migrate: bool = typer.Option(False, "--migrate")) -> None:
+    """Inspect managed runtime storage roots and optionally migrate legacy .omx files."""
+
+    report = migrate_legacy_runtime_dirs(get_settings()) if migrate else describe_runtime_storage(get_settings())
+    echo(f"cache_root={report.cache_root}")
+    echo(f"legacy_root={report.legacy_root}")
+    echo(f"cache_upload_files={report.cache_upload_files}")
+    echo(f"cache_export_files={report.cache_export_files}")
+    echo(f"legacy_upload_files={report.legacy_upload_files}")
+    echo(f"legacy_export_files={report.legacy_export_files}")
+    echo(f"missing_from_cache={report.missing_from_cache}")
+    echo(f"migrated_this_run={report.migrated_this_run}")
+
+
+@app.command()
 def list_skills(database_url: str | None = None) -> None:
     """List project-local skills discovered from skills_dir/."""
 
-    settings = _settings(database_url)
-    for name in list_skill_names(settings):
+    settings = _safe_settings(database_url)
+    for name in _list_skill_names(settings):
         echo(name)
 
 
@@ -88,8 +238,8 @@ def test_embedding(
 ) -> None:
     """Run a smoke test for the configured embedding backend."""
 
-    settings = _settings(database_url)
-    provider = get_embedding_provider(settings)
+    settings = _safe_settings(database_url)
+    provider = _get_embedding_provider(settings)
     vectors = provider.embed_texts([text_input])
     echo(f"provider={type(provider).__name__}")
     echo(f"vector_dim={len(vectors[0])}")
@@ -101,7 +251,7 @@ def inspect_novel(path: Path) -> None:
     """Inspect a novel file without persisting anything."""
 
     text = path.read_text(encoding="utf-8")
-    preview = inspect_text(text)
+    preview = _inspect_text(text)
     echo(f"raw_heading_count={preview.raw_heading_count}")
     echo(f"normalized_chapter_count={preview.normalized_chapter_count}")
     echo(f"duplicate_heading_count={preview.duplicate_heading_count}")
@@ -117,10 +267,10 @@ def ingest(
 ) -> None:
     """Persist a novel and its chapter manifest."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        novel, manifest = IngestService(session, settings).ingest_text_file(str(path), title)
+        novel, manifest = _ingest_service(session, settings).ingest_text_file(str(path), title)
         echo(f"novel_id={novel.id}")
         echo(f"manifest_id={manifest.id}")
         echo(f"chapter_count={manifest.chapter_count}")
@@ -135,10 +285,10 @@ def start_run(
 ) -> None:
     """Create a new analysis run with a root branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        run, branch = RunService(session, settings).create_run(
+        run, branch = _run_service(session, settings).create_run(
             novel_id,
             manifest_id,
             branch_name,
@@ -146,6 +296,42 @@ def start_run(
         echo(f"run_id={run.id}")
         echo(f"branch_id={branch.id}")
         echo(f"active_branch_id={run.active_branch_id}")
+
+
+@app.command()
+def auto_run(
+    path: Path,
+    title: str | None = None,
+    branch_name: str = "main",
+    max_chapters: int | None = typer.Option(None, "--max-chapters"),
+    pipeline_profile: str = typer.Option("auto-lite", "--pipeline-profile"),
+    database_url: str | None = None,
+) -> None:
+    """Ingest, create a run, and optionally auto-advance in one command."""
+
+    try:
+        result = _ingest_and_start_pipeline(
+            path=str(path),
+            title=title,
+            branch_name=branch_name,
+            pipeline_profile=pipeline_profile,
+            max_chapters=max_chapters,
+            database_url=database_url,
+        )
+    except ValueError as exc:
+        echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    echo(f"novel_id={result.novel_id}")
+    echo(f"manifest_id={result.manifest_id}")
+    echo(f"chapter_count={result.chapter_count}")
+    echo(f"run_id={result.run_id}")
+    echo(f"branch_id={result.branch_id}")
+    echo(f"processed_chapters={result.processed_chapters}")
+    echo(f"next_chapter={result.next_chapter}")
+    echo(f"pipeline_profile={result.pipeline_profile}")
+    echo(f"pipeline_state={result.pipeline_state}")
+    echo(f"setup_status={result.setup_status}")
+    echo(f"existing={str(result.existing).lower()}")
 
 
 
@@ -160,10 +346,10 @@ def clear_running_jobs(
 ) -> None:
     """Mark stale running jobs as failed so the branch can continue."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        count = RunService(session, settings).clear_running_jobs(branch_id, reason)
+        count = _run_service(session, settings).clear_running_jobs(branch_id, reason)
         echo(f"cleared_running_jobs={count}")
 
 
@@ -176,15 +362,15 @@ def retry_failed_jobs(
 ) -> None:
     """Retry failed jobs serially for up to N chapters."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     retried = 0
     with factory() as session:
-        run_service = RunService(session, settings)
+        run_service = _run_service(session, settings)
         failed = run_service.list_failed_jobs(branch_id, max_chapters)
         for job in failed:
             run_service.reset_failed_job(branch_id, job.chapter_index)
-            artifact_ids = AnalysisService(session, settings).analyze_range(
+            artifact_ids = _analysis_service(session, settings).analyze_range(
                 run_id,
                 branch_id,
                 job.chapter_index,
@@ -202,10 +388,10 @@ def list_failed_jobs(
 ) -> None:
     """List failed jobs for one branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        jobs = RunService(session, settings).list_failed_jobs(branch_id, limit)
+        jobs = _run_service(session, settings).list_failed_jobs(branch_id, limit)
         echo(f"failed_job_count={len(jobs)}")
         for job in jobs:
             echo(
@@ -222,12 +408,12 @@ def retry_chapter(
 ) -> None:
     """Reset one failed chapter and retry it immediately."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        run_service = RunService(session, settings)
+        run_service = _run_service(session, settings)
         run_service.reset_failed_job(branch_id, chapter_index)
-        artifact_ids = AnalysisService(session, settings).analyze_range(
+        artifact_ids = _analysis_service(session, settings).analyze_range(
             run_id,
             branch_id,
             chapter_index,
@@ -236,6 +422,28 @@ def retry_chapter(
         echo(f"retried_chapter={chapter_index}")
         for artifact_id in artifact_ids:
             echo(f"artifact_id={artifact_id}")
+
+
+@app.command()
+def list_job_events(
+    branch_id: str,
+    limit: int = typer.Option(50, '--limit'),
+    database_url: str | None = None,
+) -> None:
+    """List recent job events for one branch."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    from novel_analyzer.services.job_event_service import JobEventService
+
+    with factory() as session:
+        rows = JobEventService(session).list_for_branch(branch_id, limit)
+        echo(f"job_event_count={len(rows)}")
+        for item in rows:
+            echo(
+                f"event=chapter:{item.chapter_index}|type:{item.event_type}|stage:{item.stage or '-'}|"
+                f"level:{item.level}|message:{item.message}"
+            )
 
 
 
@@ -247,10 +455,10 @@ def list_chapters(
 ) -> None:
     """List per-chapter progress rows for one branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        rows = ChapterIndexService(session).list_rows(branch_id, limit)
+        rows = _chapter_index_service(session).list_rows(branch_id, limit)
         echo(f"chapter_row_count={len(rows)}")
         for row in rows:
             echo(
@@ -268,10 +476,10 @@ def show_run_status(
 ) -> None:
     """Show an operational status snapshot for one run/branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        status = StatusService(session).get_run_status(run_id, branch_id)
+        status = _status_service(session).get_run_status(run_id, branch_id)
         for key in status.__dataclass_fields__:
             echo(f"{key}={getattr(status, key)}")
 
@@ -286,16 +494,16 @@ def resume_run(
 ) -> None:
     """Advance the run serially for up to N chapters, stopping on first failure."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     processed = 0
     with factory() as session:
-        run_service = RunService(session, settings)
+        run_service = _run_service(session, settings)
         while processed < max_chapters:
             next_index = run_service.next_chapter_index(run_id, branch_id)
             if next_index is None:
                 break
-            artifact_ids = AnalysisService(session, settings).analyze_range(
+            artifact_ids = _analysis_service(session, settings).analyze_range(
                 run_id,
                 branch_id,
                 next_index,
@@ -316,15 +524,15 @@ def analyze_next(
 ) -> None:
     """Analyze the next pending chapter for a branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        run_service = RunService(session, settings)
+        run_service = _run_service(session, settings)
         next_index = run_service.next_chapter_index(run_id, branch_id)
         if next_index is None:
             echo('next_chapter=None')
             return
-        artifact_ids = AnalysisService(session, settings).analyze_range(
+        artifact_ids = _analysis_service(session, settings).analyze_range(
             run_id,
             branch_id,
             next_index,
@@ -345,10 +553,10 @@ def analyze_range(
 ) -> None:
     """Analyze and persist a chapter range using the configured LLM."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        artifact_ids = AnalysisService(session, settings).analyze_range(
+        artifact_ids = _analysis_service(session, settings).analyze_range(
             run_id,
             branch_id,
             start_chapter,
@@ -363,10 +571,10 @@ def analyze_range(
 def materialize_retrieval(artifact_id: str, database_url: str | None = None) -> None:
     """Materialize retrieval rows for an existing chapter artifact."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        document = RetrievalService(session, settings).materialize_for_artifact(artifact_id)
+        document = _retrieval_service(session, settings).materialize_for_artifact(artifact_id)
         echo(f"document_id={document.id}")
         echo(f"chapter_index={document.chapter_index}")
 
@@ -380,10 +588,10 @@ def search_branch(
 ) -> None:
     """Run retrieval search over a branch's materialized documents."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        hits = RetrievalService(session, settings).search_branch(branch_id, query, limit)
+        hits = _retrieval_service(session, settings).search_branch(branch_id, query, limit)
         echo(f"hit_count={len(hits)}")
         for hit in hits:
             echo(
@@ -402,10 +610,10 @@ def ask_branch(
 ) -> None:
     """Answer a question about the novel using branch retrieval context."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        result = BranchQAService(session, settings).answer_question(branch_id, question, limit)
+        result = _qa_service(session, settings).answer_question(branch_id, question, limit)
         echo(f"answer={result.answer}")
         echo(f"used_chapters={result.used_chapters}")
         echo(f"confidence={result.confidence}")
@@ -431,10 +639,10 @@ def show_raw_output(
 ) -> None:
     """Show the latest raw LLM output record for one chapter."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        record = RawOutputService(session).latest_for_chapter(branch_id, chapter_index)
+        record = _raw_output_service(session).latest_for_chapter(branch_id, chapter_index)
         if record is None:
             raise typer.Exit(code=1)
         echo(f"chapter_index={record.chapter_index}")
@@ -454,10 +662,10 @@ def export_raw_output(
 ) -> None:
     """Export the latest raw output JSON/text bundle for one chapter."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        record = RawOutputService(session).latest_for_chapter(branch_id, chapter_index)
+        record = _raw_output_service(session).latest_for_chapter(branch_id, chapter_index)
         if record is None:
             raise typer.Exit(code=1)
         payload = {
@@ -481,10 +689,10 @@ def show_context(
 ) -> None:
     """Show the assembled prior context that will feed a chapter."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        bundle = ContextService(session).context_bundle(branch_id, chapter_index)
+        bundle = _context_service(session).context_bundle(branch_id, chapter_index)
         echo(json.dumps(bundle, ensure_ascii=False, indent=2))
 
 
@@ -497,10 +705,10 @@ def export_context(
 ) -> None:
     """Export the assembled prior context for a chapter to JSON."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        bundle = ContextService(session).context_bundle(branch_id, chapter_index)
+        bundle = _context_service(session).context_bundle(branch_id, chapter_index)
         output_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"context_path={output_path}")
 
@@ -513,10 +721,10 @@ def show_chapter(
 ) -> None:
     """Show a compact chapter bundle for one branch/chapter."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        bundle = ExportService(session).export_chapter_bundle(branch_id, chapter_index)
+        bundle = _export_service(session).export_chapter_bundle(branch_id, chapter_index)
         echo(json.dumps(bundle, ensure_ascii=False, indent=2))
 
 
@@ -529,10 +737,10 @@ def export_chapter_bundle(
 ) -> None:
     """Export one chapter bundle JSON for external consumption."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        bundle = ExportService(session).export_chapter_bundle(branch_id, chapter_index)
+        bundle = _export_service(session).export_chapter_bundle(branch_id, chapter_index)
         output_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"chapter_bundle_path={output_path}")
 
@@ -546,10 +754,10 @@ def export_branch_bundle(
 ) -> None:
     """Export one branch bundle JSON for external consumption."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        bundle = _export_service(session).export_branch_bundle(run_id, branch_id)
         output_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"bundle_path={output_path}")
 
@@ -563,10 +771,10 @@ def export_chapter_qa_context(
 ) -> None:
     """Export one chapter QA context JSON for downstream tools."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        payload = ExportService(session).export_chapter_qa_context(branch_id, chapter_index)
+        payload = _export_service(session).export_chapter_qa_context(branch_id, chapter_index)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"chapter_qa_context_path={output_path}")
 
@@ -580,10 +788,10 @@ def export_branch_qa_context(
 ) -> None:
     """Export one branch QA context JSON for downstream tools."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        payload = ExportService(session).export_branch_qa_context(run_id, branch_id)
+        payload = _export_service(session).export_branch_qa_context(run_id, branch_id)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"branch_qa_context_path={output_path}")
 
@@ -597,7 +805,7 @@ def export_markdown(
 ) -> None:
     """Export one chapter artifact to Markdown."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     from novel_analyzer.reporting.markdown import render_chapter_markdown
     with factory() as session:
@@ -625,10 +833,10 @@ def commit_demo(
 ) -> None:
     """Commit a demo artifact for a chapter."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        artifact = RunService(session, settings).record_chapter_artifact(
+        artifact = _run_service(session, settings).record_chapter_artifact(
             branch_id,
             chapter_index,
             payload={"chapter_index": chapter_index, "summary": f"chapter {chapter_index}"},
@@ -645,10 +853,10 @@ def add_manual(
 ) -> None:
     """Persist a manual artifact excluded from downstream by default."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        artifact = RunService(session, settings).add_manual_artifact(
+        artifact = _run_service(session, settings).add_manual_artifact(
             branch_id,
             chapter_index,
             payload={"note": "manual patch"},
@@ -666,10 +874,10 @@ def fork_branch(
 ) -> None:
     """Fork a branch, preserving chapters <= keep_through and hiding later progress."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        branch = RunService(session, settings).fork_branch(branch_id, keep_through, name)
+        branch = _run_service(session, settings).fork_branch(branch_id, keep_through, name)
         echo(f"new_branch_id={branch.id}")
         echo(f"fork_after_chapter_index={branch.fork_after_chapter_index}")
 
@@ -678,10 +886,10 @@ def fork_branch(
 def show_branch(branch_id: str, database_url: str | None = None) -> None:
     """Print a compact branch snapshot."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        snapshot = RunService(session, settings).branch_snapshot(branch_id)
+        snapshot = _run_service(session, settings).branch_snapshot(branch_id)
         for key, value in snapshot.items():
             echo(f"{key}={value}")
 
@@ -698,10 +906,10 @@ def repair_branch(
 ) -> None:
     """Backfill jobs and materialized layers for an existing branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        report = RepairService(session).repair_branch(branch_id)
+        report = _repair_service(session).repair_branch(branch_id)
         for key in report.__dataclass_fields__:
             echo(f"{key}={getattr(report, key)}")
 
@@ -713,10 +921,10 @@ def validate_branch(
 ) -> None:
     """Run consistency checks for one branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        report = ConsistencyService(session).validate_branch(branch_id)
+        report = _consistency_service(session).validate_branch(branch_id)
         echo(f"issue_count={report.issue_count}")
         for issue in report.issues:
             echo(f"issue={issue.severity}|{issue.code}|{issue.message}")
@@ -731,10 +939,10 @@ def search_facts(
 ) -> None:
     """Search extracted facts inside one branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        facts = FactService(session).search_facts(branch_id, query, limit)
+        facts = _fact_service(session).search_facts(branch_id, query, limit)
         echo(f"fact_hit_count={len(facts)}")
         for fact in facts:
             echo(
@@ -751,10 +959,10 @@ def show_facts(
 ) -> None:
     """Show fact rows for a branch (optionally one chapter)."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        facts = FactService(session).list_facts(branch_id, chapter_index, limit)
+        facts = _fact_service(session).list_facts(branch_id, chapter_index, limit)
         echo(f"fact_count={len(facts)}")
         for fact in facts:
             echo(
@@ -771,10 +979,10 @@ def export_branch_package(
 ) -> None:
     """Export a complete branch package directory."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        path = PackageService(session).export_branch_package(run_id, branch_id, output_dir)
+        path = _package_service(session).export_branch_package(run_id, branch_id, output_dir)
         echo(f"package_path={path}")
 
 
@@ -787,12 +995,91 @@ def export_branch_report(
 ) -> None:
     """Export a branch-level Markdown report."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
-        output_path.write_text(render_branch_report(bundle), encoding='utf-8')
+        bundle = _export_service(session).export_branch_bundle(run_id, branch_id)
+        output_path.write_text(_render_branch_report(bundle), encoding='utf-8')
         echo(f"report_path={output_path}")
+
+
+@app.command()
+def set_cluster_status(
+    branch_id: str,
+    cluster_key: str,
+    cluster_status: str,
+    review_notes: str = typer.Option('', '--review-notes'),
+    review_owner: str = typer.Option('', '--review-owner'),
+    resolved_at: str = typer.Option('', '--resolved-at'),
+    review_result: str = typer.Option('', '--review-result'),
+    database_url: str | None = None,
+) -> None:
+    """Persist a minimal manual status override for one risk cluster."""
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    try:
+        with factory() as session:
+            from novel_analyzer.services.cluster_review_service import ClusterReviewService
+            state = ClusterReviewService(session).write(
+                branch_id=branch_id,
+                cluster_key=cluster_key,
+                cluster_status=cluster_status,
+                review_notes=review_notes,
+                review_owner=review_owner,
+                resolved_at=resolved_at,
+                review_result=review_result,
+            )
+    except Exception:
+        state = write_cluster_review_state(
+            branch_id=branch_id,
+            cluster_key=cluster_key,
+            cluster_status=cluster_status,
+            review_notes=review_notes,
+            review_owner=review_owner,
+            resolved_at=resolved_at,
+            review_result=review_result,
+            settings=settings,
+        )
+    echo(f"branch_id={state.branch_id}")
+    echo(f"cluster_key={state.cluster_key}")
+    echo(f"cluster_status={state.cluster_status}")
+    echo(f"review_notes={state.review_notes}")
+    echo(f"review_owner={state.review_owner}")
+    echo(f"resolved_at={state.resolved_at}")
+    echo(f"review_result={state.review_result}")
+
+
+@app.command()
+def show_cluster_status(branch_id: str, database_url: str | None = None) -> None:
+    """Show persisted manual status overrides for one branch's risk clusters."""
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    try:
+        with factory() as session:
+            from novel_analyzer.services.cluster_review_service import ClusterReviewService
+            payload = ClusterReviewService(session).read_branch(branch_id)
+    except Exception:
+        payload = read_cluster_review_state(branch_id, settings)
+    echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def show_cluster_history(
+    branch_id: str,
+    cluster_key: str,
+    database_url: str | None = None,
+) -> None:
+    """Show review history for one cluster."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    try:
+        with factory() as session:
+            from novel_analyzer.services.cluster_review_service import ClusterReviewService
+            payload = ClusterReviewService(session).read_history(branch_id, cluster_key)
+    except Exception:
+        payload = []
+    echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 
@@ -803,10 +1090,10 @@ def summarize_graph(
 ) -> None:
     """Show a compact reasoning-oriented graph summary."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        summary = GraphService(session).summarize_branch(branch_id)
+        summary = _graph_service(session).summarize_branch(branch_id)
         echo(f"branch_id={summary.branch_id}")
         echo(f"node_count={summary.node_count}")
         echo(f"edge_count={summary.edge_count}")
@@ -838,10 +1125,10 @@ def show_graph(
 ) -> None:
     """Show a compact graph snapshot for a branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        snapshot = GraphService(session).reasoning_snapshot(
+        snapshot = _graph_service(session).reasoning_snapshot(
             branch_id,
             upto_chapter=upto_chapter,
         )
@@ -856,10 +1143,10 @@ def show_reasoning_graph(
 ) -> None:
     """Show the full reasoning-graph JSON for a branch."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        snapshot = GraphService(session).reasoning_snapshot(
+        snapshot = _graph_service(session).reasoning_snapshot(
             branch_id,
             upto_chapter=upto_chapter,
             node_limit=50,
@@ -877,7 +1164,7 @@ def show_window(
 ) -> None:
     """Show one materialized fixed-size window artifact."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
         artifact = session.scalar(
@@ -895,7 +1182,7 @@ def show_window(
 def latest_manifest(novel_id: str, database_url: str | None = None) -> None:
     """Show the latest manifest id for a novel."""
 
-    settings = _settings(database_url)
+    settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
         manifest = session.scalar(

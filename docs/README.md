@@ -7,6 +7,7 @@
 ## 0. 开发变更记录
 
 - [`../CHANGELOG.md`](../CHANGELOG.md)：后续每次开发更改都需要追加记录
+- 约定：每次修复 / 变动都需要同步更新文档、changelog 与 commit 记录
 
 ## 1. 使用者（只想直接用系统的人）
 
@@ -68,6 +69,8 @@
 3. [`./real-run-checklist.md`](./real-run-checklist.md)
 4. [`./review-template.md`](./review-template.md)
 5. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+6. [`../apps/web/README.md`](../apps/web/README.md)
+7. [`../apps/api/README.md`](../apps/api/README.md)
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)
@@ -82,3 +85,73 @@
 3. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
 4. [`./model-eval-template.md`](./model-eval-template.md)
 5. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
+6. [`./application-seams.md`](./application-seams.md)
+7. [`./api-contract.md`](./api-contract.md)
+8. [`./storage-lifecycle.md`](./storage-lifecycle.md)
+
+### 风险审查体系文档
+1. [`./risk-audit-docs-index.md`](./risk-audit-docs-index.md)
+2. [`./risk-audit-system-overview.md`](./risk-audit-system-overview.md)
+3. [`./risk-audit-delivery-summary.md`](./risk-audit-delivery-summary.md)
+4. [`./risk-audit-capability.md`](./risk-audit-capability.md)
+5. [`./risk-audit-runtime-architecture.md`](./risk-audit-runtime-architecture.md)
+6. [`./risk-audit-runtime-boundary.md`](./risk-audit-runtime-boundary.md)
+7. [`./skills-vs-risk-checkers-boundary.md`](./skills-vs-risk-checkers-boundary.md)
+8. [`./risk-audit-checker-roadmap.md`](./risk-audit-checker-roadmap.md)
+9. [`./reader-experience-capability.md`](./reader-experience-capability.md)
+10. [`./risk-audit-doc-consistency-checklist.md`](./risk-audit-doc-consistency-checklist.md)
+11. [`./risk-audit-doc-source-of-truth-matrix.md`](./risk-audit-doc-source-of-truth-matrix.md)
+12. [`./risk-audit-doc-stability-matrix.md`](./risk-audit-doc-stability-matrix.md)
+13. [`./risk-audit-code-stability-matrix.md`](./risk-audit-code-stability-matrix.md)
+14. [`./risk-audit-phase-completion-checklist.md`](./risk-audit-phase-completion-checklist.md)
+15. [`./risk-audit-next-phase-30-60-90.md`](./risk-audit-next-phase-30-60-90.md)
+16. [`./risk-audit-team-sync-brief.md`](./risk-audit-team-sync-brief.md)
+17. [`./risk-audit-phase-1-freeze-declaration.md`](./risk-audit-phase-1-freeze-declaration.md)
+18. [`./cluster-status-semantics.md`](./cluster-status-semantics.md)
+19. [`./minimal-review-workflow-guide.md`](./minimal-review-workflow-guide.md)
+20. [`./risk-audit-artifact-manifest.md`](./risk-audit-artifact-manifest.md)
+21. [`./minimal-review-workflow-state-machine.md`](./minimal-review-workflow-state-machine.md)
+22. [`./review-workflow-phase2-design.md`](./review-workflow-phase2-design.md)
+23. [`./review-workflow-api.md`](./review-workflow-api.md)
+24. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
+25. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
+26. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
+27. [`./review-workflow-api-freeze-readiness.md`](./review-workflow-api-freeze-readiness.md)
+27. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
+24. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
+
+### 前端 / 部署补充
+- `apps/web/README.md`：前端开发、构建、npm 源
+- `apps/api/README.md`：后端原型启动与接口说明
+
+
+---
+
+## 当前推荐运行配置
+
+真实拆书与工作台当前建议统一使用：
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+同时，当前失败恢复策略已经收口为：
+- 自动重试最多 5 次
+- 超过 5 次才需要人工介入
+
+---
+
+## 当前 release 建议阅读顺序
+
+如果你现在要接手这个“基础可用 release”，建议按下面顺序看：
+
+1. [`./release-handoff-brief.md`](./release-handoff-brief.md)
+2. [`./final-handoff.md`](./final-handoff.md)
+3. [`../apps/web/README.md`](../apps/web/README.md)
+4. [`../apps/api/README.md`](../apps/api/README.md)
+5. [`../CHANGELOG.md`](../CHANGELOG.md)
+
+这样可以先理解：
+- 当前 release 到了什么程度
+- 已经能做哪些事
+- 怎么启动前后端
+- 最近几轮到底改了什么

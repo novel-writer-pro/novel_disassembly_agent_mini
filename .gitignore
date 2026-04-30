@@ -15,3 +15,6 @@ __pycache__/*
 .cache
 *_cache
 .venv
+apps/web/node_modules/
+apps/web/.next/
+apps/web/tsconfig.tsbuildinfo

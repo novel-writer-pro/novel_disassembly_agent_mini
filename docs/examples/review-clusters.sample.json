@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "cluster_key": "character_ooc|::|human_review_candidate",
+      "checker_names": ["character_ooc"],
+      "risk_types": ["human_review_candidate"],
+      "cluster_title": "人物连续性复核簇",
+      "suggested_review_action": "优先核对人物动机、关系与行为是否有前文支撑，避免只依据标题或摘要推断人物变化。",
+      "review_priority": "P2",
+      "cluster_status": "needs_review",
+      "chapter_count": 4,
+      "chapters": [96, 100, 101, 102],
+      "first_chapter": 96,
+      "last_chapter": 102,
+      "max_confidence": 0.35,
+      "titles": [
+        "灵武合一，符屋摊主的威胁（求订",
+        "今日合该庆贺（求订阅）"
+      ],
+      "sample_summary": "本章存在人物连续性上的可疑点，需要人工复核。",
+      "chapter_span": "96-102",
+      "pattern_label": "持续型问题",
+      "review_notes": "恢复默认演示状态",
+      "review_owner": "system-reset",
+      "review_result": "deferred",
+      "review_result_label": "暂缓判断",
+      "review_history_count": 3,
+      "latest_review_event": {
+        "cluster_status": "reviewed",
+        "review_result": "confirmed-benign",
+        "review_notes": "API E2E: 已通过 API 写回。",
+        "review_owner": "api-editor",
+        "resolved_at": "",
+        "event_type": "status_update"
+      }
+    }
+  ]
+}

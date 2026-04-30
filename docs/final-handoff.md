@@ -134,6 +134,85 @@ flowchart TD
 - fork branch 逻辑回退
 - 同 branch 同章重拆兼容
 
+### 2.8 Web 工作台原型
+- 独立前端目录：`apps/web/`
+- 独立后端目录：`apps/api/`
+- 前端可读取真实 run / branch snapshot
+- 可按章节查看 chapter bundle / QA context / 原始正文
+- 支持从拆书引用中的 `第N章` 跳转查看对应章节
+- 支持恢复动作与导出链接生成
+
+### 2.8.1 当前基础 release 已覆盖的工作台能力
+- `/library`：多本小说管理入口、当前生效小说切换、状态总览
+- `/control`：导入作品、查看进度、继续整理、显示异常提示
+- `/reader`：查看章节拆书细节、状态信息与原始章节正文
+- `/qa`：聊天式问答、流式输出、检索联动问答、引用章节跳转、推理摘要展示
+- `/ops`：恢复失败任务、处理运行态、生成导出资源
+- 多任务运行 / 恢复中心：集中查看“运行中 / 待恢复”小说，并支持自动刷新
+- 运行时文件默认写入 `.cache/novel-analyzer/`，并兼容历史 `.omx/...` 路径迁移
+- 工作台会按 branch 记住各自的最后阅读章节，减少多本小说切换时的上下文丢失
+- 可通过 `novel-analyzer runtime-storage --migrate` 或 `scripts/check_runtime_storage.py --migrate` 检查并迁移历史运行时文件
+- `/library` 与任务中心已能直接读取 `runtime-health`，用于排查运行时文件问题
+- `/library` 与任务中心现已同时显示 provider 健康状态，帮助识别 ask-stream 是否因上游 503 持续降级
+- 任务中心会根据 provider 健康状态给出更明确的操作建议；问答页降级提示也已转为更产品化文案，而不是直接暴露原始错误串
+- 工作台头部统一系统状态条已接入 provider/cache/自动刷新状态；恢复页也会结合 provider degraded 状态调整操作提示
+- provider degraded 时，工作台自动刷新会退避到更低频，减少无意义高频请求噪音
+- 任务中心里的恢复入口与问答页降级提示也已同步做降噪，减少误导性强操作与重复告警
+- 系统健康面板会输出聚合建议文案，帮助操作员快速判断应先等待 provider 恢复还是先排查缓存迁移
+- 系统健康面板、任务中心、恢复页的建议已开始共用统一规则，减少状态解释冲突
+- 多任务恢复中心现在会按统一优先级排序任务，帮助操作员先盯最急的小说
+- 小说空间与多任务中心已统一优先级排序逻辑，减少跨页面认知跳变
+- 恢复页、任务中心与健康面板当前也开始共用恢复动作策略规则，减少跨页面建议冲突
+- 前端运行态规则现已集中到 `apps/web/src/lib/operations.ts`，后续若要调整 provider/cache/恢复/排序逻辑，应优先改这一层，而不是在多个页面分别写分支判断
+- `/library`、`/control`、`/reader`、`/qa`、`/ops` 当前已按 SSR 动态页构建，避免产品工作台在 `next build` 时被误当作纯静态页 prerender
+- `reader` 内部章节跳转现在也会同步更新路由参数，减少因 `router.query.chapter` 与界面状态分裂而出现的跳错章/跳回旧章
+- workbench 本地状态现在会等待 hydration 完成后再写回与刷新，避免跨页进入 `/library`、`/ops` 时被默认示例小说状态覆盖
+- 异步可观测流水线已进入 Phase 0：后端开始具备章节任务事件流与更细粒度 job 运行字段，为下一阶段 `/pipeline` 控制台与 scheduler / worker 重构做准备
+- 异步可观测流水线现已进入 Phase 1 后端骨架：数据库已支持 `pipeline_runs`，API 已可启动/暂停/恢复/取消一个最小后台拆书任务，下一步重点是前端 `/pipeline` 控制台与更稳健的 scheduler/worker 抽象
+- `/pipeline` 前端控制台现已接入 Phase 1 API，可直接观察后台 run 状态与章节事件流；当前仍是“最小可用原型级控制台”，后续需要继续补充更细的 job 表格、实时 SSE 与 worker/watchdog 维度
+- `/pipeline` 现已具备章节任务表，并会以更高频率自动刷新，适合作为当前阶段的后台拆书监控入口
+- 当前系统对卡住任务采取保守策略：超过 heartbeat 阈值的 running job 会被自动识别为 stalled 并转为 failed，以避免“长期假 running”损害可用性
+- `/pipeline` 现也支持单章任务详情抽屉，可查看该章的完整事件链；当前阶段优先做的是“帮助操作者看清楚问题”，而不是更激进的自动处置
+- `/pipeline` 现已具备章节任务过滤器与恢复联动，便于操作者先聚焦异常章节，再从详情进入恢复动作
+- `/pipeline` 现在也会优先展示任务统计和最近 run 错误摘要，进一步降低“进页后还要自己判断当前是否异常”的负担
+- 当前工作台已将“拆书流水线”能力收纳到“开始整理”内页，不再独立占用左侧导航；同时关键页面路由会携带当前小说上下文，用于降低跨小说跳转时丢失 branch 的问题
+
+结论：当前版本已经具备“真实可操作工作台”的基础能力，而不只是单纯原型页。
+
+### 2.9 当前工作台产品化方向
+- 控制台按“导入作品 / 查看进度 / 下一步建议”组织
+- 章节阅读按“阅读提要 / 人物线索 / 追问推理 / 原文回看”组织
+- 导出与恢复按“结果资源中心”组织，而不是技术调试台
+- 当前界面目标用户是写作者，不强调技术字段暴露
+
+### 2.10 当前推荐运行配置
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+### 2.11 当前恢复策略
+- 章节失败先自动重试
+- 自动重试上限：**5 次**
+- 超过 5 次后才进入人工恢复态
+
+### 2.12 下一阶段优化点（按优先级）
+
+#### P0：优先保证可用与完整性
+1. 继续收紧多小说路由上下文，彻底消除跨小说后落回默认书/默认章的情况
+2. 给 pipeline 补“当前 run 聚焦视图”，默认优先只看当前运行任务
+3. 补充 pipeline 顶部统计的后端原生字段，避免前端全量计算造成歧义
+4. 让 `/ops` 与 `/pipeline` 的恢复联动更顺滑，支持恢复后回跳原上下文
+
+#### P1：保守增强
+5. 为 pipeline 加更细的章节排序规则：running / failed / stalled 优先
+6. 为单章详情补更多结构化错误摘要，而不是只显示原始 message
+7. 为 chapter jobs / events 增加更稳定的时间与状态说明文案
+
+#### P2：加分项（后置）
+8. 引入 SSE 替换高频轮询
+9. 将当前 in-process async runner 继续拆为更清晰的 scheduler / worker 结构
+10. 在 worker/watchdog 稳定后，再考虑更积极的自动恢复策略
+
 ---
 
 ## 3. 关键命令清单
@@ -239,6 +318,14 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 2. `thematic_contexts`
 3. `branch_report.md`
 4. `chapter_XXXX.qa-context.json`
+5. `chapter bundle`
+6. 原始章节正文片段（通过 chapter segment offset / source text）
+
+当前仓库内已经提供独立工作台原型：
+- `apps/api/`
+- `apps/web/`
+
+可直接作为后续真实前端的演进起点。
 
 ### 写作者参考工具
 建议优先使用：
@@ -333,3 +420,20 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - 有操作手册
 
 的可交付拆书 agent 后端。
+
+
+### 2.12 小说检索 / 问答工作台能力
+- 前端已接入 branch 级人物/事件检索
+- 前端已接入基于整本小说内容的问答
+- 问答结果保留 `used_chapters`、`evidence`、`reasoning_paths`、`graph_signals`
+- 引用章节在界面内可直接跳转
+
+- Web 工作台导出链路已从临时 `/tmp` 目录收口到项目内 `.cache/novel-analyzer/runtime-exports/` 持久目录，减少链接失效。
+
+- 控制台首页现在会显式提示 `DAILY_LIMIT_EXCEEDED` / `USAGE_LIMIT_EXCEEDED` 这类外部额度失败，并给出恢复入口。
+
+- 工作台导入的小说原文文件已从临时目录迁移到 `.cache/novel-analyzer/uploads/` 持久保存，保证章节正文回看与引用跳转可持续使用。
+
+- 问答与检索功能已从阅读页内嵌区域升级为单独的“小说问答”页面入口。
+
+- 前端根路由 `/` 已改为直接渲染控制台页面，修复构建阶段 `PageNotFoundError` 类问题。

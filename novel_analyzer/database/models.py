@@ -99,6 +99,7 @@ class RunBranch(TimestampSoftDeleteMixin, Base):
     windows: Mapped[list[WindowArtifact]] = relationship(back_populates="branch")
     graph_nodes: Mapped[list[GraphNode]] = relationship(back_populates="branch")
     graph_edges: Mapped[list[GraphEdge]] = relationship(back_populates="branch")
+    pipeline_runs: Mapped[list[PipelineRun]] = relationship(back_populates="branch")
 
 
 class RunCheckpoint(TimestampSoftDeleteMixin, Base):
@@ -143,10 +144,59 @@ class ChapterJob(TimestampSoftDeleteMixin, Base):
     status: Mapped[str] = mapped_column(String(32), default="pending")
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    current_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0)
+    worker_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    heartbeat_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_retry_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_class: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    provider_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    queue_name: Mapped[str] = mapped_column(String(64), default="default")
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    control_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     started_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     branch: Mapped[RunBranch] = relationship(back_populates="jobs")
+
+
+class ChapterJobEvent(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "chapter_job_events"
+
+    run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    job_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chapter_jobs.id"), nullable=True, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(64))
+    stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    level: Mapped[str] = mapped_column(String(16), default="info")
+    message: Mapped[str] = mapped_column(Text())
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+
+
+class PipelineRun(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "pipeline_runs"
+
+    run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    mode: Mapped[str] = mapped_column(String(32), default="range")
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    target_from_chapter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    target_to_chapter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    concurrency: Mapped[int] = mapped_column(Integer, default=1)
+    provider_profile: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    started_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paused_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    summary_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+
+    branch: Mapped[RunBranch] = relationship(back_populates="pipeline_runs")
 
 
 class ChapterRawOutput(TimestampSoftDeleteMixin, Base):
@@ -276,11 +326,11 @@ class GraphNode(TimestampSoftDeleteMixin, Base):
     branch: Mapped[RunBranch] = relationship(back_populates="graph_nodes")
     outgoing_edges: Mapped[list[GraphEdge]] = relationship(
         back_populates="source_node",
-        foreign_keys='GraphEdge.source_node_id',
+        foreign_keys="GraphEdge.source_node_id",
     )
     incoming_edges: Mapped[list[GraphEdge]] = relationship(
         back_populates="target_node",
-        foreign_keys='GraphEdge.target_node_id',
+        foreign_keys="GraphEdge.target_node_id",
     )
 
 
@@ -314,3 +364,58 @@ class GraphEdge(TimestampSoftDeleteMixin, Base):
         back_populates="incoming_edges",
         foreign_keys=[target_node_id],
     )
+
+
+class GateCheckerResultRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "gate_checker_results"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    checker_name: Mapped[str] = mapped_column(String(64), index=True)
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(32), default="ready")
+    visibility: Mapped[str] = mapped_column(String(32), default="active")
+
+
+class ChapterRiskCardRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "chapter_risk_cards"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(32), default="ready")
+    visibility: Mapped[str] = mapped_column(String(32), default="active")
+
+
+class ClusterReviewRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "cluster_review_records"
+    __table_args__ = (
+        UniqueConstraint("branch_id", "cluster_key", name="uq_cluster_review_branch_key"),
+    )
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    cluster_key: Mapped[str] = mapped_column(String(255), index=True)
+    cluster_status: Mapped[str] = mapped_column(String(32), default="open")
+    review_result: Mapped[str] = mapped_column(String(64), default="")
+    review_notes: Mapped[str] = mapped_column(Text(), default="")
+    review_owner: Mapped[str] = mapped_column(String(255), default="")
+    resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
+    visibility: Mapped[str] = mapped_column(String(32), default="active")
+
+
+class ClusterReviewEventRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "cluster_review_event_records"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    cluster_key: Mapped[str] = mapped_column(String(255), index=True)
+    previous_cluster_status: Mapped[str] = mapped_column(String(32), default="")
+    previous_review_result: Mapped[str] = mapped_column(String(64), default="")
+    previous_review_notes: Mapped[str] = mapped_column(Text(), default="")
+    previous_review_owner: Mapped[str] = mapped_column(String(255), default="")
+    previous_resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
+    cluster_status: Mapped[str] = mapped_column(String(32), default="open")
+    review_result: Mapped[str] = mapped_column(String(64), default="")
+    review_notes: Mapped[str] = mapped_column(Text(), default="")
+    review_owner: Mapped[str] = mapped_column(String(255), default="")
+    resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
+    event_type: Mapped[str] = mapped_column(String(64), default="status_update")

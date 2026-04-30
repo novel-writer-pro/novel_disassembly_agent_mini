@@ -4,7 +4,70 @@
 
 ---
 
-## 0. Python3 安装（不使用 Poetry）
+## 0. PostgreSQL 前置要求
+
+当前运行时已收口为 **PostgreSQL-only**。
+
+在执行 CLI 前，请先准备：
+- PostgreSQL 数据库实例
+- 用户与数据库
+- 必要扩展能力检查
+
+建议先运行：
+```bash
+python3 scripts/check_postgres.py
+```
+
+或：
+```bash
+poetry run novel-analyzer db-capabilities
+```
+
+如果你打算使用 Web 工作台原型，建议同时准备：
+- 一个可连接的 PostgreSQL 库
+- `run_id / branch_id` 可供前端读取
+- `apps/api` 原型后端
+- `apps/web` Next.js 前端运行环境
+
+### 0.1 Web 工作台前端依赖
+前端当前使用：
+- Next.js
+- React
+- Ant Design
+
+建议 Node.js 20+，并先设置 npm 源：
+
+```bash
+npm config set registry https://registry.npmmirror.com/
+```
+
+
+## 0.2 当前推荐 LLM 配置
+
+当前工作台与真实拆书默认建议使用：
+- provider: `vip1129`
+- base_url: `https://api.vip1129.cc/v1`
+- model: `gpt-5.4-mini`
+
+例如：
+```bash
+export NOVEL_ANALYZER_LLM_PROVIDER_NAME=vip1129
+export NOVEL_ANALYZER_LLM_BASE_URL=https://api.vip1129.cc/v1
+export NOVEL_ANALYZER_LLM_API_KEY='your-key'
+export NOVEL_ANALYZER_LLM_MODEL_NAME=gpt-5.4-mini
+export NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME=gpt-5.4-mini
+export NOVEL_ANALYZER_LLM_QA_MODEL_NAME=gpt-5.4-mini
+export NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME=gpt-5.4-mini
+```
+
+## 0.3 自动重试说明
+
+章节拆书失败时：
+- 系统会先自动重试
+- 当前自动重试上限为 **5 次**
+- 达到 5 次后仍失败，才进入人工恢复（`needs_recovery` / 工作台恢复页）
+
+## 1. Python3 安装（不使用 Poetry）
 
 ```bash
 python3 -m venv .venv
@@ -29,7 +92,7 @@ python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>
 
 ---
 
-## 1. 初始化环境
+## 2. 初始化环境
 
 ```bash
 poetry install
@@ -45,7 +108,21 @@ poetry run novel-analyzer test-embedding
 
 ---
 
-## 2. 导入小说并创建分支
+## 3. 导入小说并创建分支
+
+### 2.0 一键高层入口（新）
+如果你想减少手工步骤，可以直接用：
+```bash
+poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0
+```
+
+这条命令会：
+- 导入小说
+- 创建 manifest
+- 创建 run / branch
+- 输出 `novel_id / manifest_id / run_id / branch_id`
+
+当 `--max-chapters > 0` 时，它还会继续自动推进指定数量的章节。
 
 ### 2.1 导入文本
 ```bash
@@ -68,7 +145,7 @@ poetry run novel-analyzer start-run <novel_id> <manifest_id>
 
 ---
 
-## 3. 标准拆书推进路径
+## 4. 标准拆书推进路径
 
 ### 3.1 单章推进（推荐）
 ```bash
@@ -92,7 +169,7 @@ poetry run novel-analyzer resume-run <run_id> <branch_id> --max-chapters 3
 
 ---
 
-## 4. 运行状态与审计
+## 5. 运行状态与审计
 
 ### 4.1 查看 branch / run 状态
 ```bash
@@ -116,9 +193,19 @@ poetry run novel-analyzer show-raw-output <branch_id> <chapter_index>
 poetry run novel-analyzer export-raw-output <branch_id> <chapter_index> ./raw.json
 ```
 
+### 4.4 章节原文回看
+当前前端工作台原型已经支持按章节查看原始正文片段。
+
+CLI 下若需要回看，可结合：
+- `show-chapter`
+- `show-context`
+- `export-chapter-bundle`
+
+以及数据库中的 `chapter_segments.start_offset/end_offset` 与原始文本源文件进行定位。
+
 ---
 
-## 5. 图谱、状态机与专题导航
+## 6. 图谱、状态机与专题导航
 
 ### 5.1 图谱概览
 ```bash
@@ -148,7 +235,7 @@ poetry run novel-analyzer export-branch-report <run_id> <branch_id> ./branch.md
 
 ---
 
-## 6. 小说问答与 QA Context
+## 7. 小说问答与 QA Context
 
 ### 6.1 直接问答
 ```bash
@@ -203,7 +290,7 @@ poetry run novel-analyzer export-branch-qa-context <run_id> <branch_id> ./branch
 
 ---
 
-## 7. Package 导出标准路径
+## 8. Package 导出标准路径
 
 ```bash
 poetry run novel-analyzer export-branch-package <run_id> <branch_id> ./branch_pkg
@@ -220,9 +307,19 @@ poetry run novel-analyzer export-branch-package <run_id> <branch_id> ./branch_pk
 - `chapters/chapter_XXXX.context.json`
 - `chapters/chapter_XXXX.qa-context.json`
 
+### 8.1 Web 工作台下载
+当前 `apps/api` 原型还提供：
+- `GET /api/branch-exports`
+- `GET /api/download`
+
+前端工作台可以直接生成并下载：
+- branch bundle
+- branch QA context
+- branch report
+
 ---
 
-## 8. 恢复、修复与回退
+## 9. 恢复、修复与回退
 
 ### 8.1 查失败任务
 ```bash
@@ -258,6 +355,14 @@ poetry run novel-analyzer validate-branch <branch_id>
 poetry run novel-analyzer repair-branch <branch_id>
 ```
 
+### 9.1 工作台中的恢复动作
+当前前端工作台原型已接入：
+- `retry-failed`
+- `clear-running`
+- `repair`
+
+适合在 `needs_recovery` 状态下直接从界面操作。
+
 ---
 
 ## 9. 推荐的日常操作顺序
@@ -292,3 +397,50 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./interface-manifest.md`](./interface-manifest.md)
 - [`./examples/*.sample.json`](./examples/)
 - [`./final-handoff.md`](./final-handoff.md)
+
+---
+
+## 11. 当前维护建议（2026-04-28 之后）
+
+如果你接手当前版本，请优先遵守以下原则：
+
+1. **先保可用，再加功能**
+   - 优先修复上下文丢失、任务卡死、恢复不顺滑
+   - 不急着引入更激进的自动恢复与更复杂的调度
+
+2. **先保单一真相源**
+   - chapter job 状态以 `chapter_jobs` 为准
+   - 事件链以 `chapter_job_events` 为准
+   - 不要在前端再发明第二套任务状态缓存
+
+3. **优先沿现有入口演进**
+   - 高阶能力优先收纳在“开始整理”/“导出与恢复”内
+   - 不要轻易增加新的一级导航
+
+4. **下一步推荐**
+   - pipeline 当前 run 聚焦模式
+   - pipeline 排序和错误摘要
+   - ops <-> pipeline 回跳联动
+   - 最后再做 SSE
+
+
+### 6.5 Web 工作台中的问答能力
+当前阅读页已经直接接入：
+- branch 级检索（人物 / 事件 / 冲突 / 关键词）
+- 基于小说内容的问答
+- 结果中的引用章节跳转、证据摘要、推理路径与图谱信号
+
+
+## 附：前端构建缓存异常
+
+如果工作台前端在 `npm run build` 时出现页面模块缺失，但源码页面文件实际存在，优先清理：
+
+```bash
+cd apps/web
+rm -rf .next
+npm run build
+```
+
+本轮已验证：曾出现 `/ops` 页面缺失于 manifest，但清理 `.next` 后重新构建即可恢复。
+
+- 问答 / 检索台已上移到阅读页前部，默认先于章节详情展示。

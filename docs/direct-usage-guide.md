@@ -29,6 +29,8 @@ python3 -m novel_analyzer.cli.app <command> ...
 ```
 
 ## 基础配置
+当前运行时已收口为 **PostgreSQL-only**。
+
 建议通过 `.env.local` 配置：
 
 ```bash
@@ -52,12 +54,21 @@ NOVEL_ANALYZER_EMBEDDING_CACHE_DIR=.cache/embeddings
 
 ## 一次性初始化
 ```bash
+python3 scripts/check_postgres.py
 poetry run novel-analyzer init-db
 poetry run novel-analyzer db-health
+poetry run novel-analyzer db-capabilities
 poetry run novel-analyzer test-embedding
 ```
 
 ## 拆书主流程
+### 0. 一键入口（可选）
+```bash
+poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0
+```
+
+适合希望“导入后自动把初始化步骤做完”的场景。
+
 ### 1. 导入小说
 ```bash
 poetry run novel-analyzer ingest /path/to/novel.txt --title 'xxx'
