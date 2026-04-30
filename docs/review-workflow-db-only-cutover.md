@@ -29,9 +29,10 @@
 
 ### A. 结构条件
 
-1. `cluster_review_records` 已在目标数据库存在
-2. `cluster_review_event_records` 已在目标数据库存在
-3. 导出层已稳定读取 DB review object / history
+1. `cluster_review_records` 已在目标数据库存在（迁移 `20260430_01`）
+2. `cluster_review_event_records` 已在目标数据库存在（迁移 `20260430_01`）
+3. history 事件包含上一版 `review_result` / `review_notes` / `review_owner` / `resolved_at`，便于审计链追溯
+4. 导出层已稳定读取 DB review object / history
 
 ### B. 接口条件
 

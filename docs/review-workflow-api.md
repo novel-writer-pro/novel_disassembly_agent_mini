@@ -28,12 +28,13 @@
 - `cluster_status`（可选）
 - `review_owner`（可选）
 - `review_result`（可选）
-- `cluster_status`（可选）
-- `review_owner`（可选）
-- `review_result`（可选）
 
 当前返回重点字段：
 
+- `contract_version`（当前为 `review-workflow.v1`）
+- `filters`
+- `allowed_cluster_statuses`
+- `allowed_review_results`
 - `review_storage_mode`
 - `cluster_key`
 - `cluster_title`
@@ -73,8 +74,13 @@
 
 当前返回重点字段：
 
+- `contract_version`（当前为 `review-workflow.v1`）
+- `review_storage_mode`
 - `previous_cluster_status`
 - `previous_review_result`
+- `previous_review_notes`
+- `previous_review_owner`
+- `previous_resolved_at`
 - `cluster_status`
 - `review_result`
 - `review_notes`
@@ -99,6 +105,10 @@
 
 当前返回重点字段：
 
+- `contract_version`（当前为 `review-workflow.v1`）
+- `filters`
+- `allowed_cluster_statuses`
+- `allowed_review_results`
 - `review_storage_mode`
 - `cluster_count`
 - `history_event_count`
@@ -142,8 +152,9 @@
 
 当前行为：
 
-- 会更新 DB-backed review object
-- 会追加一条 review history event
+- 会优先更新 DB-backed review object
+- 会追加一条 review history event，并记录上一版 notes / owner / resolved_at 以支撑审计链
+- 如果 review 表缺失，会进入 `file-fallback` 并写入兼容 history 文件；响应仍带 `review_storage_mode`
 
 ### 常见错误语义
 
