@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ClusterReviewEventRecord, ClusterReviewRecord
@@ -66,7 +66,7 @@ class ClusterReviewService:
                 .where(ClusterReviewRecord.visibility == "active")
                 .order_by(ClusterReviewRecord.cluster_key)
             ).all()
-        except SQLAlchemyError as exc:
+        except (OperationalError, ProgrammingError) as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -90,13 +90,14 @@ class ClusterReviewService:
                 .where(ClusterReviewEventRecord.cluster_key == cluster_key)
                 .order_by(ClusterReviewEventRecord.created_at)
             ).all()
-        except SQLAlchemyError as exc:
+        except (OperationalError, ProgrammingError) as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
             return []
         return [
             {
+                "event_id": row.id,
                 "previous_cluster_status": row.previous_cluster_status,
                 "previous_review_result": row.previous_review_result,
                 "previous_review_notes": row.previous_review_notes,
