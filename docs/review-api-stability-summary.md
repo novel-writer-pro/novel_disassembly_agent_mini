@@ -16,6 +16,9 @@
 
 当前建议稳定字段：
 
+- `stable_contract_version`
+- `review_storage_mode`
+- `filters`
 - `cluster_key`
 - `cluster_title`
 - `checker_names`
@@ -31,6 +34,11 @@
 
 当前建议稳定字段：
 
+- `stable_contract_version`
+- `review_storage_mode`
+- `filters`
+- `event_index`
+- `audit_key`
 - `cluster_status`
 - `review_result`
 - `review_notes`
@@ -55,7 +63,9 @@
 
 当前建议稳定字段：
 
+- `stable_contract_version`
 - `review_storage_mode`
+- `filters`
 - `cluster_count`
 - `by_status`
 - `by_result`
@@ -70,6 +80,10 @@
 - `review_history`
 - `review_history_count`
 - `latest_review_event`
+- `previous_values`
+- `current_values`
+- `changed_fields`
+- `transition`
 - `review_progress_note`
 - `review_result_note`
 - `review_owner_note`
@@ -131,3 +145,5 @@
 
 > 接入方当前可以把 review API 当作“准稳定接口”使用：  
 > 稳定字段可接，实验字段宽松消费，后续等 Phase 2 收口后再正式宣布 `v1`。
+
+当前响应中的 `stable_contract_version=review-api-pre-v1` 是显式合同标记；在正式 v1 前，下游应把它当作兼容判断字段，而不是 UI 文案。

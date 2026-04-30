@@ -249,6 +249,9 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     assert b'"previous_cluster_status"' in body
     assert b'"event_type": "status_update"' in body
     assert b'"event_index": 1' in body
+    assert b'"audit_key"' in body
+    assert b'"previous_values"' in body
+    assert b'"current_values"' in body
     assert b'"changed_fields"' in body
     assert b'"transition": "new->reviewed"' in body
 

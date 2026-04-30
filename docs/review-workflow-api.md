@@ -31,11 +31,9 @@
 
 当前返回重点字段：
 
-- `contract_version`（当前为 `review-workflow.v1`）
-- `filters`
-- `allowed_cluster_statuses`
-- `allowed_review_results`
+- `stable_contract_version`
 - `review_storage_mode`
+- `filters`
 - `cluster_key`
 - `cluster_title`
 - `checker_names`
@@ -71,14 +69,17 @@
 - `branch_id`
 - `cluster_key`
 - `database_url`（可选）
-- `event_type` / `review_owner` / `review_result` / `limit`（可选过滤）
+- `event_type`（可选）
 
 当前返回重点字段：
 
+- `stable_contract_version`
 - `review_storage_mode`
-- `count`
-- `applied_filters`
-- `event_id`
+- `filters`
+- `event_index`
+- `audit_key`
+- `previous_values`
+- `current_values`
 - `previous_cluster_status`
 - `previous_review_result`
 - `previous_review_notes`
@@ -91,6 +92,8 @@
 - `resolved_at`
 - `event_type`
 - `created_at`
+- `changed_fields`
+- `transition`
 
 ---
 
@@ -108,11 +111,9 @@
 
 当前返回重点字段：
 
-- `contract_version`（当前为 `review-workflow.v1`）
-- `filters`
-- `allowed_cluster_statuses`
-- `allowed_review_results`
+- `stable_contract_version`
 - `review_storage_mode`
+- `filters`
 - `cluster_count`
 - `history_event_count`
 - `latest_review_at`
@@ -156,8 +157,8 @@
 当前行为：
 
 - 会优先更新 DB-backed review object
-- 会追加一条 review history event，并记录上一版 notes / owner / resolved_at 以支撑审计链
-- 如果 review 表缺失，会进入 `file-fallback` 并写入兼容 history 文件；响应仍带 `review_storage_mode`
+- 会追加一条 review history event
+- 响应包含 `stable_contract_version=review-api-pre-v1`，用于下游判断当前合同仍处于 Phase 2 pre-v1
 
 ### 常见错误语义
 
@@ -166,6 +167,12 @@
   - 例如：
     - `cluster_status=resolved` 但 `review_result` 为空
     - `review_result=needs-escalation` 但 `review_notes` 为空
+
+### fallback / 审计链说明
+
+- DB 表已迁移时，`review_storage_mode=db` 是主路径，history 来自 `cluster_review_event_records`。
+- review 表未迁移时，读取接口会显式回落到 `review_storage_mode=file-fallback`；history 在 fallback 路径下返回空列表，避免伪装成 DB 审计链。
+- history 事件现在包含 `event_index`、`audit_key`、`previous_values`、`current_values`、`changed_fields` 与 `transition`，用于审计链展示；稳定消费仍应优先绑定基础状态字段。
 
 ---
 
