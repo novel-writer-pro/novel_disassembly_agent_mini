@@ -50,6 +50,7 @@ from novel_analyzer.runtime.storage import (
     migrate_legacy_runtime_dirs,
     runtime_cache_root,
 )
+from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state, write_cluster_review_state
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.cluster_review_service import (
@@ -172,31 +173,99 @@ def _require(params: dict[str, str], *keys: str) -> tuple[bool, str | None]:
 
 def _review_filters(params: dict[str, str]) -> dict[str, str]:
     return {
-        "cluster_status": str(params.get("cluster_status") or "").strip(),
-        "review_owner": str(params.get("review_owner") or "").strip(),
-        "review_result": str(params.get("review_result") or "").strip(),
+        key: str(params.get(key) or "").strip()
+        for key in (
+            "cluster_status",
+            "review_owner",
+            "review_result",
+            "review_priority",
+            "pattern_label",
+        )
+        if str(params.get(key) or "").strip()
     }
 
 
-def _filter_review_clusters(
+def _apply_review_filters(
     items: list[dict[str, object]],
     filters: dict[str, str],
 ) -> list[dict[str, object]]:
-    if filters["cluster_status"]:
-        items = [item for item in items if str(item.get("cluster_status") or "") == filters["cluster_status"]]
-    if filters["review_owner"]:
-        items = [item for item in items if str(item.get("review_owner") or "") == filters["review_owner"]]
-    if filters["review_result"]:
-        items = [item for item in items if str(item.get("review_result") or "") == filters["review_result"]]
-    return items
+    if not filters:
+        return items
+    return [
+        item
+        for item in items
+        if all(str(item.get(key) or "") == value for key, value in filters.items())
+    ]
 
 
-def _review_contract(filters: dict[str, str] | None = None) -> dict[str, object]:
+def _review_summary_payload(
+    *,
+    items: list[dict[str, object]],
+    review_storage_mode: object,
+    filters: dict[str, str],
+) -> dict[str, object]:
+    by_status: dict[str, int] = {}
+    by_result: dict[str, int] = {}
+    by_owner: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+    by_pattern: dict[str, int] = {}
+    for item in items:
+        status_key = str(item.get("cluster_status") or "")
+        result_key = str(item.get("review_result") or "")
+        owner_key = str(item.get("review_owner") or "")
+        priority_key = str(item.get("review_priority") or "")
+        pattern_key = str(item.get("pattern_label") or "")
+        if status_key:
+            by_status[status_key] = by_status.get(status_key, 0) + 1
+        if result_key:
+            by_result[result_key] = by_result.get(result_key, 0) + 1
+        if owner_key:
+            by_owner[owner_key] = by_owner.get(owner_key, 0) + 1
+        if priority_key:
+            by_priority[priority_key] = by_priority.get(priority_key, 0) + 1
+        if pattern_key:
+            by_pattern[pattern_key] = by_pattern.get(pattern_key, 0) + 1
+    latest_review_at = max(
+        [
+            str(item.get("latest_review_event", {}).get("created_at") or "")
+            for item in items
+            if isinstance(item.get("latest_review_event"), dict)
+            and str(item.get("latest_review_event", {}).get("created_at") or "")
+        ]
+        or [""]
+    )
+    latest_review_owner = next(
+        (
+            str(item.get("latest_review_event", {}).get("review_owner") or "")
+            for item in items
+            if isinstance(item.get("latest_review_event"), dict)
+            and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+        ),
+        "",
+    )
+    latest_review_result = next(
+        (
+            str(item.get("latest_review_event", {}).get("review_result") or "")
+            for item in items
+            if isinstance(item.get("latest_review_event"), dict)
+            and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+        ),
+        "",
+    )
     return {
-        "contract_version": "review-workflow.v1",
-        "filters": filters or {},
-        "allowed_cluster_statuses": sorted(ALLOWED_CLUSTER_STATUSES),
-        "allowed_review_results": sorted(ALLOWED_REVIEW_RESULTS),
+        "review_storage_mode": review_storage_mode,
+        "cluster_count": len(items),
+        "filters": filters,
+        "by_status": by_status,
+        "by_result": by_result,
+        "by_owner": by_owner,
+        "by_priority": by_priority,
+        "by_pattern": by_pattern,
+        "history_event_count": sum(int(item.get("review_history_count", 0) or 0) for item in items),
+        "latest_review_at": latest_review_at,
+        "latest_review_owner": latest_review_owner,
+        "latest_review_result": latest_review_result,
+        "latest_review_result_label": ExportService._review_result_label(latest_review_result),
     }
 
 
