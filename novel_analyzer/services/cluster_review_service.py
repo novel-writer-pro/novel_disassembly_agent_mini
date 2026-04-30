@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from sqlalchemy import select
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ClusterReviewEventRecord, ClusterReviewRecord
@@ -35,7 +35,7 @@ class ClusterReviewService:
     @staticmethod
     def _is_missing_relation_error(exc: Exception) -> bool:
         message = str(exc).lower()
-        return "relation" in message and "does not exist" in message
+        return ("relation" in message and "does not exist" in message) or "no such table" in message
 
     @staticmethod
     def _validate(cluster_status: str, review_result: str, review_notes: str) -> None:
@@ -66,7 +66,7 @@ class ClusterReviewService:
                 .where(ClusterReviewRecord.visibility == "active")
                 .order_by(ClusterReviewRecord.cluster_key)
             ).all()
-        except ProgrammingError as exc:
+        except SQLAlchemyError as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -90,7 +90,7 @@ class ClusterReviewService:
                 .where(ClusterReviewEventRecord.cluster_key == cluster_key)
                 .order_by(ClusterReviewEventRecord.created_at)
             ).all()
-        except ProgrammingError as exc:
+        except SQLAlchemyError as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -99,6 +99,9 @@ class ClusterReviewService:
             {
                 "previous_cluster_status": row.previous_cluster_status,
                 "previous_review_result": row.previous_review_result,
+                "previous_review_notes": row.previous_review_notes,
+                "previous_review_owner": row.previous_review_owner,
+                "previous_resolved_at": row.previous_resolved_at_text,
                 "cluster_status": row.cluster_status,
                 "review_result": row.review_result,
                 "review_notes": row.review_notes,
@@ -130,6 +133,9 @@ class ClusterReviewService:
         )
         previous_cluster_status = row.cluster_status if row is not None else ""
         previous_review_result = row.review_result if row is not None else ""
+        previous_review_notes = row.review_notes if row is not None else ""
+        previous_review_owner = row.review_owner if row is not None else ""
+        previous_resolved_at = row.resolved_at_text if row is not None else ""
         if row is None:
             row = ClusterReviewRecord(
                 branch_id=branch_id,
@@ -153,6 +159,9 @@ class ClusterReviewService:
                 cluster_key=cluster_key,
                 previous_cluster_status=previous_cluster_status,
                 previous_review_result=previous_review_result,
+                previous_review_notes=previous_review_notes,
+                previous_review_owner=previous_review_owner,
+                previous_resolved_at_text=previous_resolved_at,
                 cluster_status=cluster_status,
                 review_result=review_result,
                 review_notes=review_notes,

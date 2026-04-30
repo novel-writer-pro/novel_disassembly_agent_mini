@@ -31,6 +31,12 @@ from novel_analyzer.application import (
 )
 from novel_analyzer.application.queries import _derive_pipeline_state, _setup_status
 from novel_analyzer.config.settings import get_settings
+from novel_analyzer.runtime.cluster_review_state import (
+    ALLOWED_CLUSTER_STATUSES,
+    ALLOWED_REVIEW_RESULTS,
+    read_cluster_review_history,
+    write_cluster_review_state,
+)
 from novel_analyzer.database.models import (
     AnalysisRun,
     ChapterManifest,
@@ -159,6 +165,36 @@ def _require(params: dict[str, str], *keys: str) -> tuple[bool, str | None]:
         if not params.get(key):
             return False, key
     return True, None
+
+
+def _review_filters(params: dict[str, str]) -> dict[str, str]:
+    return {
+        "cluster_status": str(params.get("cluster_status") or "").strip(),
+        "review_owner": str(params.get("review_owner") or "").strip(),
+        "review_result": str(params.get("review_result") or "").strip(),
+    }
+
+
+def _filter_review_clusters(
+    items: list[dict[str, object]],
+    filters: dict[str, str],
+) -> list[dict[str, object]]:
+    if filters["cluster_status"]:
+        items = [item for item in items if str(item.get("cluster_status") or "") == filters["cluster_status"]]
+    if filters["review_owner"]:
+        items = [item for item in items if str(item.get("review_owner") or "") == filters["review_owner"]]
+    if filters["review_result"]:
+        items = [item for item in items if str(item.get("review_result") or "") == filters["review_result"]]
+    return items
+
+
+def _review_contract(filters: dict[str, str] | None = None) -> dict[str, object]:
+    return {
+        "contract_version": "review-workflow.v1",
+        "filters": filters or {},
+        "allowed_cluster_statuses": sorted(ALLOWED_CLUSTER_STATUSES),
+        "allowed_review_results": sorted(ALLOWED_REVIEW_RESULTS),
+    }
 
 
 def _mock_import(profile: str) -> dict[str, Any]:
@@ -830,16 +866,10 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["branch_id"],
                 )
                 items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
-                status_filter = str(params.get("cluster_status") or "").strip()
-                owner_filter = str(params.get("review_owner") or "").strip()
-                result_filter = str(params.get("review_result") or "").strip()
-                if status_filter:
-                    items = [item for item in items if str(item.get("cluster_status") or "") == status_filter]
-                if owner_filter:
-                    items = [item for item in items if str(item.get("review_owner") or "") == owner_filter]
-                if result_filter:
-                    items = [item for item in items if str(item.get("review_result") or "") == result_filter]
+                filters = _review_filters(params)
+                items = _filter_review_clusters(items, filters)
                 payload = {
+                    **_review_contract(filters),
                     "review_storage_mode": bundle.get("review_storage_mode"),
                     "items": items,
                 }
@@ -870,15 +900,8 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["branch_id"],
                 )
                 items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
-                status_filter = str(params.get("cluster_status") or "").strip()
-                owner_filter = str(params.get("review_owner") or "").strip()
-                result_filter = str(params.get("review_result") or "").strip()
-                if status_filter:
-                    items = [item for item in items if str(item.get("cluster_status") or "") == status_filter]
-                if owner_filter:
-                    items = [item for item in items if str(item.get("review_owner") or "") == owner_filter]
-                if result_filter:
-                    items = [item for item in items if str(item.get("review_result") or "") == result_filter]
+                filters = _review_filters(params)
+                items = _filter_review_clusters(items, filters)
                 by_status: dict[str, int] = {}
                 by_result: dict[str, int] = {}
                 by_owner: dict[str, int] = {}
@@ -929,6 +952,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 )
                 latest_review_result_label = ExportService._review_result_label(latest_review_result)
                 payload = {
+                    **_review_contract(filters),
                     "review_storage_mode": bundle.get("review_storage_mode"),
                     "cluster_count": len(items),
                     "by_status": by_status,
@@ -965,17 +989,25 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             factory = create_session_factory(runtime)
             with factory() as session:
                 payload = {
+                    **_review_contract(),
+                    "review_storage_mode": "db",
                     "items": ClusterReviewService(session).read_history(
                         params["branch_id"],
                         params["cluster_key"],
-                    )
+                    ),
                 }
         except Exception as exc:  # noqa: BLE001
-            return _response(
-                start_response,
-                status="500 Internal Server Error",
-                payload={"error": str(exc)},
-            )
+            if not ClusterReviewService._is_missing_relation_error(exc):
+                return _response(
+                    start_response,
+                    status="500 Internal Server Error",
+                    payload={"error": str(exc)},
+                )
+            payload = {
+                **_review_contract(),
+                "review_storage_mode": "file-fallback",
+                "items": read_cluster_review_history(params["branch_id"], params["cluster_key"], runtime),
+            }
         return _response(start_response, status="200 OK", payload=payload)
 
     if path == "/api/review-cluster-update" and method == "POST":
@@ -995,16 +1027,33 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             runtime.database_url = database_url
         try:
             factory = create_session_factory(runtime)
+            review_storage_mode = "db"
             with factory() as session:
-                state = ClusterReviewService(session).write(
-                    branch_id=branch_id,
-                    cluster_key=cluster_key,
-                    cluster_status=cluster_status,
-                    review_notes=str(body.get("review_notes") or ""),
-                    review_owner=str(body.get("review_owner") or ""),
-                    resolved_at=str(body.get("resolved_at") or ""),
-                    review_result=str(body.get("review_result") or ""),
-                )
+                try:
+                    state = ClusterReviewService(session).write(
+                        branch_id=branch_id,
+                        cluster_key=cluster_key,
+                        cluster_status=cluster_status,
+                        review_notes=str(body.get("review_notes") or ""),
+                        review_owner=str(body.get("review_owner") or ""),
+                        resolved_at=str(body.get("resolved_at") or ""),
+                        review_result=str(body.get("review_result") or ""),
+                    )
+                except Exception as exc:
+                    if not ClusterReviewService._is_missing_relation_error(exc):
+                        raise
+                    session.rollback()
+                    review_storage_mode = "file-fallback"
+                    state = write_cluster_review_state(
+                        branch_id=branch_id,
+                        cluster_key=cluster_key,
+                        cluster_status=cluster_status,
+                        review_notes=str(body.get("review_notes") or ""),
+                        review_owner=str(body.get("review_owner") or ""),
+                        resolved_at=str(body.get("resolved_at") or ""),
+                        review_result=str(body.get("review_result") or ""),
+                        settings=runtime,
+                    )
         except ValueError as exc:
             return _response(
                 start_response,
@@ -1017,7 +1066,11 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 status="500 Internal Server Error",
                 payload={"error": str(exc)},
             )
-        return _response(start_response, status="200 OK", payload=asdict(state))
+        return _response(
+            start_response,
+            status="200 OK",
+            payload={**_review_contract(), "review_storage_mode": review_storage_mode, **asdict(state)},
+        )
 
     if path == "/api/pipeline/start-range" and method == "POST":
         body = _body(environ)
