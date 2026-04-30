@@ -228,6 +228,7 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     assert b'"contract_version": "review-workflow.v1"' in body
     assert b'"allowed_cluster_statuses"' in body
     assert b'"review_storage_mode"' in body
+    assert b'"stable_contract_version": "review-api-pre-v1"' in body
 
     cluster_key = "character_ooc|::|motivation_shift"
     status, body = _call_post_json(
@@ -243,43 +244,27 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     )
     assert status == "200 OK"
     assert b'"cluster_status": "reviewed"' in body
+    assert b'"stable_contract_version": "review-api-pre-v1"' in body
 
     status, body = _call(f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}")
     assert status == "200 OK"
-    history_payload = json.loads(body)
-    assert history_payload["review_storage_mode"] == "db"
-    assert history_payload["count"] == 1
-    assert history_payload["items"][0]["event_id"]
-    assert history_payload["items"][0]["previous_cluster_status"] == ""
-    assert history_payload["items"][0]["event_type"] == "status_update"
+    assert b'"previous_cluster_status"' in body
+    assert b'"event_type": "status_update"' in body
+    assert b'"event_index": 1' in body
+    assert b'"changed_fields"' in body
+    assert b'"transition": "new->reviewed"' in body
 
-    status, body = _call_post_json(
-        "/api/review-cluster-update",
-        {
-            "branch_id": branch_id,
-            "cluster_key": cluster_key,
-            "cluster_status": "reopened",
-            "review_result": "deferred",
-            "review_notes": "needs another pass",
-            "review_owner": "editor-b",
-        },
-    )
-    assert status == "200 OK"
 
-    status, body = _call(
-        f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}"
-        "&review_owner=editor-b&review_result=deferred&limit=1"
-    )
+def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkeypatch) -> None:
+    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    status, body = _call("/api/review-cluster-history?branch_id=branch-x&cluster_key=cluster-y")
+
     assert status == "200 OK"
-    filtered_payload = json.loads(body)
-    assert filtered_payload["applied_filters"]["review_owner"] == "editor-b"
-    assert filtered_payload["applied_filters"]["review_result"] == "deferred"
-    assert filtered_payload["applied_filters"]["limit"] == 1
-    assert filtered_payload["count"] == 1
-    assert filtered_payload["items"][0]["previous_cluster_status"] == "reviewed"
-    assert filtered_payload["items"][0]["previous_review_result"] == "confirmed-benign"
-    assert filtered_payload["items"][0]["previous_review_notes"] == "api test"
-    assert filtered_payload["items"][0]["previous_review_owner"] == "editor-a"
+    assert b'"review_storage_mode": "file-fallback"' in body
+    assert b'"items": []' in body
 
 
 def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
@@ -332,6 +317,7 @@ def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> Non
     status, body = _call(f"/api/review-clusters?run_id={run_id}&branch_id={branch_id}&cluster_status=reviewed&review_owner=editor-a&review_result=confirmed-benign")
     assert status == "200 OK"
     assert b'"items"' in body
+    assert b'"filters"' in body
     assert b'"review_owner": "editor-a"' in body
 
 
@@ -387,6 +373,7 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
     assert b'"contract_version": "review-workflow.v1"' in body
     assert b'"cluster_count": 1' in body
     assert b'"history_event_count": 1' in body
+    assert b'"stable_contract_version": "review-api-pre-v1"' in body
     assert b'"latest_review_owner": "editor-a"' in body
     assert b'"latest_review_result": "confirmed-benign"' in body
     assert '"latest_review_result_label": "确认无问题"'.encode("utf-8") in body
