@@ -225,6 +225,8 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     status, body = _call(f"/api/review-clusters?run_id={run_id}&branch_id={branch_id}")
     assert status == "200 OK"
     assert b'"items"' in body
+    assert b'"contract_version": "review-workflow.v1"' in body
+    assert b'"allowed_cluster_statuses"' in body
     assert b'"review_storage_mode"' in body
 
     cluster_key = "character_ooc|::|motivation_shift"
@@ -246,6 +248,8 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     assert status == "200 OK"
     assert b'"previous_cluster_status"' in body
     assert b'"event_type": "status_update"' in body
+    assert b'"previous_review_notes"' in body
+    assert b'"review_storage_mode": "db"' in body
 
 
 def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
@@ -350,6 +354,7 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
 
     status, body = _call(f"/api/review-cluster-summary?run_id={run_id}&branch_id={branch_id}")
     assert status == "200 OK"
+    assert b'"contract_version": "review-workflow.v1"' in body
     assert b'"cluster_count": 1' in body
     assert b'"history_event_count": 1' in body
     assert b'"latest_review_owner": "editor-a"' in body

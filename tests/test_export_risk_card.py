@@ -4,8 +4,12 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from novel_analyzer.config.settings import Settings
 from novel_analyzer.database.session import create_schema
-from novel_analyzer.runtime.cluster_review_state import write_cluster_review_state
+from novel_analyzer.runtime.cluster_review_state import (
+    read_cluster_review_history,
+    write_cluster_review_state,
+)
 from novel_analyzer.services.cluster_review_service import ClusterReviewService
 from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.ingest_service import IngestService
@@ -380,6 +384,39 @@ def test_write_cluster_review_state_requires_matching_status_for_needs_escalatio
         )
 
 
+def test_file_fallback_review_state_records_history_chain(tmp_path: Path) -> None:
+    settings = Settings(runtime_cache_dir=str(tmp_path / 'cache'))
+    write_cluster_review_state(
+        'branch-x',
+        'cluster-y',
+        'needs_review',
+        review_result='deferred',
+        review_notes='first pass',
+        review_owner='editor-a',
+        settings=settings,
+    )
+    write_cluster_review_state(
+        'branch-x',
+        'cluster-y',
+        'reviewed',
+        review_result='confirmed-benign',
+        review_notes='second pass',
+        review_owner='editor-b',
+        settings=settings,
+    )
+
+    history = read_cluster_review_history('branch-x', 'cluster-y', settings)
+
+    assert len(history) == 2
+    assert history[0]['previous_cluster_status'] == ''
+    assert history[1]['previous_cluster_status'] == 'needs_review'
+    assert history[1]['previous_review_result'] == 'deferred'
+    assert history[1]['previous_review_notes'] == 'first pass'
+    assert history[1]['previous_review_owner'] == 'editor-a'
+    assert history[1]['review_owner'] == 'editor-b'
+    assert history[1]['created_at'].endswith('Z')
+
+
 def test_cluster_review_service_persists_review_record_in_database(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
@@ -403,3 +440,19 @@ def test_cluster_review_service_persists_review_record_in_database(tmp_path: Pat
         assert len(history) == 1
         assert history[0]['previous_cluster_status'] == ''
         assert history[0]['cluster_status'] == 'reviewed'
+        service.write(
+            branch_id=branch.id,
+            cluster_key='character_ooc|::|human_review_candidate',
+            cluster_status='resolved',
+            review_result='confirmed-issue',
+            review_notes='二次确认',
+            review_owner='editor-b',
+            resolved_at='2026-04-29T03:00:00Z',
+        )
+        history = service.read_history(branch.id, 'character_ooc|::|human_review_candidate')
+        assert len(history) == 2
+        assert history[1]['previous_review_result'] == 'confirmed-benign'
+        assert history[1]['previous_review_notes'] == '已读'
+        assert history[1]['previous_review_owner'] == 'editor-a'
+        assert history[1]['previous_resolved_at'] == '2026-04-29T02:00:00Z'
+        assert history[1]['review_notes'] == '二次确认'
