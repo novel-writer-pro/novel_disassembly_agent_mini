@@ -202,6 +202,8 @@
 {
   "items": [
     {
+      "previous_cluster_status": "needs_review",
+      "previous_review_result": "deferred",
       "cluster_status": "reviewed",
       "review_result": "confirmed-benign",
       "review_notes": "...",
@@ -216,6 +218,11 @@
 ### 2.14 GET /branches/{branch_id}/review-clusters/summary
 返回当前 branch 的问题簇汇总统计。
 
+**Query filters (optional)**
+- `cluster_status`
+- `review_owner`
+- `review_result`
+
 **Response schema**
 ```json
 {
@@ -225,6 +232,9 @@
   "latest_review_at": "2026-04-29T03:00:00Z",
   "latest_review_owner": "editor-a",
   "latest_review_result": "confirmed-benign",
+  "latest_review_result_label": "确认无问题",
+  "by_priority": {"P2": 1},
+  "by_pattern": {"持续型问题": 1},
   "by_status": {"reviewed": 1},
   "by_result": {"confirmed-benign": 1},
   "by_owner": {"editor-a": 1}

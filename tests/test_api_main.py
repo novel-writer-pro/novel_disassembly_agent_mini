@@ -244,6 +244,7 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
 
     status, body = _call(f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}")
     assert status == "200 OK"
+    assert b'"previous_cluster_status"' in body
     assert b'"event_type": "status_update"' in body
 
 
@@ -353,9 +354,68 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
     assert b'"history_event_count": 1' in body
     assert b'"latest_review_owner": "editor-a"' in body
     assert b'"latest_review_result": "confirmed-benign"' in body
+    assert '"latest_review_result_label": "确认无问题"'.encode("utf-8") in body
+    assert b'"P2": 1' in body
+    assert '"单点问题": 1'.encode("utf-8") in body
     assert b'"reviewed": 1' in body
     assert b'"confirmed-benign": 1' in body
     assert b'"editor-a": 1' in body
+
+
+def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
+    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        novel_path = tmp_path / 'novel.txt'
+        novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '命格初现',
+                'chapter_summary': '卫图在本章做出异常决定。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图做出异常决定'],
+                'continuity_notes': ['主线推进。'],
+                'ooc_candidates': [
+                    {
+                        'character_name': '卫图',
+                        'risk_type': 'motivation_shift',
+                        'severity': 'medium',
+                        'summary': '卫图目标改变过快。',
+                        'supporting_evidence': ['前文目标A'],
+                        'counter_evidence': ['也许有新情报'],
+                    }
+                ],
+                'needs_human_review': True,
+                'dimensions': [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        ClusterReviewService(session).write(
+            branch_id=branch.id,
+            cluster_key='character_ooc|::|motivation_shift',
+            cluster_status='reviewed',
+            review_result='confirmed-benign',
+            review_notes='api summary filter test',
+            review_owner='editor-a',
+        )
+
+    status, body = _call(
+        f"/api/review-cluster-summary?run_id={run_id}&branch_id={branch_id}"
+        f"&cluster_status=reviewed&review_owner=editor-a&review_result=confirmed-benign"
+    )
+    assert status == "200 OK"
+    assert b'"cluster_count": 1' in body
+    assert b'"confirmed-benign": 1' in body
 
 
 def test_review_cluster_update_returns_400_for_invalid_status_combo(monkeypatch) -> None:

@@ -97,6 +97,8 @@ class ClusterReviewService:
             return []
         return [
             {
+                "previous_cluster_status": row.previous_cluster_status,
+                "previous_review_result": row.previous_review_result,
                 "cluster_status": row.cluster_status,
                 "review_result": row.review_result,
                 "review_notes": row.review_notes,
@@ -126,6 +128,8 @@ class ClusterReviewService:
             .where(ClusterReviewRecord.cluster_key == cluster_key)
             .where(ClusterReviewRecord.visibility == "active")
         )
+        previous_cluster_status = row.cluster_status if row is not None else ""
+        previous_review_result = row.review_result if row is not None else ""
         if row is None:
             row = ClusterReviewRecord(
                 branch_id=branch_id,
@@ -147,6 +151,8 @@ class ClusterReviewService:
             ClusterReviewEventRecord(
                 branch_id=branch_id,
                 cluster_key=cluster_key,
+                previous_cluster_status=previous_cluster_status,
+                previous_review_result=previous_review_result,
                 cluster_status=cluster_status,
                 review_result=review_result,
                 review_notes=review_notes,

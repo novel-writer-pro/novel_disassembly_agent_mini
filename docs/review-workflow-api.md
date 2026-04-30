@@ -28,6 +28,9 @@
 - `cluster_status`（可选）
 - `review_owner`（可选）
 - `review_result`（可选）
+- `cluster_status`（可选）
+- `review_owner`（可选）
+- `review_result`（可选）
 
 当前返回重点字段：
 
@@ -70,6 +73,8 @@
 
 当前返回重点字段：
 
+- `previous_cluster_status`
+- `previous_review_result`
 - `cluster_status`
 - `review_result`
 - `review_notes`
@@ -100,9 +105,21 @@
 - `latest_review_at`
 - `latest_review_owner`
 - `latest_review_result`
+- `latest_review_result_label`
 - `by_status`
 - `by_result`
 - `by_owner`
+- `by_priority`
+- `by_pattern`
+
+当前过滤语义：
+
+- `cluster_status`
+  - 只聚合指定状态的问题簇
+- `review_owner`
+  - 只聚合指定处理人的问题簇
+- `review_result`
+  - 只聚合指定复核结果的问题簇
 
 ---
 
@@ -203,6 +220,7 @@
 
 - `docs/examples/review-cluster-summary.sample.json`
 - `docs/examples/review-cluster-summary.stable.sample.json`
+- `docs/examples/review-cluster-summary.stable.v1.sample.json`
 
 ### `review-cluster-update`
 

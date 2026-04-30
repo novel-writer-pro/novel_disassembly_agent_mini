@@ -116,6 +116,7 @@
 24. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
 25. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
 26. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
+27. [`./review-workflow-api-freeze-readiness.md`](./review-workflow-api-freeze-readiness.md)
 27. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
 24. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
 

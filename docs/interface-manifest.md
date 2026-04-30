@@ -285,3 +285,4 @@
 - [`./examples/review-cluster-history.stable.sample.json`](./examples/review-cluster-history.stable.sample.json)
 - [`./examples/review-cluster-summary.sample.json`](./examples/review-cluster-summary.sample.json)
 - [`./examples/review-cluster-summary.stable.sample.json`](./examples/review-cluster-summary.stable.sample.json)
+- [`./examples/review-cluster-summary.stable.v1.sample.json`](./examples/review-cluster-summary.stable.v1.sample.json)

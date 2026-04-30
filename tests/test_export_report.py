@@ -151,6 +151,7 @@ def test_render_branch_report_includes_manual_review_metadata(tmp_path: Path) ->
         cluster['review_notes'] = '已人工确认该问题无需升级。'
         cluster['review_history_count'] = 2
         cluster['latest_review_event'] = {
+            'previous_cluster_status': 'needs_review',
             'cluster_status': 'resolved',
             'review_result': 'confirmed-benign',
             'review_owner': 'editor-a',
@@ -167,7 +168,7 @@ def test_render_branch_report_includes_manual_review_metadata(tmp_path: Path) ->
         assert 'result: confirmed-benign (确认无问题)' in report
         assert 'notes: 已人工确认该问题无需升级。' in report
         assert 'history_count: 2' in report
-        assert 'latest_event: status=resolved | result=confirmed-benign | owner=editor-a | created_at=2026-04-29T02:05:00Z' in report
+        assert 'latest_event: from=needs_review->resolved | result=confirmed-benign | owner=editor-a | created_at=2026-04-29T02:05:00Z' in report
         assert 'Review Progress: 已人工处理问题簇 1 个。' in report
         assert 'Review Result: 已确认无问题 1 个。' in report
         assert 'Review Storage: 当前 review 数据来自数据库主路径。' in report

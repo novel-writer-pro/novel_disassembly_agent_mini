@@ -42,6 +42,7 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 - 想看 review workflow API 版本化策略：[`./docs/review-workflow-api-versioning.md`](./docs/review-workflow-api-versioning.md)
 - 想看 review API 稳定字段收口清单：[`./docs/review-api-stability-summary.md`](./docs/review-api-stability-summary.md)
 - 想看第二阶段实施优先级建议：[`./docs/review-workflow-phase2-priority-ranking.md`](./docs/review-workflow-phase2-priority-ranking.md)
+- 想看 review workflow API 冻结就绪判断：[`./docs/review-workflow-api-freeze-readiness.md`](./docs/review-workflow-api-freeze-readiness.md)
 - 想看 review workflow DB-only 切换策略：[`./docs/review-workflow-db-only-cutover.md`](./docs/review-workflow-db-only-cutover.md)
 - 想看读者体验能力规划：[`./docs/reader-experience-capability.md`](./docs/reader-experience-capability.md)
 - 想浏览全部文档：[`./docs/README.md`](./docs/README.md)

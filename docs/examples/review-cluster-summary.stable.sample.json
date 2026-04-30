@@ -1,6 +1,17 @@
 {
   "review_storage_mode": "db",
   "cluster_count": 1,
+  "history_event_count": 2,
+  "latest_review_at": "2026-04-29T03:00:00Z",
+  "latest_review_owner": "editor-a",
+  "latest_review_result": "confirmed-benign",
+  "latest_review_result_label": "确认无问题",
+  "by_priority": {
+    "P2": 1
+  },
+  "by_pattern": {
+    "持续型问题": 1
+  },
   "by_status": {
     "reviewed": 1
   },

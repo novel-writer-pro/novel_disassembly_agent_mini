@@ -206,7 +206,7 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
                 latest_event = item.get('latest_review_event')
                 if isinstance(latest_event, dict):
                     lines.append(
-                        f"  - latest_event: status={latest_event.get('cluster_status')} | "
+                        f"  - latest_event: from={latest_event.get('previous_cluster_status')}->{latest_event.get('cluster_status')} | "
                         f"result={latest_event.get('review_result')} | owner={latest_event.get('review_owner')} | "
                         f"created_at={latest_event.get('created_at')}"
                     )

@@ -401,4 +401,5 @@ def test_cluster_review_service_persists_review_record_in_database(tmp_path: Pat
         assert payload['character_ooc|::|human_review_candidate']['review_owner'] == 'editor-a'
         history = service.read_history(branch.id, 'character_ooc|::|human_review_candidate')
         assert len(history) == 1
+        assert history[0]['previous_cluster_status'] == ''
         assert history[0]['cluster_status'] == 'reviewed'

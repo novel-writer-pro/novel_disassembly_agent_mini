@@ -870,19 +870,36 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["branch_id"],
                 )
                 items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
+                status_filter = str(params.get("cluster_status") or "").strip()
+                owner_filter = str(params.get("review_owner") or "").strip()
+                result_filter = str(params.get("review_result") or "").strip()
+                if status_filter:
+                    items = [item for item in items if str(item.get("cluster_status") or "") == status_filter]
+                if owner_filter:
+                    items = [item for item in items if str(item.get("review_owner") or "") == owner_filter]
+                if result_filter:
+                    items = [item for item in items if str(item.get("review_result") or "") == result_filter]
                 by_status: dict[str, int] = {}
                 by_result: dict[str, int] = {}
                 by_owner: dict[str, int] = {}
+                by_priority: dict[str, int] = {}
+                by_pattern: dict[str, int] = {}
                 for item in items:
                     status_key = str(item.get("cluster_status") or "")
                     result_key = str(item.get("review_result") or "")
                     owner_key = str(item.get("review_owner") or "")
+                    priority_key = str(item.get("review_priority") or "")
+                    pattern_key = str(item.get("pattern_label") or "")
                     if status_key:
                         by_status[status_key] = by_status.get(status_key, 0) + 1
                     if result_key:
                         by_result[result_key] = by_result.get(result_key, 0) + 1
                     if owner_key:
                         by_owner[owner_key] = by_owner.get(owner_key, 0) + 1
+                    if priority_key:
+                        by_priority[priority_key] = by_priority.get(priority_key, 0) + 1
+                    if pattern_key:
+                        by_pattern[pattern_key] = by_pattern.get(pattern_key, 0) + 1
                 latest_review_at = max(
                     [
                         str(item.get("latest_review_event", {}).get("created_at") or "")
@@ -910,16 +927,20 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     ),
                     "",
                 )
+                latest_review_result_label = ExportService._review_result_label(latest_review_result)
                 payload = {
                     "review_storage_mode": bundle.get("review_storage_mode"),
                     "cluster_count": len(items),
                     "by_status": by_status,
                     "by_result": by_result,
                     "by_owner": by_owner,
+                    "by_priority": by_priority,
+                    "by_pattern": by_pattern,
                     "history_event_count": sum(int(item.get("review_history_count", 0) or 0) for item in items),
                     "latest_review_at": latest_review_at,
                     "latest_review_owner": latest_review_owner,
                     "latest_review_result": latest_review_result,
+                    "latest_review_result_label": latest_review_result_label,
                 }
         except Exception as exc:  # noqa: BLE001
             return _response(

@@ -406,6 +406,8 @@ class ClusterReviewEventRecord(TimestampSoftDeleteMixin, Base):
 
     branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
     cluster_key: Mapped[str] = mapped_column(String(255), index=True)
+    previous_cluster_status: Mapped[str] = mapped_column(String(32), default="")
+    previous_review_result: Mapped[str] = mapped_column(String(64), default="")
     cluster_status: Mapped[str] = mapped_column(String(32), default="open")
     review_result: Mapped[str] = mapped_column(String(64), default="")
     review_notes: Mapped[str] = mapped_column(Text(), default="")
