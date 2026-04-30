@@ -45,6 +45,7 @@ from novel_analyzer.database.models import (
     RunBranch,
 )
 from novel_analyzer.database.session import create_session_factory
+from novel_analyzer.runtime.cluster_review_state import write_cluster_review_state
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.runtime.storage import (
     describe_runtime_storage,
@@ -113,7 +114,7 @@ def _stream_response(
 
 
 def _sse_event(payload: dict[str, Any]) -> bytes:
-    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n".encode("utf-8")
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n".encode()
 
 
 def _query(environ: dict[str, Any]) -> dict[str, str]:
@@ -945,39 +946,16 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["run_id"],
                     params["branch_id"],
                 )
-                items = cast(
+                filters = _review_filters(params)
+                candidate_clusters = cast(
                     list[dict[str, object]],
                     bundle.get("risk_summary", {}).get("review_candidate_clusters", []),
                 )
-                status_filter = str(params.get("cluster_status") or "").strip()
-                owner_filter = str(params.get("review_owner") or "").strip()
-                result_filter = str(params.get("review_result") or "").strip()
-                if status_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("cluster_status") or "") == status_filter
-                    ]
-                if owner_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("review_owner") or "") == owner_filter
-                    ]
-                if result_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("review_result") or "") == result_filter
-                    ]
+                items = _apply_review_filters(candidate_clusters, filters)
                 payload = {
                     "stable_contract_version": "review-api-pre-v1",
                     "review_storage_mode": bundle.get("review_storage_mode"),
-                    "filters": {
-                        "cluster_status": status_filter,
-                        "review_owner": owner_filter,
-                        "review_result": result_filter,
-                    },
+                    "filters": filters,
                     "items": items,
                 }
         except Exception as exc:  # noqa: BLE001
@@ -1006,106 +984,17 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["run_id"],
                     params["branch_id"],
                 )
-                items = cast(
+                filters = _review_filters(params)
+                candidate_clusters = cast(
                     list[dict[str, object]],
                     bundle.get("risk_summary", {}).get("review_candidate_clusters", []),
                 )
-                status_filter = str(params.get("cluster_status") or "").strip()
-                owner_filter = str(params.get("review_owner") or "").strip()
-                result_filter = str(params.get("review_result") or "").strip()
-                if status_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("cluster_status") or "") == status_filter
-                    ]
-                if owner_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("review_owner") or "") == owner_filter
-                    ]
-                if result_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("review_result") or "") == result_filter
-                    ]
-                by_status: dict[str, int] = {}
-                by_result: dict[str, int] = {}
-                by_owner: dict[str, int] = {}
-                by_priority: dict[str, int] = {}
-                by_pattern: dict[str, int] = {}
-                for item in items:
-                    status_key = str(item.get("cluster_status") or "")
-                    result_key = str(item.get("review_result") or "")
-                    owner_key = str(item.get("review_owner") or "")
-                    priority_key = str(item.get("review_priority") or "")
-                    pattern_key = str(item.get("pattern_label") or "")
-                    if status_key:
-                        by_status[status_key] = by_status.get(status_key, 0) + 1
-                    if result_key:
-                        by_result[result_key] = by_result.get(result_key, 0) + 1
-                    if owner_key:
-                        by_owner[owner_key] = by_owner.get(owner_key, 0) + 1
-                    if priority_key:
-                        by_priority[priority_key] = by_priority.get(priority_key, 0) + 1
-                    if pattern_key:
-                        by_pattern[pattern_key] = by_pattern.get(pattern_key, 0) + 1
-                latest_review_at = max(
-                    [
-                        str(item.get("latest_review_event", {}).get("created_at") or "")
-                        for item in items
-                        if isinstance(item.get("latest_review_event"), dict)
-                        and str(item.get("latest_review_event", {}).get("created_at") or "")
-                    ]
-                    or [""]
+                items = _apply_review_filters(candidate_clusters, filters)
+                payload = _review_summary_payload(
+                    items=items,
+                    review_storage_mode=bundle.get("review_storage_mode"),
+                    filters=filters,
                 )
-                latest_review_owner = next(
-                    (
-                        str(item.get("latest_review_event", {}).get("review_owner") or "")
-                        for item in items
-                        if isinstance(item.get("latest_review_event"), dict)
-                        and str(item.get("latest_review_event", {}).get("created_at") or "")
-                        == latest_review_at
-                    ),
-                    "",
-                )
-                latest_review_result = next(
-                    (
-                        str(item.get("latest_review_event", {}).get("review_result") or "")
-                        for item in items
-                        if isinstance(item.get("latest_review_event"), dict)
-                        and str(item.get("latest_review_event", {}).get("created_at") or "")
-                        == latest_review_at
-                    ),
-                    "",
-                )
-                latest_review_result_label = ExportService._review_result_label(
-                    latest_review_result
-                )
-                payload = {
-                    "stable_contract_version": "review-api-pre-v1",
-                    "review_storage_mode": bundle.get("review_storage_mode"),
-                    "filters": {
-                        "cluster_status": status_filter,
-                        "review_owner": owner_filter,
-                        "review_result": result_filter,
-                    },
-                    "cluster_count": len(items),
-                    "by_status": by_status,
-                    "by_result": by_result,
-                    "by_owner": by_owner,
-                    "by_priority": by_priority,
-                    "by_pattern": by_pattern,
-                    "history_event_count": sum(
-                        int(item.get("review_history_count", 0) or 0) for item in items
-                    ),
-                    "latest_review_at": latest_review_at,
-                    "latest_review_owner": latest_review_owner,
-                    "latest_review_result": latest_review_result,
-                    "latest_review_result_label": latest_review_result_label,
-                }
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,
@@ -1194,35 +1083,23 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         database_url = str(body.get("database_url") or "") or None
         if database_url:
             runtime.database_url = database_url
+        review_payload = {
+            "review_notes": str(body.get("review_notes") or ""),
+            "review_owner": str(body.get("review_owner") or ""),
+            "resolved_at": str(body.get("resolved_at") or ""),
+            "review_result": str(body.get("review_result") or ""),
+        }
         try:
             factory = create_session_factory(runtime)
             review_storage_mode = "db"
             with factory() as session:
-                try:
-                    state = ClusterReviewService(session).write(
-                        branch_id=branch_id,
-                        cluster_key=cluster_key,
-                        cluster_status=cluster_status,
-                        review_notes=str(body.get("review_notes") or ""),
-                        review_owner=str(body.get("review_owner") or ""),
-                        resolved_at=str(body.get("resolved_at") or ""),
-                        review_result=str(body.get("review_result") or ""),
-                    )
-                except Exception as exc:
-                    if not ClusterReviewService._is_missing_relation_error(exc):
-                        raise
-                    session.rollback()
-                    review_storage_mode = "file-fallback"
-                    state = write_cluster_review_state(
-                        branch_id=branch_id,
-                        cluster_key=cluster_key,
-                        cluster_status=cluster_status,
-                        review_notes=str(body.get("review_notes") or ""),
-                        review_owner=str(body.get("review_owner") or ""),
-                        resolved_at=str(body.get("resolved_at") or ""),
-                        review_result=str(body.get("review_result") or ""),
-                        settings=runtime,
-                    )
+                state = ClusterReviewService(session).write(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    cluster_status=cluster_status,
+                    **review_payload,
+                )
+                payload = {**asdict(state), "review_storage_mode": "db"}
         except ValueError as exc:
             return _response(
                 start_response,
@@ -1230,13 +1107,20 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         except Exception as exc:  # noqa: BLE001
-            return _response(
-                start_response,
-                status="500 Internal Server Error",
-                payload={"error": str(exc)},
+            if not ClusterReviewService._is_missing_relation_error(exc):
+                return _response(
+                    start_response,
+                    status="500 Internal Server Error",
+                    payload={"error": str(exc)},
+                )
+            state = write_cluster_review_state(
+                branch_id=branch_id,
+                cluster_key=cluster_key,
+                cluster_status=cluster_status,
+                settings=runtime,
+                **review_payload,
             )
-        payload = asdict(state)
-        payload["stable_contract_version"] = "review-api-pre-v1"
+            payload = {**asdict(state), "review_storage_mode": "file-fallback"}
         return _response(start_response, status="200 OK", payload=payload)
 
     if path == "/api/pipeline/start-range" and method == "POST":

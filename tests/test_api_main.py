@@ -4,11 +4,13 @@ from types import TracebackType
 from typing import Any, cast
 from wsgiref.types import StartResponse
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.main import application
+from novel_analyzer.config.settings import get_settings
 from novel_analyzer.database.session import create_schema
+from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state
 from novel_analyzer.services.cluster_review_service import ClusterReviewService
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
@@ -316,12 +318,20 @@ def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> Non
         )
 
     status, body = _call(
-        f"/api/review-clusters?run_id={run_id}&branch_id={branch_id}&cluster_status=reviewed&review_owner=editor-a&review_result=confirmed-benign"
+        f"/api/review-clusters?run_id={run_id}&branch_id={branch_id}"
+        "&cluster_status=reviewed&review_owner=editor-a&review_result=confirmed-benign"
+        "&review_priority=P2&pattern_label=%E5%8D%95%E7%82%B9%E9%97%AE%E9%A2%98"
     )
+    payload = json.loads(body)
     assert status == "200 OK"
-    assert b'"items"' in body
-    assert b'"filters"' in body
-    assert b'"review_owner": "editor-a"' in body
+    assert payload["filters"] == {
+        "cluster_status": "reviewed",
+        "review_owner": "editor-a",
+        "review_result": "confirmed-benign",
+        "review_priority": "P2",
+        "pattern_label": "单点问题",
+    }
+    assert payload["items"][0]["review_owner"] == "editor-a"
 
 
 def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_path) -> None:
@@ -379,9 +389,9 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
     assert b'"stable_contract_version": "review-api-pre-v1"' in body
     assert b'"latest_review_owner": "editor-a"' in body
     assert b'"latest_review_result": "confirmed-benign"' in body
-    assert '"latest_review_result_label": "确认无问题"'.encode("utf-8") in body
+    assert '"latest_review_result_label": "确认无问题"'.encode() in body
     assert b'"P2": 1' in body
-    assert '"单点问题": 1'.encode("utf-8") in body
+    assert '"单点问题": 1'.encode() in body
     assert b'"reviewed": 1' in body
     assert b'"confirmed-benign": 1' in body
     assert b'"editor-a": 1' in body
@@ -440,7 +450,63 @@ def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path)
     )
     assert status == "200 OK"
     assert b'"cluster_count": 1' in body
-    assert b'"confirmed-benign": 1' in body
+    payload = json.loads(body)
+    assert payload["filters"] == {
+        "cluster_status": "reviewed",
+        "review_owner": "editor-a",
+        "review_result": "confirmed-benign",
+    }
+    assert payload["by_result"]["confirmed-benign"] == 1
+
+
+def test_review_cluster_service_handles_missing_sqlite_review_tables(monkeypatch) -> None:
+    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    create_schema(engine)
+    with engine.begin() as conn:
+        conn.execute(text('DROP TABLE cluster_review_event_records'))
+        conn.execute(text('DROP TABLE cluster_review_records'))
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        assert ClusterReviewService(session).read_branch("branch-x") == {}
+        assert ClusterReviewService(session).read_history("branch-x", "cluster-y") == []
+
+    status, body = _call("/api/review-cluster-history?branch_id=branch-x&cluster_key=cluster-y")
+    assert status == "200 OK"
+    assert json.loads(body) == {"items": []}
+
+
+def test_review_cluster_update_file_fallback_when_review_tables_missing(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    create_schema(engine)
+    with engine.begin() as conn:
+        conn.execute(text('DROP TABLE cluster_review_event_records'))
+        conn.execute(text('DROP TABLE cluster_review_records'))
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+    settings = get_settings().model_copy(deep=True)
+    settings.runtime_cache_dir = str(tmp_path / "runtime-cache")
+    monkeypatch.setattr("apps.api.app.main.get_settings", lambda: settings)
+
+    status, body = _call_post_json(
+        "/api/review-cluster-update",
+        {
+            "branch_id": "branch-x",
+            "cluster_key": "cluster-y",
+            "cluster_status": "reviewed",
+            "review_result": "confirmed-benign",
+            "review_owner": "editor-fallback",
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["review_storage_mode"] == "file-fallback"
+    fallback_state = read_cluster_review_state("branch-x", settings)
+    assert fallback_state["cluster-y"]["review_owner"] == "editor-fallback"
 
 
 def test_review_cluster_update_returns_400_for_invalid_status_combo(monkeypatch) -> None:
