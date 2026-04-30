@@ -15,6 +15,10 @@ from novel_analyzer.runtime.cluster_review_state import (
 )
 
 
+class ClusterReviewStorageUnavailable(RuntimeError):
+    """Raised when DB-backed review storage is not migrated yet."""
+
+
 @dataclass(frozen=True, slots=True)
 class ClusterReviewEntry:
     branch_id: str
@@ -35,7 +39,12 @@ class ClusterReviewService:
     @staticmethod
     def _is_missing_relation_error(exc: Exception) -> bool:
         message = str(exc).lower()
-        return ("relation" in message and "does not exist" in message) or "no such table" in message
+        return (
+            "relation" in message
+            and "does not exist" in message
+            or "no such table" in message
+            and "cluster_review" in message
+        )
 
     @staticmethod
     def _validate(cluster_status: str, review_result: str, review_notes: str) -> None:
@@ -70,7 +79,7 @@ class ClusterReviewService:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
-            return {}
+            raise ClusterReviewStorageUnavailable("cluster review tables are unavailable") from exc
         return {
             row.cluster_key: {
                 "cluster_status": row.cluster_status,
@@ -82,7 +91,7 @@ class ClusterReviewService:
             for row in rows
         }
 
-    def read_history(self, branch_id: str, cluster_key: str) -> list[dict[str, str]]:
+    def read_history(self, branch_id: str, cluster_key: str) -> list[dict[str, object]]:
         try:
             rows = self.session.scalars(
                 select(ClusterReviewEventRecord)
@@ -94,25 +103,34 @@ class ClusterReviewService:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
-            return []
-        return [
-            {
-                "event_id": row.id,
-                "previous_cluster_status": row.previous_cluster_status,
-                "previous_review_result": row.previous_review_result,
-                "previous_review_notes": row.previous_review_notes,
-                "previous_review_owner": row.previous_review_owner,
-                "previous_resolved_at": row.previous_resolved_at_text,
-                "cluster_status": row.cluster_status,
-                "review_result": row.review_result,
-                "review_notes": row.review_notes,
-                "review_owner": row.review_owner,
-                "resolved_at": row.resolved_at_text,
-                "event_type": row.event_type,
-                "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
-            }
-            for row in rows
-        ]
+            raise ClusterReviewStorageUnavailable("cluster review history table is unavailable") from exc
+        events: list[dict[str, object]] = []
+        for index, row in enumerate(rows, start=1):
+            changed_fields = [
+                field_name
+                for field_name, previous_value, current_value in (
+                    ("cluster_status", row.previous_cluster_status, row.cluster_status),
+                    ("review_result", row.previous_review_result, row.review_result),
+                )
+                if previous_value != current_value
+            ]
+            events.append(
+                {
+                    "event_index": index,
+                    "previous_cluster_status": row.previous_cluster_status,
+                    "previous_review_result": row.previous_review_result,
+                    "cluster_status": row.cluster_status,
+                    "review_result": row.review_result,
+                    "review_notes": row.review_notes,
+                    "review_owner": row.review_owner,
+                    "resolved_at": row.resolved_at_text,
+                    "event_type": row.event_type,
+                    "changed_fields": changed_fields,
+                    "transition": f"{row.previous_cluster_status or 'new'}->{row.cluster_status}",
+                    "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
+                }
+            )
+        return events
 
     def write(
         self,

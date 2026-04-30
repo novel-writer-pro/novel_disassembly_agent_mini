@@ -1073,9 +1073,12 @@ def show_cluster_history(
 
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
-    with factory() as session:
-        from novel_analyzer.services.cluster_review_service import ClusterReviewService
-        payload = ClusterReviewService(session).read_history(branch_id, cluster_key)
+    try:
+        with factory() as session:
+            from novel_analyzer.services.cluster_review_service import ClusterReviewService
+            payload = ClusterReviewService(session).read_history(branch_id, cluster_key)
+    except Exception:
+        payload = []
     echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 

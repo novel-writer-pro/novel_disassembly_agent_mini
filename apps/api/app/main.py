@@ -52,7 +52,10 @@ from novel_analyzer.runtime.storage import (
 )
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.services.export_service import ExportService
-from novel_analyzer.services.cluster_review_service import ClusterReviewService
+from novel_analyzer.services.cluster_review_service import (
+    ClusterReviewService,
+    ClusterReviewStorageUnavailable,
+)
 from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -866,11 +869,35 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["branch_id"],
                 )
                 items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
-                filters = _review_filters(params)
-                items = _filter_review_clusters(items, filters)
+                status_filter = str(params.get("cluster_status") or "").strip()
+                owner_filter = str(params.get("review_owner") or "").strip()
+                result_filter = str(params.get("review_result") or "").strip()
+                if status_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("cluster_status") or "") == status_filter
+                    ]
+                if owner_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("review_owner") or "") == owner_filter
+                    ]
+                if result_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("review_result") or "") == result_filter
+                    ]
                 payload = {
-                    **_review_contract(filters),
+                    "stable_contract_version": "review-api-pre-v1",
                     "review_storage_mode": bundle.get("review_storage_mode"),
+                    "filters": {
+                        "cluster_status": status_filter,
+                        "review_owner": owner_filter,
+                        "review_result": result_filter,
+                    },
                     "items": items,
                 }
         except Exception as exc:  # noqa: BLE001
@@ -900,8 +927,27 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["branch_id"],
                 )
                 items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
-                filters = _review_filters(params)
-                items = _filter_review_clusters(items, filters)
+                status_filter = str(params.get("cluster_status") or "").strip()
+                owner_filter = str(params.get("review_owner") or "").strip()
+                result_filter = str(params.get("review_result") or "").strip()
+                if status_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("cluster_status") or "") == status_filter
+                    ]
+                if owner_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("review_owner") or "") == owner_filter
+                    ]
+                if result_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("review_result") or "") == result_filter
+                    ]
                 by_status: dict[str, int] = {}
                 by_result: dict[str, int] = {}
                 by_owner: dict[str, int] = {}
@@ -952,8 +998,13 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 )
                 latest_review_result_label = ExportService._review_result_label(latest_review_result)
                 payload = {
-                    **_review_contract(filters),
+                    "stable_contract_version": "review-api-pre-v1",
                     "review_storage_mode": bundle.get("review_storage_mode"),
+                    "filters": {
+                        "cluster_status": status_filter,
+                        "review_owner": owner_filter,
+                        "review_result": result_filter,
+                    },
                     "cluster_count": len(items),
                     "by_status": by_status,
                     "by_result": by_result,
@@ -988,33 +1039,26 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         try:
             factory = create_session_factory(runtime)
             with factory() as session:
-                items = ClusterReviewService(session).read_history(
-                    params["branch_id"],
-                    params["cluster_key"],
-                )
+                try:
+                    items = ClusterReviewService(session).read_history(
+                        params["branch_id"],
+                        params["cluster_key"],
+                    )
+                    review_storage_mode = "db"
+                except ClusterReviewStorageUnavailable:
+                    items = []
+                    review_storage_mode = "file-fallback"
                 event_type_filter = str(params.get("event_type") or "").strip()
-                owner_filter = str(params.get("review_owner") or "").strip()
-                result_filter = str(params.get("review_result") or "").strip()
                 if event_type_filter:
-                    items = [item for item in items if str(item.get("event_type") or "") == event_type_filter]
-                if owner_filter:
-                    items = [item for item in items if str(item.get("review_owner") or "") == owner_filter]
-                if result_filter:
-                    items = [item for item in items if str(item.get("review_result") or "") == result_filter]
-                limit = int(params.get("limit", "0") or "0")
-                if limit > 0:
-                    items = items[-limit:]
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("event_type") or "") == event_type_filter
+                    ]
                 payload = {
-                    "review_storage_mode": "db",
-                    "branch_id": params["branch_id"],
-                    "cluster_key": params["cluster_key"],
-                    "count": len(items),
-                    "applied_filters": {
-                        "event_type": event_type_filter,
-                        "review_owner": owner_filter,
-                        "review_result": result_filter,
-                        "limit": limit,
-                    },
+                    "stable_contract_version": "review-api-pre-v1",
+                    "review_storage_mode": review_storage_mode,
+                    "filters": {"event_type": event_type_filter},
                     "items": items,
                 }
         except Exception as exc:  # noqa: BLE001
@@ -1087,11 +1131,9 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 status="500 Internal Server Error",
                 payload={"error": str(exc)},
             )
-        return _response(
-            start_response,
-            status="200 OK",
-            payload={**_review_contract(), "review_storage_mode": review_storage_mode, **asdict(state)},
-        )
+        payload = asdict(state)
+        payload["stable_contract_version"] = "review-api-pre-v1"
+        return _response(start_response, status="200 OK", payload=payload)
 
     if path == "/api/pipeline/start-range" and method == "POST":
         body = _body(environ)

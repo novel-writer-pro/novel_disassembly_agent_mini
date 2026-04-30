@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import cast
 
 from sqlalchemy import select
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import (
@@ -22,7 +22,10 @@ from novel_analyzer.database.models import (
 )
 from novel_analyzer.domain.schemas import BranchQAContextOutput, ChapterQAContextOutput
 from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state
-from novel_analyzer.services.cluster_review_service import ClusterReviewService
+from novel_analyzer.services.cluster_review_service import (
+    ClusterReviewService,
+    ClusterReviewStorageUnavailable,
+)
 from novel_analyzer.services.chapter_index_service import ChapterIndexService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.run_service import RunService
@@ -43,7 +46,12 @@ class ExportService:
     @staticmethod
     def _is_missing_relation_error(exc: Exception) -> bool:
         message = str(exc).lower()
-        return "relation" in message and "does not exist" in message
+        return (
+            "relation" in message
+            and "does not exist" in message
+            or "no such table" in message
+            and "cluster_review" in message
+        )
 
     @staticmethod
     def _severity_rank(level: str | None) -> int:
@@ -1061,7 +1069,11 @@ class ExportService:
                 str(cluster.get('cluster_key') or ''): self.cluster_review_service.read_history(branch_id, str(cluster.get('cluster_key') or ''))
                 for cluster in review_candidate_clusters
             }
-        except ProgrammingError as exc:
+        except ClusterReviewStorageUnavailable:
+            persisted_cluster_states = read_cluster_review_state(branch_id)
+            history_by_cluster = {}
+            review_storage_mode = "file-fallback"
+        except (OperationalError, ProgrammingError) as exc:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
