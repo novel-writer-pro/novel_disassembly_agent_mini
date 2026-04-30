@@ -200,10 +200,24 @@
 **Response schema**
 ```json
 {
+  "review_storage_mode": "db",
+  "branch_id": "branch-uuid",
+  "cluster_key": "character_ooc|::|motivation_shift",
+  "count": 1,
+  "applied_filters": {
+    "event_type": "",
+    "review_owner": "editor-a",
+    "review_result": "confirmed-benign",
+    "limit": 1
+  },
   "items": [
     {
+      "event_id": "event-uuid",
       "previous_cluster_status": "needs_review",
       "previous_review_result": "deferred",
+      "previous_review_notes": "...",
+      "previous_review_owner": "editor-b",
+      "previous_resolved_at": "",
       "cluster_status": "reviewed",
       "review_result": "confirmed-benign",
       "review_notes": "...",

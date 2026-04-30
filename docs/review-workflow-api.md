@@ -71,11 +71,14 @@
 - `branch_id`
 - `cluster_key`
 - `database_url`（可选）
+- `event_type` / `review_owner` / `review_result` / `limit`（可选过滤）
 
 当前返回重点字段：
 
-- `contract_version`（当前为 `review-workflow.v1`）
 - `review_storage_mode`
+- `count`
+- `applied_filters`
+- `event_id`
 - `previous_cluster_status`
 - `previous_review_result`
 - `previous_review_notes`
