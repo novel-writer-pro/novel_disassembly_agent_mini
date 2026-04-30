@@ -168,7 +168,9 @@ class ChapterJobEvent(TimestampSoftDeleteMixin, Base):
     run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
     branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
     chapter_index: Mapped[int] = mapped_column(Integer, index=True)
-    job_id: Mapped[str | None] = mapped_column(ForeignKey("chapter_jobs.id"), nullable=True, index=True)
+    job_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chapter_jobs.id"), nullable=True, index=True
+    )
     event_type: Mapped[str] = mapped_column(String(64))
     stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
     level: Mapped[str] = mapped_column(String(16), default="info")
@@ -324,11 +326,11 @@ class GraphNode(TimestampSoftDeleteMixin, Base):
     branch: Mapped[RunBranch] = relationship(back_populates="graph_nodes")
     outgoing_edges: Mapped[list[GraphEdge]] = relationship(
         back_populates="source_node",
-        foreign_keys='GraphEdge.source_node_id',
+        foreign_keys="GraphEdge.source_node_id",
     )
     incoming_edges: Mapped[list[GraphEdge]] = relationship(
         back_populates="target_node",
-        foreign_keys='GraphEdge.target_node_id',
+        foreign_keys="GraphEdge.target_node_id",
     )
 
 

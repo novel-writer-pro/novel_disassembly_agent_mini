@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import shutil
-from datetime import datetime
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 from socketserver import ThreadingMixIn
 from typing import Any, cast
@@ -15,9 +15,9 @@ from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
 
 from novel_analyzer.application import (
-    get_branch_job_rows,
     cancel_pipeline_run,
     export_branch_refs,
+    get_branch_job_rows,
     get_branch_snapshot,
     get_pipeline_run_status,
     get_run_snapshot,
@@ -26,8 +26,8 @@ from novel_analyzer.application import (
     pause_pipeline_run,
     recover_branch,
     resume_pipeline_run,
-    start_pipeline_run_async,
     start_pipeline,
+    start_pipeline_run_async,
 )
 from novel_analyzer.application.queries import _derive_pipeline_state, _setup_status
 from novel_analyzer.config.settings import get_settings
@@ -45,18 +45,14 @@ from novel_analyzer.database.models import (
     RunBranch,
 )
 from novel_analyzer.database.session import create_session_factory
+from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.runtime.storage import (
     describe_runtime_storage,
     migrate_legacy_runtime_dirs,
     runtime_cache_root,
 )
-from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state, write_cluster_review_state
-from novel_analyzer.runtime.provider_health import read_provider_health
+from novel_analyzer.services.cluster_review_service import ClusterReviewService
 from novel_analyzer.services.export_service import ExportService
-from novel_analyzer.services.cluster_review_service import (
-    ClusterReviewService,
-    ClusterReviewStorageUnavailable,
-)
 from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -330,8 +326,6 @@ def _mock_branch_snapshot(profile: str) -> dict[str, Any]:
     }
 
 
-
-
 def _runtime_cache_root() -> Path:
     return runtime_cache_root(get_settings())
 
@@ -347,9 +341,16 @@ def _migrate_legacy_runtime_dirs() -> None:
 
 def _stable_export_dir(run_id: str, branch_id: str) -> str:
     _migrate_legacy_runtime_dirs()
-    base = _runtime_cache_root() / "runtime-exports" / run_id / branch_id / datetime.now().strftime('%Y%m%dT%H%M%S')
+    base = (
+        _runtime_cache_root()
+        / "runtime-exports"
+        / run_id
+        / branch_id
+        / datetime.now().strftime("%Y%m%dT%H%M%S")
+    )
     base.mkdir(parents=True, exist_ok=True)
     return str(base)
+
 
 def _persist_uploaded_text(file_item: Any) -> str:
     _migrate_legacy_runtime_dirs()
@@ -418,7 +419,7 @@ def _chapter_source_payload(
         if novel is None:
             raise ValueError("novel source not found")
         text = _resolve_source_path(novel.source_path).read_text(encoding="utf-8")
-        content = text[segment.start_offset:segment.end_offset].strip()
+        content = text[segment.start_offset : segment.end_offset].strip()
         return {
             "chapter_index": chapter_index,
             "raw_heading": segment.raw_heading,
@@ -437,10 +438,7 @@ def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     with factory() as session:
         branches = session.scalars(
-            session.query(RunBranch)
-            .order_by(RunBranch.updated_at.desc())
-            .limit(limit)
-            .statement
+            session.query(RunBranch).order_by(RunBranch.updated_at.desc()).limit(limit).statement
         ).all()
         for branch in branches:
             run = session.get(AnalysisRun, branch.run_id)
@@ -458,7 +456,9 @@ def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
                     "run_id": run.id,
                     "branch_id": branch.id,
                     "branch_name": branch.name,
-                    "pipeline_state": _derive_pipeline_state(session, run.id, branch.id, status.next_chapter),
+                    "pipeline_state": _derive_pipeline_state(
+                        session, run.id, branch.id, status.next_chapter
+                    ),
                     "completed_chapters": status.completed_chapters,
                     "manifest_chapter_count": status.manifest_chapter_count,
                     "next_chapter": status.next_chapter,
@@ -490,14 +490,18 @@ def _job_events_payload(branch_id: str, database_url: str | None, limit: int) ->
                 "level": row.level,
                 "message": row.message,
                 "payload_json": row.payload_json,
-                "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else str(row.created_at),
+                "created_at": row.created_at.isoformat()
+                if hasattr(row.created_at, "isoformat")
+                else str(row.created_at),
             }
             for row in rows
         ]
     }
 
 
-def _chapter_job_events_payload(branch_id: str, chapter_index: int, database_url: str | None, limit: int) -> dict[str, Any]:
+def _chapter_job_events_payload(
+    branch_id: str, chapter_index: int, database_url: str | None, limit: int
+) -> dict[str, Any]:
     runtime = get_settings().model_copy(deep=True)
     if database_url:
         runtime.database_url = database_url
@@ -516,7 +520,9 @@ def _chapter_job_events_payload(branch_id: str, chapter_index: int, database_url
                 "level": row.level,
                 "message": row.message,
                 "payload_json": row.payload_json,
-                "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else str(row.created_at),
+                "created_at": row.created_at.isoformat()
+                if hasattr(row.created_at, "isoformat")
+                else str(row.created_at),
             }
             for row in rows
         ]
@@ -859,7 +865,9 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 status="500 Internal Server Error",
                 payload={"error": str(exc)},
             )
-        return _response(start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]})
+        return _response(
+            start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]}
+        )
 
     if path == "/api/library":
         database_url = params.get("database_url")
@@ -937,7 +945,10 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["run_id"],
                     params["branch_id"],
                 )
-                items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
+                items = cast(
+                    list[dict[str, object]],
+                    bundle.get("risk_summary", {}).get("review_candidate_clusters", []),
+                )
                 status_filter = str(params.get("cluster_status") or "").strip()
                 owner_filter = str(params.get("review_owner") or "").strip()
                 result_filter = str(params.get("review_result") or "").strip()
@@ -995,7 +1006,10 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     params["run_id"],
                     params["branch_id"],
                 )
-                items = cast(list[dict[str, object]], bundle.get("risk_summary", {}).get("review_candidate_clusters", []))
+                items = cast(
+                    list[dict[str, object]],
+                    bundle.get("risk_summary", {}).get("review_candidate_clusters", []),
+                )
                 status_filter = str(params.get("cluster_status") or "").strip()
                 owner_filter = str(params.get("review_owner") or "").strip()
                 result_filter = str(params.get("review_result") or "").strip()
@@ -1052,7 +1066,8 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                         str(item.get("latest_review_event", {}).get("review_owner") or "")
                         for item in items
                         if isinstance(item.get("latest_review_event"), dict)
-                        and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+                        and str(item.get("latest_review_event", {}).get("created_at") or "")
+                        == latest_review_at
                     ),
                     "",
                 )
@@ -1061,11 +1076,14 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                         str(item.get("latest_review_event", {}).get("review_result") or "")
                         for item in items
                         if isinstance(item.get("latest_review_event"), dict)
-                        and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+                        and str(item.get("latest_review_event", {}).get("created_at") or "")
+                        == latest_review_at
                     ),
                     "",
                 )
-                latest_review_result_label = ExportService._review_result_label(latest_review_result)
+                latest_review_result_label = ExportService._review_result_label(
+                    latest_review_result
+                )
                 payload = {
                     "stable_contract_version": "review-api-pre-v1",
                     "review_storage_mode": bundle.get("review_storage_mode"),
@@ -1080,7 +1098,9 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "by_owner": by_owner,
                     "by_priority": by_priority,
                     "by_pattern": by_pattern,
-                    "history_event_count": sum(int(item.get("review_history_count", 0) or 0) for item in items),
+                    "history_event_count": sum(
+                        int(item.get("review_history_count", 0) or 0) for item in items
+                    ),
                     "latest_review_at": latest_review_at,
                     "latest_review_owner": latest_review_owner,
                     "latest_review_result": latest_review_result,
@@ -1124,6 +1144,21 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                         for item in items
                         if str(item.get("event_type") or "") == event_type_filter
                     ]
+                if owner_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("review_owner") or "") == owner_filter
+                    ]
+                if result_filter:
+                    items = [
+                        item
+                        for item in items
+                        if str(item.get("review_result") or "") == result_filter
+                    ]
+                limit = int(params.get("limit", "0") or "0")
+                if limit > 0:
+                    items = items[-limit:]
                 payload = {
                     "stable_contract_version": "review-api-pre-v1",
                     "review_storage_mode": review_storage_mode,
@@ -1218,8 +1253,12 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             snapshot = start_pipeline_run_async(
                 run_id=run_id,
                 branch_id=branch_id,
-                target_from_chapter=int(str(body.get("from_chapter"))) if body.get("from_chapter") else None,
-                target_to_chapter=int(str(body.get("to_chapter"))) if body.get("to_chapter") else None,
+                target_from_chapter=int(str(body.get("from_chapter")))
+                if body.get("from_chapter")
+                else None,
+                target_to_chapter=int(str(body.get("to_chapter")))
+                if body.get("to_chapter")
+                else None,
                 concurrency=int(str(body.get("concurrency") or "1")),
                 provider_profile=str(body.get("provider_profile") or "") or None,
                 created_by="api",
@@ -1247,7 +1286,9 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 database_url=params.get("database_url"),
             )
         except Exception as exc:  # noqa: BLE001
-            return _response(start_response, status="500 Internal Server Error", payload={"error": str(exc)})
+            return _response(
+                start_response, status="500 Internal Server Error", payload={"error": str(exc)}
+            )
         return _response(start_response, status="200 OK", payload=asdict(snapshot))
 
     if path == "/api/pipeline/runs":
@@ -1265,10 +1306,17 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 database_url=params.get("database_url"),
             )
         except Exception as exc:  # noqa: BLE001
-            return _response(start_response, status="500 Internal Server Error", payload={"error": str(exc)})
-        return _response(start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]})
+            return _response(
+                start_response, status="500 Internal Server Error", payload={"error": str(exc)}
+            )
+        return _response(
+            start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]}
+        )
 
-    if path in {"/api/pipeline/pause", "/api/pipeline/resume", "/api/pipeline/cancel"} and method == "POST":
+    if (
+        path in {"/api/pipeline/pause", "/api/pipeline/resume", "/api/pipeline/cancel"}
+        and method == "POST"
+    ):
         body = _body(environ)
         pipeline_run_id = str(body.get("pipeline_run_id") or "")
         if not pipeline_run_id:
@@ -1279,13 +1327,24 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             )
         try:
             if path.endswith("/pause"):
-                snapshot = pause_pipeline_run(pipeline_run_id=pipeline_run_id, database_url=str(body.get("database_url") or "") or None)
+                snapshot = pause_pipeline_run(
+                    pipeline_run_id=pipeline_run_id,
+                    database_url=str(body.get("database_url") or "") or None,
+                )
             elif path.endswith("/resume"):
-                snapshot = resume_pipeline_run(pipeline_run_id=pipeline_run_id, database_url=str(body.get("database_url") or "") or None)
+                snapshot = resume_pipeline_run(
+                    pipeline_run_id=pipeline_run_id,
+                    database_url=str(body.get("database_url") or "") or None,
+                )
             else:
-                snapshot = cancel_pipeline_run(pipeline_run_id=pipeline_run_id, database_url=str(body.get("database_url") or "") or None)
+                snapshot = cancel_pipeline_run(
+                    pipeline_run_id=pipeline_run_id,
+                    database_url=str(body.get("database_url") or "") or None,
+                )
         except Exception as exc:  # noqa: BLE001
-            return _response(start_response, status="500 Internal Server Error", payload={"error": str(exc)})
+            return _response(
+                start_response, status="500 Internal Server Error", payload={"error": str(exc)}
+            )
         return _response(start_response, status="200 OK", payload=asdict(snapshot))
 
     if path == "/api/runtime-health":
@@ -1325,14 +1384,18 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         try:
             factory = create_session_factory(runtime)
             with factory() as session:
-                hits = RetrievalService(session, runtime).search_branch(params["branch_id"], params["q"], limit)
+                hits = RetrievalService(session, runtime).search_branch(
+                    params["branch_id"], params["q"], limit
+                )
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,
                 status="500 Internal Server Error",
                 payload={"error": str(exc)},
             )
-        return _response(start_response, status="200 OK", payload={"hits": [asdict(hit) for hit in hits]})
+        return _response(
+            start_response, status="200 OK", payload={"hits": [asdict(hit) for hit in hits]}
+        )
 
     if path == "/api/ask-branch" and method == "POST":
         body = _body(environ)
@@ -1352,7 +1415,9 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         try:
             factory = create_session_factory(runtime)
             with factory() as session:
-                result = BranchQAService(session, runtime).answer_question(branch_id, question, limit)
+                result = BranchQAService(session, runtime).answer_question(
+                    branch_id, question, limit
+                )
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,
@@ -1382,18 +1447,24 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             try:
                 factory = create_session_factory(runtime)
                 with factory() as session:
-                    hits = RetrievalService(session, runtime).search_branch(branch_id, question, limit)
+                    hits = RetrievalService(session, runtime).search_branch(
+                        branch_id, question, limit
+                    )
                     yield _sse_event(
                         {
                             "type": "retrieval",
                             "hits": [asdict(hit) for hit in hits],
                         }
                     )
-                    yield _sse_event({"type": "status", "message": "正在结合证据与图谱线索组织回答…"})
-                    result = BranchQAService(session, runtime).answer_question(branch_id, question, limit)
+                    yield _sse_event(
+                        {"type": "status", "message": "正在结合证据与图谱线索组织回答…"}
+                    )
+                    result = BranchQAService(session, runtime).answer_question(
+                        branch_id, question, limit
+                    )
                 answer_text = result.answer or ""
                 for index in range(0, len(answer_text), 20):
-                    yield _sse_event({"type": "delta", "delta": answer_text[index:index + 20]})
+                    yield _sse_event({"type": "delta", "delta": answer_text[index : index + 20]})
                 yield _sse_event({"type": "final", "result": result.model_dump(mode="json")})
             except Exception as exc:  # noqa: BLE001
                 yield _sse_event({"type": "error", "error": str(exc)})

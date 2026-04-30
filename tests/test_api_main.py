@@ -4,10 +4,10 @@ from types import TracebackType
 from typing import Any, cast
 from wsgiref.types import StartResponse
 
-from apps.api.app.main import application
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from apps.api.app.main import application
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.services.cluster_review_service import ClusterReviewService
 from novel_analyzer.services.ingest_service import IngestService
@@ -22,8 +22,7 @@ def _call(path: str) -> tuple[str, bytes]:
     def start_response(
         status: str,
         headers: list[tuple[str, str]],
-        exc_info:
-        tuple[type[BaseException], BaseException, TracebackType]
+        exc_info: tuple[type[BaseException], BaseException, TracebackType]
         | tuple[None, None, None]
         | None = None,
     ) -> object:
@@ -53,8 +52,7 @@ def _call_post_json(path: str, payload: dict[str, object]) -> tuple[str, bytes]:
     def start_response(
         status: str,
         headers: list[tuple[str, str]],
-        exc_info:
-        tuple[type[BaseException], BaseException, TracebackType]
+        exc_info: tuple[type[BaseException], BaseException, TracebackType]
         | tuple[None, None, None]
         | None = None,
     ) -> object:
@@ -122,8 +120,7 @@ def test_import_endpoint_requires_uploaded_file() -> None:
     def start_response(
         status: str,
         headers: list[tuple[str, str]],
-        exc_info:
-        tuple[type[BaseException], BaseException, TracebackType]
+        exc_info: tuple[type[BaseException], BaseException, TracebackType]
         | tuple[None, None, None]
         | None = None,
     ) -> object:
@@ -155,8 +152,7 @@ def test_recovery_endpoint_requires_action_fields() -> None:
     def start_response(
         status: str,
         headers: list[tuple[str, str]],
-        exc_info:
-        tuple[type[BaseException], BaseException, TracebackType]
+        exc_info: tuple[type[BaseException], BaseException, TracebackType]
         | tuple[None, None, None]
         | None = None,
     ) -> object:
@@ -184,15 +180,15 @@ def test_recovery_endpoint_requires_action_fields() -> None:
 
 
 def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
-    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
 
     with factory() as session:
-        novel_path = tmp_path / 'novel.txt'
-        novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
-        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
         run, branch = RunService(session).create_run(novel.id, manifest.id)
         run_id = run.id
         branch_id = branch.id
@@ -200,24 +196,24 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
             branch.id,
             1,
             {
-                'chapter_index': 1,
-                'normalized_title': '命格初现',
-                'chapter_summary': '卫图在本章做出异常决定。',
-                'key_entities': ['卫图'],
-                'key_events': ['卫图做出异常决定'],
-                'continuity_notes': ['主线推进。'],
-                'ooc_candidates': [
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
                     {
-                        'character_name': '卫图',
-                        'risk_type': 'motivation_shift',
-                        'severity': 'medium',
-                        'summary': '卫图目标改变过快。',
-                        'supporting_evidence': ['前文目标A'],
-                        'counter_evidence': ['也许有新情报'],
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
                     }
                 ],
-                'needs_human_review': True,
-                'dimensions': [],
+                "needs_human_review": True,
+                "dimensions": [],
             },
         )
         RiskAuditService(session).generate_for_chapter(branch.id, 1)
@@ -246,7 +242,9 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     assert b'"cluster_status": "reviewed"' in body
     assert b'"stable_contract_version": "review-api-pre-v1"' in body
 
-    status, body = _call(f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}")
+    status, body = _call(
+        f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}"
+    )
     assert status == "200 OK"
     assert b'"previous_cluster_status"' in body
     assert b'"event_type": "status_update"' in body
@@ -268,15 +266,15 @@ def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkey
 
 
 def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
-    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
 
     with factory() as session:
-        novel_path = tmp_path / 'novel.txt'
-        novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
-        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
         run, branch = RunService(session).create_run(novel.id, manifest.id)
         run_id = run.id
         branch_id = branch.id
@@ -284,37 +282,39 @@ def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> Non
             branch.id,
             1,
             {
-                'chapter_index': 1,
-                'normalized_title': '命格初现',
-                'chapter_summary': '卫图在本章做出异常决定。',
-                'key_entities': ['卫图'],
-                'key_events': ['卫图做出异常决定'],
-                'continuity_notes': ['主线推进。'],
-                'ooc_candidates': [
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
                     {
-                        'character_name': '卫图',
-                        'risk_type': 'motivation_shift',
-                        'severity': 'medium',
-                        'summary': '卫图目标改变过快。',
-                        'supporting_evidence': ['前文目标A'],
-                        'counter_evidence': ['也许有新情报'],
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
                     }
                 ],
-                'needs_human_review': True,
-                'dimensions': [],
+                "needs_human_review": True,
+                "dimensions": [],
             },
         )
         RiskAuditService(session).generate_for_chapter(branch.id, 1)
         ClusterReviewService(session).write(
             branch_id=branch.id,
-            cluster_key='character_ooc|::|motivation_shift',
-            cluster_status='reviewed',
-            review_result='confirmed-benign',
-            review_notes='api filter test',
-            review_owner='editor-a',
+            cluster_key="character_ooc|::|motivation_shift",
+            cluster_status="reviewed",
+            review_result="confirmed-benign",
+            review_notes="api filter test",
+            review_owner="editor-a",
         )
 
-    status, body = _call(f"/api/review-clusters?run_id={run_id}&branch_id={branch_id}&cluster_status=reviewed&review_owner=editor-a&review_result=confirmed-benign")
+    status, body = _call(
+        f"/api/review-clusters?run_id={run_id}&branch_id={branch_id}&cluster_status=reviewed&review_owner=editor-a&review_result=confirmed-benign"
+    )
     assert status == "200 OK"
     assert b'"items"' in body
     assert b'"filters"' in body
@@ -322,15 +322,15 @@ def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> Non
 
 
 def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_path) -> None:
-    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
 
     with factory() as session:
-        novel_path = tmp_path / 'novel.txt'
-        novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
-        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
         run, branch = RunService(session).create_run(novel.id, manifest.id)
         run_id = run.id
         branch_id = branch.id
@@ -338,34 +338,34 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
             branch.id,
             1,
             {
-                'chapter_index': 1,
-                'normalized_title': '命格初现',
-                'chapter_summary': '卫图在本章做出异常决定。',
-                'key_entities': ['卫图'],
-                'key_events': ['卫图做出异常决定'],
-                'continuity_notes': ['主线推进。'],
-                'ooc_candidates': [
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
                     {
-                        'character_name': '卫图',
-                        'risk_type': 'motivation_shift',
-                        'severity': 'medium',
-                        'summary': '卫图目标改变过快。',
-                        'supporting_evidence': ['前文目标A'],
-                        'counter_evidence': ['也许有新情报'],
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
                     }
                 ],
-                'needs_human_review': True,
-                'dimensions': [],
+                "needs_human_review": True,
+                "dimensions": [],
             },
         )
         RiskAuditService(session).generate_for_chapter(branch.id, 1)
         ClusterReviewService(session).write(
             branch_id=branch.id,
-            cluster_key='character_ooc|::|motivation_shift',
-            cluster_status='reviewed',
-            review_result='confirmed-benign',
-            review_notes='api summary test',
-            review_owner='editor-a',
+            cluster_key="character_ooc|::|motivation_shift",
+            cluster_status="reviewed",
+            review_result="confirmed-benign",
+            review_notes="api summary test",
+            review_owner="editor-a",
         )
 
     status, body = _call(f"/api/review-cluster-summary?run_id={run_id}&branch_id={branch_id}")
@@ -385,15 +385,15 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
 
 
 def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
-    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
 
     with factory() as session:
-        novel_path = tmp_path / 'novel.txt'
-        novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
-        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
         run, branch = RunService(session).create_run(novel.id, manifest.id)
         run_id = run.id
         branch_id = branch.id
@@ -401,34 +401,34 @@ def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path)
             branch.id,
             1,
             {
-                'chapter_index': 1,
-                'normalized_title': '命格初现',
-                'chapter_summary': '卫图在本章做出异常决定。',
-                'key_entities': ['卫图'],
-                'key_events': ['卫图做出异常决定'],
-                'continuity_notes': ['主线推进。'],
-                'ooc_candidates': [
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
                     {
-                        'character_name': '卫图',
-                        'risk_type': 'motivation_shift',
-                        'severity': 'medium',
-                        'summary': '卫图目标改变过快。',
-                        'supporting_evidence': ['前文目标A'],
-                        'counter_evidence': ['也许有新情报'],
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
                     }
                 ],
-                'needs_human_review': True,
-                'dimensions': [],
+                "needs_human_review": True,
+                "dimensions": [],
             },
         )
         RiskAuditService(session).generate_for_chapter(branch.id, 1)
         ClusterReviewService(session).write(
             branch_id=branch.id,
-            cluster_key='character_ooc|::|motivation_shift',
-            cluster_status='reviewed',
-            review_result='confirmed-benign',
-            review_notes='api summary filter test',
-            review_owner='editor-a',
+            cluster_key="character_ooc|::|motivation_shift",
+            cluster_status="reviewed",
+            review_result="confirmed-benign",
+            review_notes="api summary filter test",
+            review_owner="editor-a",
         )
 
     status, body = _call(
@@ -441,7 +441,7 @@ def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path)
 
 
 def test_review_cluster_update_returns_400_for_invalid_status_combo(monkeypatch) -> None:
-    engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)

@@ -58,7 +58,9 @@ class ClusterReviewService:
         if cluster_status == "escalated" and review_result != "needs-escalation":
             raise ValueError("cluster_status=escalated requires review_result=needs-escalation")
         if cluster_status == "resolved" and review_result == "needs-escalation":
-            raise ValueError("cluster_status=resolved cannot be paired with review_result=needs-escalation")
+            raise ValueError(
+                "cluster_status=resolved cannot be paired with review_result=needs-escalation"
+            )
         if review_result == "needs-escalation" and not review_notes.strip():
             raise ValueError("review_result=needs-escalation requires non-empty review_notes")
 
@@ -98,34 +100,27 @@ class ClusterReviewService:
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
-            raise ClusterReviewStorageUnavailable("cluster review history table is unavailable") from exc
-        events: list[dict[str, object]] = []
-        for index, row in enumerate(rows, start=1):
-            changed_fields = [
-                field_name
-                for field_name, previous_value, current_value in (
-                    ("cluster_status", row.previous_cluster_status, row.cluster_status),
-                    ("review_result", row.previous_review_result, row.review_result),
-                )
-                if previous_value != current_value
-            ]
-            events.append(
-                {
-                    "event_index": index,
-                    "previous_cluster_status": row.previous_cluster_status,
-                    "previous_review_result": row.previous_review_result,
-                    "cluster_status": row.cluster_status,
-                    "review_result": row.review_result,
-                    "review_notes": row.review_notes,
-                    "review_owner": row.review_owner,
-                    "resolved_at": row.resolved_at_text,
-                    "event_type": row.event_type,
-                    "changed_fields": changed_fields,
-                    "transition": f"{row.previous_cluster_status or 'new'}->{row.cluster_status}",
-                    "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
-                }
-            )
-        return events
+            return []
+        return [
+            {
+                "event_id": row.id,
+                "previous_cluster_status": row.previous_cluster_status,
+                "previous_review_result": row.previous_review_result,
+                "previous_review_notes": row.previous_review_notes,
+                "previous_review_owner": row.previous_review_owner,
+                "previous_resolved_at": row.previous_resolved_at_text,
+                "cluster_status": row.cluster_status,
+                "review_result": row.review_result,
+                "review_notes": row.review_notes,
+                "review_owner": row.review_owner,
+                "resolved_at": row.resolved_at_text,
+                "event_type": row.event_type,
+                "created_at": row.created_at.isoformat()
+                if hasattr(row.created_at, "isoformat")
+                else "",
+            }
+            for row in rows
+        ]
 
     def write(
         self,
