@@ -988,13 +988,34 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         try:
             factory = create_session_factory(runtime)
             with factory() as session:
+                items = ClusterReviewService(session).read_history(
+                    params["branch_id"],
+                    params["cluster_key"],
+                )
+                event_type_filter = str(params.get("event_type") or "").strip()
+                owner_filter = str(params.get("review_owner") or "").strip()
+                result_filter = str(params.get("review_result") or "").strip()
+                if event_type_filter:
+                    items = [item for item in items if str(item.get("event_type") or "") == event_type_filter]
+                if owner_filter:
+                    items = [item for item in items if str(item.get("review_owner") or "") == owner_filter]
+                if result_filter:
+                    items = [item for item in items if str(item.get("review_result") or "") == result_filter]
+                limit = int(params.get("limit", "0") or "0")
+                if limit > 0:
+                    items = items[-limit:]
                 payload = {
-                    **_review_contract(),
                     "review_storage_mode": "db",
-                    "items": ClusterReviewService(session).read_history(
-                        params["branch_id"],
-                        params["cluster_key"],
-                    ),
+                    "branch_id": params["branch_id"],
+                    "cluster_key": params["cluster_key"],
+                    "count": len(items),
+                    "applied_filters": {
+                        "event_type": event_type_filter,
+                        "review_owner": owner_filter,
+                        "review_result": result_filter,
+                        "limit": limit,
+                    },
+                    "items": items,
                 }
         except Exception as exc:  # noqa: BLE001
             if not ClusterReviewService._is_missing_relation_error(exc):

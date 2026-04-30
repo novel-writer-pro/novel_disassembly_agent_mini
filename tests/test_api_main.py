@@ -246,10 +246,40 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
 
     status, body = _call(f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}")
     assert status == "200 OK"
-    assert b'"previous_cluster_status"' in body
-    assert b'"event_type": "status_update"' in body
-    assert b'"previous_review_notes"' in body
-    assert b'"review_storage_mode": "db"' in body
+    history_payload = json.loads(body)
+    assert history_payload["review_storage_mode"] == "db"
+    assert history_payload["count"] == 1
+    assert history_payload["items"][0]["event_id"]
+    assert history_payload["items"][0]["previous_cluster_status"] == ""
+    assert history_payload["items"][0]["event_type"] == "status_update"
+
+    status, body = _call_post_json(
+        "/api/review-cluster-update",
+        {
+            "branch_id": branch_id,
+            "cluster_key": cluster_key,
+            "cluster_status": "reopened",
+            "review_result": "deferred",
+            "review_notes": "needs another pass",
+            "review_owner": "editor-b",
+        },
+    )
+    assert status == "200 OK"
+
+    status, body = _call(
+        f"/api/review-cluster-history?branch_id={branch_id}&cluster_key={cluster_key}"
+        "&review_owner=editor-b&review_result=deferred&limit=1"
+    )
+    assert status == "200 OK"
+    filtered_payload = json.loads(body)
+    assert filtered_payload["applied_filters"]["review_owner"] == "editor-b"
+    assert filtered_payload["applied_filters"]["review_result"] == "deferred"
+    assert filtered_payload["applied_filters"]["limit"] == 1
+    assert filtered_payload["count"] == 1
+    assert filtered_payload["items"][0]["previous_cluster_status"] == "reviewed"
+    assert filtered_payload["items"][0]["previous_review_result"] == "confirmed-benign"
+    assert filtered_payload["items"][0]["previous_review_notes"] == "api test"
+    assert filtered_payload["items"][0]["previous_review_owner"] == "editor-a"
 
 
 def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> None:

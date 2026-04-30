@@ -436,23 +436,22 @@ def test_cluster_review_service_persists_review_record_in_database(tmp_path: Pat
         payload = service.read_branch(branch.id)
         assert payload['character_ooc|::|human_review_candidate']['cluster_status'] == 'reviewed'
         assert payload['character_ooc|::|human_review_candidate']['review_owner'] == 'editor-a'
-        history = service.read_history(branch.id, 'character_ooc|::|human_review_candidate')
-        assert len(history) == 1
-        assert history[0]['previous_cluster_status'] == ''
-        assert history[0]['cluster_status'] == 'reviewed'
         service.write(
             branch_id=branch.id,
             cluster_key='character_ooc|::|human_review_candidate',
-            cluster_status='resolved',
-            review_result='confirmed-issue',
-            review_notes='二次确认',
+            cluster_status='reopened',
+            review_result='deferred',
+            review_notes='需要二次确认',
             review_owner='editor-b',
-            resolved_at='2026-04-29T03:00:00Z',
         )
         history = service.read_history(branch.id, 'character_ooc|::|human_review_candidate')
         assert len(history) == 2
+        assert history[0]['event_id']
+        assert history[0]['previous_cluster_status'] == ''
+        assert history[0]['cluster_status'] == 'reviewed'
+        assert history[1]['previous_cluster_status'] == 'reviewed'
         assert history[1]['previous_review_result'] == 'confirmed-benign'
         assert history[1]['previous_review_notes'] == '已读'
         assert history[1]['previous_review_owner'] == 'editor-a'
         assert history[1]['previous_resolved_at'] == '2026-04-29T02:00:00Z'
-        assert history[1]['review_notes'] == '二次确认'
+        assert history[1]['cluster_status'] == 'reopened'
