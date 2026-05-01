@@ -1,5 +1,12 @@
 ## 2026-05-01
 
+### API meta 端点清单与真实路由对齐
+- 修正 `/api/meta` 的 `available_endpoints` 列表，使其与 WSGI 中真实实现的路由集合一致
+- 补入真实存在但之前遗漏的 `/api/start` 与 `/api/recovery`
+- 移除之前误列入但实际并不存在于该 WSGI 路由表中的 `/api/pipeline/pause`、`/api/pipeline/resume`、`/api/pipeline/cancel`
+- 为 `/api/meta` 增加自动比对测试，防止元信息与实现再次漂移
+- 验证：meta route inventory targeted 回归通过
+
 ### API meta 契约与实际能力对齐
 - 修正 `/api/meta` 中关于 write-side import/upload 的过时说明，不再把已可用的 `/api/import` 描述为 future work
 - 将 `/api/import` 补入 `available_endpoints` 列表，避免接口清单与真实能力不一致

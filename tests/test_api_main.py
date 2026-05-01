@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from io import BytesIO
 from types import TracebackType
@@ -101,8 +102,17 @@ def test_meta_endpoint_lists_available_routes() -> None:
     assert status == "200 OK"
     assert b"/api/mock/import" in body
     assert b"/api/import" in body
+    assert b"/api/start" in body
+    assert b"/api/recovery" in body
     assert b"Current backend is dependency-light WSGI JSON." in body
     assert b"future work" not in body
+
+    source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
+    route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
+    meta_block = re.search(r'"available_endpoints": \[(.*?)\]\s*,\s*"notes"', source, re.S)
+    assert meta_block is not None
+    meta_paths = sorted(set(re.findall(r'"([^"]+)"', meta_block.group(1))))
+    assert route_paths == meta_paths
 
 
 def test_mock_import_endpoint_uses_profile_query() -> None:
