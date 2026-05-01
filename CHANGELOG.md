@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### docs/README 接口文档编号修正并加保护
+- 修正 `docs/README.md` 中“接口类文档”小节因多轮增补导致的编号漂移问题
+- 增加自动测试，要求该小节的编号必须连续递增，避免后续文档入口继续失序
+- 验证：接口文档编号测试与 API README 路由清单一致性测试通过
+
 ### apps/api README 路由清单增加完整一致性保护
 - 修正 `apps/api/README.md` 中把 `pause|resume|cancel` 写成伪单条 endpoint 的误导表述
 - 为 `apps/api/README.md` 增加完整路由集合一致性测试，直接把 README 暴露的 `METHOD /path` 列表与真实 WSGI 路由集合进行比对
