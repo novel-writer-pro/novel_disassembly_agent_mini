@@ -139,6 +139,22 @@ def test_chapter_qa_context_requires_query_params() -> None:
     assert b"missing query parameter" in body
 
 
+def test_root_readme_heading_levels_do_not_jump() -> None:
+    import re
+
+    levels: list[int] = []
+    for line in Path("README.md").read_text(encoding="utf-8").splitlines():
+        match = re.match(r'^(#{1,6})\s+', line)
+        if match:
+            levels.append(len(match.group(1)))
+
+    prev = None
+    for level in levels:
+        if prev is not None:
+            assert level <= prev + 1
+        prev = level
+
+
 def test_api_contract_markdown_fences_are_balanced() -> None:
     text = Path("docs/api-contract.md").read_text(encoding="utf-8")
     assert text.count("```") % 2 == 0

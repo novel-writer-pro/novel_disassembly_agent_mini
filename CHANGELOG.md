@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### 根 README 标题层级修正并加保护
+- 修复根 `README.md` 中一行误写成一级标题的说明文本，消除文档标题层级跳级问题
+- 增加自动测试，要求根 README 的标题层级不得出现大于 1 级的跳跃
+- 验证：README heading 测试与现有契约测试 strict 模式通过
+
 ### docs/api-contract Markdown 结构修复
 - 修复 `docs/api-contract.md` 中未闭合的 fenced code block，避免后续标题与内容被错误吞入代码块
 - 增加轻量测试，要求该文档的 Markdown 代码块 fence 数量必须成对平衡

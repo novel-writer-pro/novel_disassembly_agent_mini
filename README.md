@@ -87,7 +87,7 @@ export NOVEL_ANALYZER_LLM_API_KEY='your-key'
 export NOVEL_ANALYZER_LLM_BASE_URL='https://api.vip1129.cc/v1'
 export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4-mini'
 
-# or copy .env.example -> .env.local and fill the secrets locally
+or copy `.env.example` -> `.env.local` and fill the secrets locally
 ```
 
 
