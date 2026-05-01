@@ -53,6 +53,7 @@
 
 ### 推荐阅读顺序
 1. [`./interface-manifest.md`](./interface-manifest.md)
+2. [`./api-current-surface.md`](./api-current-surface.md)
 2. [`./examples/`](./examples/)
 3. [`./system-review-consumption-mapping.md`](./system-review-consumption-mapping.md)
 4. [`./system-review-display-rules.md`](./system-review-display-rules.md)
@@ -105,9 +106,9 @@
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)
-2. [`./examples/chapter-bundle.sample.json`](./examples/chapter-bundle.sample.json)
-3. [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
-4. [`./examples/branch-bundle-review-summary.sample.json`](./examples/branch-bundle-review-summary.sample.json)
+3. [`./examples/chapter-bundle.sample.json`](./examples/chapter-bundle.sample.json)
+4. [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
+5. [`./examples/branch-bundle-review-summary.sample.json`](./examples/branch-bundle-review-summary.sample.json)
 5. [`./system-review-consumption-mapping.md`](./system-review-consumption-mapping.md)
 6. [`./system-review-display-rules.md`](./system-review-display-rules.md)
 7. [`./system-review-integration-checklist.md`](./system-review-integration-checklist.md)

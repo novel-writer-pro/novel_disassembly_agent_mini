@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### 新增当前 API 实现契约文档
+- 新增 `docs/api-current-surface.md`，专门描述 `apps/api/app/main.py` 当前已经实现并可调用的 WSGI API surface
+- `apps/api/README.md` 改为把该文档作为当前实现契约入口，同时保留 `docs/api-contract.md` 作为未来目标契约参考
+- 避免未来目标契约文档被误读成当前实现清单
+- 验证：README 指向与 meta/README 一致性 targeted 回归通过
+
 ### apps/api README 端点清单补齐
 - 补充 `apps/api/README.md` 中缺失的 review workflow、job events、search、ask-branch 等已实现端点
 - 增加 README 一致性测试，锁定关键端点在后端 README 中必须被暴露

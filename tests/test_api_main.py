@@ -139,6 +139,12 @@ def test_chapter_qa_context_requires_query_params() -> None:
     assert b"missing query parameter" in body
 
 
+def test_api_readme_points_to_current_api_surface_doc() -> None:
+    readme = Path("apps/api/README.md").read_text(encoding="utf-8")
+    assert "docs/api-current-surface.md" in readme
+    assert "docs/api-contract.md" in readme
+
+
 def test_api_readme_mentions_review_and_search_endpoints() -> None:
     readme = Path("apps/api/README.md").read_text(encoding="utf-8")
     for needle in [

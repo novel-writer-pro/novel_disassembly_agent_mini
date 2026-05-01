@@ -5,7 +5,7 @@
 当前阶段：
 - 已完成 shared application seam
 - 当前由这里承接 HTTP 路由、章节读取、恢复动作、导出下载
-- 契约以 `docs/api-contract.md` 为准
+- 当前实现契约以 `docs/api-current-surface.md` 为准；未来目标契约仍参考 `docs/api-contract.md`
 
 当前可以直接运行一个轻量 WSGI 原型后端：
 
