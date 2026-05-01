@@ -2,6 +2,7 @@
 
 推荐先看：
 1. [`../../tracks/risk-audit/README.md`](../../tracks/risk-audit/README.md)
+2. [`../../api-current-surface.md`](../../api-current-surface.md)
 2. [`../../risk-audit-runtime-architecture.md`](../../risk-audit-runtime-architecture.md)
 3. [`../../skills-vs-risk-checkers-boundary.md`](../../skills-vs-risk-checkers-boundary.md)
 4. [`../../architecture/risk-audit-semantic-enhancement.md`](../../architecture/risk-audit-semantic-enhancement.md)

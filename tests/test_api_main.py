@@ -179,6 +179,17 @@ def test_docs_readme_numbered_sections_are_sequential() -> None:
             assert nums == list(range(1, len(nums) + 1))
 
 
+def test_role_and_track_docs_point_to_current_api_surface_doc() -> None:
+    checks = {
+        "docs/roles/integrator/README.md": "api-current-surface.md",
+        "docs/roles/backend/README.md": "api-current-surface.md",
+        "docs/tracks/review-workflow/README.md": "api-current-surface.md",
+    }
+    for path, needle in checks.items():
+        text = Path(path).read_text(encoding="utf-8")
+        assert needle in text
+
+
 def test_docs_readme_points_to_current_api_surface_doc() -> None:
     readme = Path("docs/README.md").read_text(encoding="utf-8")
     assert "./api-current-surface.md" in readme

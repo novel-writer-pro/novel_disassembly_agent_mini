@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### 角色/轨道入口补 current API surface 链接
+- 为 `docs/roles/integrator/README.md`、`docs/roles/backend/README.md`、`docs/tracks/review-workflow/README.md` 补充 `api-current-surface.md` 入口
+- 让接入者、后端维护者与 review workflow 读者都能更快看到“当前已实现 API surface”的 source-of-truth
+- 增加自动测试，锁定这三个角色/轨道入口必须继续暴露该文档
+- 验证：角色/轨道入口 targeted strict 回归通过
+
 ### current API surface 文档边界说明加保护
 - 为 `docs/api-current-surface.md` 增加显式测试，要求该文档必须继续指向 `docs/api-contract.md`，并保留“未来目标契约”的边界说明
 - 避免后续维护中把 current-surface 文档误改成没有边界的实现清单，或丢失与目标契约的关系说明
