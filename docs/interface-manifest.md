@@ -156,6 +156,12 @@
 
 对于 review workflow 相关字段，当前建议：
 
+- 顶层 contract 字段：
+  - `contract_version`
+  - `stable_contract_version`
+  - `allowed_cluster_statuses`
+  - `allowed_review_results`
+
 - 稳定对外字段：
   - `cluster_key`
   - `cluster_title`
