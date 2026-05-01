@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### docs/README 接入者阅读顺序说明与当前 API surface 对齐
+- 修正 `docs/README.md` 中“接入者”小节的步骤说明，使第 2 步明确对应 `api-current-surface.md`，不再沿用旧的“先对照样例 JSON”说明
+- 让阅读顺序说明与实际链接顺序保持一致，减少接入者被错误引导
+- 增加自动测试，锁定第 2 步必须明确指向当前已实现 API surface
+- 验证：integrator flow / docs index / current-surface targeted strict 回归通过
+
 ### 非技术入口不暴露 current API surface 的边界加保护
 - 增加显式测试，要求 `docs/roles/product/README.md` 与 `docs/tracks/reader-experience/README.md` 不能引入 `api-current-surface.md` 入口
 - 让 current API surface 的导航边界不只验证“该出现的地方出现”，也验证“不该出现的地方不出现”
