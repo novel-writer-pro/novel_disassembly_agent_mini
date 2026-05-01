@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### 非技术入口不暴露 current API surface 的边界加保护
+- 增加显式测试，要求 `docs/roles/product/README.md` 与 `docs/tracks/reader-experience/README.md` 不能引入 `api-current-surface.md` 入口
+- 让 current API surface 的导航边界不只验证“该出现的地方出现”，也验证“不该出现的地方不出现”
+- 验证：技术入口 + 非技术入口边界 targeted strict 回归通过
+
 ### current API surface 维护规则同步到 endpoint specs 时代
 - 更新 `docs/api-current-surface.md` 的维护规则，明确 `_API_ENDPOINT_SPECS` 是 method+path 的 source-of-truth
 - 将 `available_endpoint_specs` 与 `available_endpoints` 的维护责任都写入文档，避免维护规则停留在旧的 path-only 时代

@@ -192,6 +192,16 @@ def test_maintainer_and_risk_audit_docs_point_to_current_api_surface_doc() -> No
         assert needle in text
 
 
+def test_non_technical_docs_do_not_point_to_current_api_surface_doc() -> None:
+    checks = [
+        "docs/roles/product/README.md",
+        "docs/tracks/reader-experience/README.md",
+    ]
+    for path in checks:
+        text = Path(path).read_text(encoding="utf-8")
+        assert "api-current-surface.md" not in text
+
+
 def test_roles_and_tracks_index_point_to_current_api_surface_doc() -> None:
     checks = {
         "docs/roles/README.md": "api-current-surface.md",
