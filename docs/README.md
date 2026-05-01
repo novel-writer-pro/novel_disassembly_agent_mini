@@ -80,17 +80,19 @@
 ### 推荐阅读顺序
 1. [`./final-handoff.md`](./final-handoff.md)
 2. [`./release-handoff-brief.md`](./release-handoff-brief.md)
-3. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
-4. [`./model-eval-template.md`](./model-eval-template.md)
-5. [`./review-template.md`](./review-template.md)
-6. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+3. [`./api-current-surface.md`](./api-current-surface.md)
+4. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
+5. [`./model-eval-template.md`](./model-eval-template.md)
+6. [`./review-template.md`](./review-template.md)
+7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
 
 ### 说明
 - 第 1 步：先看完整交付说明
 - 第 2 步：再看简版交接说明
-- 第 3 步：看内部 agent / skills / embedding 设计
-- 第 4 步：后续换模型时参考评测模板
-- 第 5 步：做真实章节复盘时参考记录模板
+- 第 3 步：再看当前已实现 API surface
+- 第 4 步：看内部 agent / skills / embedding 设计
+- 第 5 步：后续换模型时参考评测模板
+- 第 6 步：做真实章节复盘时参考记录模板
 
 ---
 

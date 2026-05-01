@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### docs/README 开发者阅读顺序补 current API surface
+- 在 `docs/README.md` 的“开发者（继续开发 / 维护 / 接手的人）”阅读顺序中加入 `api-current-surface.md`，并将其明确为第 3 步
+- 让继续开发/接手的读者更早看到当前已实现 API surface，而不是只看到高层交接说明和内部 agent 设计
+- 增加自动测试，锁定开发者阅读顺序的第 3 步必须是 current API surface
+- 验证：developer flow / integrator flow / docs index targeted strict 回归通过
+
 ### docs/README 接入者阅读顺序说明与当前 API surface 对齐
 - 修正 `docs/README.md` 中“接入者”小节的步骤说明，使第 2 步明确对应 `api-current-surface.md`，不再沿用旧的“先对照样例 JSON”说明
 - 让阅读顺序说明与实际链接顺序保持一致，减少接入者被错误引导

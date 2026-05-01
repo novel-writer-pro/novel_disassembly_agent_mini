@@ -223,6 +223,12 @@ def test_role_and_track_docs_point_to_current_api_surface_doc() -> None:
         assert needle in text
 
 
+def test_docs_readme_developer_flow_mentions_current_api_surface_third() -> None:
+    text = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "3. [`./api-current-surface.md`](./api-current-surface.md)" in text
+    assert "第 3 步：再看当前已实现 API surface" in text
+
+
 def test_docs_readme_integrator_flow_mentions_current_api_surface_second() -> None:
     text = Path("docs/README.md").read_text(encoding="utf-8")
     assert "第 2 步：再看当前已实现 API surface" in text
