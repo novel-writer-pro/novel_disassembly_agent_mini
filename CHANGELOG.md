@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### apps/api README 补 method-aware meta 契约说明
+- 在 `apps/api/README.md` 中补充 `/api/meta` 的 `available_endpoint_specs` 字段说明
+- 让后端接入者在 README 层就能知道：`available_endpoints` 是兼容字段，自动接入/契约校验应优先消费 `available_endpoint_specs`
+- 增加自动测试，锁定 README 必须继续提到该 method-aware 元信息字段
+- 验证：API README / current-surface / meta targeted strict 回归通过
+
 ### /api/meta 升级为 method+path 契约清单
 - 为 `/api/meta` 新增 `available_endpoint_specs` 字段，显式返回 `{method, path}` 列表，同时保留 `available_endpoints` 作为兼容字段
 - 将 endpoint spec 提升为后端模块级 source-of-truth 常量，并让 `/api/meta` 测试直接复用该常量，减少依赖源码正则反推实现的脆弱性

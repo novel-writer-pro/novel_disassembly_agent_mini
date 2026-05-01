@@ -265,6 +265,11 @@ def test_api_readme_points_to_current_api_surface_doc() -> None:
     assert "docs/api-contract.md" in readme
 
 
+def test_api_readme_mentions_method_aware_meta_specs() -> None:
+    readme = Path("apps/api/README.md").read_text(encoding="utf-8")
+    assert "available_endpoint_specs" in readme
+
+
 def test_api_readme_mentions_review_and_search_endpoints() -> None:
     readme = Path("apps/api/README.md").read_text(encoding="utf-8")
     for needle in [
