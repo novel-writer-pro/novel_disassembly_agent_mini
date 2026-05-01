@@ -179,6 +179,11 @@ def test_docs_readme_numbered_sections_are_sequential() -> None:
             assert nums == list(range(1, len(nums) + 1))
 
 
+def test_docs_readme_points_to_current_api_surface_doc() -> None:
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "./api-current-surface.md" in readme
+
+
 def test_api_current_surface_doc_matches_route_inventory() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))

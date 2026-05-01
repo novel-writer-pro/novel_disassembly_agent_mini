@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### docs/README 增加 current API surface 入口保护
+- 为 `docs/README.md` 增加显式测试，要求文档索引必须暴露 `api-current-surface.md` 入口
+- 让 root README、docs/README、apps/api/README 三层入口都进入 current API surface 文档的自动保护范围
+- 验证：三层入口 targeted strict 回归通过
+
 ### 根 README 补当前 API 实现契约入口
 - 在仓库根 `README.md` 的 newcomer path 中补充 `docs/api-current-surface.md` 直链
 - 让接入者能从项目顶层直接区分“当前已实现 API surface”和“未来目标契约”
