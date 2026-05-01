@@ -233,6 +233,13 @@ def test_api_current_surface_doc_matches_route_inventory() -> None:
     assert route_paths == mentioned
 
 
+def test_api_current_surface_doc_mentions_endpoint_specs_source_of_truth() -> None:
+    text = Path("docs/api-current-surface.md").read_text(encoding="utf-8")
+    assert "_API_ENDPOINT_SPECS" in text
+    assert "available_endpoint_specs" in text
+    assert "available_endpoints" in text
+
+
 def test_api_endpoint_specs_have_unique_paths() -> None:
     paths = [item["path"] for item in _API_ENDPOINT_SPECS]
     assert len(paths) == len(set(paths))

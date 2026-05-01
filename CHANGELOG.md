@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### current API surface 维护规则同步到 endpoint specs 时代
+- 更新 `docs/api-current-surface.md` 的维护规则，明确 `_API_ENDPOINT_SPECS` 是 method+path 的 source-of-truth
+- 将 `available_endpoint_specs` 与 `available_endpoints` 的维护责任都写入文档，避免维护规则停留在旧的 path-only 时代
+- 增加自动测试，锁定 current-surface 文档必须继续提到 `_API_ENDPOINT_SPECS` / `available_endpoint_specs` / `available_endpoints`
+- 验证：current-surface maintenance rule targeted strict 回归通过
+
 ### apps/api README 补 method-aware meta 契约说明
 - 在 `apps/api/README.md` 中补充 `/api/meta` 的 `available_endpoint_specs` 字段说明
 - 让后端接入者在 README 层就能知道：`available_endpoints` 是兼容字段，自动接入/契约校验应优先消费 `available_endpoint_specs`

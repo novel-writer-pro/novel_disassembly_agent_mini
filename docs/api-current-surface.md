@@ -64,7 +64,9 @@
 ## 3. 维护规则
 
 当 `apps/api/app/main.py` 增删真实路由时，需要同步更新：
-1. `/api/meta` 的 `available_endpoints`
-2. `apps/api/README.md`
-3. `docs/api-current-surface.md`
-4. 相关契约一致性测试
+1. 模块级 `_API_ENDPOINT_SPECS`（作为 method+path source-of-truth）
+2. `/api/meta` 的 `available_endpoint_specs`
+3. `/api/meta` 的 `available_endpoints`（兼容旧消费者）
+4. `apps/api/README.md`
+5. `docs/api-current-surface.md`
+6. 相关契约一致性测试
