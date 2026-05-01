@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### API meta 契约与实际能力对齐
+- 修正 `/api/meta` 中关于 write-side import/upload 的过时说明，不再把已可用的 `/api/import` 描述为 future work
+- 将 `/api/import` 补入 `available_endpoints` 列表，避免接口清单与真实能力不一致
+- 为 `/api/meta` 增加更严格的测试断言，锁定端点暴露与说明文案的一致性
+- 验证：`test_meta_endpoint_lists_available_routes` + import endpoint targeted 回归通过
+
 ### API multipart 解析去除 cgi 依赖
 - 将 `apps/api/app/main.py` 中的 `cgi.FieldStorage` multipart 解析替换为基于 `email.parser.BytesParser` 的标准库实现
 - 消除 Python 3.13 方向上的 `cgi` deprecation warning，同时保持 `/api/import` 现有行为不变

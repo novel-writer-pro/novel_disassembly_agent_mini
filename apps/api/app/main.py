@@ -1061,6 +1061,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     "/health",
                     "/api/meta",
                     "/api/mock/import",
+                    "/api/import",
                     "/api/run-snapshot",
                     "/api/branch-snapshot",
                     "/api/chapter-bundle",
@@ -1092,7 +1093,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 ],
                 "notes": [
                     "Current backend is dependency-light WSGI JSON.",
-                    "Real write-side import/upload endpoints are still future work.",
+                    "The import/upload endpoint is available; broader write-side workflow surfaces remain incrementally productized.",
                 ],
             },
         )

@@ -100,6 +100,9 @@ def test_meta_endpoint_lists_available_routes() -> None:
     status, body = _call("/api/meta")
     assert status == "200 OK"
     assert b"/api/mock/import" in body
+    assert b"/api/import" in body
+    assert b"Current backend is dependency-light WSGI JSON." in body
+    assert b"future work" not in body
 
 
 def test_mock_import_endpoint_uses_profile_query() -> None:
