@@ -1,6 +1,7 @@
 # API Contract / Web Backend 契约（Future Target）
 
 > 本文件描述未来 `apps/api` 的目标契约，不代表 Phase 1 已全部实现。
+> 当前已经实现并可调用的 API surface 请参考 `docs/api-current-surface.md`。
 
 ## 1. 总体约束
 - 首期采用 HTTP + polling

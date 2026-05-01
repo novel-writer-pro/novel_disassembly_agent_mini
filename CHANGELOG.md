@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### future target API 契约文档补 current surface 回链
+- 在 `docs/api-contract.md` 中补充显式回链，说明当前已实现并可调用的 API surface 应查看 `docs/api-current-surface.md`
+- 让读者在看到“这不是当前实现”时，能立刻知道当前实现的 source-of-truth 在哪里
+- 增加自动测试，锁定 future-target 文档必须继续指回 current-surface 文档
+- 验证：api-contract backlink / fence / current-surface boundary targeted strict 回归通过
+
 ### docs/README 开发者阅读顺序补 current API surface
 - 在 `docs/README.md` 的“开发者（继续开发 / 维护 / 接手的人）”阅读顺序中加入 `api-current-surface.md`，并将其明确为第 3 步
 - 让继续开发/接手的读者更早看到当前已实现 API surface，而不是只看到高层交接说明和内部 agent 设计

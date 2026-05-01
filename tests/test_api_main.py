@@ -163,6 +163,11 @@ def test_root_readme_heading_levels_do_not_jump() -> None:
         prev = level
 
 
+def test_api_contract_doc_points_back_to_current_surface() -> None:
+    text = Path("docs/api-contract.md").read_text(encoding="utf-8")
+    assert "docs/api-current-surface.md" in text
+
+
 def test_api_contract_markdown_fences_are_balanced() -> None:
     text = Path("docs/api-contract.md").read_text(encoding="utf-8")
     assert text.count("```") % 2 == 0
