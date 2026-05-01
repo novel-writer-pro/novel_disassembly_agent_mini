@@ -199,6 +199,12 @@ def test_api_current_surface_doc_matches_route_inventory() -> None:
     assert route_paths == mentioned
 
 
+def test_api_current_surface_doc_points_to_target_contract() -> None:
+    text = Path("docs/api-current-surface.md").read_text(encoding="utf-8")
+    assert "docs/api-contract.md" in text
+    assert "未来目标契约" in text
+
+
 def test_api_readme_route_inventory_matches_implemented_routes() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))

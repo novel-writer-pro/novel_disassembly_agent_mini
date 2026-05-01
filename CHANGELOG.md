@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### current API surface 文档边界说明加保护
+- 为 `docs/api-current-surface.md` 增加显式测试，要求该文档必须继续指向 `docs/api-contract.md`，并保留“未来目标契约”的边界说明
+- 避免后续维护中把 current-surface 文档误改成没有边界的实现清单，或丢失与目标契约的关系说明
+- 验证：current-surface / docs index / apps-api README targeted strict 回归通过
+
 ### docs/README 增加 current API surface 入口保护
 - 为 `docs/README.md` 增加显式测试，要求文档索引必须暴露 `api-current-surface.md` 入口
 - 让 root README、docs/README、apps/api/README 三层入口都进入 current API surface 文档的自动保护范围
