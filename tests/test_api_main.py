@@ -139,6 +139,19 @@ def test_chapter_qa_context_requires_query_params() -> None:
     assert b"missing query parameter" in body
 
 
+def test_api_readme_mentions_review_and_search_endpoints() -> None:
+    readme = Path("apps/api/README.md").read_text(encoding="utf-8")
+    for needle in [
+        "`GET /api/review-clusters?run_id=...&branch_id=...`",
+        "`GET /api/review-cluster-summary?run_id=...&branch_id=...`",
+        "`POST /api/review-batch-execute`",
+        "`POST /api/search-branch`",
+        "`POST /api/ask-branch`",
+        "`GET /api/job-events?branch_id=...&limit=100`",
+    ]:
+        assert needle in readme
+
+
 def test_import_endpoint_requires_uploaded_file() -> None:
     captured: dict[str, Any] = {}
 

@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### apps/api README 端点清单补齐
+- 补充 `apps/api/README.md` 中缺失的 review workflow、job events、search、ask-branch 等已实现端点
+- 增加 README 一致性测试，锁定关键端点在后端 README 中必须被暴露
+- 避免 API 实现、`/api/meta` 元信息与后端 README 三者继续漂移
+- 验证：README / meta targeted 回归通过
+
 ### API meta 端点清单与真实路由对齐
 - 修正 `/api/meta` 的 `available_endpoints` 列表，使其与 WSGI 中真实实现的路由集合一致
 - 补入真实存在但之前遗漏的 `/api/start` 与 `/api/recovery`

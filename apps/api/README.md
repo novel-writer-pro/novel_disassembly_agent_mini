@@ -25,12 +25,26 @@
 - `GET /api/chapter-bundle?branch_id=...&chapter_index=...`
 - `GET /api/chapter-qa-context?branch_id=...&chapter_index=...`
 - `GET /api/chapter-source?branch_id=...&chapter_index=...`
+- `GET /api/chapter-jobs?branch_id=...&limit=200`
+- `GET /api/chapter-job-events?branch_id=...&chapter_index=...&limit=100`
+- `GET /api/review-clusters?run_id=...&branch_id=...`
+- `GET /api/review-cluster-summary?run_id=...&branch_id=...`
+- `GET /api/review-cluster-history?branch_id=...&cluster_key=...`
+- `POST /api/review-cluster-update`
+- `POST /api/review-batch-execute`
+- `GET /api/review-batch-history?branch_id=...`
 - `GET /api/library`
+- `GET /api/job-events?branch_id=...&limit=100`
+- `POST /api/pipeline/start-range`
+- `GET /api/pipeline/status?pipeline_run_id=...`
+- `GET /api/pipeline/runs?branch_id=...`
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
+- `POST /api/search-branch`
+- `POST /api/ask-branch`
+- `POST /api/ask-branch-stream`
 - `GET /api/branch-exports?run_id=...&branch_id=...`
 - `GET /api/download?path=...`
-- `POST /api/ask-branch-stream`
 
 说明：
 - 当前仍是轻量原型后端，不是完整生产 API
