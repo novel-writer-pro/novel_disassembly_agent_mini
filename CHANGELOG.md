@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### apps/api README 路由清单增加完整一致性保护
+- 修正 `apps/api/README.md` 中把 `pause|resume|cancel` 写成伪单条 endpoint 的误导表述
+- 为 `apps/api/README.md` 增加完整路由集合一致性测试，直接把 README 暴露的 `METHOD /path` 列表与真实 WSGI 路由集合进行比对
+- 让 README、`/api/meta` 与 `docs/api-current-surface.md` 三者都进入自动一致性保护范围
+- 验证：README / current-surface / meta 三方 targeted 回归通过
+
 ### 当前 API surface 文档增加自动一致性保护
 - 为 `docs/api-current-surface.md` 增加自动一致性测试，直接把当前实现路由集合与文档中的 `METHOD /path` 列表进行比对
 - 让当前实现文档、`/api/meta` 与 `apps/api/README.md` 的维护规则从“靠人工自觉”升级为“有测试锁定”

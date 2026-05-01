@@ -75,7 +75,7 @@
 - `POST /api/pipeline/start-range`：以后台异步方式启动一段连续拆书任务（当前最小版本要求从 `next_chapter` 开始）
 - `GET /api/pipeline/status?pipeline_run_id=...`：查看某个后台 pipeline run 状态
 - `GET /api/pipeline/runs?branch_id=...`：查看某个 branch 最近的后台 pipeline run 历史
-- `POST /api/pipeline/pause|resume|cancel`：暂停 / 恢复 / 取消后台 pipeline run
+- 后台 pipeline run 的 pause / resume / cancel 控制能力仍属于后续增量 productization 范围，当前 WSGI 原型未单独暴露对应 HTTP 路由。
 - `GET /api/chapter-jobs?branch_id=...&limit=200`：返回章节级任务表，用于 pipeline 控制台展示当前 stage / 进度 / 尝试次数 / 心跳 / 失败分类
 - 当前后端会在若干读取路径中顺手扫描长时间无 heartbeat 的 running job，并将其标记为 `failure_class=stalled`，避免控制台长期看到“假 running”
 - `GET /api/chapter-job-events?branch_id=...&chapter_index=...&limit=100`：返回单章任务事件链，适合 pipeline 控制台详情抽屉查看

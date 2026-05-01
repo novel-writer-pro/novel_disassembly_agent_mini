@@ -154,6 +154,21 @@ def test_api_current_surface_doc_matches_route_inventory() -> None:
     assert route_paths == mentioned
 
 
+def test_api_readme_route_inventory_matches_implemented_routes() -> None:
+    source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
+    route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
+
+    readme = Path("apps/api/README.md").read_text(encoding="utf-8")
+    mentioned = sorted(
+        set(
+            match.group(1)
+            for match in re.finditer(r'`(?:GET|POST) (/[^` ?]+)', readme)
+        )
+    )
+
+    assert route_paths == mentioned
+
+
 def test_api_readme_points_to_current_api_surface_doc() -> None:
     readme = Path("apps/api/README.md").read_text(encoding="utf-8")
     assert "docs/api-current-surface.md" in readme
