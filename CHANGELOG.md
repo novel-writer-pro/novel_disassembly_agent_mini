@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### /api/meta 升级为 method+path 契约清单
+- 为 `/api/meta` 新增 `available_endpoint_specs` 字段，显式返回 `{method, path}` 列表，同时保留 `available_endpoints` 作为兼容字段
+- 将 endpoint spec 提升为后端模块级 source-of-truth 常量，并让 `/api/meta` 测试直接复用该常量，减少依赖源码正则反推实现的脆弱性
+- 增加唯一性测试，要求 endpoint spec 中的 path 不得重复
+- 验证：meta + endpoint spec + current-surface targeted strict 回归通过
+
 ### roles/tracks 总入口补 current API surface 链接
 - 为 `docs/roles/README.md` 与 `docs/tracks/README.md` 补充 `api-current-surface.md` 总入口
 - 让从角色总导航和能力线总导航进入的技术型读者，也能快速落到当前已实现 API surface 的 source-of-truth

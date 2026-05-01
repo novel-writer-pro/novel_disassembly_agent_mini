@@ -52,6 +52,10 @@
 
 ## 2. 当前契约定位
 
+- `/api/meta` 当前同时返回：
+  - `available_endpoints`：兼容旧消费者的路径列表
+  - `available_endpoint_specs`：面向自动接入/校验的 `{method, path}` 清单（推荐优先消费）
+
 - 这是**实现面对齐文档**，目标是让接入方知道“现在真实可用的是什么”
 - `/api/meta` 应与这里保持一致
 - `apps/api/README.md` 应把这份文档作为当前实现契约入口

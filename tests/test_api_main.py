@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from apps.api.app.main import application
+from apps.api.app.main import _API_ENDPOINT_SPECS, application
 from novel_analyzer.application.dto import AutoRunResult, BranchSnapshot, RunSnapshot
 from novel_analyzer.config.settings import get_settings
 from novel_analyzer.database.session import create_schema
@@ -104,15 +104,18 @@ def test_meta_endpoint_lists_available_routes() -> None:
     assert b"/api/import" in body
     assert b"/api/start" in body
     assert b"/api/recovery" in body
+    assert b"available_endpoint_specs" in body
+    assert b'"method": "POST"' in body
     assert b"Current backend is dependency-light WSGI JSON." in body
     assert b"future work" not in body
 
-    source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
-    route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
-    meta_block = re.search(r'"available_endpoints": \[(.*?)\]\s*,\s*"notes"', source, re.S)
-    assert meta_block is not None
-    meta_paths = sorted(set(re.findall(r'"([^"]+)"', meta_block.group(1))))
-    assert route_paths == meta_paths
+    payload = json.loads(body)
+    meta_paths = sorted(item["path"] for item in payload["available_endpoint_specs"])
+    assert sorted(item["path"] for item in _API_ENDPOINT_SPECS) == meta_paths
+
+    normalized_meta_pairs = sorted((item["path"], item["method"]) for item in payload["available_endpoint_specs"])
+    expected_pairs = sorted((item["path"], item["method"]) for item in _API_ENDPOINT_SPECS)
+    assert expected_pairs == normalized_meta_pairs
 
 
 def test_mock_import_endpoint_uses_profile_query() -> None:
@@ -228,6 +231,11 @@ def test_api_current_surface_doc_matches_route_inventory() -> None:
     )
 
     assert route_paths == mentioned
+
+
+def test_api_endpoint_specs_have_unique_paths() -> None:
+    paths = [item["path"] for item in _API_ENDPOINT_SPECS]
+    assert len(paths) == len(set(paths))
 
 
 def test_api_current_surface_doc_points_to_target_contract() -> None:
