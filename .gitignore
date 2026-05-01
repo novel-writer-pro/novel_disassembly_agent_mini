@@ -18,3 +18,5 @@ __pycache__/*
 apps/web/node_modules/
 apps/web/.next/
 apps/web/tsconfig.tsbuildinfo
+**/__pycache__/
+*.py[cod]
