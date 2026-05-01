@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### 当前 API surface 文档增加自动一致性保护
+- 为 `docs/api-current-surface.md` 增加自动一致性测试，直接把当前实现路由集合与文档中的 `METHOD /path` 列表进行比对
+- 让当前实现文档、`/api/meta` 与 `apps/api/README.md` 的维护规则从“靠人工自觉”升级为“有测试锁定”
+- 验证：current surface / README / meta 三方 targeted 回归通过
+
 ### 新增当前 API 实现契约文档
 - 新增 `docs/api-current-surface.md`，专门描述 `apps/api/app/main.py` 当前已经实现并可调用的 WSGI API surface
 - `apps/api/README.md` 改为把该文档作为当前实现契约入口，同时保留 `docs/api-contract.md` 作为未来目标契约参考

@@ -139,6 +139,21 @@ def test_chapter_qa_context_requires_query_params() -> None:
     assert b"missing query parameter" in body
 
 
+def test_api_current_surface_doc_matches_route_inventory() -> None:
+    source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
+    route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
+
+    current_doc = Path("docs/api-current-surface.md").read_text(encoding="utf-8")
+    mentioned = sorted(
+        set(
+            match.group(1)
+            for match in re.finditer(r'`(?:GET|POST) (/[^` ?]+)', current_doc)
+        )
+    )
+
+    assert route_paths == mentioned
+
+
 def test_api_readme_points_to_current_api_surface_doc() -> None:
     readme = Path("apps/api/README.md").read_text(encoding="utf-8")
     assert "docs/api-current-surface.md" in readme
