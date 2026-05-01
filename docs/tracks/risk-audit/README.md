@@ -2,6 +2,7 @@
 
 主看：
 1. [`../../risk-audit-docs-index.md`](../../risk-audit-docs-index.md)
+2. [`../../api-current-surface.md`](../../api-current-surface.md)
 2. [`../../risk-audit-system-overview.md`](../../risk-audit-system-overview.md)
 3. [`../../risk-audit-capability.md`](../../risk-audit-capability.md)
 4. [`../../risk-audit-checker-roadmap.md`](../../risk-audit-checker-roadmap.md)

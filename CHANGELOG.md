@@ -1,5 +1,12 @@
 ## 2026-05-01
 
+### 维护者与风险审查主线入口补 current API surface 链接
+- 为 `docs/roles/maintainer/README.md` 与 `docs/tracks/risk-audit/README.md` 补充 `api-current-surface.md` 入口
+- 明确让维护者与风险审查主线读者可以直接落到“当前已实现 API surface”的 source-of-truth
+- 同时保持 product / reader-experience 入口不过度暴露实现细节
+- 增加自动测试，锁定这两个入口必须继续暴露 current API surface 文档
+- 验证：maintainer / risk-audit targeted strict 回归通过
+
 ### 角色/轨道入口补 current API surface 链接
 - 为 `docs/roles/integrator/README.md`、`docs/roles/backend/README.md`、`docs/tracks/review-workflow/README.md` 补充 `api-current-surface.md` 入口
 - 让接入者、后端维护者与 review workflow 读者都能更快看到“当前已实现 API surface”的 source-of-truth
