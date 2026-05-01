@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from io import BytesIO
 from types import TracebackType
 from typing import Any, cast
@@ -9,6 +10,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.main import application
+from novel_analyzer.application.dto import AutoRunResult, BranchSnapshot, RunSnapshot
 from novel_analyzer.config.settings import get_settings
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.runtime.cluster_review_state import (
@@ -154,6 +156,103 @@ def test_import_endpoint_requires_uploaded_file() -> None:
     )
     assert captured["status"] == "400 Bad Request"
     assert b"missing uploaded file" in body
+
+
+def test_import_endpoint_accepts_multipart_upload(monkeypatch, tmp_path) -> None:
+    captured: dict[str, Any] = {}
+
+    def start_response(
+        status: str,
+        headers: list[tuple[str, str]],
+        exc_info: tuple[type[BaseException], BaseException, TracebackType]
+        | tuple[None, None, None]
+        | None = None,
+    ) -> object:
+        _ = exc_info
+        captured["status"] = status
+        captured["headers"] = headers
+        return lambda chunk: None
+
+    def fake_ingest_and_start_pipeline(**kwargs: Any):
+        captured["ingest_kwargs"] = kwargs
+        return AutoRunResult(
+            novel_id="novel-1",
+            manifest_id="manifest-1",
+            run_id="run-1",
+            branch_id="branch-1",
+            chapter_count=1,
+            processed_chapters=0,
+            next_chapter=1,
+            pipeline_profile=kwargs.get("pipeline_profile", "manual"),
+            pipeline_state="ready",
+        )
+
+    monkeypatch.setattr("apps.api.app.main.ingest_and_start_pipeline", fake_ingest_and_start_pipeline)
+    monkeypatch.setattr(
+        "apps.api.app.main.get_run_snapshot",
+        lambda *args, **kwargs: RunSnapshot(
+            run_id="run-1",
+            branch_id="branch-1",
+            branch_name="main",
+            pipeline_state="ready",
+            manifest_chapter_count=1,
+            completed_chapters=0,
+            failed_jobs=0,
+            running_jobs=0,
+            next_chapter=1,
+            allowed_actions=["resume"],
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.api.app.main.get_branch_snapshot",
+        lambda *args, **kwargs: BranchSnapshot(
+            branch_id="branch-1",
+            pipeline_state="ready",
+            allowed_actions=["resume"],
+            chapter_rows=[],
+            failed_summary=[],
+            risk_summary={},
+        ),
+    )
+
+    boundary = "test-boundary"
+    raw = (
+        "--test-boundary\r\n"
+        'Content-Disposition: form-data; name="title"\r\n\r\n'
+        "Sample Title\r\n"
+        "--test-boundary\r\n"
+        'Content-Disposition: form-data; name="pipeline_profile"\r\n\r\n'
+        "manual\r\n"
+        "--test-boundary\r\n"
+        'Content-Disposition: form-data; name="file"; filename="sample.txt"\r\n'
+        "Content-Type: text/plain\r\n\r\n"
+        "第1章 一\n正文\n"
+        "\r\n--test-boundary--\r\n"
+    ).encode("utf-8")
+
+    body = b"".join(
+        application(
+            {
+                "REQUEST_METHOD": "POST",
+                "PATH_INFO": "/api/import",
+                "CONTENT_TYPE": f"multipart/form-data; boundary={boundary}",
+                "CONTENT_LENGTH": str(len(raw)),
+                "QUERY_STRING": "",
+                "wsgi.input": BytesIO(raw),
+            },
+            cast(StartResponse, start_response),
+        )
+    )
+
+    assert captured["status"] == "200 OK"
+    assert b'"import_result"' in body
+    assert b'"run_snapshot"' in body
+    assert b'"branch_snapshot"' in body
+    ingest_kwargs = captured["ingest_kwargs"]
+    assert ingest_kwargs["title"] == "Sample Title"
+    assert ingest_kwargs["pipeline_profile"] == "manual"
+    assert Path(ingest_kwargs["path"]).exists()
+    assert Path(ingest_kwargs["path"]).read_text(encoding="utf-8") == "第1章 一\n正文\n"
 
 
 def test_recovery_endpoint_requires_action_fields() -> None:

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import io
 import json
 import shutil
 from dataclasses import asdict
+from email.parser import BytesParser
+from email.policy import default
 from datetime import datetime
 from pathlib import Path
 from socketserver import ThreadingMixIn
@@ -138,19 +141,39 @@ def _json_body(environ: dict[str, Any]) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(raw.decode("utf-8")))
 
 
-def _multipart_form(environ: dict[str, Any]) -> dict[str, Any]:
-    import cgi
+class _UploadedMultipartFile:
+    def __init__(self, *, filename: str, file: io.BytesIO) -> None:
+        self.filename = filename
+        self.file = file
 
-    form = cgi.FieldStorage(fp=environ["wsgi.input"], environ=environ, keep_blank_values=True)
+
+def _multipart_form(environ: dict[str, Any]) -> dict[str, Any]:
+    length = int(environ.get("CONTENT_LENGTH") or "0")
+    if length <= 0:
+        return {}
+    raw = environ["wsgi.input"].read(length)
+    if not raw:
+        return {}
+
+    content_type = environ.get("CONTENT_TYPE", "")
+    headers = f"Content-Type: {content_type}\r\nMIME-Version: 1.0\r\n\r\n".encode("utf-8")
+    message = BytesParser(policy=default).parsebytes(headers + raw)
+    if not message.is_multipart():
+        return {}
+
     payload: dict[str, Any] = {}
-    for key in form.keys():
-        item = form[key]
-        if isinstance(item, list):
-            item = item[-1]
-        if getattr(item, "filename", None):
-            payload[key] = item
-        else:
-            payload[key] = item.value
+    for part in message.iter_parts():
+        key = part.get_param("name", header="content-disposition")
+        if not key:
+            continue
+        filename = part.get_filename()
+        if filename:
+            payload[key] = _UploadedMultipartFile(
+                filename=filename,
+                file=io.BytesIO(part.get_payload(decode=True) or b""),
+            )
+            continue
+        payload[key] = part.get_content()
     return payload
 
 

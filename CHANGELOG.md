@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### API multipart 解析去除 cgi 依赖
+- 将 `apps/api/app/main.py` 中的 `cgi.FieldStorage` multipart 解析替换为基于 `email.parser.BytesParser` 的标准库实现
+- 消除 Python 3.13 方向上的 `cgi` deprecation warning，同时保持 `/api/import` 现有行为不变
+- 新增正向 multipart 上传测试，覆盖 `title` / `pipeline_profile` / `file` 三类字段的实际解析与落盘
+- 验证：`tests/test_api_main.py` 全量通过
+
 ### 根 README 风险审查入口补齐
 - 在仓库根 `README.md` 的 newcomer path 中补充 `risk-audit-completion-status.md` 直链
 - 让新接手者能直接看到风险审查第一阶段的完成度、测试方法与使用说明
