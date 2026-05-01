@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### roles/tracks 总入口补 current API surface 链接
+- 为 `docs/roles/README.md` 与 `docs/tracks/README.md` 补充 `api-current-surface.md` 总入口
+- 让从角色总导航和能力线总导航进入的技术型读者，也能快速落到当前已实现 API surface 的 source-of-truth
+- 增加自动测试，锁定 roles/tracks 总入口必须继续暴露该文档
+- 验证：roles/tracks 总入口与下层技术入口 targeted strict 回归通过
+
 ### 维护者与风险审查主线入口补 current API surface 链接
 - 为 `docs/roles/maintainer/README.md` 与 `docs/tracks/risk-audit/README.md` 补充 `api-current-surface.md` 入口
 - 明确让维护者与风险审查主线读者可以直接落到“当前已实现 API surface”的 source-of-truth

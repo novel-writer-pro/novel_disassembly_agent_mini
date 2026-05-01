@@ -3,3 +3,5 @@
 - [`./risk-audit/README.md`](./risk-audit/README.md)
 - [`./review-workflow/README.md`](./review-workflow/README.md)
 - [`./reader-experience/README.md`](./reader-experience/README.md)
+
+- [`../api-current-surface.md`](../api-current-surface.md)
