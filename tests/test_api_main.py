@@ -139,6 +139,11 @@ def test_chapter_qa_context_requires_query_params() -> None:
     assert b"missing query parameter" in body
 
 
+def test_root_readme_points_to_current_api_surface_doc() -> None:
+    readme = Path("README.md").read_text(encoding="utf-8")
+    assert "docs/api-current-surface.md" in readme
+
+
 def test_root_readme_heading_levels_do_not_jump() -> None:
     import re
 

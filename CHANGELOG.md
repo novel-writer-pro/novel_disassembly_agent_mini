@@ -1,5 +1,11 @@
 ## 2026-05-01
 
+### 根 README 补当前 API 实现契约入口
+- 在仓库根 `README.md` 的 newcomer path 中补充 `docs/api-current-surface.md` 直链
+- 让接入者能从项目顶层直接区分“当前已实现 API surface”和“未来目标契约”
+- 增加自动测试，要求根 README 必须暴露当前 API 实现契约文档
+- 验证：root README / current-surface targeted strict 回归通过
+
 ### docs/README 编号检查升级为全节扫描
 - 修复 `docs/README.md` 第二个“推荐阅读顺序”小节的编号漂移问题
 - 将原本只覆盖“接口类文档”的编号测试升级为：扫描 `docs/README.md` 所有带编号的 `###` 小节，并要求编号连续递增
