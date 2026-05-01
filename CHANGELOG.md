@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### 根 README 风险审查入口补齐
+- 在仓库根 `README.md` 的 newcomer path 中补充 `risk-audit-completion-status.md` 直链
+- 让新接手者能直接看到风险审查第一阶段的完成度、测试方法与使用说明
+- 验证：关联 report / review endpoint smoke 通过
+
 ### 仓库缓存文件治理
 - 将 `**/__pycache__/` 与 `*.py[cod]` 明确加入 `.gitignore`，避免 Python 字节码缓存继续污染版本库
 - 将历史上已被错误纳管的 `__pycache__` / `.pyc` 文件从 Git 索引中移除

@@ -28,6 +28,7 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 - 想看 `skills_dir` 与门控 checker 的边界：[`./docs/skills-vs-risk-checkers-boundary.md`](./docs/skills-vs-risk-checkers-boundary.md)
 - 想看风险审查运行时架构：[`./docs/risk-audit-runtime-architecture.md`](./docs/risk-audit-runtime-architecture.md)
 - 想看风险审查架构专题总入口：[`./docs/architecture/README.md`](./docs/architecture/README.md)
+- 想看风险审查完成度 / 测试 / 使用说明：[`./docs/architecture/risk-audit-completion-status.md`](./docs/architecture/risk-audit-completion-status.md)
 - 想看 checker 路线图：[`./docs/risk-audit-checker-roadmap.md`](./docs/risk-audit-checker-roadmap.md)
 - 想看下一批 checker 技术设计：[`./docs/risk-audit-next-batch-checkers.md`](./docs/risk-audit-next-batch-checkers.md)
 - 想看风险审查系统总览：[`./docs/risk-audit-system-overview.md`](./docs/risk-audit-system-overview.md)
