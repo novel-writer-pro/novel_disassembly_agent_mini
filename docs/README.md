@@ -54,13 +54,13 @@
 ### 推荐阅读顺序
 1. [`./interface-manifest.md`](./interface-manifest.md)
 2. [`./api-current-surface.md`](./api-current-surface.md)
-2. [`./examples/`](./examples/)
-3. [`./system-review-consumption-mapping.md`](./system-review-consumption-mapping.md)
-4. [`./system-review-display-rules.md`](./system-review-display-rules.md)
-5. [`./system-review-integration-checklist.md`](./system-review-integration-checklist.md)
-6. [`./system-review-release-checklist.md`](./system-review-release-checklist.md)
-7. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
-8. [`./final-handoff.md`](./final-handoff.md)
+3. [`./examples/`](./examples/)
+4. [`./system-review-consumption-mapping.md`](./system-review-consumption-mapping.md)
+5. [`./system-review-display-rules.md`](./system-review-display-rules.md)
+6. [`./system-review-integration-checklist.md`](./system-review-integration-checklist.md)
+7. [`./system-review-release-checklist.md`](./system-review-release-checklist.md)
+8. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
+9. [`./final-handoff.md`](./final-handoff.md)
 
 ### 说明
 - 第 1 步：先看稳定接口结构

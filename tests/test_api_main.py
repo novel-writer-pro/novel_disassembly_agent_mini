@@ -160,15 +160,18 @@ def test_api_contract_markdown_fences_are_balanced() -> None:
     assert text.count("```") % 2 == 0
 
 
-def test_docs_readme_interface_section_numbering_is_sequential() -> None:
+def test_docs_readme_numbered_sections_are_sequential() -> None:
     import re
 
     text = Path("docs/README.md").read_text(encoding="utf-8")
-    start = text.index("### 接口类文档")
-    end = text.find("\n### ", start + 1)
-    chunk = text[start:end if end != -1 else None]
-    nums = [int(m.group(1)) for m in re.finditer(r'^(\d+)\. ', chunk, re.M)]
-    assert nums == list(range(1, len(nums) + 1))
+    for match in re.finditer(r'^###\s+(.+)$', text, re.M):
+        start = match.start()
+        next_m = re.search(r'^###\s+.+$', text[match.end():], re.M)
+        end = match.end() + next_m.start() if next_m else len(text)
+        chunk = text[start:end]
+        nums = [int(m.group(1)) for m in re.finditer(r'^(\d+)\. ', chunk, re.M)]
+        if nums:
+            assert nums == list(range(1, len(nums) + 1))
 
 
 def test_api_current_surface_doc_matches_route_inventory() -> None:
