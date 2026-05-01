@@ -1,5 +1,10 @@
 ## 2026-05-01
 
+### docs/api-contract Markdown 结构修复
+- 修复 `docs/api-contract.md` 中未闭合的 fenced code block，避免后续标题与内容被错误吞入代码块
+- 增加轻量测试，要求该文档的 Markdown 代码块 fence 数量必须成对平衡
+- 验证：api-contract fence 测试与 current-surface 契约测试通过
+
 ### docs/README 接口文档编号修正并加保护
 - 修正 `docs/README.md` 中“接口类文档”小节因多轮增补导致的编号漂移问题
 - 增加自动测试，要求该小节的编号必须连续递增，避免后续文档入口继续失序

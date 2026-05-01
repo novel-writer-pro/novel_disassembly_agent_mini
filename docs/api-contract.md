@@ -167,6 +167,7 @@
   "pipeline_state": "auto_running",
   "message": "retry accepted"
 }
+```
 
 ### 2.12 GET /branches/{branch_id}/review-clusters
 返回当前 branch 的问题簇列表。

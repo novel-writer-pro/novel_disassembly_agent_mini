@@ -139,6 +139,11 @@ def test_chapter_qa_context_requires_query_params() -> None:
     assert b"missing query parameter" in body
 
 
+def test_api_contract_markdown_fences_are_balanced() -> None:
+    text = Path("docs/api-contract.md").read_text(encoding="utf-8")
+    assert text.count("```") % 2 == 0
+
+
 def test_docs_readme_interface_section_numbering_is_sequential() -> None:
     import re
 
