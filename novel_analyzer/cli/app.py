@@ -21,7 +21,11 @@ from novel_analyzer.database.session import (
     ensure_database_exists,
 )
 from novel_analyzer.runtime.storage import describe_runtime_storage, migrate_legacy_runtime_dirs
-from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state, write_cluster_review_state
+from novel_analyzer.runtime.cluster_review_state import (
+    read_cluster_review_history,
+    read_cluster_review_state,
+    write_cluster_review_state,
+)
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -1010,6 +1014,7 @@ def set_cluster_status(
     cluster_status: str,
     review_notes: str = typer.Option('', '--review-notes'),
     review_owner: str = typer.Option('', '--review-owner'),
+    review_actor: str = typer.Option('', '--review-actor'),
     resolved_at: str = typer.Option('', '--resolved-at'),
     review_result: str = typer.Option('', '--review-result'),
     database_url: str | None = None,
@@ -1026,6 +1031,7 @@ def set_cluster_status(
                 cluster_status=cluster_status,
                 review_notes=review_notes,
                 review_owner=review_owner,
+                review_actor=review_actor,
                 resolved_at=resolved_at,
                 review_result=review_result,
             )
@@ -1036,6 +1042,7 @@ def set_cluster_status(
             cluster_status=cluster_status,
             review_notes=review_notes,
             review_owner=review_owner,
+            review_actor=review_actor,
             resolved_at=resolved_at,
             review_result=review_result,
             settings=settings,
@@ -1045,6 +1052,7 @@ def set_cluster_status(
     echo(f"cluster_status={state.cluster_status}")
     echo(f"review_notes={state.review_notes}")
     echo(f"review_owner={state.review_owner}")
+    echo(f"review_actor={state.review_actor}")
     echo(f"resolved_at={state.resolved_at}")
     echo(f"review_result={state.review_result}")
 
@@ -1067,6 +1075,10 @@ def show_cluster_status(branch_id: str, database_url: str | None = None) -> None
 def show_cluster_history(
     branch_id: str,
     cluster_key: str,
+    event_type: str = typer.Option('', '--event-type'),
+    review_owner: str = typer.Option('', '--review-owner'),
+    review_result: str = typer.Option('', '--review-result'),
+    limit: int = typer.Option(0, '--limit'),
     database_url: str | None = None,
 ) -> None:
     """Show review history for one cluster."""
@@ -1078,7 +1090,15 @@ def show_cluster_history(
             from novel_analyzer.services.cluster_review_service import ClusterReviewService
             payload = ClusterReviewService(session).read_history(branch_id, cluster_key)
     except Exception:
-        payload = []
+        payload = read_cluster_review_history(branch_id, cluster_key, settings)
+    if event_type:
+        payload = [item for item in payload if str(item.get('event_type') or '') == event_type]
+    if review_owner:
+        payload = [item for item in payload if str(item.get('review_owner') or '') == review_owner]
+    if review_result:
+        payload = [item for item in payload if str(item.get('review_result') or '') == review_result]
+    if limit > 0:
+        payload = payload[-limit:]
     echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 

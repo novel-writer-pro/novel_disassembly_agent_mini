@@ -9,9 +9,13 @@
 
 ### 已纳入并开始提质
 
-3. `plot_logic_consistency`
-4. `timeline_consistency`
-5. `power_scaling_consistency`
+3. `relationship_consistency`
+4. `foreshadow_payoff_consistency`
+5. `setting_scope_consistency`
+6. `thread_closure_consistency`
+7. `plot_logic_consistency`
+8. `timeline_consistency`
+9. `power_scaling_consistency`
 
 ---
 
@@ -74,11 +78,88 @@
 - `state_transition_notes`
 - `unresolved_threads`
 
+### 当前 phase-2 第一轮已落地的细粒度候选
+
+- `plot_logic_consistency`
+  - `thread_state_conflict`
+  - `motivation_to_action_gap`
+- `timeline_consistency`
+  - `sequence_conflict_candidate`
+  - `recovery_window_insufficient`
+- `power_scaling_consistency`
+  - `upset_without_setup`
+  - `cost_constraint_missing`
+
 ---
+
+### `relationship_consistency`
+
+已开始利用：
+
+- `state_summary.stable_relations`
+- `state_summary.evolved_relations`
+- `unsupported_inferences`
+- `state_transition_notes`
+- `evidence_backed_resolutions`
+- `unresolved_threads`
+
+当前第一轮已落地的细粒度候选：
+
+- `relationship_shift_without_bridge`
+- `trust_state_conflict`
+- `hostility_resolution_too_fast`
+
+### `foreshadow_payoff_consistency`
+
+已开始利用：
+
+- `state_summary.new_foreshadowing`
+- `state_summary.paid_off_foreshadowing`
+- `unsupported_inferences`
+- `evidence_backed_resolutions`
+- `unresolved_threads`
+
+当前第一轮已落地的细粒度候选：
+
+- `payoff_without_setup`
+- `resolved_thread_reopened_without_reason`
+- `important_thread_long_unmentioned`
+
+### `setting_scope_consistency`
+
+已开始利用：
+
+- `state_summary.observed_world_rules`
+- `state_summary.constraining_world_rules`
+- `unsupported_inferences`
+- `state_transition_notes`
+- `unresolved_threads`
+
+当前第一轮已落地的细粒度候选：
+
+- `constraint_scope_expansion`
+- `resource_limit_missing`
+- `authority_boundary_conflict`
+
+### `thread_closure_consistency`
+
+已开始利用：
+
+- `state_summary.new_conflicts`
+- `state_summary.escalated_conflicts`
+- `unsupported_inferences`
+- `evidence_backed_resolutions`
+- `unresolved_threads`
+
+当前第一轮已落地的细粒度候选：
+
+- `thread_dropped_after_escalation`
+- `closure_without_resolution_basis`
+- `ending_stability_candidate`
 
 ## 3. 下一阶段优先级
 
-## P1：增强现有 5 个 checker 的信号质量
+## P1：增强现有 9 个 checker 的信号质量
 
 ### 目标
 
@@ -176,6 +257,10 @@
 
 > 先把当前 5 个 checker 做扎实，再扩数量。
 
+更细的下一批设计与实现边界，见：
+
+- [`./risk-audit-next-batch-checkers.md`](./risk-audit-next-batch-checkers.md)
+
 ---
 
 ## 5. 当前最重要的开发顺序
@@ -194,3 +279,5 @@
 ## 6. 一句话总结
 
 > 当前路线不是继续无限加 checker，而是先把已经进入 roster 的 5 个 checker 做成真正可解释、可聚合、可交付的系统审查能力。
+
+当前 phase-2 第一轮已经证明：plot / timeline / power 三类 checker 可以继续沿“结构化信号 -> 更具体候选 -> 风险卡/cluster 消费”的路径稳定演进。

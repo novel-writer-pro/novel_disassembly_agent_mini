@@ -18,6 +18,7 @@
 
 - `risk-audit-docs-index.md`
 - `risk-audit-system-overview.md`
+- `architecture/README.md`
 
 ### 能力说明层
 
@@ -29,10 +30,20 @@
 - `risk-audit-runtime-architecture.md`
 - `risk-audit-runtime-boundary.md`
 - `skills-vs-risk-checkers-boundary.md`
+- `architecture/risk-audit-semantic-enhancement.md`
+- `architecture/risk-audit-embedding-pgvector-implementation-spec.md`
 
 ### 路线图层
 
 - `risk-audit-checker-roadmap.md`
+- `risk-audit-phase2-checker-implementation.md`
+- `risk-audit-next-batch-checkers.md`
+
+### 运行期样例结论链
+
+- `.omx/reports/sample-novel-current-conclusion.md`
+- `.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
+- `.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
 
 ---
 
@@ -50,6 +61,18 @@
 - 具体能力定义
 - 具体字段解释
 - 具体架构细节
+
+### `architecture/README.md`
+
+职责：
+
+- 作为架构专题文档的统一入口
+- 帮助后端/维护者快速定位语义增强与 embedding 落地方案
+
+不应承担：
+
+- 具体 checker 能力定义
+- 具体实现规格口径
 
 ### `risk-audit-system-overview.md`
 
@@ -111,6 +134,30 @@
 - 系统成熟度判断
 - checker roadmap
 
+### `architecture/risk-audit-semantic-enhancement.md`
+
+职责：
+
+- 解释为什么当前风险审查主链没有直接把 embedding / LLM skills 塞进每个 checker
+- 说明后续语义增强应该加在哪一层
+
+不应承担：
+
+- 回写当前已落地 checker 现状
+- 替代运行时主架构文档
+
+### `architecture/risk-audit-embedding-pgvector-implementation-spec.md`
+
+职责：
+
+- 定义 ONNX embedding + pgvector 的生产落地规格
+- 说明 signal store / link service / adjudication service 的拆分建议
+
+不应承担：
+
+- 替代路线图文档
+- 回写当前已实现能力现状
+
 ### `risk-audit-checker-roadmap.md`
 
 职责：
@@ -124,6 +171,30 @@
 - 运行时边界解释
 - 文档导航职责
 
+### `risk-audit-phase2-checker-implementation.md`
+
+职责：
+
+- 详细定义 plot / timeline / power 三类 checker 的第二阶段实施方式
+- 明确结构化信号、降噪规则、风险类型与验收门槛
+
+不应承担：
+
+- 总体产品定位
+- 文档导航职责
+
+### `risk-audit-next-batch-checkers.md`
+
+职责：
+
+- 定义下一批新增 checker 的立项边界
+- 收口新增 checker 的风险类型、信号来源与反误报原则
+
+不应承担：
+
+- 回写当前已实现能力现状
+- 替代 phase-2 已落地实现说明
+
 ### `reader-experience-capability.md`
 
 职责：
@@ -134,6 +205,42 @@
 
 - 当前门控系统实现状态判断
 - risk checker 运行时架构说明
+
+### `.omx/reports/sample-novel-current-conclusion.md`
+
+职责：
+
+- 作为样例小说当前主结论文档
+- 汇总稳定覆盖范围、主判断、fresh verification evidence
+
+不应承担：
+
+- 详细恢复步骤（由 blocker memo 承担）
+- phase-2 离线 best-effort 全量展开（由 offline memo 承担）
+
+### `.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
+
+职责：
+
+- 说明当前离线样例产物能支持到什么程度的 phase-2 结论
+- 明确哪些结论成立、哪些仍不能成立
+
+不应承担：
+
+- 作为主结论文档替代
+- 作为数据库恢复操作手册
+
+### `.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
+
+职责：
+
+- 说明真实 sample phase-2 复跑为何被阻塞
+- 记录恢复条件、恢复步骤、继续命令、完成判据
+
+不应承担：
+
+- 直接输出内容结论
+- 替代 offline memo 或主结论
 
 ---
 
@@ -157,11 +264,16 @@
 
 - `risk-audit-capability.md`
 - `risk-audit-checker-roadmap.md`
+- `risk-audit-phase2-checker-implementation.md`
 
 建议：
 
 - `risk-audit-capability.md` 负责说“系统已经能做什么”
 - `risk-audit-checker-roadmap.md` 负责说“下一步往哪里走”
+- `risk-audit-phase2-checker-implementation.md` 负责说“第二批 checker 具体怎么做”
+- `risk-audit-next-batch-checkers.md` 负责说“下一批新增 checker 应该如何收口与立项”
+- `architecture/risk-audit-semantic-enhancement.md` 负责说“语义增强为什么不直接放进 checker，以及后续应加在哪一层”
+- `architecture/risk-audit-embedding-pgvector-implementation-spec.md` 负责说“最终 embedding / pgvector 方案要怎么落成数据对象与服务”
 
 ### 重叠点 C：运行时边界
 
@@ -227,7 +339,9 @@
 
 1. `risk-audit-capability.md`
 2. `risk-audit-checker-roadmap.md`
-3. `risk-audit-system-overview.md`（如成熟度发生变化）
+3. `risk-audit-phase2-checker-implementation.md`（如影响第二批 checker 路线）
+4. `risk-audit-next-batch-checkers.md`（如涉及新增 checker 的立项边界）
+5. `risk-audit-system-overview.md`（如成熟度发生变化）
 
 ### 如果改运行时架构
 
@@ -244,6 +358,18 @@
 1. `risk-audit-capability.md`
 2. `risk-audit-system-overview.md`
 3. `risk-audit-checker-roadmap.md`（如影响路线判断）
+4. `risk-audit-phase2-checker-implementation.md`（如影响第二批 checker 实施细节）
+5. `risk-audit-next-batch-checkers.md`（如影响下一批 checker 的 signal / risk type 口径）
+
+### 如果改样例小说结论链
+
+至少同步更新：
+
+1. `.omx/reports/sample-novel-current-conclusion.md`
+2. `.omx/reports/sample-novel-phase2-offline-memo-20260430.md`（如 phase-2 离线结论发生变化）
+3. `.omx/reports/sample-novel-phase2-db-blocker-20260430.md`（如阻塞条件/恢复步骤发生变化）
+4. `docs/risk-audit-docs-index.md`（如导航入口变化）
+5. `docs/README.md`（如主索引入口变化）
 
 ### 如果改读者体验规划
 

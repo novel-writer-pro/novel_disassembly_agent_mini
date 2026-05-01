@@ -1,11 +1,113 @@
 {
+  "contract_version": "review-workflow.v1",
+  "stable_contract_version": "review-api-pre-v1",
+  "allowed_cluster_statuses": [
+    "escalated",
+    "needs_review",
+    "open",
+    "reopened",
+    "resolved",
+    "reviewed"
+  ],
+  "allowed_review_results": [
+    "confirmed-benign",
+    "confirmed-issue",
+    "deferred",
+    "needs-escalation"
+  ],
   "review_storage_mode": "db",
   "cluster_count": 1,
   "history_event_count": 2,
   "latest_review_at": "2026-04-29T03:00:00Z",
   "latest_review_owner": "editor-a",
+  "latest_review_actor": "review-bot",
+  "latest_review_event_type": "assignment_update",
   "latest_review_result": "confirmed-benign",
   "latest_review_result_label": "确认无问题",
+  "current_owner_top": "editor-a",
+  "current_owner_top_count": 1,
+  "latest_actor_top": "review-bot",
+  "latest_actor_top_count": 1,
+  "latest_event_type_top": "assignment_update",
+  "latest_event_type_top_count": 1,
+  "workflow_lane_top": "human_review_queue",
+  "workflow_lane_top_count": 1,
+  "queue_priority_top": "high",
+  "queue_priority_top_count": 1,
+  "deadline_level_top": "soon",
+  "deadline_level_top_count": 1,
+  "batch_operation_hint_top": "batch_human_review_queue",
+  "batch_operation_hint_top_count": 1,
+  "auto_next_action_code_top": "prioritize_phase2_human_review",
+  "auto_next_action_code_top_count": 1,
+  "auto_next_action_top": "优先安排人工复核 恢复窗口不足候选簇，重点核对时间线/恢复窗口相关证据链是否闭合。",
+  "auto_next_action_top_count": 1,
+  "escalation_reason_code_top": "phase2_risk_requires_human_confirmation",
+  "escalation_reason_code_top_count": 1,
+  "escalation_reason_top": "当前问题簇属于 phase-2 结构化风险候选，需优先补足人工确认后再决定是否升级或关闭。",
+  "escalation_reason_top_count": 1,
+  "pending_assignment_count": 0,
+  "pending_escalation_count": 0,
+  "resolved_count": 0,
+  "needs_review_count": 1,
+  "action_required_count": 1,
+  "batch_suggestions": [
+    {
+      "hint_code": "batch_human_review_queue",
+      "hint_title": "可批量人工复核",
+      "action_bucket": "review",
+      "batch_priority": "medium",
+      "group_strategy": "by_checker_span",
+      "group_key": "timeline_consistency:single",
+      "cluster_count": 1,
+      "cluster_keys": [
+        "timeline_consistency|::|recovery_window_insufficient"
+      ],
+      "suggested_cluster_order": [
+        "timeline_consistency|::|recovery_window_insufficient"
+      ],
+      "suggested_cluster_order_titles": [
+        "恢复窗口不足候选簇"
+      ],
+      "cluster_titles": [
+        "恢复窗口不足候选簇"
+      ],
+      "suggested_cluster_order_details": [
+        {
+          "cluster_key": "timeline_consistency|::|recovery_window_insufficient",
+          "cluster_title": "恢复窗口不足候选簇",
+          "queue_priority": "high",
+          "review_priority": "P2",
+          "chapter_count": 1,
+          "confidence": 0.32,
+          "human_review_batch_rank_score": 66.0,
+          "human_review_batch_rank_reason": "priority=P2 | pattern=单点问题 | chapter_count=1 | confidence=0.32 | human_review_batch_rank_score=66.00",
+          "chapter_span_width": 0,
+          "batch_rank_score": 448.2,
+          "order_reason": "queue=high | priority=P2 | chapter_count=1 | confidence=0.32 | span_width=0 | batch_rank_score=448.20"
+        }
+      ],
+      "ordering_strategy": "queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter",
+      "suggested_first_cluster_reason": "queue=high | priority=P2 | chapter_count=1 | confidence=0.35 | span_width=0 | batch_rank_score=423.50",
+      "owners": [],
+      "suggested_owner": "",
+      "primary_checker": "timeline_consistency",
+      "risk_types": [
+        "recovery_window_insufficient"
+      ],
+      "chapter_spans": [
+        "12"
+      ],
+      "queue_priority_top": "high",
+      "deadline_level_top": "soon",
+      "action_required": true,
+      "resolved_candidate_count": 0,
+      "escalation_candidate_count": 0,
+      "recommended_batch_action": "优先安排人工复核 恢复窗口不足候选簇，重点核对时间线/恢复窗口相关证据链是否闭合。",
+      "span_bucket": "single",
+      "phase2_focus_top": "timeline-phase2"
+    }
+  ],
   "by_priority": {
     "P2": 1
   },
@@ -20,5 +122,40 @@
   },
   "by_owner": {
     "editor-a": 1
-  }
+  },
+  "by_actor": {
+    "review-bot": 1
+  },
+  "by_latest_event_type": {
+    "assignment_update": 1
+  },
+  "by_workflow_lane": {
+    "human_review_queue": 1
+  },
+  "by_queue_priority": {
+    "high": 1
+  },
+  "by_deadline_level": {
+    "soon": 1
+  },
+  "by_batch_operation_hint": {
+    "batch_human_review_queue": 1
+  },
+  "by_auto_next_action_code": {
+    "prioritize_phase2_human_review": 1
+  },
+  "by_auto_next_action": {
+    "优先安排人工复核 恢复窗口不足候选簇，重点核对时间线/恢复窗口相关证据链是否闭合。": 1
+  },
+  "by_escalation_reason_code": {
+    "phase2_risk_requires_human_confirmation": 1
+  },
+  "by_escalation_reason": {
+    "当前问题簇属于 phase-2 结构化风险候选，需优先补足人工确认后再决定是否升级或关闭。": 1
+  },
+  "by_phase2_focus": {
+    "timeline-phase2": 1
+  },
+  "phase2_focus_top": "timeline-phase2",
+  "phase2_focus_top_count": 1
 }

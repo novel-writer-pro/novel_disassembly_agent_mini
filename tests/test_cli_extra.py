@@ -1,9 +1,13 @@
 from pathlib import Path
+import json
 
 from _pytest.monkeypatch import MonkeyPatch
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from typer.testing import CliRunner
 
 from novel_analyzer.cli.app import app
+from novel_analyzer.runtime.cluster_review_state import write_cluster_review_state
 from tests.cli_test_support import patch_cli_sqlite_runtime
 
 runner = CliRunner()
@@ -74,3 +78,67 @@ def test_export_qa_context_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None
     assert branch_result.exit_code == 0
     assert chapter_out.exists()
     assert branch_out.exists()
+
+
+def test_show_cluster_history_cli_supports_filters_and_fallback(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    from novel_analyzer.config.settings import get_settings
+
+    settings = get_settings().model_copy(deep=True)
+    settings.runtime_cache_dir = str(tmp_path / "runtime-cache")
+    monkeypatch.setattr("novel_analyzer.cli.app.get_settings", lambda: settings)
+    fallback_engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    fallback_factory = sessionmaker(bind=fallback_engine, future=True)
+    monkeypatch.setattr(
+        "novel_analyzer.cli.app.create_session_factory",
+        lambda settings=None: fallback_factory,
+    )
+
+    write_cluster_review_state(
+        "branch-x",
+        "cluster-y",
+        "needs_review",
+        review_result="deferred",
+        review_notes="待处理",
+        review_owner="editor-a",
+        review_actor="editor-a",
+        settings=settings,
+    )
+    write_cluster_review_state(
+        "branch-x",
+        "cluster-y",
+        "needs_review",
+        review_result="deferred",
+        review_notes="待处理",
+        review_owner="editor-b",
+        review_actor="review-bot",
+        settings=settings,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "show-cluster-history",
+            "branch-x",
+            "cluster-y",
+            "--event-type",
+            "assignment_update",
+            "--review-owner",
+            "editor-b",
+            "--review-result",
+            "deferred",
+            "--limit",
+            "1",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert len(payload) == 1
+    assert payload[0]["event_type"] == "assignment_update"
+    assert payload[0]["review_owner"] == "editor-b"
+    assert payload[0]["review_actor"] == "review-bot"

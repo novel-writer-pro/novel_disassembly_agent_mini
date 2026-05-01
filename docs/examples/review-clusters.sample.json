@@ -1,4 +1,20 @@
 {
+  "contract_version": "review-workflow.v1",
+  "stable_contract_version": "review-api-pre-v1",
+  "allowed_cluster_statuses": [
+    "escalated",
+    "needs_review",
+    "open",
+    "reopened",
+    "resolved",
+    "reviewed"
+  ],
+  "allowed_review_results": [
+    "confirmed-benign",
+    "confirmed-issue",
+    "deferred",
+    "needs-escalation"
+  ],
   "items": [
     {
       "cluster_key": "character_ooc|::|human_review_candidate",
@@ -30,6 +46,7 @@
         "review_result": "confirmed-benign",
         "review_notes": "API E2E: 已通过 API 写回。",
         "review_owner": "api-editor",
+        "review_actor": "api-bot",
         "resolved_at": "",
         "event_type": "status_update"
       }

@@ -28,6 +28,98 @@ ALLOWED_CLUSTER_STATUSES = {
 }
 
 
+def _normalize_review_snapshot(payload: dict[str, object] | None) -> dict[str, str]:
+    source = payload or {}
+    return {
+        "cluster_status": str(source.get("cluster_status") or ""),
+        "review_result": str(source.get("review_result") or ""),
+        "review_notes": str(source.get("review_notes") or ""),
+        "review_owner": str(source.get("review_owner") or ""),
+        "review_actor": str(source.get("review_actor") or ""),
+        "resolved_at": str(source.get("resolved_at") or ""),
+    }
+
+
+def _changed_review_fields(
+    previous: dict[str, str],
+    current: dict[str, str],
+) -> list[str]:
+    fields = [
+        "cluster_status",
+        "review_result",
+        "review_notes",
+        "review_owner",
+        "review_actor",
+        "resolved_at",
+    ]
+    return [field for field in fields if previous.get(field, "") != current.get(field, "")]
+
+
+def infer_review_event_type(
+    previous: dict[str, str] | None,
+    current: dict[str, str] | None,
+) -> str:
+    prev = _normalize_review_snapshot(previous)
+    curr = _normalize_review_snapshot(current)
+    changed_fields = _changed_review_fields(prev, curr)
+    if not changed_fields:
+        return "noop_update"
+    if changed_fields == ["review_actor"]:
+        return "actor_update"
+    if changed_fields == ["review_owner"]:
+        return "owner_update"
+    if "review_owner" in changed_fields and "review_actor" in changed_fields:
+        return "assignment_update"
+    if changed_fields == ["review_notes"]:
+        return "note_update"
+    if changed_fields == ["resolved_at"]:
+        return "resolution_marker_update"
+    if changed_fields == ["review_result"]:
+        return "result_update"
+    if "cluster_status" in changed_fields:
+        return "status_update"
+    return "review_update"
+
+
+def build_review_history_event(
+    *,
+    branch_id: str,
+    cluster_key: str,
+    event_index: int,
+    previous: dict[str, object] | None,
+    current: dict[str, object] | None,
+    created_at: str,
+    event_type: str | None = None,
+) -> dict[str, str | int | list[str] | dict[str, str]]:
+    prev = _normalize_review_snapshot(previous)
+    curr = _normalize_review_snapshot(current)
+    changed_fields = _changed_review_fields(prev, curr)
+    resolved_event_type = event_type or infer_review_event_type(prev, curr)
+    return {
+        "event_index": event_index,
+        "event_id": f"{branch_id}:{cluster_key}:{event_index}",
+        "audit_key": f"{branch_id}:{cluster_key}:{event_index}",
+        "previous_values": prev,
+        "current_values": curr,
+        "previous_cluster_status": prev["cluster_status"],
+        "previous_review_result": prev["review_result"],
+        "previous_review_notes": prev["review_notes"],
+        "previous_review_owner": prev["review_owner"],
+        "previous_review_actor": prev["review_actor"],
+        "previous_resolved_at": prev["resolved_at"],
+        "cluster_status": curr["cluster_status"],
+        "review_result": curr["review_result"],
+        "review_notes": curr["review_notes"],
+        "review_owner": curr["review_owner"],
+        "review_actor": curr["review_actor"],
+        "resolved_at": curr["resolved_at"],
+        "event_type": resolved_event_type,
+        "changed_fields": changed_fields,
+        "transition": f"{prev['cluster_status'] or 'new'}->{curr['cluster_status'] or 'unknown'}",
+        "created_at": created_at,
+    }
+
+
 def _cluster_review_root(settings: Settings | None = None) -> Path:
     root = runtime_cache_root(settings) / "cluster-review"
     root.mkdir(parents=True, exist_ok=True)
@@ -45,6 +137,7 @@ class ClusterReviewState:
     cluster_status: str
     review_notes: str = ""
     review_owner: str = ""
+    review_actor: str = ""
     resolved_at: str = ""
     review_result: str = ""
 
@@ -75,6 +168,7 @@ def read_cluster_review_state(branch_id: str, settings: Settings | None = None) 
                 "cluster_status": str(value.get("cluster_status") or ""),
                 "review_notes": str(value.get("review_notes") or ""),
                 "review_owner": str(value.get("review_owner") or ""),
+                "review_actor": str(value.get("review_actor") or ""),
                 "resolved_at": str(value.get("resolved_at") or ""),
                 "review_result": str(value.get("review_result") or ""),
             }
@@ -85,7 +179,7 @@ def read_cluster_review_history(
     branch_id: str,
     cluster_key: str,
     settings: Settings | None = None,
-) -> list[dict[str, str]]:
+) -> list[dict[str, object]]:
     runtime = settings or get_settings()
     path = _cluster_review_history_path(branch_id, runtime)
     if not path.exists():
@@ -99,23 +193,36 @@ def read_cluster_review_history(
     events = payload.get(cluster_key, [])
     if not isinstance(events, list):
         return []
-    result: list[dict[str, str]] = []
-    for event in events:
+    result: list[dict[str, object]] = []
+    for index, event in enumerate(events, start=1):
         if isinstance(event, dict):
-            result.append({
-                "previous_cluster_status": str(event.get("previous_cluster_status") or ""),
-                "previous_review_result": str(event.get("previous_review_result") or ""),
-                "previous_review_notes": str(event.get("previous_review_notes") or ""),
-                "previous_review_owner": str(event.get("previous_review_owner") or ""),
-                "previous_resolved_at": str(event.get("previous_resolved_at") or ""),
-                "cluster_status": str(event.get("cluster_status") or ""),
-                "review_result": str(event.get("review_result") or ""),
-                "review_notes": str(event.get("review_notes") or ""),
-                "review_owner": str(event.get("review_owner") or ""),
-                "resolved_at": str(event.get("resolved_at") or ""),
-                "event_type": str(event.get("event_type") or "status_update"),
-                "created_at": str(event.get("created_at") or ""),
-            })
+            previous = {
+                "cluster_status": event.get("previous_cluster_status"),
+                "review_result": event.get("previous_review_result"),
+                "review_notes": event.get("previous_review_notes"),
+                "review_owner": event.get("previous_review_owner"),
+                "review_actor": event.get("previous_review_actor"),
+                "resolved_at": event.get("previous_resolved_at"),
+            }
+            current = {
+                "cluster_status": event.get("cluster_status"),
+                "review_result": event.get("review_result"),
+                "review_notes": event.get("review_notes"),
+                "review_owner": event.get("review_owner"),
+                "review_actor": event.get("review_actor"),
+                "resolved_at": event.get("resolved_at"),
+            }
+            result.append(
+                build_review_history_event(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    event_index=index,
+                    previous=previous,
+                    current=current,
+                    created_at=str(event.get("created_at") or ""),
+                    event_type=str(event.get("event_type") or "") or None,
+                )
+            )
     return result
 
 
@@ -126,6 +233,7 @@ def write_cluster_review_state(
     *,
     review_notes: str = "",
     review_owner: str = "",
+    review_actor: str = "",
     resolved_at: str = "",
     review_result: str = "",
     settings: Settings | None = None,
@@ -156,6 +264,7 @@ def write_cluster_review_state(
         "cluster_status": cluster_status,
         "review_notes": review_notes,
         "review_owner": review_owner,
+        "review_actor": review_actor or review_owner,
         "resolved_at": resolved_at,
         "review_result": review_result,
     }
@@ -171,20 +280,24 @@ def write_cluster_review_state(
     events = history_payload.get(cluster_key)
     if not isinstance(events, list):
         events = []
-    events.append({
-        "previous_cluster_status": str(previous.get("cluster_status") or ""),
-        "previous_review_result": str(previous.get("review_result") or ""),
-        "previous_review_notes": str(previous.get("review_notes") or ""),
-        "previous_review_owner": str(previous.get("review_owner") or ""),
-        "previous_resolved_at": str(previous.get("resolved_at") or ""),
+    current = {
         "cluster_status": cluster_status,
         "review_result": review_result,
         "review_notes": review_notes,
         "review_owner": review_owner,
+        "review_actor": review_actor or review_owner,
         "resolved_at": resolved_at,
-        "event_type": "status_update",
-        "created_at": _utc_timestamp(),
-    })
+    }
+    events.append(
+        build_review_history_event(
+            branch_id=branch_id,
+            cluster_key=cluster_key,
+            event_index=len(events) + 1,
+            previous=previous,
+            current=current,
+            created_at=_utc_timestamp(),
+        )
+    )
     history_payload[cluster_key] = events
     history_path.write_text(json.dumps(history_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return ClusterReviewState(
@@ -193,6 +306,7 @@ def write_cluster_review_state(
         cluster_status=cluster_status,
         review_notes=review_notes,
         review_owner=review_owner,
+        review_actor=review_actor or review_owner,
         resolved_at=resolved_at,
         review_result=review_result,
     )

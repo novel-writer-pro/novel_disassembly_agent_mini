@@ -83,6 +83,7 @@
 - `chapter_output_summary`
 - `failed_summary`
 - `audit_conclusion`
+- `review_summary`
 - `risk_summary`
 
 ### 2.1 chapter_output_summary
@@ -109,11 +110,49 @@
 - `blocking_judgement`
 - `recommended_action`
 - `review_progress_note`
+- `needs_review_note`
+- `resolved_cluster_note`
 - `review_result_note`
+- `pending_escalation_note`
 - `review_owner_note`
+- `current_owner_note`
+- `review_actor_note`
+- `latest_event_type_note`
+- `pending_assignment_note`
 - `latest_review_note`
 
-### 2.4 review workflow stability note
+### 2.4 review_summary
+当前已扩展包含：
+- `cluster_count`
+- `by_status`
+- `by_result`
+- `by_owner`
+- `by_actor`
+- `by_latest_event_type`
+- `by_priority`
+- `by_pattern`
+- `history_event_count`
+- `latest_review_at`
+- `latest_review_owner`
+- `latest_review_actor`
+- `latest_review_event_type`
+- `latest_review_result`
+- `latest_review_result_label`
+- `current_owner_top`
+- `current_owner_top_count`
+- `latest_actor_top`
+- `latest_actor_top_count`
+- `latest_event_type_top`
+- `latest_event_type_top_count`
+- `pending_assignment_count`
+- `pending_escalation_count`
+- `resolved_count`
+- `needs_review_count`
+
+稳定样例：
+- `docs/examples/branch-bundle-review-summary.sample.json`
+
+### 2.5 review workflow stability note
 
 对于 review workflow 相关字段，当前建议：
 
@@ -237,15 +276,103 @@
 
 ---
 
-## 6. Recommended Integration Order
+## 6. Review Workflow / Batch Execution Views
 
-### 前端最小接入
+来源：
+- `GET /api/review-clusters?branch_id=...`
+- `GET /api/review-cluster-history?branch_id=...&cluster_key=...`
+- `GET /api/review-summary?branch_id=...`
+- `POST /api/review-batch-execute`
+- `GET /api/review-batch-history?branch_id=...`
+
+### 6.1 `review-clusters`
+
+建议稳定消费字段：
+- `cluster_key`
+- `cluster_title`
+- `checker_names`
+- `risk_types`
+- `review_priority`
+- `cluster_status`
+- `review_result`
+- `review_result_label`
+- `chapter_span`
+- `review_owner`
+
+可增强消费字段：
+- `latest_review_event`
+- `review_history_count`
+- `review_progress_note`
+- `review_result_note`
+- `latest_review_note`
+
+### 6.2 `review-summary`
+
+当前系统已稳定提供的聚合视图包括：
+- `cluster_count`
+- `by_status`
+- `by_result`
+- `by_owner`
+- `by_priority`
+- `history_event_count`
+- `pending_assignment_count`
+- `pending_escalation_count`
+- `resolved_count`
+- `needs_review_count`
+- `batch_suggestions`
+
+phase-2 聚合增强字段：
+- `by_phase2_focus`
+- `phase2_focus_top`
+- `phase2_focus_top_count`
+- `auto_next_action_code_top`
+- `escalation_reason_code_top`
+
+### 6.3 `review-batch-execute`
+
+当前执行回执建议消费字段：
+- `execution_id`
+- `action`
+- `hint_code`
+- `target_count`
+- `success_count`
+- `failed_count`
+- `skipped_count`
+- `preview`
+- `successes`
+- `failed`
+- `skipped`
+
+### 6.4 `review-batch-history`
+
+当前批量执行历史建议消费字段：
+- `items[*].execution_id`
+- `items[*].created_at`
+- `items[*].action`
+- `items[*].hint_code`
+- `items[*].group_strategy`
+- `items[*].group_key`
+- `items[*].dry_run`
+- `items[*].target_count`
+- `items[*].success_count`
+- `items[*].failed_count`
+- `items[*].skipped_count`
+- `items[*].preview`
+
+说明：
+- 当前是 runtime file-backed 最小审计链
+- 对系统集成方来说已经足够承接回执、操作历史、批量确认弹窗
+- 更完整语义见 [`./review-batch-execution-contract.md`](./review-batch-execution-contract.md)
+
+## 7. Recommended Integration Order
+
+### 7.1 前端最小接入
 1. `chapter bundle`
 2. `branch report`
 3. `chapter QA context`
 4. `branch QA context`
 
-### 问答工具接入
+### 7.2 问答工具接入
 1. 先用 `branch QA context.recommended_questions`
 2. 再按 `thematic_contexts.*.question_sequence` 引导追问
 3. 需要图谱视图时使用：
@@ -253,7 +380,7 @@
    - `edge_refs`
    - `timeline_points`
 
-### 写作者参考接入
+### 7.3 写作者参考接入
 优先使用：
 - `artifact.chapter_summary`
 - `artifact.state_transition_notes`
@@ -264,7 +391,7 @@
 
 ---
 
-## 7. Stability Notes
+## 8. Stability Notes
 
 当前这些接口可视为“项目内稳定输出面”：
 - chapter bundle
@@ -275,7 +402,7 @@
 
 未来允许新增字段，但应尽量保持已有字段名与基础层级不破坏。
 
-## 8. Example Files
+## 9. Example Files
 
 - [`./examples/chapter-bundle.sample.json`](./examples/chapter-bundle.sample.json)
 - [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)

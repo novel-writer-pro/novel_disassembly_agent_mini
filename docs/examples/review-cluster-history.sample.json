@@ -1,25 +1,90 @@
 {
+  "contract_version": "review-workflow.v1",
+  "stable_contract_version": "review-api-pre-v1",
+  "allowed_cluster_statuses": [
+    "escalated",
+    "needs_review",
+    "open",
+    "reopened",
+    "resolved",
+    "reviewed"
+  ],
+  "allowed_review_results": [
+    "confirmed-benign",
+    "confirmed-issue",
+    "deferred",
+    "needs-escalation"
+  ],
   "items": [
     {
+      "event_index": 1,
+      "audit_key": "branch-001:character_ooc|::|human_review_candidate:1",
+      "previous_values": {
+        "cluster_status": "needs_review",
+        "review_result": "deferred",
+        "review_notes": "等待人工复核",
+        "review_owner": "system-reset",
+        "resolved_at": ""
+      },
+      "current_values": {
+        "cluster_status": "reviewed",
+        "review_result": "confirmed-benign",
+        "review_notes": "DB E2E: 已完成一轮人工复核。",
+        "review_owner": "editor-db",
+        "review_actor": "editor-db",
+        "resolved_at": ""
+      },
       "previous_cluster_status": "needs_review",
       "previous_review_result": "deferred",
+      "previous_review_notes": "等待人工复核",
+      "previous_review_owner": "system-reset",
+      "previous_resolved_at": "",
       "cluster_status": "reviewed",
       "review_result": "confirmed-benign",
       "review_notes": "DB E2E: 已完成一轮人工复核。",
       "review_owner": "editor-db",
+      "review_actor": "editor-db",
       "resolved_at": "",
       "event_type": "status_update",
+      "changed_fields": [
+        "cluster_status",
+        "review_result"
+      ],
+      "transition": "needs_review->reviewed",
       "created_at": "2026-04-29T02:00:00Z"
     },
     {
+      "event_index": 2,
+      "audit_key": "branch-001:character_ooc|::|human_review_candidate:2",
+      "previous_values": {
+        "cluster_status": "reviewed",
+        "review_result": "confirmed-benign",
+        "review_notes": "DB E2E: 已完成一轮人工复核。",
+        "review_owner": "editor-db",
+        "resolved_at": ""
+      },
+      "current_values": {
+        "cluster_status": "reviewed",
+        "review_result": "confirmed-benign",
+        "review_notes": "API E2E: 已通过 API 写回。",
+        "review_owner": "api-editor",
+        "review_actor": "api-bot",
+        "resolved_at": ""
+      },
       "previous_cluster_status": "reviewed",
       "previous_review_result": "confirmed-benign",
+      "previous_review_notes": "DB E2E: 已完成一轮人工复核。",
+      "previous_review_owner": "editor-db",
+      "previous_resolved_at": "",
       "cluster_status": "reviewed",
       "review_result": "confirmed-benign",
       "review_notes": "API E2E: 已通过 API 写回。",
       "review_owner": "api-editor",
+      "review_actor": "api-bot",
       "resolved_at": "",
       "event_type": "status_update",
+      "changed_fields": [],
+      "transition": "reviewed->reviewed",
       "created_at": "2026-04-29T03:00:00Z"
     }
   ]

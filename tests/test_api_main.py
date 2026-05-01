@@ -4,14 +4,22 @@ from types import TracebackType
 from typing import Any, cast
 from wsgiref.types import StartResponse
 
+import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.main import application
 from novel_analyzer.config.settings import get_settings
 from novel_analyzer.database.session import create_schema
-from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state
-from novel_analyzer.services.cluster_review_service import ClusterReviewService
+from novel_analyzer.runtime.cluster_review_state import (
+    read_cluster_review_state,
+    write_cluster_review_state,
+)
+from novel_analyzer.services.cluster_review_service import (
+    ClusterReviewService,
+    ClusterReviewStorageUnavailable,
+)
+from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
 from novel_analyzer.services.run_service import RunService
@@ -238,6 +246,7 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
             "review_result": "confirmed-benign",
             "review_notes": "api test",
             "review_owner": "editor-a",
+            "review_actor": "api-bot",
         },
     )
     assert status == "200 OK"
@@ -249,13 +258,14 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     )
     assert status == "200 OK"
     assert b'"previous_cluster_status"' in body
-    assert b'"event_type": "status_update"' in body
+    assert b'"event_type": "assignment_update"' in body
     assert b'"event_index": 1' in body
     assert b'"audit_key"' in body
     assert b'"previous_values"' in body
     assert b'"current_values"' in body
     assert b'"changed_fields"' in body
     assert b'"transition": "new->reviewed"' in body
+    assert b'"review_actor": "api-bot"' in body
 
 
 def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkeypatch) -> None:
@@ -268,6 +278,52 @@ def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkey
     assert status == "200 OK"
     assert b'"review_storage_mode": "file-fallback"' in body
     assert b'"items": []' in body
+
+
+def test_review_cluster_history_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
+    settings = get_settings().model_copy(deep=True)
+    settings.runtime_cache_dir = str(tmp_path / "runtime-cache")
+    monkeypatch.setattr("apps.api.app.main.get_settings", lambda: settings)
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    write_cluster_review_state(
+        "branch-x",
+        "cluster-y",
+        "needs_review",
+        review_result="deferred",
+        review_notes="待处理",
+        review_owner="editor-a",
+        review_actor="editor-a",
+        settings=settings,
+    )
+    write_cluster_review_state(
+        "branch-x",
+        "cluster-y",
+        "needs_review",
+        review_result="deferred",
+        review_notes="待处理",
+        review_owner="editor-b",
+        review_actor="review-bot",
+        settings=settings,
+    )
+
+    status, body = _call(
+        "/api/review-cluster-history?branch_id=branch-x&cluster_key=cluster-y"
+        "&event_type=assignment_update&review_owner=editor-b&review_result=deferred&limit=1"
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["filters"] == {
+        "event_type": "assignment_update",
+        "review_owner": "editor-b",
+        "review_result": "deferred",
+    }
+    assert len(payload["items"]) == 1
+    assert payload["items"][0]["event_type"] == "assignment_update"
+    assert payload["items"][0]["review_owner"] == "editor-b"
+    assert payload["items"][0]["review_actor"] == "review-bot"
 
 
 def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
@@ -379,6 +435,7 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
             review_result="confirmed-benign",
             review_notes="api summary test",
             review_owner="editor-a",
+            review_actor="review-bot",
         )
 
     status, body = _call(f"/api/review-cluster-summary?run_id={run_id}&branch_id={branch_id}")
@@ -388,6 +445,8 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
     assert b'"history_event_count": 1' in body
     assert b'"stable_contract_version": "review-api-pre-v1"' in body
     assert b'"latest_review_owner": "editor-a"' in body
+    assert b'"latest_review_actor": "review-bot"' in body
+    assert b'"latest_review_event_type": "assignment_update"' in body
     assert b'"latest_review_result": "confirmed-benign"' in body
     assert '"latest_review_result_label": "确认无问题"'.encode() in body
     assert b'"P2": 1' in body
@@ -395,6 +454,37 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
     assert b'"reviewed": 1' in body
     assert b'"confirmed-benign": 1' in body
     assert b'"editor-a": 1' in body
+    assert b'"review-bot": 1' in body
+    assert b'"current_owner_top": "editor-a"' in body
+    assert b'"latest_actor_top": "review-bot"' in body
+    assert b'"latest_event_type_top": "assignment_update"' in body
+    assert b'"workflow_lane_top": "assignment_queue"' in body
+    assert b'"queue_priority_top": "high"' in body
+    assert b'"deadline_level_top": "soon"' in body
+    assert b'"batch_operation_hint_top": "batch_owner_handoff_followup"' in body
+    assert b'"escalation_tier_top": ""' in body
+    assert b'"auto_next_action_code_top": "notify_owner_to_take_over"' in body
+    assert b'"auto_next_action_top":' in body
+    assert b'"escalation_reason_code_top": "awaiting_owner_followup"' in body
+    assert b'"escalation_reason_top":' in body
+    assert b'"pending_assignment_count": 1' in body
+    assert b'"pending_escalation_count": 0' in body
+    assert b'"resolved_count": 0' in body
+    assert b'"needs_review_count": 0' in body
+    assert b'"action_required_count": 1' in body
+    assert b'"close_ready_count": 0' in body
+    assert b'"by_workflow_lane": {' in body
+    assert b'"by_queue_priority": {' in body
+    assert b'"by_deadline_level": {' in body
+    assert b'"by_batch_operation_hint": {' in body
+    assert b'"by_escalation_tier": {}' in body
+    assert b'"batch_suggestions": [' in body
+    assert b'"action_bucket": "followup"' in body
+    assert b'"batch_priority": "high"' in body
+    assert b'"ordering_strategy": "queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter"' in body
+    assert b'"suggested_cluster_order_details": [' in body
+    assert b'"by_auto_next_action_code": {' in body
+    assert b'"by_auto_next_action": {' in body
 
 
 def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
@@ -442,6 +532,7 @@ def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path)
             review_result="confirmed-benign",
             review_notes="api summary filter test",
             review_owner="editor-a",
+            review_actor="review-bot",
         )
 
     status, body = _call(
@@ -469,12 +560,16 @@ def test_review_cluster_service_handles_missing_sqlite_review_tables(monkeypatch
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
 
     with factory() as session:
-        assert ClusterReviewService(session).read_branch("branch-x") == {}
-        assert ClusterReviewService(session).read_history("branch-x", "cluster-y") == []
+        with pytest.raises(ClusterReviewStorageUnavailable):
+            ClusterReviewService(session).read_branch("branch-x")
+        with pytest.raises(ClusterReviewStorageUnavailable):
+            ClusterReviewService(session).read_history("branch-x", "cluster-y")
 
     status, body = _call("/api/review-cluster-history?branch_id=branch-x&cluster_key=cluster-y")
     assert status == "200 OK"
-    assert json.loads(body) == {"items": []}
+    payload = json.loads(body)
+    assert payload["review_storage_mode"] == "file-fallback"
+    assert payload["items"] == []
 
 
 def test_review_cluster_update_file_fallback_when_review_tables_missing(
@@ -526,3 +621,552 @@ def test_review_cluster_update_returns_400_for_invalid_status_combo(monkeypatch)
     )
     assert status == "400 Bad Request"
     assert b"requires a non-empty review_result" in body
+
+
+def test_review_batch_execute_dry_run_and_apply(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
+                    {
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
+                    }
+                ],
+                "needs_human_review": True,
+                "dimensions": [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        suggestion = bundle["review_summary"]["batch_suggestions"][0]
+        cluster_key = suggestion["cluster_keys"][0]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_review_assign",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "editor-a",
+            "review_actor": "review-bot",
+            "review_notes": "dry-run preview",
+            "dry_run": True,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["dry_run"] is True
+    assert payload["target_count"] == 1
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+    assert payload["preview"][0]["cluster_key"] == cluster_key
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_review_assign",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "editor-a",
+            "review_actor": "review-bot",
+            "review_notes": "batch assign apply",
+            "review_result": "deferred",
+            "dry_run": False,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["dry_run"] is False
+    assert payload["success_count"] == 1
+    assert payload["failed_count"] == 0
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+    assert payload["successes"][0]["cluster_key"] == cluster_key
+
+    with factory() as session:
+        state = ClusterReviewService(session).read_branch(branch_id)
+        assert state[cluster_key]["review_owner"] == "editor-a"
+
+
+def test_review_batch_execute_escalate(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "normalized_title": "升级测试",
+                "chapter_summary": "问题簇需要升级处理。",
+                "key_entities": ["卫图"],
+                "key_events": ["升级处理"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
+                    {
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
+                    }
+                ],
+                "needs_human_review": True,
+                "dimensions": [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        ClusterReviewService(session).write(
+            branch_id=branch.id,
+            cluster_key="character_ooc|::|motivation_shift",
+            cluster_status="escalated",
+            review_result="needs-escalation",
+            review_notes="需要升级",
+            review_owner="editor-a",
+            review_actor="review-bot",
+        )
+        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        suggestion = bundle["review_summary"]["batch_suggestions"][0]
+        cluster_key = suggestion["cluster_keys"][0]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_escalate",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "senior-editor",
+            "review_actor": "review-bot",
+            "review_notes": "批量升级执行",
+            "dry_run": True,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["dry_run"] is True
+    assert payload["target_count"] == 1
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_escalate",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "senior-editor",
+            "review_actor": "review-bot",
+            "review_notes": "批量升级执行",
+            "dry_run": False,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["success_count"] == 1
+    assert payload["failed_count"] == 0
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+
+    with factory() as session:
+        state = ClusterReviewService(session).read_branch(branch_id)
+        assert state[cluster_key]["cluster_status"] == "escalated"
+        assert state[cluster_key]["review_result"] == "needs-escalation"
+        assert state[cluster_key]["review_owner"] == "senior-editor"
+
+
+def test_review_batch_execute_close(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "normalized_title": "关闭测试",
+                "chapter_summary": "问题簇可安全关闭。",
+                "key_entities": ["卫图"],
+                "key_events": ["关闭处理"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
+                    {
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
+                    }
+                ],
+                "needs_human_review": True,
+                "dimensions": [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        ClusterReviewService(session).write(
+            branch_id=branch.id,
+            cluster_key="character_ooc|::|motivation_shift",
+            cluster_status="resolved",
+            review_result="confirmed-benign",
+            review_notes="满足关闭条件",
+            review_owner="editor-a",
+            review_actor="review-bot",
+        )
+        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        suggestion = next(
+            item
+            for item in bundle["review_summary"]["batch_suggestions"]
+            if item["hint_code"] == "batch_close_ready_candidates"
+        )
+        cluster_key = suggestion["cluster_keys"][0]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_close",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "editor-a",
+            "review_actor": "review-bot",
+            "review_notes": "批量关闭执行",
+            "dry_run": True,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["dry_run"] is True
+    assert payload["preview"][0]["close_ready_gate"] is True
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_close",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "editor-a",
+            "review_actor": "review-bot",
+            "review_notes": "批量关闭执行",
+            "dry_run": False,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["success_count"] == 1
+    assert payload["failed_count"] == 0
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+
+    with factory() as session:
+        state = ClusterReviewService(session).read_branch(branch_id)
+        assert state[cluster_key]["cluster_status"] == "resolved"
+        assert state[cluster_key]["review_result"] == "confirmed-benign"
+
+
+def test_review_batch_execute_archive(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "normalized_title": "归档测试",
+                "chapter_summary": "问题簇已关闭但未达到 close-ready。",
+                "key_entities": ["卫图"],
+                "key_events": ["归档处理"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
+                    {
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
+                    }
+                ],
+                "needs_human_review": True,
+                "dimensions": [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        ClusterReviewService(session).write(
+            branch_id=branch.id,
+            cluster_key="character_ooc|::|motivation_shift",
+            cluster_status="resolved",
+            review_result="deferred",
+            review_notes="允许归档但不满足关闭门槛",
+            review_owner="editor-a",
+            review_actor="review-bot",
+        )
+        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        suggestion = next(
+            item
+            for item in bundle["review_summary"]["batch_suggestions"]
+            if item["hint_code"] == "batch_archive_candidates"
+        )
+        cluster_key = suggestion["cluster_keys"][0]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_archive",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "archiver",
+            "review_actor": "review-bot",
+            "review_notes": "批量归档执行",
+            "dry_run": True,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["dry_run"] is True
+    assert payload["preview"][0]["close_ready_gate"] is False
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_archive",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "archiver",
+            "review_actor": "review-bot",
+            "review_notes": "批量归档执行",
+            "dry_run": False,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["success_count"] == 1
+    assert payload["failed_count"] == 0
+    assert payload["skipped_count"] == 0
+    assert payload["execution_id"]
+
+    with factory() as session:
+        state = ClusterReviewService(session).read_branch(branch_id)
+        assert state[cluster_key]["cluster_status"] == "resolved"
+        assert state[cluster_key]["review_result"] == "deferred"
+        assert state[cluster_key]["review_owner"] == "archiver"
+
+
+def test_review_batch_execute_reports_skipped_cluster_keys(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
+                    {
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
+                    }
+                ],
+                "needs_human_review": True,
+                "dimensions": [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        suggestion = bundle["review_summary"]["batch_suggestions"][0]
+        cluster_key = suggestion["cluster_keys"][0]
+
+    status, body = _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_review_assign",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key, "not-allowed"],
+            "review_owner": "editor-a",
+            "review_actor": "review-bot",
+            "dry_run": True,
+        },
+    )
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["target_count"] == 1
+    assert payload["skipped_count"] == 1
+    assert payload["skipped"][0]["cluster_key"] == "not-allowed"
+
+
+def test_review_batch_history_returns_audit_entries(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+    settings = get_settings().model_copy(deep=True)
+    settings.runtime_cache_dir = str(tmp_path / "runtime-cache")
+    monkeypatch.setattr("apps.api.app.main.get_settings", lambda: settings)
+
+    with factory() as session:
+        novel_path = tmp_path / "novel.txt"
+        novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_id = run.id
+        branch_id = branch.id
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "normalized_title": "命格初现",
+                "chapter_summary": "卫图在本章做出异常决定。",
+                "key_entities": ["卫图"],
+                "key_events": ["卫图做出异常决定"],
+                "continuity_notes": ["主线推进。"],
+                "ooc_candidates": [
+                    {
+                        "character_name": "卫图",
+                        "risk_type": "motivation_shift",
+                        "severity": "medium",
+                        "summary": "卫图目标改变过快。",
+                        "supporting_evidence": ["前文目标A"],
+                        "counter_evidence": ["也许有新情报"],
+                    }
+                ],
+                "needs_human_review": True,
+                "dimensions": [],
+            },
+        )
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+        suggestion = bundle["review_summary"]["batch_suggestions"][0]
+        cluster_key = suggestion["cluster_keys"][0]
+
+    _call_post_json(
+        "/api/review-batch-execute",
+        {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "action": "batch_review_assign",
+            "hint_code": suggestion["hint_code"],
+            "group_strategy": suggestion["group_strategy"],
+            "group_key": suggestion["group_key"],
+            "cluster_keys": [cluster_key],
+            "review_owner": "editor-a",
+            "review_actor": "review-bot",
+            "dry_run": True,
+        },
+    )
+    status, body = _call(f"/api/review-batch-history?branch_id={branch_id}&limit=1")
+    payload = json.loads(body)
+    assert status == "200 OK"
+    assert payload["branch_id"] == branch_id
+    assert len(payload["items"]) == 1
+    assert payload["items"][0]["action"] == "batch_review_assign"
+    assert payload["items"][0]["dry_run"] is True

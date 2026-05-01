@@ -83,9 +83,11 @@ def test_render_branch_report_contains_status_and_windows(tmp_path: Path) -> Non
         assert 'Recommended Action' in report
         assert '## Failed Summary' in report
         assert '## Risk Summary' in report
+        assert '## Review Summary' in report
         assert '### Human Review Candidates' in report
         assert '### Review Candidate Evidence Preview' in report
         assert '### Review Candidate Clusters' in report
+        assert '### Phase-2 Risk Highlights' not in report
         assert 'title=' in report
         assert 'action:' in report
         assert 'priority=' in report
@@ -105,6 +107,42 @@ def test_render_branch_report_contains_status_and_windows(tmp_path: Path) -> Non
         assert '## Chapter Output Summary' in report
         assert '## Reasoning Graph' in report
         assert '### Reasoning Paths' in report
+
+
+def test_render_branch_report_highlights_phase2_risk_clusters(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        artifact = RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '恢复窗口测试',
+                'chapter_summary': '本章恢复时长存在可疑压缩。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图三日后回城又当夜再战'],
+                'continuity_notes': ['主线推进。'],
+                'timeline_signals': ['三日后回城', '当夜再次出手'],
+                'unsupported_inferences': ['“当夜已完成全部恢复”缺少直接证据支撑'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        RetrievalService(session).materialize_for_artifact(artifact.id)
+        FactService(session).materialize_for_artifact(artifact.id)
+        GraphService(session).materialize_for_artifact(artifact.id)
+        RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        bundle = ExportService(session).export_branch_bundle(run.id, branch.id)
+        report = render_branch_report(bundle)
+        assert '### Phase-2 Risk Highlights' in report
+        assert '恢复窗口不足候选簇' in report
+        assert 'focus:' in report
+        assert 'phase2_focus_top:' in report
+        assert 'by_phase2_focus:' in report
 
 
 def test_render_branch_report_includes_manual_review_metadata(tmp_path: Path) -> None:
@@ -150,28 +188,64 @@ def test_render_branch_report_includes_manual_review_metadata(tmp_path: Path) ->
         cluster['review_result_label'] = '确认无问题'
         cluster['review_notes'] = '已人工确认该问题无需升级。'
         cluster['review_history_count'] = 2
+        cluster['workflow_lane'] = 'resolved_queue'
+        cluster['queue_priority'] = 'done'
+        cluster['action_required'] = False
+        cluster['suggested_deadline_level'] = 'none'
+        cluster['batch_operation_hint'] = 'batch_close_ready_candidates'
+        cluster['auto_next_action'] = '保留人物连续性复核簇的审计记录，并继续关注后续章节是否复发。'
         cluster['latest_review_event'] = {
             'previous_cluster_status': 'needs_review',
             'cluster_status': 'resolved',
             'review_result': 'confirmed-benign',
             'review_owner': 'editor-a',
+            'review_actor': 'review-bot',
             'created_at': '2026-04-29T02:05:00Z',
         }
         bundle['audit_conclusion']['review_progress_note'] = '已人工处理问题簇 1 个。'
+        bundle['audit_conclusion']['resolved_cluster_note'] = '当前已有 1 个问题簇被标记为 resolved。'
         bundle['audit_conclusion']['review_result_note'] = '已确认无问题 1 个。'
         bundle['audit_conclusion']['review_storage_note'] = '当前 review 数据来自数据库主路径。'
         bundle['audit_conclusion']['review_owner_note'] = '当前已记录复核人中，editor-a 处理了 1 个问题簇。'
-        bundle['audit_conclusion']['latest_review_note'] = '最近一次复核记录：状态=resolved，结果=confirmed-benign，处理人=editor-a。'
+        bundle['audit_conclusion']['current_owner_note'] = '当前问题簇负责人分布中，editor-a 负责 1 个问题簇。'
+        bundle['audit_conclusion']['review_actor_note'] = '最近审查动作记录中，review-bot 执行了 1 次变更。'
+        bundle['audit_conclusion']['latest_event_type_note'] = '最近一批问题簇的最新动作类型中，assignment_update 出现了 1 次。'
+        bundle['audit_conclusion']['pending_assignment_note'] = '存在 1 个已交接但未闭环的问题簇；优先关注 人物连续性复核簇（owner=editor-a）。'
+        bundle['audit_conclusion']['latest_review_note'] = '最近一次复核记录：状态=resolved，结果=confirmed-benign，处理人=editor-a，操作人=review-bot。'
         report = render_branch_report(bundle)
         assert 'owner: editor-a' in report
         assert 'resolved_at: 2026-04-29T02:00:00Z' in report
         assert 'result: confirmed-benign (确认无问题)' in report
         assert 'notes: 已人工确认该问题无需升级。' in report
+        assert 'workflow_lane: resolved_queue' in report
+        assert 'queue_priority: done' in report
+        assert 'action_required: False' in report
+        assert 'suggested_deadline_level: none' in report
+        assert 'batch_operation_hint: batch_close_ready_candidates' in report
+        assert 'auto_next_action:' in report
         assert 'history_count: 2' in report
-        assert 'latest_event: from=needs_review->resolved | result=confirmed-benign | owner=editor-a | created_at=2026-04-29T02:05:00Z' in report
+        assert 'latest_event: from=needs_review->resolved | result=confirmed-benign | owner=editor-a | actor=review-bot | created_at=2026-04-29T02:05:00Z' in report
         assert 'Review Progress: 已人工处理问题簇 1 个。' in report
+        assert 'Resolved Clusters: 当前已有 1 个问题簇被标记为 resolved。' in report
         assert 'Review Result: 已确认无问题 1 个。' in report
         assert 'Review Storage: 当前 review 数据来自数据库主路径。' in report
         assert 'Review Owner: 当前已记录复核人中，editor-a 处理了 1 个问题簇。' in report
-        assert 'Latest Review: 最近一次复核记录：状态=resolved，结果=confirmed-benign，处理人=editor-a。' in report
+        assert 'Current Owner: 当前问题簇负责人分布中，editor-a 负责 1 个问题簇。' in report
+        assert 'Review Actor: 最近审查动作记录中，review-bot 执行了 1 次变更。' in report
+        assert 'Latest Event Type: 最近一批问题簇的最新动作类型中，assignment_update 出现了 1 次。' in report
+        assert 'Pending Assignment: 存在 1 个已交接但未闭环的问题簇；优先关注 人物连续性复核簇（owner=editor-a）。' in report
+        assert 'Latest Review: 最近一次复核记录：状态=resolved，结果=confirmed-benign，处理人=editor-a，操作人=review-bot。' in report
+        assert '## Review Summary' in report
+        assert 'current_owner_top:' in report
+        assert 'workflow_lane_top:' in report
+        assert 'queue_priority_top:' in report
+        assert 'deadline_level_top:' in report
+        assert 'batch_operation_hint_top:' in report
+        assert 'batch_suggestions:' in report
+        assert 'auto_next_action_code_top:' in report
+        assert 'auto_next_action_top:' in report
+        assert 'escalation_reason_code_top:' in report
+        assert 'ordering_strategy' in report
+        assert 'action_bucket' in report
+        assert 'batch_priority' in report
         assert 'status=resolved (已关闭)' in report

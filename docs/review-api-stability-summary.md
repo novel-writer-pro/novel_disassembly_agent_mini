@@ -91,6 +91,18 @@
 - `pattern_label`
 - `review_storage_note`
 
+### phase-2 扩展字段（当前属于增强字段）
+
+- `phase2_focus_top`
+- `phase2_focus_top_count`
+- `by_phase2_focus`
+- `prioritize_phase2_human_review`（动作代码语义）
+- `phase2_risk_requires_human_confirmation`（原因代码语义）
+
+说明：
+- 这些字段/语义当前已经有实现、样例与文档，但仍按 **pre-v1 扩展字段** 管理。
+- 下游可以消费，但应采用宽松绑定，而不是把它们视为已经冻结的稳定合同。
+
 ---
 
 ## 4. 建议接入策略
@@ -109,6 +121,7 @@
 - 宽松消费
 - 允许不存在
 - 允许未来增强或收敛
+- 对 phase-2 字段尤其应避免把 full sample 与 stable sample 混为同一收口等级
 
 ---
 
@@ -147,3 +160,8 @@
 > 稳定字段可接，实验字段宽松消费，后续等 Phase 2 收口后再正式宣布 `v1`。
 
 当前响应中的 `stable_contract_version=review-api-pre-v1` 是显式合同标记；在正式 v1 前，下游应把它当作兼容判断字段，而不是 UI 文案。
+
+同时需要特别区分：
+- `review-cluster-summary.sample.json` 代表当前较完整的 pre-v1 / phase-2 扩展样例
+- `review-cluster-summary.stable.sample.json` / `stable.v1.sample.json` 代表较小的稳定字段子集
+- 二者不一致并不表示合同错误，而是刻意保留的稳定级别差异

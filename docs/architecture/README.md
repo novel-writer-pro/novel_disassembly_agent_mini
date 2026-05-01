@@ -1,0 +1,15 @@
+# 架构专题文档入口
+
+当前建议优先看：
+
+1. [`./risk-audit-completion-status.md`](./risk-audit-completion-status.md)
+2. [`./risk-audit-semantic-enhancement.md`](./risk-audit-semantic-enhancement.md)
+3. [`./risk-audit-embedding-pgvector-implementation-spec.md`](./risk-audit-embedding-pgvector-implementation-spec.md)
+4. [`../risk-audit-runtime-architecture.md`](../risk-audit-runtime-architecture.md)
+5. [`../skills-vs-risk-checkers-boundary.md`](../skills-vs-risk-checkers-boundary.md)
+
+适合回答：
+- 风险审查主链为什么分层
+- embedding / pgvector 应该落在哪
+- checker 为什么保持规则化判定
+- LLM 为什么只做目标式复核

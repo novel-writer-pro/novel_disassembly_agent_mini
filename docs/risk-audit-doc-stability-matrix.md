@@ -49,6 +49,9 @@
 5. `risk-audit-runtime-boundary.md`
    - 运行时与非运行时边界已较稳定
 
+6. `.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
+   - 当阻塞条件稳定后，可按稳定维护态对待；主要在恢复步骤变化时更新
+
 ### 持续更新态
 
 1. `risk-audit-system-overview.md`
@@ -68,6 +71,12 @@
 
 6. `reader-experience-capability.md`
    - 当前仍是规划态，应持续更新
+
+7. `.omx/reports/sample-novel-current-conclusion.md`
+   - 会随着样例主结论与 fresh verification evidence 更新而变化
+
+8. `.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
+   - 会随着离线 best-effort 结论变化而更新
 
 ---
 

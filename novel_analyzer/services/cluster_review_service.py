@@ -12,6 +12,8 @@ from novel_analyzer.database.models import ClusterReviewEventRecord, ClusterRevi
 from novel_analyzer.runtime.cluster_review_state import (
     ALLOWED_CLUSTER_STATUSES,
     ALLOWED_REVIEW_RESULTS,
+    build_review_history_event,
+    infer_review_event_type,
 )
 
 
@@ -27,6 +29,7 @@ class ClusterReviewEntry:
     review_result: str = ""
     review_notes: str = ""
     review_owner: str = ""
+    review_actor: str = ""
     resolved_at: str = ""
 
 
@@ -83,6 +86,7 @@ class ClusterReviewService:
                 "review_result": row.review_result,
                 "review_notes": row.review_notes,
                 "review_owner": row.review_owner,
+                "review_actor": row.review_actor,
                 "resolved_at": row.resolved_at_text,
             }
             for row in rows
@@ -103,40 +107,32 @@ class ClusterReviewService:
             raise ClusterReviewStorageUnavailable("cluster review history table is unavailable") from exc
         events: list[dict[str, object]] = []
         for index, row in enumerate(rows, start=1):
-            changed_fields = [
-                field_name
-                for field_name, previous_value, current_value in (
-                    ("cluster_status", row.previous_cluster_status, row.cluster_status),
-                    ("review_result", row.previous_review_result, row.review_result),
-                )
-                if previous_value != current_value
-            ]
+            previous = {
+                "cluster_status": row.previous_cluster_status,
+                "review_result": row.previous_review_result,
+                "review_notes": row.previous_review_notes,
+                "review_owner": row.previous_review_owner,
+                "review_actor": row.previous_review_actor,
+                "resolved_at": row.previous_resolved_at_text,
+            }
+            current = {
+                "cluster_status": row.cluster_status,
+                "review_result": row.review_result,
+                "review_notes": row.review_notes,
+                "review_owner": row.review_owner,
+                "review_actor": row.review_actor,
+                "resolved_at": row.resolved_at_text,
+            }
             events.append(
-                {
-                    "event_index": index,
-                    "audit_key": f"{branch_id}:{cluster_key}:{index}",
-                    "previous_values": {
-                        "cluster_status": row.previous_cluster_status,
-                        "review_result": row.previous_review_result,
-                    },
-                    "current_values": {
-                        "cluster_status": row.cluster_status,
-                        "review_result": row.review_result,
-                        "review_owner": row.review_owner,
-                        "resolved_at": row.resolved_at_text,
-                    },
-                    "previous_cluster_status": row.previous_cluster_status,
-                    "previous_review_result": row.previous_review_result,
-                    "cluster_status": row.cluster_status,
-                    "review_result": row.review_result,
-                    "review_notes": row.review_notes,
-                    "review_owner": row.review_owner,
-                    "resolved_at": row.resolved_at_text,
-                    "event_type": row.event_type,
-                    "changed_fields": changed_fields,
-                    "transition": f"{row.previous_cluster_status or 'new'}->{row.cluster_status}",
-                    "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
-                }
+                build_review_history_event(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    event_index=index,
+                    previous=previous,
+                    current=current,
+                    created_at=row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
+                    event_type=row.event_type,
+                )
             )
         return events
 
@@ -149,6 +145,7 @@ class ClusterReviewService:
         review_result: str = "",
         review_notes: str = "",
         review_owner: str = "",
+        review_actor: str = "",
         resolved_at: str = "",
     ) -> ClusterReviewEntry:
         self._validate(cluster_status, review_result, review_notes)
@@ -162,6 +159,7 @@ class ClusterReviewService:
         previous_review_result = row.review_result if row is not None else ""
         previous_review_notes = row.review_notes if row is not None else ""
         previous_review_owner = row.review_owner if row is not None else ""
+        previous_review_actor = row.review_actor if row is not None else ""
         previous_resolved_at = row.resolved_at_text if row is not None else ""
         if row is None:
             row = ClusterReviewRecord(
@@ -171,6 +169,7 @@ class ClusterReviewService:
                 review_result=review_result,
                 review_notes=review_notes,
                 review_owner=review_owner,
+                review_actor=review_actor or review_owner,
                 resolved_at_text=resolved_at,
             )
             self.session.add(row)
@@ -179,6 +178,7 @@ class ClusterReviewService:
             row.review_result = review_result
             row.review_notes = review_notes
             row.review_owner = review_owner
+            row.review_actor = review_actor or review_owner
             row.resolved_at_text = resolved_at
         self.session.add(
             ClusterReviewEventRecord(
@@ -188,13 +188,32 @@ class ClusterReviewService:
                 previous_review_result=previous_review_result,
                 previous_review_notes=previous_review_notes,
                 previous_review_owner=previous_review_owner,
+                previous_review_actor=previous_review_actor,
                 previous_resolved_at_text=previous_resolved_at,
                 cluster_status=cluster_status,
                 review_result=review_result,
                 review_notes=review_notes,
                 review_owner=review_owner,
+                review_actor=review_actor or review_owner,
                 resolved_at_text=resolved_at,
-                event_type="status_update",
+                event_type=infer_review_event_type(
+                    {
+                        "cluster_status": previous_cluster_status,
+                        "review_result": previous_review_result,
+                        "review_notes": previous_review_notes,
+                        "review_owner": previous_review_owner,
+                        "review_actor": previous_review_actor,
+                        "resolved_at": previous_resolved_at,
+                    },
+                    {
+                        "cluster_status": cluster_status,
+                        "review_result": review_result,
+                        "review_notes": review_notes,
+                        "review_owner": review_owner,
+                        "review_actor": review_actor or review_owner,
+                        "resolved_at": resolved_at,
+                    },
+                ),
             )
         )
         self.session.commit()
@@ -205,5 +224,6 @@ class ClusterReviewService:
             review_result=review_result,
             review_notes=review_notes,
             review_owner=review_owner,
+            review_actor=review_actor or review_owner,
             resolved_at=resolved_at,
         )

@@ -399,6 +399,7 @@ class ClusterReviewRecord(TimestampSoftDeleteMixin, Base):
     review_result: Mapped[str] = mapped_column(String(64), default="")
     review_notes: Mapped[str] = mapped_column(Text(), default="")
     review_owner: Mapped[str] = mapped_column(String(255), default="")
+    review_actor: Mapped[str] = mapped_column(String(255), default="")
     resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
     visibility: Mapped[str] = mapped_column(String(32), default="active")
 
@@ -412,10 +413,53 @@ class ClusterReviewEventRecord(TimestampSoftDeleteMixin, Base):
     previous_review_result: Mapped[str] = mapped_column(String(64), default="")
     previous_review_notes: Mapped[str] = mapped_column(Text(), default="")
     previous_review_owner: Mapped[str] = mapped_column(String(255), default="")
+    previous_review_actor: Mapped[str] = mapped_column(String(255), default="")
     previous_resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
     cluster_status: Mapped[str] = mapped_column(String(32), default="open")
     review_result: Mapped[str] = mapped_column(String(64), default="")
     review_notes: Mapped[str] = mapped_column(Text(), default="")
     review_owner: Mapped[str] = mapped_column(String(255), default="")
+    review_actor: Mapped[str] = mapped_column(String(255), default="")
     resolved_at_text: Mapped[str] = mapped_column(String(64), default="")
     event_type: Mapped[str] = mapped_column(String(64), default="status_update")
+
+
+class RiskSemanticSignalRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "risk_semantic_signals"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True)
+    signal_type: Mapped[str] = mapped_column(String(64), index=True)
+    source_field: Mapped[str] = mapped_column(String(128), default="")
+    raw_text: Mapped[str] = mapped_column(Text())
+    canonical_label: Mapped[str] = mapped_column(Text(), default="")
+    canonical_group: Mapped[str] = mapped_column(String(255), default="")
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    vector_payload: Mapped[list[float]] = mapped_column(JSON, default=list)
+    vector_text: Mapped[str] = mapped_column(Text(), default="")
+    vector_dim: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(32), default="ready")
+
+
+class RiskSignalLinkRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "risk_signal_links"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, index=True, default=0)
+    from_signal_id: Mapped[str] = mapped_column(ForeignKey("risk_semantic_signals.id"), index=True)
+    to_signal_id: Mapped[str] = mapped_column(ForeignKey("risk_semantic_signals.id"), index=True)
+    link_type: Mapped[str] = mapped_column(String(64), index=True)
+    score: Mapped[float] = mapped_column(Float, default=0.0)
+    evidence_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+
+
+class RiskSignalClusterRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "risk_signal_clusters"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    cluster_key: Mapped[str] = mapped_column(String(255), index=True)
+    signal_type: Mapped[str] = mapped_column(String(64), index=True)
+    summary_text: Mapped[str] = mapped_column(Text(), default="")
+    signal_ids_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
