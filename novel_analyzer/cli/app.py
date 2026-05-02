@@ -1494,9 +1494,13 @@ def run_whole_book_imitation(
     power_map: list[str] = typer.Option([], "--power-map"),
     rule_override: list[str] = typer.Option([], "--rule-override"),
     forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
+    execute: bool = typer.Option(False, "--execute", help="Run sandbox iteration instead of dry-run queue only."),
+    max_rounds: int = typer.Option(1, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
     database_url: str | None = None,
 ) -> None:
-    """Build a dry-run whole-book execution queue from the orchestration plan."""
+    """Build a dry-run queue or execute a sandbox whole-book imitation run."""
 
     from novel_analyzer.domain.schemas import StoryMappingPack
 
@@ -1529,10 +1533,22 @@ def run_whole_book_imitation(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        report = _whole_book_imitation_service(session).build_run_queue(
-            branch_id,
-            mapping_pack=mapping_pack,
-            chapter_goals=chapter_goals,
+        service = _whole_book_imitation_service(session)
+        report = (
+            service.run_in_sandbox(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+            )
+            if execute
+            else service.build_run_queue(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+            )
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 

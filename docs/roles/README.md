@@ -4,5 +4,6 @@
 - [`./backend/README.md`](./backend/README.md)
 - [`./integrator/README.md`](./integrator/README.md)
 - [`./maintainer/README.md`](./maintainer/README.md)
+- [`./imitation/README.md`](./imitation/README.md)
 
 - [`../api-current-surface.md`](../api-current-surface.md)

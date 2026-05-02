@@ -318,3 +318,29 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"queue"' in run_result.stdout
     assert '"expected_outputs"' in run_result.stdout
     assert '"carry_over_inputs"' in run_result.stdout
+
+    sandbox_result = runner.invoke(
+        app,
+        [
+            "run-whole-book-imitation",
+            "branch-cli-1",
+            "测试项目",
+            "示例小说",
+            "新世界版示例小说",
+            "2:延续资源铺垫",
+            "3:延续主角获得功法后的行动线",
+            "--world-map",
+            "郑国=星际联邦",
+            "--character-map",
+            "卫图=魏拓",
+            "--execute",
+            "--max-rounds",
+            "1",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert sandbox_result.exit_code == 0
+    assert '"execution_mode": "sandbox_execute"' in sandbox_result.stdout
+    assert '"executed_steps"' in sandbox_result.stdout
+    assert '"final_carry_over_state"' in sandbox_result.stdout

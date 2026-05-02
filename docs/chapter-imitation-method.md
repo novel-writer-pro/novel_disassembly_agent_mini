@@ -13,6 +13,16 @@
 
 > **原章拆解 → 仿写计划 → 结构草案 → 风险检查 → 对比优化 → 扩写**
 
+补充：
+
+后续正式生产架构不建议只依赖“单次生成 + 审查回退”，而建议升级为：
+
+> **约束输入层 + skills 生产链 + harness agent 控制层 + risk audit 门控层**
+
+对应的详细架构文档见：
+
+- `docs/architecture/chapter-imitation-harness-architecture.md`
+
 ---
 
 ## 2. 推荐步骤
@@ -254,3 +264,89 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 - `run_notes`
 
 因此现在已经能把整本仿写从“概念计划”推进到“章节执行队列骨架”。
+
+---
+
+## 10. 整本 sandbox execute（当前最终推荐入口）
+
+建议使用：
+
+```bash
+novel-analyzer run-whole-book-imitation <branch_id> \
+  "测试项目" \
+  "示例小说" \
+  "新世界版示例小说" \
+  "2:延续资源铺垫" \
+  "3:延续主角获得功法后的行动线" \
+  --world-map "郑国=星际联邦" \
+  --character-map "卫图=魏拓" \
+  --execute \
+  --max-rounds 1 \
+  --use-llm
+```
+
+当前输出会明确给出：
+
+- `execution_mode = "sandbox_execute"`
+- `queue`
+- `executed_steps`
+  - `overall_score`
+  - `overall_risk_level`
+  - `draft_excerpt`
+  - `carry_over_state`
+- `final_carry_over_state`
+
+这意味着系统现在已经不仅能：
+
+> 规划整本仿写怎么跑
+
+还可以：
+
+> 在 sandbox 中逐章执行 imitation iteration，并显式把上一章生成出的摘要 / 关系状态 / 未解线程 / 规则约束传给下一章
+
+当前边界仍然明确：
+
+- 仍不会把生成正文写入 live branch artifact
+- 当前 carry-over 仍然是 sandbox report state，不是正式生产内容发布
+- 更适合作为“整本仿写实验链 / 评估链 / agentOS 编排链”的稳定中间层
+
+---
+
+## 11. 推荐输入 / 输出结构
+
+如果未来要把它复用到“全文仿写 / 换皮改写 / agentOS 工作流”，建议把输入拆成四层：
+
+### 输入层
+
+1. source anchor
+   - source chapter index / range
+   - source chapter title / excerpt / skeleton
+2. target transformation
+   - target goal
+   - world mapping
+   - character mapping
+   - faction / power mapping
+3. continuity memory
+   - previous generated summary
+   - previous relationship state
+   - previous unresolved threads
+   - previous rule state
+4. gate constraints
+   - risk focus
+   - forbidden transformations
+   - rule overrides
+
+### 输出层
+
+1. `plan`
+2. `draft`
+3. `comparison / review / gate / risk`
+4. `carry_over_state`
+
+这样后续不管接：
+
+- openFang / openClaw 这类 agentOS
+- 批处理 orchestrator
+- 后续全文仿写 runner
+
+都可以复用同一套可解释、可检查、可门控的 contract。

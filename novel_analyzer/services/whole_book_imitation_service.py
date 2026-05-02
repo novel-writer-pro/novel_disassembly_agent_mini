@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from novel_analyzer.domain.schemas import (
     StoryMappingPack,
+    WholeBookCarryOverState,
+    WholeBookImitationExecutedStep,
     WholeBookImitationPlan,
     WholeBookImitationQueueStep,
     WholeBookImitationRunReport,
@@ -114,5 +116,85 @@ class WholeBookImitationService:
             project_title=plan.project_title,
             queue=queue,
             carry_over_notes=carry_over_notes,
+            execution_mode="dry_run",
+            run_notes=run_notes,
+        )
+
+    def run_in_sandbox(
+        self,
+        branch_id: str,
+        *,
+        mapping_pack: StoryMappingPack,
+        chapter_goals: list[tuple[int, str]],
+        max_rounds: int = 1,
+        use_llm: bool = False,
+        model_name: str | None = None,
+    ) -> WholeBookImitationRunReport:
+        report = self.build_run_queue(
+            branch_id,
+            mapping_pack=mapping_pack,
+            chapter_goals=chapter_goals,
+        )
+        executed_steps: list[WholeBookImitationExecutedStep] = []
+        carry_state: WholeBookCarryOverState | None = None
+
+        for step in report.queue:
+            target_goal = step.target_goal
+            if carry_state is not None:
+                inherited_parts = [
+                    item
+                    for item in [
+                        carry_state.generated_summary.strip(),
+                        *carry_state.relationship_state[:2],
+                        *carry_state.unresolved_threads[:2],
+                        *carry_state.rule_state[:2],
+                    ]
+                    if item
+                ]
+                if inherited_parts:
+                    target_goal = f"{target_goal}｜承接上一生成状态：{'；'.join(inherited_parts[:5])}"
+
+            iteration = self.chapter_imitation.iterate_draft(
+                branch_id,
+                source_chapter_index=step.source_chapter_index,
+                target_goal=target_goal,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name,
+            )
+            final_round = iteration.rounds[-1]
+            carry_state = WholeBookCarryOverState(
+                source_chapter_index=step.source_chapter_index,
+                generated_summary=iteration.final_draft.draft_text[:220],
+                relationship_state=final_round.review.risk_gate_notes[:3],
+                unresolved_threads=final_round.risk.top_risk_summaries[:3] or final_round.risk.coverage_gaps[:3],
+                rule_state=final_round.risk.top_risk_types[:3],
+                next_constraints=iteration.final_draft.risk_gate_notes[:4],
+            )
+            executed_steps.append(
+                WholeBookImitationExecutedStep(
+                    order=step.order,
+                    source_chapter_index=step.source_chapter_index,
+                    target_goal=step.target_goal,
+                    stop_reason=iteration.stop_reason,
+                    overall_score=final_round.score.overall_score,
+                    overall_risk_level=final_round.risk.overall_risk_level,
+                    draft_title=iteration.final_draft.draft_title,
+                    draft_excerpt=iteration.final_draft.draft_text[:240],
+                    carry_over_state=carry_state,
+                )
+            )
+
+        run_notes = list(report.run_notes)
+        run_notes.append("sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。")
+        run_notes.append("当前仍是内存态 sandbox，不会把生成正文写入 live branch artifact。")
+        return WholeBookImitationRunReport(
+            branch_id=report.branch_id,
+            project_title=report.project_title,
+            queue=report.queue,
+            carry_over_notes=report.carry_over_notes,
+            execution_mode="sandbox_execute",
+            executed_steps=executed_steps,
+            final_carry_over_state=carry_state,
             run_notes=run_notes,
         )

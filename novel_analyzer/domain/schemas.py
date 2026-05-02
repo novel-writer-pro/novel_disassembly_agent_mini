@@ -832,11 +832,39 @@ class WholeBookImitationQueueStep(BaseModel):
     risk_focus: list[str] = Field(default_factory=list)
 
 
+class WholeBookCarryOverState(BaseModel):
+    """Explicit generated-state payload carried across sandbox imitation steps."""
+
+    source_chapter_index: int = Field(ge=1)
+    generated_summary: str = Field(default="")
+    relationship_state: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
+    rule_state: list[str] = Field(default_factory=list)
+    next_constraints: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationExecutedStep(BaseModel):
+    """One executed sandbox step derived from a queue item."""
+
+    order: int = Field(ge=1)
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    stop_reason: str
+    overall_score: int = Field(ge=0, le=100)
+    overall_risk_level: str = Field(default="low")
+    draft_title: str
+    draft_excerpt: str
+    carry_over_state: WholeBookCarryOverState
+
+
 class WholeBookImitationRunReport(BaseModel):
-    """Dry-run execution queue for a whole-book imitation orchestration."""
+    """Dry-run or sandbox-executed report for a whole-book imitation orchestration."""
 
     branch_id: str
     project_title: str
     queue: list[WholeBookImitationQueueStep] = Field(default_factory=list)
     carry_over_notes: list[str] = Field(default_factory=list)
+    execution_mode: str = Field(default="dry_run")
+    executed_steps: list[WholeBookImitationExecutedStep] = Field(default_factory=list)
+    final_carry_over_state: WholeBookCarryOverState | None = Field(default=None)
     run_notes: list[str] = Field(default_factory=list)

@@ -81,6 +81,16 @@ def _seed_branch(session, source_path: Path) -> str:
                 end_offset=text.index("第3章"),
                 content_hash="c2",
             ),
+            ChapterSegment(
+                manifest_id=manifest.id,
+                chapter_index=3,
+                raw_heading="第3章 养生功法",
+                normalized_chapter_no=3,
+                normalized_title="养生功法",
+                start_offset=text.index("第3章"),
+                end_offset=len(text),
+                content_hash="c3",
+            ),
             ChapterArtifact(
                 branch_id=branch.id,
                 chapter_index=1,
@@ -160,3 +170,33 @@ def test_whole_book_imitation_service_builds_run_queue(tmp_path: Path) -> None:
         assert report.queue[0].expected_outputs
         assert report.queue[1].carry_over_inputs
         assert report.run_notes
+
+
+def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = WholeBookImitationService(session)
+        pack = StoryMappingPack(
+            project_title="测试项目",
+            source_work_name="示例小说",
+            target_work_name="新世界版示例小说",
+            world_mapping={"郑国": "星际联邦"},
+            character_mapping={"卫图": "魏拓"},
+        )
+        report = service.run_in_sandbox(
+            branch_id,
+            mapping_pack=pack,
+            chapter_goals=[
+                (2, "延续资源铺垫"),
+                (3, "延续主角获得功法后的行动线"),
+            ],
+            max_rounds=1,
+            use_llm=False,
+        )
+        assert report.execution_mode == "sandbox_execute"
+        assert len(report.executed_steps) == 2
+        assert report.final_carry_over_state is not None
+        assert report.executed_steps[0].carry_over_state.generated_summary

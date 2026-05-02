@@ -154,6 +154,42 @@
 
 > 约定：后续每次开发更改，都应在本文件追加一条记录，至少说明“做了什么 / 为什么 / 如何验证”。
 
+## 2026-05-03
+
+### 仿写能力收口为 skills + harness + risk-audit 最终推荐架构
+- 新增 `docs/architecture/chapter-imitation-harness-architecture.md`
+- 将章节仿写 / 全书仿写的推荐方向明确收口为：
+  - 约束输入层
+  - skills 分阶段生产链
+  - harness agent 控制层
+  - risk audit 最终门控层
+- 把这套规划同步接入：
+  - `docs/architecture/README.md`
+  - `docs/chapter-imitation-method.md`
+  - `docs/roles/imitation/README.md`
+  - `docs/tracks/imitation/README.md`
+  - `docs/README.md`
+- 目的：避免后续继续走“单次大模型生成 + 审查不过反复重写”的低效路线，而是转向可分工、可复用、可定向修复的受控生成系统
+- 验证：
+  - `pytest tests/test_next_chapter_planner_service.py tests/test_chapter_imitation_service.py tests/test_whole_book_imitation_service.py tests/test_cli.py tests/test_api_main.py -q`
+  - `python -m compileall novel_analyzer docs tests`
+
+### whole-book imitation 增加 sandbox execute 与显式 carry-over state
+- 为 whole-book imitation 增加：
+  - `WholeBookCarryOverState`
+  - `WholeBookImitationExecutedStep`
+  - `WholeBookImitationRunReport.execution_mode / executed_steps / final_carry_over_state`
+- `run-whole-book-imitation` 新增：
+  - `--execute`
+  - `--max-rounds`
+  - `--use-llm`
+  - `--model-name`
+- 当前可以在 sandbox 中逐章执行 imitation iteration，并显式把“上一章生成摘要 / 关系状态 / 未解线程 / 规则约束”传给下一章
+- 仍保持严格边界：不会把生成正文写入 live branch artifact
+- 验证：
+  - `pytest tests/test_whole_book_imitation_service.py tests/test_cli.py -q`
+  - `python -m compileall novel_analyzer docs tests`
+
 ## 2026-05-02
 
 ### 仿写评分器补入迭代闭环

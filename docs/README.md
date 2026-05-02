@@ -12,18 +12,21 @@
 - [`./roles/backend/README.md`](./roles/backend/README.md)
 - [`./roles/integrator/README.md`](./roles/integrator/README.md)
 - [`./roles/maintainer/README.md`](./roles/maintainer/README.md)
+- [`./roles/imitation/README.md`](./roles/imitation/README.md)
 
 ### 按能力线 / 主题
 - [`./tracks/README.md`](./tracks/README.md)
 - [`./tracks/risk-audit/README.md`](./tracks/risk-audit/README.md)
 - [`./tracks/review-workflow/README.md`](./tracks/review-workflow/README.md)
 - [`./tracks/reader-experience/README.md`](./tracks/reader-experience/README.md)
+- [`./tracks/imitation/README.md`](./tracks/imitation/README.md)
 
 ### 按架构专题
 - [`./architecture/README.md`](./architecture/README.md)
 - [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
 - [`./architecture/risk-audit-embedding-pgvector-implementation-spec.md`](./architecture/risk-audit-embedding-pgvector-implementation-spec.md)
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
+- [`./architecture/chapter-imitation-harness-architecture.md`](./architecture/chapter-imitation-harness-architecture.md)
 - [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
 
 ---
@@ -86,6 +89,7 @@
 5. [`./model-eval-template.md`](./model-eval-template.md)
 6. [`./review-template.md`](./review-template.md)
 7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+8. [`./chapter-imitation-method.md`](./chapter-imitation-method.md)
 
 ### 说明
 - 第 1 步：先看完整交付说明
@@ -94,6 +98,7 @@
 - 第 4 步：看内部 agent / skills / embedding 设计
 - 第 5 步：后续换模型时参考评测模板
 - 第 6 步：做真实章节复盘时参考记录模板
+- 第 8 步：继续做仿写/全书改写链时，直接看仿写方法与 whole-book 输入输出
 
 ---
 
@@ -156,20 +161,22 @@
 23. [`./chapter-planning-capability-proposal.md`](./chapter-planning-capability-proposal.md)
 24. [`./chapter-imitation-method.md`](./chapter-imitation-method.md)
 25. [`./chapter-imitation-ch3-live-report-20260502.md`](./chapter-imitation-ch3-live-report-20260502.md)
-26. [`./cluster-status-semantics.md`](./cluster-status-semantics.md)
-27. [`./minimal-review-workflow-guide.md`](./minimal-review-workflow-guide.md)
-28. [`./risk-audit-artifact-manifest.md`](./risk-audit-artifact-manifest.md)
-29. [`./minimal-review-workflow-state-machine.md`](./minimal-review-workflow-state-machine.md)
-30. [`./review-workflow-phase2-design.md`](./review-workflow-phase2-design.md)
-31. [`./review-workflow-api.md`](./review-workflow-api.md)
-32. [`./review-batch-execution-contract.md`](./review-batch-execution-contract.md)
-33. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
-34. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
-35. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
-36. [`./review-workflow-api-freeze-readiness.md`](./review-workflow-api-freeze-readiness.md)
-37. [`./review-workflow-team-execution-guidelines.md`](./review-workflow-team-execution-guidelines.md)
-38. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
-39. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
+26. [`./roles/imitation/README.md`](./roles/imitation/README.md)
+27. [`./tracks/imitation/README.md`](./tracks/imitation/README.md)
+28. [`./cluster-status-semantics.md`](./cluster-status-semantics.md)
+29. [`./minimal-review-workflow-guide.md`](./minimal-review-workflow-guide.md)
+30. [`./risk-audit-artifact-manifest.md`](./risk-audit-artifact-manifest.md)
+31. [`./minimal-review-workflow-state-machine.md`](./minimal-review-workflow-state-machine.md)
+32. [`./review-workflow-phase2-design.md`](./review-workflow-phase2-design.md)
+33. [`./review-workflow-api.md`](./review-workflow-api.md)
+34. [`./review-batch-execution-contract.md`](./review-batch-execution-contract.md)
+35. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
+36. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
+37. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
+38. [`./review-workflow-api-freeze-readiness.md`](./review-workflow-api-freeze-readiness.md)
+39. [`./review-workflow-team-execution-guidelines.md`](./review-workflow-team-execution-guidelines.md)
+40. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
+41. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
 
 
 ### 样例小说结论链（运行期报告）
