@@ -105,6 +105,12 @@ embedding / pgvector 实施规格。适合回答：
 - 哪些是真实外部条件阻塞
 - PostgreSQL / pgvector / provider / embedding 应该怎么验收
 
+### `risk-audit-fresh10-verification-20260502.md`
+fresh 真库核验结果。适合回答：
+- 样例小说前 10 章 fresh DB 结果是什么
+- 哪些是真实低风险候选
+- 当前系统是在内容层面有问题，还是 small-model 子路径存在稳定性债
+
 ### `architecture/README.md`
 架构专题总入口。适合回答：
 - 当前有哪些架构专题文档

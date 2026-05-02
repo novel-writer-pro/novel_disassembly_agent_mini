@@ -144,23 +144,25 @@ set +a
 
 ---
 
-## 3. 当前已确认的真实阻塞
+## 3. 当前最新收尾状态（2026-05-02）
 
-截至 **2026-05-02**，当前会话内已确认：
+截至 **2026-05-02**，本轮会话已完成：
 
-1. `127.0.0.1:5432` 当前 **connection refused**
-2. 因数据库未连通，`postgres_capability_report(...)` 返回：
-   - `database_exists=false`
-   - `can_connect=false`
-   - `initialized_schema=false`
-   - `missing_extensions=['pg_trgm', 'vector']`
-3. 因此当前会话下：
-   - 无法完成 pgvector 真环境验收
-   - 无法在真库上直接重跑示例小说前 10 章风险链
+1. PostgreSQL 真环境连通
+2. `pg_trgm` / `vector` 扩展确认
+3. LLM `gpt-5.4-mini` 最小实调用通过
+4. ONNX `bge-m3` smoke 通过
+5. Alembic 多 head / 分叉问题修复
+6. `risk_semantic_signals / risk_signal_links / risk_signal_clusters` 正式纳入 Alembic schema
+7. 样例小说前 10 章 fresh 真库复跑完成
 
-这意味着：
+因此当前结论已从：
 
-> 当前主要阻塞已经不是风险审查主链代码骨架，而是 **数据库真环境未闭环**。
+> “数据库真环境未闭环”
+
+推进到：
+
+> **真环境主链已闭环；剩余主要是 small-model pipeline 的 schema 收口与后续增强，不再是主链不可生产。**
 
 ---
 
@@ -207,6 +209,38 @@ set +a
 
 ---
 
-## 6. 一句话结论
+## 6. 当前剩余问题
 
-> 当前风险审查体系已经接近正式生产；真正剩余的收尾重点是 **PostgreSQL/pgvector 真环境、provider 长链稳定性、以及可重复运行壳层** 的闭环证明。
+当前剩余的真实问题主要有两类：
+
+### A. 非阻断稳定性债
+
+small-model pipeline 在 fresh 真库复跑中仍出现 schema 漂移：
+
+- `continuity_notes` 返回 dict，但 schema 期望 string
+- `ChapterIntakeOutput` 中出现 `chapter_id` 代替 `chapter_index`
+
+当前影响：
+
+- small-model 路径会报 validation error
+- 但 `monolithic_fallback` 会兜底
+- 不阻断章节完成与 risk card 生成
+
+### B. 能力覆盖度仍然偏保守
+
+在样例小说前 10 章 fresh 结果中，多数 chapter risk card 仍属于：
+
+- `overall_risk_level = low`
+- `status = partial`
+
+这意味着当前更偏：
+
+- advisory-only
+- 轻风险提示
+- 证据不足即跳过/降级
+
+而不是激进自动判错。
+
+## 7. 一句话结论
+
+> 当前风险审查体系已经达到 **真 PostgreSQL/pgvector/LLM 环境下可持续运行** 的阶段；剩余重点不再是主链打通，而是 **small-model schema 收口、覆盖度增强、以及 targeted adjudication 提质**。

@@ -156,6 +156,24 @@
 
 ## 2026-05-02
 
+### fresh 真库前10章风险结论与交接文档补齐
+- 新增 `docs/risk-audit-fresh10-verification-20260502.md`
+- 新增 `docs/chapter-planning-capability-proposal.md`
+- 将样例小说前 10 章的 fresh PostgreSQL 真库结果写入正式文档，而不再只依赖离线报告或口头结论
+- 明确记录：
+  - fresh run/branch 标识
+  - 1~10 章全部跑通
+  - 低风险候选主要集中在 `character_ooc` 与 `plot_logic_consistency`
+  - small-model schema 漂移为非阻断稳定性债
+- 同步将这些文档接入 docs 索引，方便后续维护与交接
+
+### 风险语义信号表补入正式 Alembic schema
+- 新增迁移 `20260502_01_risk_signal_tables.py`
+- 将 `risk_semantic_signals`、`risk_signal_links`、`risk_signal_clusters` 正式纳入 Alembic 管理
+- 修复“空库 init-db 成功，但 fresh 风险审查在第1章因缺表中断”的真环境问题
+- 让 ONNX/pgvector/semantic middle layer 在新库中不再依赖历史手工残留表
+- 验证：后续将以真库 fresh10 rerun 作为主证据继续签收
+
 ### Alembic 多 head 冲突收口为线性迁移链
 - 修复 `alembic/versions/20260430_01_cluster_review_records.py` 与 `20260430_01_cluster_review_tables.py` 共享同一 revision id 的问题
 - 将 records 迁移改为 `20260430_02`，并收口为兼容性 no-op bridge，避免空库 `init-db` 时出现 multiple heads

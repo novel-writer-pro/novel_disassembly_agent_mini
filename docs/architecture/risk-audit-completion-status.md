@@ -50,7 +50,43 @@
 
 ---
 
-## 2. 什么还不算“最终完成”
+## 2. fresh 真环境补充结果（2026-05-02）
+
+本轮新增真实验证结果：
+
+1. PostgreSQL 真环境已打通
+2. `pg_trgm` / `vector` 扩展已确认
+3. Alembic 多 head / 分叉已修复
+4. `risk_semantic_signals / risk_signal_links / risk_signal_clusters` 已纳入正式 schema
+5. 样例小说前 10 章已经完成 fresh 真库复跑
+
+fresh run / branch：
+
+- `run_id = ac9449b9-7326-474f-bb72-4416375a7491`
+- `branch_id = 62e636f0-c901-4167-aa1c-aff3da9c83ef`
+
+fresh 前 10 章结论：
+
+- 全部章节 `overall_risk_level = low`
+- 未发现明确成立的 OOC / 规则冲突 / 崩坏
+- 第 2 / 3 / 6 / 7 / 8 / 9 章出现 low 级人工复核候选
+- 主要集中在：
+  - `character_ooc`
+  - `plot_logic_consistency`
+
+同时，本轮也验证出一个非阻断问题：
+
+- small-model pipeline 存在 schema 漂移
+- 但 `monolithic_fallback` 会兜底
+- 不阻断章节完成与 risk card 生成
+
+详见：
+
+- `docs/risk-audit-fresh10-verification-20260502.md`
+
+---
+
+## 3. 什么还不算“最终完成”
 
 以下内容属于下一阶段，而不是当前第一阶段完成定义的一部分：
 
@@ -67,7 +103,7 @@
 
 ---
 
-## 3. 当前如何使用
+## 4. 当前如何使用
 
 ### 3.1 运行 risk audit 主链
 
@@ -121,7 +157,7 @@
 
 ---
 
-## 4. 当前如何验证
+## 5. 当前如何验证
 
 ### 4.1 推荐验证命令
 
@@ -138,7 +174,8 @@
 ```
 
 #### 当前最近一次结果
-- `111 passed`
+- 历史主链基线：`111 passed`
+- 本轮 fresh 收尾补充：`54 passed`
 
 ### 4.2 轻量验证命令
 
@@ -168,11 +205,12 @@
 
 ---
 
-## 5. 当前验证报告在哪里
+## 6. 当前验证报告在哪里
 
 主链验证报告：
 
 - `.omx/reports/risk-audit-mainline-verification-20260430.md`
+- `docs/risk-audit-fresh10-verification-20260502.md`
 
 这份报告当前包含：
 - checker roster
@@ -185,17 +223,19 @@
 
 ---
 
-## 6. 当前已知 warning
+## 7. 当前已知 warning
 
-当前唯一已知 warning 是：
+当前新的已知 warning / 稳定性债：
 
-- `apps/api/app/main.py:142`
-- `cgi` deprecation warning
+1. small-model pipeline 的 schema 漂移：
+   - `continuity_notes` 返回 dict 而不是 string
+   - `ChapterIntakeOutput` 返回 `chapter_id` 而非 `chapter_index`
+2. 历史 `cgi` deprecation warning 已不是本轮主问题
 
-它不阻塞当前风险审查主链。
+这些问题当前 **不阻塞主链**，但会触发 fallback，值得后续收口。
 
 ---
 
-## 7. 一句话结论
+## 8. 一句话结论
 
-> 当前风险审查技术已经完成第一阶段：具备可运行、可验证、可交接的多源 evidence pack 门控主链；后续主要工作是 PostgreSQL/pgvector 真环境验证与下一阶段增强，而不是再补齐主链骨架。
+> 当前风险审查技术已经完成第一阶段，并且已补上 fresh PostgreSQL 真环境验证；现在的重点是 **schema 收口与覆盖度增强**，而不是再补齐主链骨架。

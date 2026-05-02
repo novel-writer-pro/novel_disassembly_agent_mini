@@ -277,6 +277,30 @@ def test_alembic_cluster_review_revisions_are_linearized() -> None:
     assert "down_revision = '20260429_01'" in tables
 
 
+def test_alembic_risk_signal_tables_follow_cluster_review_chain() -> None:
+    migration = Path("alembic/versions/20260502_01_risk_signal_tables.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'revision = "20260502_01"' in migration
+    assert 'down_revision = "20260430_02"' in migration
+    assert '"risk_semantic_signals"' in migration
+    assert '"risk_signal_links"' in migration
+    assert '"risk_signal_clusters"' in migration
+
+
+def test_docs_index_points_to_fresh10_and_chapter_planning_docs() -> None:
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    risk_index = Path("docs/risk-audit-docs-index.md").read_text(encoding="utf-8")
+    completion = Path("docs/architecture/risk-audit-completion-status.md").read_text(
+        encoding="utf-8"
+    )
+    assert "./risk-audit-fresh10-verification-20260502.md" in readme
+    assert "./chapter-planning-capability-proposal.md" in readme
+    assert "risk-audit-fresh10-verification-20260502.md" in risk_index
+    assert "chapter-planning-capability-proposal.md" in readme
+    assert "risk-audit-fresh10-verification-20260502.md" in completion
+
+
 def test_api_current_surface_doc_matches_route_inventory() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
