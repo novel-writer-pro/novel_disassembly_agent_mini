@@ -269,3 +269,39 @@
 ## 10. 一句话结论
 
 > 章节仿写能力的正确起点，不是“直接代写正文”，而是 **基于拆书状态与风险门控底座，先做下一章规划器 + 风险约束器**，再逐步放开到场景草案和正文草案。
+
+---
+
+## 11. 当前已落地的最小代码骨架
+
+本轮已补入最小服务骨架：
+
+- `novel_analyzer/services/next_chapter_planner_service.py`
+- `ChapterPlanningIntent`
+- `ChapterPlanningContext`
+- `ChapterPlanningCard`
+- `ChapterPlanningScene`
+
+当前能力边界：
+
+1. 能从 branch 当前状态提炼：
+   - recent chapter summaries
+   - active characters
+   - unresolved threads
+   - active conflicts
+   - world rules
+   - recent risk signal hints
+2. 能生成最小的：
+   - chapter goal
+   - main conflict
+   - scene plan
+   - ending hook
+   - risk notes
+3. 当前仍是：
+   - deterministic skeleton
+   - non-LLM first-pass planner
+   - 方便后续接 LLM / prompt planner / gate loop
+
+这意味着：
+
+> 下一步不必从 0 开始，而可以直接在这个 skeleton 上继续接入 branch package / risk card / LLM planner。

@@ -156,6 +156,23 @@
 
 ## 2026-05-02
 
+### next_chapter_planner 数据结构与服务骨架落地
+- 新增 `novel_analyzer/services/next_chapter_planner_service.py`
+- 新增规划相关 schema：
+  - `ChapterPlanningIntent`
+  - `ChapterPlanningContext`
+  - `ChapterPlanningCard`
+  - `ChapterPlanningScene`
+- 当前 skeleton 已能从 branch 现有状态生成最小的“下一章规划卡”，包括：
+  - chapter goal
+  - main conflict
+  - scene plan
+  - ending hook
+  - risk notes
+- 新增 `tests/test_next_chapter_planner_service.py`，锁定当前最小上下文构建与规划输出
+- 文档补充：
+  - `docs/chapter-planning-capability-proposal.md` 增补当前已落地骨架说明
+
 ### fresh 真库前10章风险结论与交接文档补齐
 - 新增 `docs/risk-audit-fresh10-verification-20260502.md`
 - 新增 `docs/chapter-planning-capability-proposal.md`

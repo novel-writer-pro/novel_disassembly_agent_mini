@@ -575,3 +575,58 @@ class ChapterRiskCard(BaseModel):
     generated_at: str | None = None
     checker_statuses: dict[str, str] = Field(default_factory=dict)
     coverage_gaps: list[str] = Field(default_factory=list)
+
+
+class ChapterPlanningIntent(BaseModel):
+    """Caller-owned intent for planning the next chapter."""
+
+    primary_goal: str
+    emphasis: list[str] = Field(default_factory=list)
+    forbidden_moves: list[str] = Field(default_factory=list)
+    preferred_tone: str | None = None
+    pace: str | None = None
+    target_word_count: int | None = Field(default=None, ge=0)
+
+
+class ChapterPlanningScene(BaseModel):
+    """One planned scene for the next chapter."""
+
+    scene_index: int = Field(ge=1)
+    purpose: str
+    must_include: list[str] = Field(default_factory=list)
+    risk_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterPlanningContext(BaseModel):
+    """Structured context pack used by the next-chapter planner."""
+
+    branch_id: str
+    current_chapter_index: int = Field(ge=1)
+    next_chapter_index: int = Field(ge=1)
+    recent_chapter_summaries: list[str] = Field(default_factory=list)
+    active_characters: list[str] = Field(default_factory=list)
+    relationship_state_notes: list[str] = Field(default_factory=list)
+    active_conflicts: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
+    world_rules: list[str] = Field(default_factory=list)
+    recent_risk_signals: list[str] = Field(default_factory=list)
+    forbidden_moves: list[str] = Field(default_factory=list)
+    planning_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterPlanningCard(BaseModel):
+    """Planner-owned chapter blueprint output."""
+
+    branch_id: str
+    next_chapter_index: int = Field(ge=1)
+    chapter_goal: str
+    main_conflict: str
+    secondary_conflicts: list[str] = Field(default_factory=list)
+    required_progressions: list[str] = Field(default_factory=list)
+    scene_plan: list[ChapterPlanningScene] = Field(default_factory=list)
+    character_movements: list[str] = Field(default_factory=list)
+    relationship_movements: list[str] = Field(default_factory=list)
+    foreshadow_to_touch: list[str] = Field(default_factory=list)
+    rule_constraints: list[str] = Field(default_factory=list)
+    ending_hook: str | None = None
+    risk_notes: list[str] = Field(default_factory=list)
