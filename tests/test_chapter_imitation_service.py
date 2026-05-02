@@ -313,5 +313,6 @@ def test_chapter_imitation_service_iterate_draft(tmp_path: Path) -> None:
             max_rounds=2,
         )
         assert report.rounds
+        assert report.rounds[0].score.overall_score >= 0
         assert report.final_draft
         assert report.stop_reason in {"max_rounds_reached", "quality_threshold_reached"}

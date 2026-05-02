@@ -735,6 +735,18 @@ class ChapterImitationRiskReport(BaseModel):
     coverage_gaps: list[str] = Field(default_factory=list)
 
 
+class ChapterImitationScoreReport(BaseModel):
+    """Multi-axis score summary for one imitation draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    structure_score: int = Field(ge=0, le=100)
+    style_alignment_score: int = Field(ge=0, le=100)
+    risk_score: int = Field(ge=0, le=100)
+    overall_score: int = Field(ge=0, le=100)
+    notes: list[str] = Field(default_factory=list)
+
+
 class ChapterImitationIterationRound(BaseModel):
     """One iteration snapshot in the imitation optimization loop."""
 
@@ -744,6 +756,7 @@ class ChapterImitationIterationRound(BaseModel):
     review: ChapterImitationReviewReport
     gate: ChapterImitationGateReport
     risk: ChapterImitationRiskReport
+    score: ChapterImitationScoreReport
 
 
 class ChapterImitationIterationReport(BaseModel):

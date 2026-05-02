@@ -20,6 +20,7 @@ from novel_analyzer.domain.schemas import (
     ChapterImitationRiskReport,
     ChapterImitationReviewReport,
     ChapterImitationPlan,
+    ChapterImitationScoreReport,
     ChapterPlanningIntent,
     ChapterRiskCard,
 )
@@ -371,6 +372,41 @@ class ChapterImitationService:
             risk_gate_notes=draft.risk_gate_notes + review.risk_gate_notes,
         )
 
+    def score_draft(
+        self,
+        *,
+        source_chapter_index: int,
+        draft: ChapterImitationDraft,
+        comparison: ChapterImitationComparisonReport,
+        gate: ChapterImitationGateReport,
+        risk: ChapterImitationRiskReport,
+    ) -> ChapterImitationScoreReport:
+        structure_score = 90 if comparison.overall_verdict == "aligned" else 65
+        style_alignment_score = 70
+        draft_length = len(draft.draft_text)
+        if draft_length < 400:
+            style_alignment_score -= 15
+        if draft_length > 2400:
+            style_alignment_score -= 5
+        risk_score = 85 if risk.overall_risk_level == "low" else 60
+        if gate.needs_human_review:
+            risk_score -= 10
+        overall_score = max(0, min(100, round((structure_score * 0.45) + (style_alignment_score * 0.25) + (risk_score * 0.30))))
+        notes = [
+            f"structure_score={structure_score}",
+            f"style_alignment_score={style_alignment_score}",
+            f"risk_score={risk_score}",
+        ]
+        return ChapterImitationScoreReport(
+            source_chapter_index=source_chapter_index,
+            draft_title=draft.draft_title,
+            structure_score=structure_score,
+            style_alignment_score=style_alignment_score,
+            risk_score=risk_score,
+            overall_score=overall_score,
+            notes=notes,
+        )
+
     def iterate_draft(
         self,
         branch_id: str,
@@ -419,6 +455,13 @@ class ChapterImitationService:
                 source_chapter_index=source_chapter_index,
                 draft=draft,
             )
+            score = self.score_draft(
+                source_chapter_index=source_chapter_index,
+                draft=draft,
+                comparison=comparison,
+                gate=gate,
+                risk=risk,
+            )
             rounds.append(
                 ChapterImitationIterationRound(
                     round_index=round_index,
@@ -427,12 +470,14 @@ class ChapterImitationService:
                     review=review,
                     gate=gate,
                     risk=risk,
+                    score=score,
                 )
             )
             if (
                 comparison.overall_verdict == "aligned"
                 and gate.overall_verdict != "needs_revision"
                 and risk.overall_risk_level == "low"
+                and score.overall_score >= 80
             ):
                 stop_reason = "quality_threshold_reached"
                 break

@@ -254,4 +254,5 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     )
     assert iterate_result.exit_code == 0
     assert '"rounds"' in iterate_result.stdout
+    assert '"overall_score"' in iterate_result.stdout
     assert '"final_draft"' in iterate_result.stdout
