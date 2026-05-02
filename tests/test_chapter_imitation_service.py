@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from langchain_core.messages import AIMessage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -168,4 +169,41 @@ def test_chapter_imitation_service_builds_plan_and_skeleton(tmp_path: Path) -> N
         )
         assert draft.original_title == "养生功法"
         assert "【章节目标】" in draft.draft_text
+        assert draft.comparison_notes
+
+
+def test_chapter_imitation_service_builds_llm_draft(monkeypatch, tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = ChapterImitationService(session)
+
+        class _DummyModel:
+            def invoke(self, _prompt: str):
+                return AIMessage(
+                    content="""
+{
+  "draft_title": "养生功法",
+  "draft_text": "卫图在受挫后保持克制，转而将注意力放在功法修炼上。",
+  "method_notes": ["保持原章克制推进节奏"],
+  "comparison_notes": ["仍保留受挫后转修炼的骨架"],
+  "risk_gate_notes": ["重点检查 OOC 与剧情推进支撑缺口"]
+}
+""".strip()
+                )
+
+        monkeypatch.setattr(
+            "novel_analyzer.services.chapter_imitation_service.build_chat_model",
+            lambda *args, **kwargs: _DummyModel(),
+        )
+
+        draft = service.build_llm_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        assert draft.original_title == "养生功法"
+        assert "受挫后保持克制" in draft.draft_text
         assert draft.comparison_notes

@@ -1223,6 +1223,8 @@ def imitate_chapter(
     branch_id: str,
     source_chapter_index: int,
     target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
     database_url: str | None = None,
 ) -> None:
     """Build a visible imitation plan + skeleton draft for one source chapter."""
@@ -1230,10 +1232,20 @@ def imitate_chapter(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        payload = _chapter_imitation_service(session).build_skeleton_draft(
-            branch_id,
-            source_chapter_index=source_chapter_index,
-            target_goal=target_goal,
+        service = _chapter_imitation_service(session)
+        payload = (
+            service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
         )
         echo(payload.model_dump_json(indent=2, ensure_ascii=False))
 

@@ -8,12 +8,15 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import ChapterSegment, NovelSource, RunBranch
 from novel_analyzer.domain.schemas import (
     ChapterImitationDraft,
     ChapterImitationPlan,
     ChapterPlanningIntent,
 )
+from novel_analyzer.llm.client import build_chat_model
+from novel_analyzer.llm.prompts import build_chapter_imitation_prompt
 from novel_analyzer.services.next_chapter_planner_service import (
     NextChapterPlannerService,
     PlannerContextWindow,
@@ -32,8 +35,9 @@ class ChapterImitationMethod:
 class ChapterImitationService:
     """Build an imitation plan and deterministic skeleton draft for one chapter."""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
+        self.settings = settings or get_settings()
         self.run_service = RunService(session)
         self.next_chapter_planner = NextChapterPlannerService(session)
 
@@ -117,6 +121,47 @@ class ChapterImitationService:
             risk_gate_notes=risk_gate_notes + plan.risk_focus,
         )
 
+    def build_llm_draft(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        target_goal: str,
+        method: ChapterImitationMethod | None = None,
+        model_name: str | None = None,
+    ) -> ChapterImitationDraft:
+        plan = self.build_imitation_plan(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            method=method,
+        )
+        title, source_text = self._source_chapter_text(branch_id, source_chapter_index)
+        prompt = build_chapter_imitation_prompt(
+            source_chapter_index=source_chapter_index,
+            source_title=title,
+            source_excerpt=source_text[:2500],
+            target_goal=target_goal,
+            style_axes=plan.style_axes,
+            scene_beats=plan.scene_beats,
+            hard_constraints=plan.hard_constraints,
+            soft_constraints=plan.soft_constraints,
+        )
+        model = build_chat_model(self.settings, model_name=model_name)
+        response = model.invoke(prompt)
+        payload = self._extract_json_payload(response.content if hasattr(response, "content") else response)
+        return ChapterImitationDraft.model_validate(
+            {
+                "source_chapter_index": source_chapter_index,
+                "original_title": title,
+                "draft_title": payload.get("draft_title") or title,
+                "draft_text": payload.get("draft_text") or "",
+                "method_notes": payload.get("method_notes") or plan.style_axes + plan.scene_beats,
+                "comparison_notes": payload.get("comparison_notes") or [],
+                "risk_gate_notes": payload.get("risk_gate_notes") or plan.risk_focus,
+            }
+        )
+
     def _source_chapter_text(self, branch_id: str, chapter_index: int) -> tuple[str, str]:
         branch = self.session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
         if branch is None:
@@ -135,6 +180,20 @@ class ChapterImitationService:
             raise ValueError(f"Unknown chapter_index: {chapter_index}")
         full_text = Path(novel.source_path).read_text(encoding="utf-8", errors="ignore")
         return segment.normalized_title, full_text[segment.start_offset : segment.end_offset].strip()
+
+    @staticmethod
+    def _extract_json_payload(raw_content: object) -> dict[str, object]:
+        text = str(raw_content).strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+        import json
+
+        return json.loads(text)
 
     @staticmethod
     def _render_skeleton_text(*, title: str, plan: ChapterImitationPlan) -> str:
