@@ -721,3 +721,15 @@ class ChapterImitationGateReport(BaseModel):
     hook_score: float | None = Field(default=None, ge=0.0, le=10.0)
     risk_gate_notes: list[str] = Field(default_factory=list)
     overall_verdict: str = Field(default="needs_revision")
+
+
+class ChapterImitationRiskReport(BaseModel):
+    """In-memory risk review for imitation draft prose."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    overall_risk_level: str = Field(default="low")
+    checker_statuses: dict[str, str] = Field(default_factory=dict)
+    top_risk_types: list[str] = Field(default_factory=list)
+    top_risk_summaries: list[str] = Field(default_factory=list)
+    coverage_gaps: list[str] = Field(default_factory=list)

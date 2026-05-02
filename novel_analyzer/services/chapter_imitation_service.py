@@ -15,9 +15,11 @@ from novel_analyzer.domain.schemas import (
     ChapterImitationDraft,
     ChapterImitationComparisonReport,
     ChapterImitationGateReport,
+    ChapterImitationRiskReport,
     ChapterImitationReviewReport,
     ChapterImitationPlan,
     ChapterPlanningIntent,
+    ChapterRiskCard,
 )
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_chapter_imitation_prompt
@@ -26,6 +28,7 @@ from novel_analyzer.services.next_chapter_planner_service import (
     PlannerContextWindow,
 )
 from novel_analyzer.services.quality_gate_service import QualityGateService
+from novel_analyzer.services.risk_audit_service import RiskAuditService
 from novel_analyzer.services.run_service import RunService
 
 
@@ -288,6 +291,62 @@ class ChapterImitationService:
             hook_score=quality.hook_score,
             risk_gate_notes=risk_notes,
             overall_verdict=verdict,
+        )
+
+    def risk_review_draft(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        draft: ChapterImitationDraft,
+    ) -> ChapterImitationRiskReport:
+        artifact_payload = {
+            "chapter_index": source_chapter_index,
+            "normalized_title": draft.draft_title,
+            "chapter_summary": draft.draft_text[:200],
+            "key_entities": [],
+            "key_events": [],
+            "continuity_notes": draft.comparison_notes[:3],
+            "state_transition_notes": draft.comparison_notes[:3],
+            "evidence_backed_resolutions": [],
+            "unresolved_threads": draft.risk_gate_notes[:3],
+            "needs_human_review": True,
+            "unsupported_inferences": [],
+            "ambiguous_points": [],
+        }
+        results = []
+        service = RiskAuditService(self.session)
+        for checker in service.checkers:
+            try:
+                result = checker.evaluate(
+                    branch_id=branch_id,
+                    chapter_index=source_chapter_index,
+                    artifact_payload=artifact_payload,
+                    facts=[],
+                )
+            except Exception as exc:  # noqa: BLE001
+                result = service.aggregate(  # type: ignore[assignment]
+                    branch_id=branch_id,
+                    chapter_index=source_chapter_index,
+                    checker_results=[],
+                )
+                raise exc
+            results.append(result)
+        card = ChapterRiskCard.model_validate(
+            RiskAuditService.aggregate(
+                branch_id=branch_id,
+                chapter_index=source_chapter_index,
+                checker_results=results,
+            ).model_dump(mode="json")
+        )
+        return ChapterImitationRiskReport(
+            source_chapter_index=source_chapter_index,
+            draft_title=draft.draft_title,
+            overall_risk_level=card.overall_risk_level,
+            checker_statuses=card.checker_statuses,
+            top_risk_types=[item.risk_type for item in card.top_risks],
+            top_risk_summaries=[item.summary for item in card.top_risks],
+            coverage_gaps=card.coverage_gaps,
         )
 
     def revise_draft(
