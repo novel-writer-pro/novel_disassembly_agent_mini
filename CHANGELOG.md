@@ -156,6 +156,15 @@
 
 ## 2026-05-02
 
+### 仿写评分器补入迭代闭环
+- 为 imitation loop 新增多轴评分：
+  - `structure_score`
+  - `style_alignment_score`
+  - `risk_score`
+  - `overall_score`
+- 将 `iterate-imitation` 的 stop 条件从纯布尔判断升级为“结构 + 风险 + 评分阈值”联合判定
+- 第3章 live 实验报告同步补入评分与 stop 逻辑说明
+
 ### 第3章 live 仿写实验报告补齐
 - 新增 `docs/chapter-imitation-ch3-live-report-20260502.md`
 - 将《第3章 养生功法》的 live 仿写实验结果收口为正式文档

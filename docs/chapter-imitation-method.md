@@ -152,9 +152,21 @@ novel-analyzer iterate-imitation <branch_id> <source_chapter_index> "<target_goa
   - `review`
   - `gate`
   - `risk`
+  - `score`
 - `final_draft`
 - `stop_reason`
 
 对应的首个正式实验报告：
 
 - `docs/chapter-imitation-ch3-live-report-20260502.md`
+
+### 当前 stop 条件
+
+第一版 runner 当前会综合：
+
+- 结构对齐
+- 质量门控
+- sandbox 风险级别
+- `overall_score`
+
+来决定是否停止继续迭代。

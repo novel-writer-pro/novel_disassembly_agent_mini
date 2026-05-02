@@ -73,11 +73,13 @@ novel-analyzer iterate-imitation 62e636f0-c901-4167-aa1c-aff3da9c83ef 3 \
 - `comparison.overall_verdict = aligned`
 - `gate.overall_verdict = aligned_but_needs_revision`
 - `risk.overall_risk_level = low`
+- `score.overall_score >= 80`
 
 这说明：
 
 - 第一轮草案已在结构层面达到可接受对齐
 - 风险层面为低风险
+- 当前评分器也已认为其达到可接受阈值
 - 仍有修订建议，但没有进入高风险或结构性偏离
 
 ---
@@ -115,6 +117,23 @@ novel-analyzer iterate-imitation 62e636f0-c901-4167-aa1c-aff3da9c83ef 3 \
 3. **轮次只跑到一轮**
    - 因为当前阈值认为已达标
    - 但如果追求“更出色”，仍可继续多轮优化
+
+### C. 当前 stop 逻辑含义
+
+当前 `iterate-imitation` 会综合判断：
+
+- `comparison.overall_verdict`
+- `gate.overall_verdict`
+- `risk.overall_risk_level`
+- `score.overall_score`
+
+这意味着它已经不再只是：
+
+> “结构对齐 + 风险低”
+
+而是进一步进入：
+
+> “结构对齐 + 风险低 + 质量/风格得分达到阈值”
 
 ---
 
