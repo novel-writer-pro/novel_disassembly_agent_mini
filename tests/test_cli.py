@@ -273,3 +273,25 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert multi_result.exit_code == 0
     assert '"steps"' in multi_result.stdout
     assert '"overall_verdict"' in multi_result.stdout
+
+    whole_result = runner.invoke(
+        app,
+        [
+            "plan-whole-book-imitation",
+            "branch-cli-1",
+            "测试项目",
+            "示例小说",
+            "新世界版示例小说",
+            "2:延续资源铺垫",
+            "3:延续主角获得功法后的行动线",
+            "--world-map",
+            "郑国=星际联邦",
+            "--character-map",
+            "卫图=魏拓",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert whole_result.exit_code == 0
+    assert '"mapping_pack"' in whole_result.stdout
+    assert '"chapter_goals"' in whole_result.stdout

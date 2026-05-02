@@ -305,3 +305,25 @@
 这意味着：
 
 > 下一步不必从 0 开始，而可以直接在这个 skeleton 上继续接入 branch package / risk card / LLM planner。
+
+---
+
+## 12. Whole-book orchestration 当前骨架
+
+本轮已补入：
+
+- `StoryMappingPack`
+- `WholeBookImitationPlan`
+- `WholeBookImitationService`
+- `plan-whole-book-imitation`
+
+这意味着系统已经开始支持：
+
+1. 原作名 → 目标作品名
+2. 世界映射
+3. 人物映射
+4. 势力映射
+5. 能力/资源映射
+6. 按章节目标排布整本仿写队列
+
+当前仍是 orchestration skeleton，而不是完整整本生成器。

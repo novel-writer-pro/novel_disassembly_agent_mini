@@ -195,3 +195,30 @@ novel-analyzer multi-chapter-imitation-consistency <branch_id> \
 - `overall_verdict`
 
 这意味着系统已经开始从“单章仿写器”向“多章连续仿写协调器”过渡。
+
+---
+
+## 8. 整本仿写 orchestration 入口（当前骨架）
+
+建议使用：
+
+```bash
+novel-analyzer plan-whole-book-imitation <branch_id> \
+  "测试项目" \
+  "示例小说" \
+  "新世界版示例小说" \
+  "2:延续资源铺垫" \
+  "3:延续主角获得功法后的行动线" \
+  --world-map "郑国=星际联邦" \
+  --character-map "卫图=魏拓"
+```
+
+当前输出会明确给出：
+
+- `mapping_pack`
+- `source_chapter_range`
+- `chapter_goals`
+- `continuity_focus`
+- `orchestration_notes`
+
+这使得“整本仿写”的上层规划已经有了清晰输入输出。

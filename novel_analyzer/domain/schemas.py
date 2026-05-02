@@ -792,3 +792,29 @@ class MultiChapterImitationConsistencyReport(BaseModel):
     continuity_notes: list[str] = Field(default_factory=list)
     risk_notes: list[str] = Field(default_factory=list)
     overall_verdict: str = Field(default="needs_review")
+
+
+class StoryMappingPack(BaseModel):
+    """Whole-book adaptation mapping rules."""
+
+    project_title: str
+    source_work_name: str
+    target_work_name: str
+    world_mapping: dict[str, str] = Field(default_factory=dict)
+    character_mapping: dict[str, str] = Field(default_factory=dict)
+    faction_mapping: dict[str, str] = Field(default_factory=dict)
+    power_mapping: dict[str, str] = Field(default_factory=dict)
+    rule_overrides: list[str] = Field(default_factory=list)
+    forbidden_transformations: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationPlan(BaseModel):
+    """Top-level orchestration skeleton for multi-chapter / whole-book imitation."""
+
+    branch_id: str
+    project_title: str
+    source_chapter_range: list[int] = Field(default_factory=list)
+    mapping_pack: StoryMappingPack
+    chapter_goals: list[tuple[int, str]] = Field(default_factory=list)
+    continuity_focus: list[str] = Field(default_factory=list)
+    orchestration_notes: list[str] = Field(default_factory=list)
