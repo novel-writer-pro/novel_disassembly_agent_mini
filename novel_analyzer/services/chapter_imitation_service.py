@@ -11,8 +11,10 @@ from sqlalchemy.orm import Session
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import ChapterSegment, NovelSource, RunBranch
 from novel_analyzer.domain.schemas import (
+    ChapterAnalysisOutput,
     ChapterImitationDraft,
     ChapterImitationComparisonReport,
+    ChapterImitationGateReport,
     ChapterImitationReviewReport,
     ChapterImitationPlan,
     ChapterPlanningIntent,
@@ -252,6 +254,40 @@ class ChapterImitationService:
             risk_gate_notes=risk_notes,
             revision_directions=revision_directions,
             overall_verdict=overall_verdict,
+        )
+
+    def gate_draft(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        draft: ChapterImitationDraft,
+    ) -> ChapterImitationGateReport:
+        _title, source_text = self._source_chapter_text(branch_id, source_chapter_index)
+        synthetic_output = ChapterAnalysisOutput(
+            chapter_index=source_chapter_index,
+            normalized_title=draft.draft_title,
+            chapter_summary=draft.draft_text[:200],
+            key_entities=[],
+            key_events=[],
+            continuity_notes=draft.comparison_notes[:3],
+            unsupported_inferences=[],
+            ambiguous_points=[],
+            needs_human_review=False,
+        )
+        quality = QualityGateService.evaluate(source_text, synthetic_output)
+        risk_notes = list(draft.risk_gate_notes)
+        if "直接抄原文" in draft.draft_text:
+            risk_notes.append("检测到疑似直接复用原文措辞，需继续改写。")
+        verdict = "aligned_but_needs_revision" if not quality.needs_human_review else "needs_revision"
+        return ChapterImitationGateReport(
+            source_chapter_index=source_chapter_index,
+            draft_title=draft.draft_title,
+            quality_gate_notes=quality.notes,
+            needs_human_review=quality.needs_human_review,
+            hook_score=quality.hook_score,
+            risk_gate_notes=risk_notes,
+            overall_verdict=verdict,
         )
 
     def revise_draft(

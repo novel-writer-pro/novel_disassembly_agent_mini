@@ -709,3 +709,15 @@ class ChapterImitationReviewReport(BaseModel):
     risk_gate_notes: list[str] = Field(default_factory=list)
     revision_directions: list[str] = Field(default_factory=list)
     overall_verdict: str = Field(default="needs_revision")
+
+
+class ChapterImitationGateReport(BaseModel):
+    """Draft-prose gate result reused by imitation/revise loops."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    quality_gate_notes: list[str] = Field(default_factory=list)
+    needs_human_review: bool = Field(default=True)
+    hook_score: float | None = Field(default=None, ge=0.0, le=10.0)
+    risk_gate_notes: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_revision")

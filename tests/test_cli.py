@@ -235,4 +235,5 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     )
     assert review_result.exit_code == 0
     assert '"review"' in review_result.stdout
+    assert '"gate"' in review_result.stdout
     assert '"revised_draft"' in review_result.stdout

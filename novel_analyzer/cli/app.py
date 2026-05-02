@@ -1335,6 +1335,11 @@ def review_imitation(
             source_chapter_index=source_chapter_index,
             draft=draft,
         )
+        gate = service.gate_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
         revised = service.revise_draft(draft, review=review)
         echo(
             json.dumps(
@@ -1342,6 +1347,7 @@ def review_imitation(
                     "draft": draft.model_dump(mode="json"),
                     "comparison": comparison.model_dump(mode="json"),
                     "review": review.model_dump(mode="json"),
+                    "gate": gate.model_dump(mode="json"),
                     "revised_draft": revised.model_dump(mode="json"),
                 },
                 ensure_ascii=False,
