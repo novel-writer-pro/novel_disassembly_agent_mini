@@ -156,6 +156,16 @@
 
 ## 2026-05-02
 
+### 第3章 live 仿写实验报告补齐
+- 新增 `docs/chapter-imitation-ch3-live-report-20260502.md`
+- 将《第3章 养生功法》的 live 仿写实验结果收口为正式文档
+- 记录：
+  - 原章核心骨架
+  - live 命令
+  - rounds 结果
+  - stop_reason
+  - 当前优点 / 不足 / 下一步
+
 ### next_chapter_planner 数据结构与服务骨架落地
 - 新增 `novel_analyzer/services/next_chapter_planner_service.py`
 - 新增规划相关 schema：

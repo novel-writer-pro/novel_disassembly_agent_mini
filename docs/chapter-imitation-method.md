@@ -133,3 +133,28 @@
 ## 5. 一句话结论
 
 > 真正稳定的章节仿写能力，不是“让模型直接写”，而是 **让模型先学会在约束下规划、在门控下修正、在对比中逼近原章骨架**。
+
+---
+
+## 6. 当前 live 实验入口
+
+建议直接使用：
+
+```bash
+novel-analyzer iterate-imitation <branch_id> <source_chapter_index> "<target_goal>" --use-llm --max-rounds 2
+```
+
+当前它会输出：
+
+- `rounds[]`
+  - `draft`
+  - `comparison`
+  - `review`
+  - `gate`
+  - `risk`
+- `final_draft`
+- `stop_reason`
+
+对应的首个正式实验报告：
+
+- `docs/chapter-imitation-ch3-live-report-20260502.md`
