@@ -696,3 +696,16 @@ class ChapterImitationComparisonReport(BaseModel):
     style_alignment_notes: list[str] = Field(default_factory=list)
     risk_alignment_notes: list[str] = Field(default_factory=list)
     overall_verdict: str = Field(default="needs_review")
+
+
+class ChapterImitationReviewReport(BaseModel):
+    """Combined comparison + risk-aware review for one imitation draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    original_title: str
+    draft_title: str
+    needs_human_review: bool = Field(default=True)
+    quality_gate_notes: list[str] = Field(default_factory=list)
+    risk_gate_notes: list[str] = Field(default_factory=list)
+    revision_directions: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_revision")

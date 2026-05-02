@@ -230,3 +230,26 @@ def test_chapter_imitation_service_compare_with_source(tmp_path: Path) -> None:
         assert report.source_length > 0
         assert report.draft_length > 0
         assert report.structure_overlap_notes
+
+
+def test_chapter_imitation_service_review_and_revise(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = ChapterImitationService(session)
+        draft = service.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        review = service.review_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+        )
+        revised = service.revise_draft(draft, review=review)
+        assert review.overall_verdict
+        assert review.revision_directions
+        assert revised.method_notes

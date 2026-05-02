@@ -1297,6 +1297,60 @@ def compare_imitation(
 
 
 @app.command()
+def review_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Build draft + comparison + review + revised draft for one imitation experiment."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _chapter_imitation_service(session)
+        draft = (
+            service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+        comparison = service.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        review = service.review_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        revised = service.revise_draft(draft, review=review)
+        echo(
+            json.dumps(
+                {
+                    "draft": draft.model_dump(mode="json"),
+                    "comparison": comparison.model_dump(mode="json"),
+                    "review": review.model_dump(mode="json"),
+                    "revised_draft": revised.model_dump(mode="json"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+
+
+@app.command()
 def show_window(
     branch_id: str,
     start_chapter: int,

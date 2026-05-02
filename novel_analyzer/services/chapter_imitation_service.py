@@ -13,6 +13,7 @@ from novel_analyzer.database.models import ChapterSegment, NovelSource, RunBranc
 from novel_analyzer.domain.schemas import (
     ChapterImitationDraft,
     ChapterImitationComparisonReport,
+    ChapterImitationReviewReport,
     ChapterImitationPlan,
     ChapterPlanningIntent,
 )
@@ -22,6 +23,7 @@ from novel_analyzer.services.next_chapter_planner_service import (
     NextChapterPlannerService,
     PlannerContextWindow,
 )
+from novel_analyzer.services.quality_gate_service import QualityGateService
 from novel_analyzer.services.run_service import RunService
 
 
@@ -213,6 +215,63 @@ class ChapterImitationService:
             style_alignment_notes=style_alignment_notes,
             risk_alignment_notes=risk_alignment_notes,
             overall_verdict=verdict,
+        )
+
+    def review_draft(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        draft: ChapterImitationDraft,
+    ) -> ChapterImitationReviewReport:
+        report = self.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        _, source_text = self._source_chapter_text(branch_id, source_chapter_index)
+        quality_notes = []
+        if len(draft.draft_text) < max(200, len(source_text) // 6):
+            quality_notes.append("草案偏短，可能只保留了骨架，信息密度仍不足。")
+        if draft.original_title != draft.draft_title:
+            quality_notes.append("标题已发生变化，需确认是否符合仿写目标。")
+        risk_notes = list(draft.risk_gate_notes)
+        revision_directions = [
+            "优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。",
+            "继续约束角色反应，避免把克制型推进写成情绪化爆发。",
+            "如涉及关系变化，补足中间证据，不要只写结果。",
+        ]
+        needs_human_review = True
+        overall_verdict = "aligned_but_needs_revision" if report.overall_verdict == "aligned" else "needs_revision"
+        return ChapterImitationReviewReport(
+            source_chapter_index=source_chapter_index,
+            original_title=report.original_title,
+            draft_title=report.draft_title,
+            needs_human_review=needs_human_review,
+            quality_gate_notes=quality_notes,
+            risk_gate_notes=risk_notes,
+            revision_directions=revision_directions,
+            overall_verdict=overall_verdict,
+        )
+
+    def revise_draft(
+        self,
+        draft: ChapterImitationDraft,
+        *,
+        review: ChapterImitationReviewReport,
+    ) -> ChapterImitationDraft:
+        revision_notes = list(draft.method_notes) + review.revision_directions
+        revised_text = draft.draft_text
+        if "草案偏短" in " ".join(review.quality_gate_notes):
+            revised_text += "\n\n【修订提示】后续版本应补足中段阻力、行动抉择与章尾钩子之间的承接。"
+        return ChapterImitationDraft(
+            source_chapter_index=draft.source_chapter_index,
+            original_title=draft.original_title,
+            draft_title=draft.draft_title,
+            draft_text=revised_text,
+            method_notes=revision_notes,
+            comparison_notes=draft.comparison_notes,
+            risk_gate_notes=draft.risk_gate_notes + review.risk_gate_notes,
         )
 
     @staticmethod
