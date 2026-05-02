@@ -317,3 +317,4 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert run_result.exit_code == 0
     assert '"queue"' in run_result.stdout
     assert '"expected_outputs"' in run_result.stdout
+    assert '"carry_over_inputs"' in run_result.stdout

@@ -247,6 +247,7 @@ novel-analyzer run-whole-book-imitation <branch_id> \
   - `source_chapter_index`
   - `target_goal`
   - `prerequisites`
+  - `carry_over_inputs`
   - `expected_outputs`
   - `risk_focus`
 - `carry_over_notes`

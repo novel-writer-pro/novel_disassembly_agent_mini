@@ -827,6 +827,7 @@ class WholeBookImitationQueueStep(BaseModel):
     source_chapter_index: int = Field(ge=1)
     target_goal: str
     prerequisites: list[str] = Field(default_factory=list)
+    carry_over_inputs: dict[str, list[str]] = Field(default_factory=dict)
     expected_outputs: list[str] = Field(default_factory=list)
     risk_focus: list[str] = Field(default_factory=list)
 

@@ -65,19 +65,29 @@ class WholeBookImitationService:
         carry_over_notes: list[str] = []
 
         previous_label: str | None = None
+        previous_goal: str | None = None
         for order, (chapter_index, goal) in enumerate(chapter_goals, start=1):
             prerequisites = []
+            carry_over_inputs: dict[str, list[str]] = {}
             if previous_label is not None:
                 prerequisites.append(f"完成上一章节仿写并确认 carry-over：{previous_label}")
                 carry_over_notes.append(
                     f"第{chapter_index}章生成前，应继承上一生成章节的关系/规则/未解线程快照。"
                 )
+                carry_over_inputs = {
+                    "previous_generated_summary": [f"{previous_label} 的 final draft 摘要"],
+                    "previous_generated_relationship_state": [f"{previous_label} 的关系推进结果"],
+                    "previous_generated_unresolved_threads": [f"{previous_label} 遗留的未解线程"],
+                    "previous_generated_rule_state": [f"{previous_label} 形成的规则/约束变化"],
+                    "previous_goal": [previous_goal or ""],
+                }
             queue.append(
                 WholeBookImitationQueueStep(
                     order=order,
                     source_chapter_index=chapter_index,
                     target_goal=goal,
                     prerequisites=prerequisites,
+                    carry_over_inputs=carry_over_inputs,
                     expected_outputs=[
                         "chapter plan",
                         "imitation draft",
@@ -93,6 +103,7 @@ class WholeBookImitationService:
                 )
             )
             previous_label = f"第{chapter_index}章"
+            previous_goal = goal
 
         run_notes = [
             "当前 whole-book runner 仍为 dry-run queue skeleton，不直接长跑整本生成。",
