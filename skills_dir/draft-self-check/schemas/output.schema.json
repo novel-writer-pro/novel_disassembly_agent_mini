@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DraftSelfCheckOutput",
+  "type": "object",
+  "required": ["blocking_issues", "likely_gate_failures", "recommended_actions", "self_notes"],
+  "properties": {
+    "blocking_issues": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "likely_gate_failures": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "self_notes": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}

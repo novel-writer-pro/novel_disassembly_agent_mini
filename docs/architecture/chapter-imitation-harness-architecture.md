@@ -383,9 +383,13 @@ RAG / retrieval 在这里主要服务：
 - `NextChapterPlannerService`
 - `ChapterImitationService`
 - `WholeBookImitationService`
+- `HarnessControllerService`
 - `iterate-imitation`
 - `multi-chapter-imitation-consistency`
 - `run-whole-book-imitation --execute`
+- `show-imitation-skill-contracts`
+- `preflight-imitation`
+- `harness-imitation`
 
 后续新增优先级建议：
 
@@ -415,4 +419,3 @@ RAG / retrieval 在这里主要服务：
 而是：
 
 > **把仿写做成：RAG 约束输入 + skills 分阶段生产 + harness agent 定向修复 + risk audit 最终门控 的受控生成系统。**
-

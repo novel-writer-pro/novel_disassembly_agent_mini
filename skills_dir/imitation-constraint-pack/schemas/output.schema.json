@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ImitationConstraintPackOutput",
+  "type": "object",
+  "required": ["hard_constraints", "soft_constraints", "forbidden_transformations", "continuity_memory"],
+  "properties": {
+    "hard_constraints": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "soft_constraints": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "forbidden_transformations": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "continuity_memory": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}

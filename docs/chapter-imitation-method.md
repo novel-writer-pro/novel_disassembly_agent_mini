@@ -350,3 +350,33 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 - 后续全文仿写 runner
 
 都可以复用同一套可解释、可检查、可门控的 contract。
+
+---
+
+## 12. 当前已实现的 harness / preflight 入口
+
+本轮已补入第一版受控仿写入口：
+
+```bash
+novel-analyzer show-imitation-skill-contracts
+novel-analyzer preflight-imitation <branch_id> <source_chapter_index> "<target_goal>"
+novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goal>" --max-rounds 2
+```
+
+当前含义：
+
+- `show-imitation-skill-contracts`
+  - 输出本地 `skills_dir` 下仿写 harness 依赖的 skill contract
+- `preflight-imitation`
+  - 在正式 gate/risk 前执行 deterministic preflight
+- `harness-imitation`
+  - 运行第一版 harness controller
+  - 输出 `skill_contracts / rounds / final_preflight / final_verdict / stop_reason`
+
+这意味着系统已经从：
+
+> 只有 imitation service
+
+推进到了：
+
+> imitation service + harness controller + preflight + local skill contracts

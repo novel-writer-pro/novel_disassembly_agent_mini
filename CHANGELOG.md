@@ -156,6 +156,25 @@
 
 ## 2026-05-03
 
+### 仿写 harness / preflight / local skill contracts 第一版落地
+- 新增 `novel_analyzer/services/imitation_harness_service.py`
+- 新增第一版：
+  - `HarnessControllerService`
+  - `ChapterImitationPreflightReport`
+  - `ChapterImitationHarnessReport`
+  - `ChapterImitationSkillContract`
+- CLI 新增：
+  - `show-imitation-skill-contracts`
+  - `preflight-imitation`
+  - `harness-imitation`
+- 本地 `skills_dir` 新增：
+  - `imitation-constraint-pack`
+  - `draft-self-check`
+- 目的：把“仿写 should use skills + harness”的规划推进为第一版真实执行框架，而不是只停留在架构文档
+- 验证：
+  - 新增 harness/service/CLI/skill-loader 相关测试
+  - 后续本轮回归会以 strict pytest + compileall 作为签收依据
+
 ### 仿写能力收口为 skills + harness + risk-audit 最终推荐架构
 - 新增 `docs/architecture/chapter-imitation-harness-architecture.md`
 - 将章节仿写 / 全书仿写的推荐方向明确收口为：

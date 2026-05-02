@@ -747,6 +747,44 @@ class ChapterImitationScoreReport(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class ChapterImitationSkillContract(BaseModel):
+    """Machine-readable contract for one local imitation skill."""
+
+    skill_name: str
+    purpose: str
+    required_inputs: list[str] = Field(default_factory=list)
+    produced_outputs: list[str] = Field(default_factory=list)
+    prompt_asset_path: str = Field(default="")
+    schema_asset_path: str = Field(default="")
+
+
+class ChapterImitationPreflightCheck(BaseModel):
+    """One deterministic preflight check before formal risk gating."""
+
+    check_name: str
+    status: str = Field(default="pass")
+    notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationPreflightReport(BaseModel):
+    """Aggregated preflight result for one draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    overall_verdict: str = Field(default="pass")
+    checks: list[ChapterImitationPreflightCheck] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationHarnessAction(BaseModel):
+    """One harness-directed revision action."""
+
+    action_type: str
+    target: str
+    instructions: list[str] = Field(default_factory=list)
+
+
 class ChapterImitationIterationRound(BaseModel):
     """One iteration snapshot in the imitation optimization loop."""
 
@@ -767,6 +805,34 @@ class ChapterImitationIterationReport(BaseModel):
     max_rounds: int = Field(ge=1)
     rounds: list[ChapterImitationIterationRound] = Field(default_factory=list)
     final_draft: ChapterImitationDraft
+    stop_reason: str
+
+
+class ChapterImitationHarnessRound(BaseModel):
+    """One controlled harness round over a chapter imitation draft."""
+
+    round_index: int = Field(ge=1)
+    draft: ChapterImitationDraft
+    comparison: ChapterImitationComparisonReport
+    review: ChapterImitationReviewReport
+    gate: ChapterImitationGateReport
+    risk: ChapterImitationRiskReport
+    score: ChapterImitationScoreReport
+    preflight: ChapterImitationPreflightReport
+    actions: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+
+
+class ChapterImitationHarnessReport(BaseModel):
+    """Harness-controlled imitation run with preflight and revision routing."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    max_rounds: int = Field(ge=1)
+    skill_contracts: list[ChapterImitationSkillContract] = Field(default_factory=list)
+    rounds: list[ChapterImitationHarnessRound] = Field(default_factory=list)
+    final_draft: ChapterImitationDraft
+    final_preflight: ChapterImitationPreflightReport
+    final_verdict: str = Field(default="needs_revision")
     stop_reason: str
 
 

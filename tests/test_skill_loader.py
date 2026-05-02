@@ -9,3 +9,5 @@ def test_project_skills_dir_is_discovered() -> None:
     names = list_skill_names(settings)
     assert 'chapter-fact-extractor' in names
     assert 'json-to-markdown' in names
+    assert 'imitation-constraint-pack' in names
+    assert 'draft-self-check' in names

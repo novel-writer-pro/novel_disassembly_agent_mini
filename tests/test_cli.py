@@ -344,3 +344,47 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"execution_mode": "sandbox_execute"' in sandbox_result.stdout
     assert '"executed_steps"' in sandbox_result.stdout
     assert '"final_carry_over_state"' in sandbox_result.stdout
+
+    contract_result = runner.invoke(
+        app,
+        [
+            "show-imitation-skill-contracts",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert contract_result.exit_code == 0
+    assert '"imitation-constraint-pack"' in contract_result.stdout
+    assert '"draft-self-check"' in contract_result.stdout
+
+    preflight_result = runner.invoke(
+        app,
+        [
+            "preflight-imitation",
+            "branch-cli-1",
+            "3",
+            "延续主角获得功法后的行动线，并保持克制成长节奏",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert preflight_result.exit_code == 0
+    assert '"preflight"' in preflight_result.stdout
+    assert '"overall_verdict"' in preflight_result.stdout
+
+    harness_result = runner.invoke(
+        app,
+        [
+            "harness-imitation",
+            "branch-cli-1",
+            "3",
+            "延续主角获得功法后的行动线，并保持克制成长节奏",
+            "--max-rounds",
+            "1",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert harness_result.exit_code == 0
+    assert '"skill_contracts"' in harness_result.stdout
+    assert '"final_preflight"' in harness_result.stdout

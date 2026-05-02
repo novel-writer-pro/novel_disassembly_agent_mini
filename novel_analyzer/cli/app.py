@@ -185,6 +185,12 @@ def _whole_book_imitation_service(session: Session) -> Any:
     return WholeBookImitationService(session)
 
 
+def _imitation_harness_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.imitation_harness_service import HarnessControllerService
+
+    return HarnessControllerService(session, settings)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -1549,6 +1555,96 @@ def run_whole_book_imitation(
                 mapping_pack=mapping_pack,
                 chapter_goals=chapter_goals,
             )
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def show_imitation_skill_contracts(database_url: str | None = None) -> None:
+    """Show the local imitation skill contracts expected by the harness controller."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _imitation_harness_service(session, settings).list_skill_contracts()
+        echo(json.dumps([item.model_dump(mode="json") for item in payload], ensure_ascii=False, indent=2))
+
+
+@app.command()
+def preflight_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run deterministic preflight checks before formal imitation gate/risk review."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        chapter_service = _chapter_imitation_service(session)
+        draft = (
+            chapter_service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else chapter_service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+        comparison = chapter_service.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        report = _imitation_harness_service(session, settings).preflight_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+            comparison=comparison,
+        )
+        echo(
+            json.dumps(
+                {
+                    "draft": draft.model_dump(mode="json"),
+                    "comparison": comparison.model_dump(mode="json"),
+                    "preflight": report.model_dump(mode="json"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+
+
+@app.command()
+def harness_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run the first controlled imitation harness with skill contracts and preflight routing."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 
