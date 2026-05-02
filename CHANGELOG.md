@@ -173,6 +173,20 @@
 - 文档补充：
   - `docs/chapter-planning-capability-proposal.md` 增补当前已落地骨架说明
 
+### 章节仿写方法与实验骨架补齐
+- 新增 `novel_analyzer/services/chapter_imitation_service.py`
+- 新增仿写相关 schema：
+  - `ChapterImitationPlan`
+  - `ChapterImitationDraft`
+- 新增 `tests/test_chapter_imitation_service.py`
+- 新增 `docs/chapter-imitation-method.md`
+- 当前实现先落：
+  - 仿写方法论
+  - imitation plan
+  - skeleton draft
+  - comparison / risk gate notes
+- 暂不直接放开高自由度正文代写，优先形成“规划 → 草案 → 风险检查”闭环
+
 ### fresh 真库前10章风险结论与交接文档补齐
 - 新增 `docs/risk-audit-fresh10-verification-20260502.md`
 - 新增 `docs/chapter-planning-capability-proposal.md`

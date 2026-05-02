@@ -630,3 +630,27 @@ class ChapterPlanningCard(BaseModel):
     rule_constraints: list[str] = Field(default_factory=list)
     ending_hook: str | None = None
     risk_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationPlan(BaseModel):
+    """Structured imitation plan before prose drafting."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    style_axes: list[str] = Field(default_factory=list)
+    scene_beats: list[str] = Field(default_factory=list)
+    hard_constraints: list[str] = Field(default_factory=list)
+    soft_constraints: list[str] = Field(default_factory=list)
+    risk_focus: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationDraft(BaseModel):
+    """Draft plus evaluation metadata for imitation experiments."""
+
+    source_chapter_index: int = Field(ge=1)
+    original_title: str
+    draft_title: str
+    draft_text: str
+    method_notes: list[str] = Field(default_factory=list)
+    comparison_notes: list[str] = Field(default_factory=list)
+    risk_gate_notes: list[str] = Field(default_factory=list)
