@@ -206,3 +206,18 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert imitate_result.exit_code == 0
     assert '"draft_text"' in imitate_result.stdout
     assert '"comparison_notes"' in imitate_result.stdout
+
+    compare_result = runner.invoke(
+        app,
+        [
+            "compare-imitation",
+            "branch-cli-1",
+            "3",
+            "延续主角获得功法后的行动线，并保持克制成长节奏",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert compare_result.exit_code == 0
+    assert '"comparison"' in compare_result.stdout
+    assert '"overall_verdict"' in compare_result.stdout

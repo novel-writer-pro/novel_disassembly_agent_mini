@@ -207,3 +207,26 @@ def test_chapter_imitation_service_builds_llm_draft(monkeypatch, tmp_path: Path)
         assert draft.original_title == "养生功法"
         assert "受挫后保持克制" in draft.draft_text
         assert draft.comparison_notes
+
+
+def test_chapter_imitation_service_compare_with_source(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = ChapterImitationService(session)
+        draft = service.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        report = service.compare_with_source(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+        )
+        assert report.original_title == "养生功法"
+        assert report.source_length > 0
+        assert report.draft_length > 0
+        assert report.structure_overlap_notes

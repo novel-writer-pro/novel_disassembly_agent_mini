@@ -12,6 +12,7 @@ from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import ChapterSegment, NovelSource, RunBranch
 from novel_analyzer.domain.schemas import (
     ChapterImitationDraft,
+    ChapterImitationComparisonReport,
     ChapterImitationPlan,
     ChapterPlanningIntent,
 )
@@ -180,6 +181,39 @@ class ChapterImitationService:
             raise ValueError(f"Unknown chapter_index: {chapter_index}")
         full_text = Path(novel.source_path).read_text(encoding="utf-8", errors="ignore")
         return segment.normalized_title, full_text[segment.start_offset : segment.end_offset].strip()
+
+    def compare_with_source(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        draft: ChapterImitationDraft,
+    ) -> ChapterImitationComparisonReport:
+        title, source_text = self._source_chapter_text(branch_id, source_chapter_index)
+        structure_overlap_notes = [
+            "是否保留了‘目标受阻 -> 克制反应 -> 行动转向’骨架。",
+            "是否保留了原章的章尾钩子功能，而不是只模仿表面句式。",
+        ]
+        style_alignment_notes = [
+            "检查是否延续了原章克制推进、资源受限、逐步转强的节奏。",
+            "检查是否避免了直接抄写原文表达。",
+        ]
+        risk_alignment_notes = [
+            "重点复核角色动机/关系变化是否需要更多支撑。",
+            "重点复核剧情推进是否存在 resolution/transition support gap。",
+        ]
+        verdict = "aligned" if draft.draft_text.strip() else "needs_review"
+        return ChapterImitationComparisonReport(
+            source_chapter_index=source_chapter_index,
+            original_title=title,
+            draft_title=draft.draft_title,
+            source_length=len(source_text),
+            draft_length=len(draft.draft_text),
+            structure_overlap_notes=structure_overlap_notes,
+            style_alignment_notes=style_alignment_notes,
+            risk_alignment_notes=risk_alignment_notes,
+            overall_verdict=verdict,
+        )
 
     @staticmethod
     def _extract_json_payload(raw_content: object) -> dict[str, object]:

@@ -682,3 +682,17 @@ class ChapterImitationDraft(BaseModel):
     method_notes: list[str] = Field(default_factory=list)
     comparison_notes: list[str] = Field(default_factory=list)
     risk_gate_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationComparisonReport(BaseModel):
+    """Structured comparison between source chapter and imitation draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    original_title: str
+    draft_title: str
+    source_length: int = Field(ge=0)
+    draft_length: int = Field(ge=0)
+    structure_overlap_notes: list[str] = Field(default_factory=list)
+    style_alignment_notes: list[str] = Field(default_factory=list)
+    risk_alignment_notes: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_review")
