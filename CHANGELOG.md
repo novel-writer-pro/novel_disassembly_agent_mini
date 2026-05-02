@@ -156,6 +156,13 @@
 
 ## 2026-05-02
 
+### Alembic 多 head 冲突收口为线性迁移链
+- 修复 `alembic/versions/20260430_01_cluster_review_records.py` 与 `20260430_01_cluster_review_tables.py` 共享同一 revision id 的问题
+- 将 records 迁移改为 `20260430_02`，并收口为兼容性 no-op bridge，避免空库 `init-db` 时出现 multiple heads
+- 保留 `20260429_01` / `20260430_01` 的实际建表/补列职责，不让历史已有库的语义被破坏
+- 同步修正文档中对 cluster review 迁移编号的描述
+- 验证：本地 PostgreSQL 真环境下 `scripts/check_postgres.py` / `init-db` / `db-capabilities` 可继续作为后续收尾验收路径
+
 ### 风险审查正式生产收尾文档补齐
 - 新增 `docs/risk-audit-production-readiness.md`
 - 将“正式稳定生产”缺少的外部条件从口头说明收口为结构化文档，明确区分：

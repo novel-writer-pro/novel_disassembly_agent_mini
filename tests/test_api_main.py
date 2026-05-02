@@ -260,6 +260,23 @@ def test_docs_readme_sample_novel_chain_includes_first_10_risk_report() -> None:
     assert "../.omx/reports/sample-novel-first-10-risk-check-20260502.md" in text
 
 
+def test_alembic_cluster_review_revisions_are_linearized() -> None:
+    records = Path("alembic/versions/20260430_01_cluster_review_records.py").read_text(
+        encoding="utf-8"
+    )
+    bridge = Path("alembic/versions/20260429_01_cluster_review_tables.py").read_text(
+        encoding="utf-8"
+    )
+    tables = Path("alembic/versions/20260430_01_cluster_review_tables.py").read_text(
+        encoding="utf-8"
+    )
+    assert "revision = '20260430_02'" in records
+    assert "down_revision = '20260430_01'" in records
+    assert 'revision = "20260429_01"' in bridge
+    assert "revision = '20260430_01'" in tables
+    assert "down_revision = '20260429_01'" in tables
+
+
 def test_api_current_surface_doc_matches_route_inventory() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
