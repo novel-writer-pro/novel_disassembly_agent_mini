@@ -238,3 +238,20 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"gate"' in review_result.stdout
     assert '"risk"' in review_result.stdout
     assert '"revised_draft"' in review_result.stdout
+
+    iterate_result = runner.invoke(
+        app,
+        [
+            "iterate-imitation",
+            "branch-cli-1",
+            "3",
+            "延续主角获得功法后的行动线，并保持克制成长节奏",
+            "--max-rounds",
+            "2",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert iterate_result.exit_code == 0
+    assert '"rounds"' in iterate_result.stdout
+    assert '"final_draft"' in iterate_result.stdout

@@ -1363,6 +1363,32 @@ def review_imitation(
 
 
 @app.command()
+def iterate_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run a multi-round imitation optimization loop and emit all rounds."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _chapter_imitation_service(session).iterate_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
 def show_window(
     branch_id: str,
     start_chapter: int,

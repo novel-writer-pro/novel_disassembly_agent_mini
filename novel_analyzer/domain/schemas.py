@@ -733,3 +733,25 @@ class ChapterImitationRiskReport(BaseModel):
     top_risk_types: list[str] = Field(default_factory=list)
     top_risk_summaries: list[str] = Field(default_factory=list)
     coverage_gaps: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationIterationRound(BaseModel):
+    """One iteration snapshot in the imitation optimization loop."""
+
+    round_index: int = Field(ge=1)
+    draft: ChapterImitationDraft
+    comparison: ChapterImitationComparisonReport
+    review: ChapterImitationReviewReport
+    gate: ChapterImitationGateReport
+    risk: ChapterImitationRiskReport
+
+
+class ChapterImitationIterationReport(BaseModel):
+    """Multi-round imitation optimization report."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    max_rounds: int = Field(ge=1)
+    rounds: list[ChapterImitationIterationRound] = Field(default_factory=list)
+    final_draft: ChapterImitationDraft
+    stop_reason: str

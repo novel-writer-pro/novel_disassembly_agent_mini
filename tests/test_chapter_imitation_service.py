@@ -297,3 +297,21 @@ def test_chapter_imitation_service_risk_review_draft(tmp_path: Path) -> None:
         assert report.draft_title == "养生功法"
         assert report.overall_risk_level in {"low", "medium", "high"}
         assert report.checker_statuses
+
+
+def test_chapter_imitation_service_iterate_draft(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = ChapterImitationService(session)
+        report = service.iterate_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+            max_rounds=2,
+        )
+        assert report.rounds
+        assert report.final_draft
+        assert report.stop_reason in {"max_rounds_reached", "quality_threshold_reached"}

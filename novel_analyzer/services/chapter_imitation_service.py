@@ -15,6 +15,8 @@ from novel_analyzer.domain.schemas import (
     ChapterImitationDraft,
     ChapterImitationComparisonReport,
     ChapterImitationGateReport,
+    ChapterImitationIterationReport,
+    ChapterImitationIterationRound,
     ChapterImitationRiskReport,
     ChapterImitationReviewReport,
     ChapterImitationPlan,
@@ -367,6 +369,82 @@ class ChapterImitationService:
             method_notes=revision_notes,
             comparison_notes=draft.comparison_notes,
             risk_gate_notes=draft.risk_gate_notes + review.risk_gate_notes,
+        )
+
+    def iterate_draft(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        target_goal: str,
+        max_rounds: int = 2,
+        use_llm: bool = False,
+        model_name: str | None = None,
+    ) -> ChapterImitationIterationReport:
+        rounds: list[ChapterImitationIterationRound] = []
+        draft = (
+            self.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name,
+            )
+            if use_llm
+            else self.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+
+        stop_reason = "max_rounds_reached"
+        for round_index in range(1, max_rounds + 1):
+            comparison = self.compare_with_source(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                draft=draft,
+            )
+            review = self.review_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                draft=draft,
+            )
+            gate = self.gate_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                draft=draft,
+            )
+            risk = self.risk_review_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                draft=draft,
+            )
+            rounds.append(
+                ChapterImitationIterationRound(
+                    round_index=round_index,
+                    draft=draft,
+                    comparison=comparison,
+                    review=review,
+                    gate=gate,
+                    risk=risk,
+                )
+            )
+            if (
+                comparison.overall_verdict == "aligned"
+                and gate.overall_verdict != "needs_revision"
+                and risk.overall_risk_level == "low"
+            ):
+                stop_reason = "quality_threshold_reached"
+                break
+            draft = self.revise_draft(draft, review=review)
+
+        return ChapterImitationIterationReport(
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            rounds=rounds,
+            final_draft=draft,
+            stop_reason=stop_reason,
         )
 
     @staticmethod
