@@ -44,6 +44,8 @@ class ChapterIntakeOutput(BaseModel):
             value['chapter_index'] = value['chapter_no']
         if 'chapter_index' not in value and 'chapter_number' in value:
             value['chapter_index'] = value['chapter_number']
+        if 'chapter_index' not in value and 'chapter_id' in value:
+            value['chapter_index'] = value['chapter_id']
         if 'normalized_title' not in value and 'chapter_title' in value:
             value['normalized_title'] = value['chapter_title']
         if 'cleaned_text' not in value and 'paragraph_blocks' in value:
@@ -248,6 +250,32 @@ class ChapterAnalysisLayerOutput(BaseModel):
     @classmethod
     def _normalize_themes(cls, value: Any) -> Any:
         return ChapterFactExtractionOutput._normalize_notes(value)
+
+    @field_validator('continuity_notes', mode='before')
+    @classmethod
+    def _normalize_continuity_notes(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                candidate = (
+                    item.get('note')
+                    or item.get('point')
+                    or item.get('text')
+                    or item.get('content')
+                    or item.get('summary')
+                    or item.get('label')
+                )
+                text = str(candidate or '').strip()
+                if text:
+                    normalized.append(text)
+        return normalized
 
     def ensure_minimum_analysis(
         self,

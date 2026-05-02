@@ -62,6 +62,18 @@ def test_chapter_intake_output_accepts_chapter_number_alias() -> None:
     assert output.cleaned_text
 
 
+def test_chapter_intake_output_accepts_chapter_id_alias() -> None:
+    output = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_id": 10,
+            "chapter_title": "测试章",
+            "cleaned_text": "正文",
+        }
+    )
+    assert output.chapter_index == 10
+    assert output.normalized_title == "测试章"
+
+
 def test_stage_chapter_content_trims_large_input() -> None:
     text = "A" * 5000
     trimmed = AnalysisService._stage_chapter_content(text, max_chars=1000)
@@ -85,6 +97,23 @@ def test_writer_learning_lens_accepts_dict_transferable_lessons() -> None:
         '通过未解线索制造后续期待',
         '让人物关系在冲突中递进',
         '把冲突线索埋入日常互动。',
+    ]
+
+
+def test_chapter_analysis_layer_output_accepts_dict_continuity_notes() -> None:
+    output = ChapterAnalysisLayerOutput.model_validate(
+        {
+            "continuity_notes": [
+                {"point": "本章对前文冲突做了延续推进。", "confidence": 0.9},
+                {"note": "关系变化需要中间证据。"},
+                {"text": "章尾通过下一步行动形成钩子。"},
+            ]
+        }
+    )
+    assert output.continuity_notes == [
+        "本章对前文冲突做了延续推进。",
+        "关系变化需要中间证据。",
+        "章尾通过下一步行动形成钩子。",
     ]
 
 
