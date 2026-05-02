@@ -132,3 +132,30 @@ def test_whole_book_imitation_service_builds_plan(tmp_path: Path) -> None:
         assert plan.project_title == "测试项目"
         assert plan.source_chapter_range == [2, 3]
         assert plan.continuity_focus
+
+
+def test_whole_book_imitation_service_builds_run_queue(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = WholeBookImitationService(session)
+        pack = StoryMappingPack(
+            project_title="测试项目",
+            source_work_name="示例小说",
+            target_work_name="新世界版示例小说",
+            world_mapping={"郑国": "星际联邦"},
+            character_mapping={"卫图": "魏拓"},
+        )
+        report = service.build_run_queue(
+            branch_id,
+            mapping_pack=pack,
+            chapter_goals=[
+                (2, "延续资源铺垫"),
+                (3, "延续主角获得功法后的行动线"),
+            ],
+        )
+        assert report.queue
+        assert report.queue[0].expected_outputs
+        assert report.run_notes

@@ -1482,6 +1482,62 @@ def plan_whole_book_imitation(
 
 
 @app.command()
+def run_whole_book_imitation(
+    branch_id: str,
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
+    database_url: str | None = None,
+) -> None:
+    """Build a dry-run whole-book execution queue from the orchestration plan."""
+
+    from novel_analyzer.domain.schemas import StoryMappingPack
+
+    def _pairs(items: list[str]) -> dict[str, str]:
+        result: dict[str, str] = {}
+        for item in items:
+            left, _, right = item.partition("=")
+            if left and right:
+                result[left] = right
+        return result
+
+    chapter_goals: list[tuple[int, str]] = []
+    for item in chapter_spec:
+        chapter_text, _, goal = item.partition(":")
+        if not chapter_text or not goal:
+            raise typer.Exit(code=1)
+        chapter_goals.append((int(chapter_text), goal))
+
+    mapping_pack = StoryMappingPack(
+        project_title=project_title,
+        source_work_name=source_work_name,
+        target_work_name=target_work_name,
+        world_mapping=_pairs(world_map),
+        character_mapping=_pairs(character_map),
+        faction_mapping=_pairs(faction_map),
+        power_mapping=_pairs(power_map),
+        rule_overrides=rule_override,
+        forbidden_transformations=forbidden_transformation,
+    )
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _whole_book_imitation_service(session).build_run_queue(
+            branch_id,
+            mapping_pack=mapping_pack,
+            chapter_goals=chapter_goals,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
 def show_window(
     branch_id: str,
     start_chapter: int,

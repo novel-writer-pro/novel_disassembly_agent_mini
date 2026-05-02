@@ -327,3 +327,23 @@
 6. 按章节目标排布整本仿写队列
 
 当前仍是 orchestration skeleton，而不是完整整本生成器。
+
+---
+
+## 13. Whole-book runner 当前骨架
+
+本轮进一步补入：
+
+- `WholeBookImitationQueueStep`
+- `WholeBookImitationRunReport`
+- `run-whole-book-imitation`
+
+它当前不直接长跑整本，而是先产出：
+
+1. 章节执行队列
+2. 每章 prerequisites
+3. 每章 expected outputs
+4. carry-over 提示
+5. run notes
+
+这使得整本仿写已经从“静态计划”推进到“可执行队列骨架”。

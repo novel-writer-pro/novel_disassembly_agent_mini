@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from novel_analyzer.domain.schemas import (
     StoryMappingPack,
     WholeBookImitationPlan,
+    WholeBookImitationQueueStep,
+    WholeBookImitationRunReport,
 )
 from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
 
@@ -45,4 +47,61 @@ class WholeBookImitationService:
             chapter_goals=chapter_goals,
             continuity_focus=continuity_focus,
             orchestration_notes=orchestration_notes,
+        )
+
+    def build_run_queue(
+        self,
+        branch_id: str,
+        *,
+        mapping_pack: StoryMappingPack,
+        chapter_goals: list[tuple[int, str]],
+    ) -> WholeBookImitationRunReport:
+        plan = self.build_plan(
+            branch_id,
+            mapping_pack=mapping_pack,
+            chapter_goals=chapter_goals,
+        )
+        queue: list[WholeBookImitationQueueStep] = []
+        carry_over_notes: list[str] = []
+
+        previous_label: str | None = None
+        for order, (chapter_index, goal) in enumerate(chapter_goals, start=1):
+            prerequisites = []
+            if previous_label is not None:
+                prerequisites.append(f"完成上一章节仿写并确认 carry-over：{previous_label}")
+                carry_over_notes.append(
+                    f"第{chapter_index}章生成前，应继承上一生成章节的关系/规则/未解线程快照。"
+                )
+            queue.append(
+                WholeBookImitationQueueStep(
+                    order=order,
+                    source_chapter_index=chapter_index,
+                    target_goal=goal,
+                    prerequisites=prerequisites,
+                    expected_outputs=[
+                        "chapter plan",
+                        "imitation draft",
+                        "comparison report",
+                        "review/gate/risk report",
+                        "revised draft",
+                    ],
+                    risk_focus=[
+                        "character_ooc",
+                        "plot_logic_consistency",
+                        "world_rule_consistency",
+                    ],
+                )
+            )
+            previous_label = f"第{chapter_index}章"
+
+        run_notes = [
+            "当前 whole-book runner 仍为 dry-run queue skeleton，不直接长跑整本生成。",
+            "后续应把 queue step 接入 sandbox branch / draft artifact / continuity carry-over。",
+        ]
+        return WholeBookImitationRunReport(
+            branch_id=branch_id,
+            project_title=plan.project_title,
+            queue=queue,
+            carry_over_notes=carry_over_notes,
+            run_notes=run_notes,
         )

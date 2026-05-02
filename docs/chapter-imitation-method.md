@@ -222,3 +222,34 @@ novel-analyzer plan-whole-book-imitation <branch_id> \
 - `orchestration_notes`
 
 这使得“整本仿写”的上层规划已经有了清晰输入输出。
+
+---
+
+## 9. 整本 dry-run 执行队列入口（当前骨架）
+
+建议使用：
+
+```bash
+novel-analyzer run-whole-book-imitation <branch_id> \
+  "测试项目" \
+  "示例小说" \
+  "新世界版示例小说" \
+  "2:延续资源铺垫" \
+  "3:延续主角获得功法后的行动线" \
+  --world-map "郑国=星际联邦" \
+  --character-map "卫图=魏拓"
+```
+
+当前输出会明确给出：
+
+- `queue`
+  - `order`
+  - `source_chapter_index`
+  - `target_goal`
+  - `prerequisites`
+  - `expected_outputs`
+  - `risk_focus`
+- `carry_over_notes`
+- `run_notes`
+
+因此现在已经能把整本仿写从“概念计划”推进到“章节执行队列骨架”。

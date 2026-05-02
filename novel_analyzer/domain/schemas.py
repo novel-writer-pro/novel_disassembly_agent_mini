@@ -818,3 +818,24 @@ class WholeBookImitationPlan(BaseModel):
     chapter_goals: list[tuple[int, str]] = Field(default_factory=list)
     continuity_focus: list[str] = Field(default_factory=list)
     orchestration_notes: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationQueueStep(BaseModel):
+    """One executable queue step in a whole-book imitation run."""
+
+    order: int = Field(ge=1)
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    prerequisites: list[str] = Field(default_factory=list)
+    expected_outputs: list[str] = Field(default_factory=list)
+    risk_focus: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationRunReport(BaseModel):
+    """Dry-run execution queue for a whole-book imitation orchestration."""
+
+    branch_id: str
+    project_title: str
+    queue: list[WholeBookImitationQueueStep] = Field(default_factory=list)
+    carry_over_notes: list[str] = Field(default_factory=list)
+    run_notes: list[str] = Field(default_factory=list)
