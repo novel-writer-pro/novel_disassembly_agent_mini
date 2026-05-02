@@ -167,6 +167,18 @@ def _graph_service(session: Session) -> Any:
     return GraphService(session)
 
 
+def _next_chapter_planner_service(session: Session) -> Any:
+    from novel_analyzer.services.next_chapter_planner_service import NextChapterPlannerService
+
+    return NextChapterPlannerService(session)
+
+
+def _chapter_imitation_service(session: Session) -> Any:
+    from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+
+    return ChapterImitationService(session)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -1173,6 +1185,57 @@ def show_reasoning_graph(
             edge_limit=80,
         )
         echo(json.dumps(snapshot, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def plan_next_chapter(
+    branch_id: str,
+    primary_goal: str,
+    emphasis: str = typer.Option("", "--emphasis"),
+    forbidden_move: list[str] = typer.Option([], "--forbidden-move"),
+    preferred_tone: str = typer.Option("", "--preferred-tone"),
+    pace: str = typer.Option("", "--pace"),
+    target_word_count: int | None = typer.Option(None, "--target-word-count"),
+    database_url: str | None = None,
+) -> None:
+    """Build a visible next-chapter planning card for one branch."""
+
+    from novel_analyzer.domain.schemas import ChapterPlanningIntent
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    emphasis_items = [item.strip() for item in emphasis.split(",") if item.strip()]
+    intent = ChapterPlanningIntent(
+        primary_goal=primary_goal,
+        emphasis=emphasis_items,
+        forbidden_moves=forbidden_move,
+        preferred_tone=preferred_tone or None,
+        pace=pace or None,
+        target_word_count=target_word_count,
+    )
+    with factory() as session:
+        payload = _next_chapter_planner_service(session).build_plan(branch_id, intent=intent)
+        echo(payload.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def imitate_chapter(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    database_url: str | None = None,
+) -> None:
+    """Build a visible imitation plan + skeleton draft for one source chapter."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _chapter_imitation_service(session).build_skeleton_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+        )
+        echo(payload.model_dump_json(indent=2, ensure_ascii=False))
 
 
 @app.command()
