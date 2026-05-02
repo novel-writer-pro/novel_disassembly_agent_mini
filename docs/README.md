@@ -24,6 +24,7 @@
 - [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
 - [`./architecture/risk-audit-embedding-pgvector-implementation-spec.md`](./architecture/risk-audit-embedding-pgvector-implementation-spec.md)
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
+- [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
 
 ---
 
@@ -150,33 +151,36 @@
 18. [`./risk-audit-next-phase-30-60-90.md`](./risk-audit-next-phase-30-60-90.md)
 19. [`./risk-audit-team-sync-brief.md`](./risk-audit-team-sync-brief.md)
 20. [`./risk-audit-phase-1-freeze-declaration.md`](./risk-audit-phase-1-freeze-declaration.md)
-21. [`./cluster-status-semantics.md`](./cluster-status-semantics.md)
-22. [`./minimal-review-workflow-guide.md`](./minimal-review-workflow-guide.md)
-23. [`./risk-audit-artifact-manifest.md`](./risk-audit-artifact-manifest.md)
-24. [`./minimal-review-workflow-state-machine.md`](./minimal-review-workflow-state-machine.md)
-25. [`./review-workflow-phase2-design.md`](./review-workflow-phase2-design.md)
-26. [`./review-workflow-api.md`](./review-workflow-api.md)
-27. [`./review-batch-execution-contract.md`](./review-batch-execution-contract.md)
-28. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
-29. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
-30. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
-31. [`./review-workflow-api-freeze-readiness.md`](./review-workflow-api-freeze-readiness.md)
-32. [`./review-workflow-team-execution-guidelines.md`](./review-workflow-team-execution-guidelines.md)
-33. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
-34. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
+21. [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
+22. [`./cluster-status-semantics.md`](./cluster-status-semantics.md)
+23. [`./minimal-review-workflow-guide.md`](./minimal-review-workflow-guide.md)
+24. [`./risk-audit-artifact-manifest.md`](./risk-audit-artifact-manifest.md)
+25. [`./minimal-review-workflow-state-machine.md`](./minimal-review-workflow-state-machine.md)
+26. [`./review-workflow-phase2-design.md`](./review-workflow-phase2-design.md)
+27. [`./review-workflow-api.md`](./review-workflow-api.md)
+28. [`./review-batch-execution-contract.md`](./review-batch-execution-contract.md)
+29. [`./review-workflow-db-only-cutover.md`](./review-workflow-db-only-cutover.md)
+30. [`./review-workflow-api-versioning.md`](./review-workflow-api-versioning.md)
+31. [`./review-api-stability-summary.md`](./review-api-stability-summary.md)
+32. [`./review-workflow-api-freeze-readiness.md`](./review-workflow-api-freeze-readiness.md)
+33. [`./review-workflow-team-execution-guidelines.md`](./review-workflow-team-execution-guidelines.md)
+34. [`./review-workflow-phase2-priority-ranking.md`](./review-workflow-phase2-priority-ranking.md)
+35. [`./review-workflow-persistence-strategy.md`](./review-workflow-persistence-strategy.md)
 
 
 ### 样例小说结论链（运行期报告）
 1. `../.omx/reports/sample-novel-current-conclusion.md`
 2. `../.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
 3. `../.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
-4. `../.omx/reports/risk-audit-mainline-verification-20260430.md`
+4. `../.omx/reports/sample-novel-first-10-risk-check-20260502.md`
+5. `../.omx/reports/risk-audit-mainline-verification-20260430.md`
 
 说明：
 - 第 1 份是当前样例小说主结论
 - 第 2 份是 phase-2 离线 best-effort 结论
 - 第 3 份是真实 phase-2 复跑阻塞与恢复清单
-- 第 4 份是当前风险审查主链 + 文档治理 + 验证结果的快照报告
+- 第 4 份是当前前10章风险核验摘要
+- 第 5 份是当前风险审查主链 + 文档治理 + 验证结果的快照报告
 
 ### 前端 / 部署补充
 - `apps/web/README.md`：前端开发、构建、npm 源

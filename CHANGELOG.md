@@ -154,6 +154,25 @@
 
 > 约定：后续每次开发更改，都应在本文件追加一条记录，至少说明“做了什么 / 为什么 / 如何验证”。
 
+## 2026-05-02
+
+### 风险审查正式生产收尾文档补齐
+- 新增 `docs/risk-audit-production-readiness.md`
+- 将“正式稳定生产”缺少的外部条件从口头说明收口为结构化文档，明确区分：
+  - PostgreSQL / pgvector 真环境
+  - provider 长链稳定性
+  - ONNX embedding 资源
+  - 可重复运行壳层
+- 补充推荐验收顺序，便于后续按 checklist 收尾
+- 验证：本地读取文档、docs index 编号检查、相关入口链接回归
+
+### 样例小说前10章风险核验报告补齐
+- 新增 `.omx/reports/sample-novel-first-10-risk-check-20260502.md`
+- 基于现有离线样例产物，对前 10 章风险卡与章节摘要进行一次 best-effort 复核
+- 明确记录：前 10 章当前均为 `risk=low`、`risk_count=0`，未发现明确 OOC / 规则冲突 / 关系突变 / 时间线异常 / 能力突变
+- 同时保留边界说明：当前会话下 PostgreSQL `127.0.0.1:5432` 连接拒绝，因此这不是 fresh DB 重跑 verdict
+- 验证：离线报告与 `.omx/tmp/sample-branch-report.md` / 既有 sample-novel 结论文档交叉核对一致
+
 ## 2026-04-27
 
 ### 基础 release 文档收口

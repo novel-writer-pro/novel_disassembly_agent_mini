@@ -17,7 +17,8 @@
 3. [`./skills-vs-risk-checkers-boundary.md`](./skills-vs-risk-checkers-boundary.md)
 4. [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
 5. [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
-6. [`./architecture/README.md`](./architecture/README.md)
+6. [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
+7. [`./architecture/README.md`](./architecture/README.md)
 
 ### 面向规划 / 持续维护
 1. [`./risk-audit-checker-roadmap.md`](./risk-audit-checker-roadmap.md)
@@ -98,6 +99,12 @@ embedding / pgvector 实施规格。适合回答：
 - 哪些 checker 优先消费 embedding 结果
 - signal store / link service / adjudication service 应该怎么拆
 
+### `risk-audit-production-readiness.md`
+正式生产收尾文档。适合回答：
+- 现在离正式稳定生产还差什么
+- 哪些是真实外部条件阻塞
+- PostgreSQL / pgvector / provider / embedding 应该怎么验收
+
 ### `architecture/README.md`
 架构专题总入口。适合回答：
 - 当前有哪些架构专题文档
@@ -144,6 +151,7 @@ embedding / pgvector 实施规格。适合回答：
 - `risk-audit-checker-roadmap.md`
 - `risk-audit-phase2-checker-implementation.md`
 - `risk-audit-next-batch-checkers.md`
+- `risk-audit-production-readiness.md`
 
 ### 如果你只想回答“读者侧以后怎么扩展”
 看：
@@ -152,6 +160,7 @@ embedding / pgvector 实施规格。适合回答：
 ### 如果你要接手样例小说 phase-2 结论线
 看：
 - `.omx/reports/sample-novel-current-conclusion.md`
+- `.omx/reports/sample-novel-first-10-risk-check-20260502.md`
 - `.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
 - `.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
 

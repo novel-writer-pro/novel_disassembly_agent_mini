@@ -244,6 +244,22 @@ def test_docs_readme_points_to_current_api_surface_doc() -> None:
     assert "./api-current-surface.md" in readme
 
 
+def test_risk_audit_indexes_point_to_production_readiness_doc() -> None:
+    checks = {
+        "docs/README.md": "./risk-audit-production-readiness.md",
+        "docs/risk-audit-docs-index.md": "./risk-audit-production-readiness.md",
+        "docs/architecture/README.md": "../risk-audit-production-readiness.md",
+    }
+    for path, needle in checks.items():
+        text = Path(path).read_text(encoding="utf-8")
+        assert needle in text
+
+
+def test_docs_readme_sample_novel_chain_includes_first_10_risk_report() -> None:
+    text = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "../.omx/reports/sample-novel-first-10-risk-check-20260502.md" in text
+
+
 def test_api_current_surface_doc_matches_route_inventory() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
