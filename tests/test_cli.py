@@ -256,3 +256,20 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"rounds"' in iterate_result.stdout
     assert '"overall_score"' in iterate_result.stdout
     assert '"final_draft"' in iterate_result.stdout
+
+    multi_result = runner.invoke(
+        app,
+        [
+            "multi-chapter-imitation-consistency",
+            "branch-cli-1",
+            "2:延续资源铺垫",
+            "3:延续主角获得功法后的行动线，并保持克制成长节奏",
+            "--max-rounds",
+            "1",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert multi_result.exit_code == 0
+    assert '"steps"' in multi_result.stdout
+    assert '"overall_verdict"' in multi_result.stdout

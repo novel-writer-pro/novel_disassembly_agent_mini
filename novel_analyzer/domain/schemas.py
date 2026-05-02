@@ -768,3 +768,27 @@ class ChapterImitationIterationReport(BaseModel):
     rounds: list[ChapterImitationIterationRound] = Field(default_factory=list)
     final_draft: ChapterImitationDraft
     stop_reason: str
+
+
+class MultiChapterImitationStep(BaseModel):
+    """One chapter step inside a multi-chapter imitation plan/report."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    final_title: str
+    final_draft_excerpt: str
+    overall_score: int = Field(ge=0, le=100)
+    overall_risk_level: str = Field(default="low")
+    stop_reason: str
+
+
+class MultiChapterImitationConsistencyReport(BaseModel):
+    """Lightweight multi-chapter continuity summary across imitation steps."""
+
+    branch_id: str
+    start_chapter_index: int = Field(ge=1)
+    end_chapter_index: int = Field(ge=1)
+    steps: list[MultiChapterImitationStep] = Field(default_factory=list)
+    continuity_notes: list[str] = Field(default_factory=list)
+    risk_notes: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_review")

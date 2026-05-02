@@ -316,3 +316,24 @@ def test_chapter_imitation_service_iterate_draft(tmp_path: Path) -> None:
         assert report.rounds[0].score.overall_score >= 0
         assert report.final_draft
         assert report.stop_reason in {"max_rounds_reached", "quality_threshold_reached"}
+
+
+def test_chapter_imitation_service_builds_multi_chapter_consistency(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = ChapterImitationService(session)
+        report = service.build_multi_chapter_consistency(
+            branch_id,
+            chapter_goals=[
+                (2, "延续资源铺垫"),
+                (3, "延续主角获得功法后的行动线，并保持克制成长节奏"),
+            ],
+            max_rounds=1,
+        )
+        assert report.steps
+        assert report.start_chapter_index == 2
+        assert report.end_chapter_index == 3
+        assert report.overall_verdict in {"aligned", "needs_review"}

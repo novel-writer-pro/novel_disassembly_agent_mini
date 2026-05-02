@@ -1389,6 +1389,37 @@ def iterate_imitation(
 
 
 @app.command()
+def multi_chapter_imitation_consistency(
+    branch_id: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    max_rounds: int = typer.Option(1, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run a lightweight multi-chapter consistency pass across several imitation steps."""
+
+    parsed: list[tuple[int, str]] = []
+    for item in chapter_spec:
+        chapter_text, _, goal = item.partition(":")
+        if not chapter_text or not goal:
+            raise typer.Exit(code=1)
+        parsed.append((int(chapter_text), goal))
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _chapter_imitation_service(session).build_multi_chapter_consistency(
+            branch_id,
+            chapter_goals=parsed,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
 def show_window(
     branch_id: str,
     start_chapter: int,

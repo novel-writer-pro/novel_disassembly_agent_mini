@@ -170,3 +170,28 @@ novel-analyzer iterate-imitation <branch_id> <source_chapter_index> "<target_goa
 - `overall_score`
 
 来决定是否停止继续迭代。
+
+---
+
+## 7. 多章连续一致性入口（当前骨架）
+
+建议使用：
+
+```bash
+novel-analyzer multi-chapter-imitation-consistency <branch_id> \
+  "2:延续资源铺垫" \
+  "3:延续主角获得功法后的行动线，并保持克制成长节奏" \
+  --max-rounds 1
+```
+
+当前输出：
+
+- `steps[]`
+  - 每章 final draft 摘要
+  - 每章 overall_score
+  - 每章 overall_risk_level
+- `continuity_notes`
+- `risk_notes`
+- `overall_verdict`
+
+这意味着系统已经开始从“单章仿写器”向“多章连续仿写协调器”过渡。
