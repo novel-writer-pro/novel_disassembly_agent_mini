@@ -723,6 +723,30 @@ def test_whole_book_imitation_run_endpoint_classifies_provider_billing_errors(mo
     assert payload["upstream_status"] == 403
 
 
+def test_whole_book_imitation_run_request_sample_is_executable(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-api-request-sample.txt")
+
+    payload = json.loads(
+        Path("docs/examples/whole-book-imitation-run.request.sample.json").read_text(encoding="utf-8")
+    )
+    payload["branch_id"] = branch_id
+    payload["execute"] = False
+    payload.pop("database_url", None)
+
+    status, body = _call_post_json("/api/whole-book-imitation-run", payload)
+    assert status == "200 OK"
+    result = json.loads(body)
+    assert result["contract_version"] == "whole-book-imitation.v1"
+    assert result["execution_mode"] == "dry_run"
+    assert result["queue"]
+
+
 def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkeypatch) -> None:
     engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
     factory = sessionmaker(bind=engine, future=True)
