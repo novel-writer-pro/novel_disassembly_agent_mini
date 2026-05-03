@@ -177,6 +177,7 @@
 - 当前 harness report 还新增 `action_queue / policy_summary`，用于输出排序后的 action 队列与聚合控制摘要
 - 当前 ordered `action_queue` 已开始写回 revise 输入痕迹，whole-book sandbox report 也开始聚合 chapter harness 的 policy summary
 - 当前 whole-book policy summary 继续补充 min/max score、max action count、verdicts 等聚合统计
+- 当前 round 还新增 `revise_payload`，用于显式观察 ordered actions 如何进入 revise 输入
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

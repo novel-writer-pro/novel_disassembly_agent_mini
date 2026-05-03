@@ -382,6 +382,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前 report 还新增 `action_queue / policy_summary`，用于直接观察 controller 的聚合决策面
   - 当前 ordered `action_queue` 也开始写回 revise 输入痕迹，whole-book sandbox report 也开始聚合 chapter harness 的 policy summary
   - 当前 whole-book policy summary 也开始补充最小/最大分数、最大 action 数等聚合统计
+  - 当前 round 还新增 `revise_payload`，用于观察 ordered actions 如何结构化进入 revise 输入
 
 这意味着系统已经从：
 

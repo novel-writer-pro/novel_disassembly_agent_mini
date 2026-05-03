@@ -125,11 +125,17 @@ class HarnessControllerService:
             "【Harness Action Queue】",
             *action_lines,
         ]
+        revise_payload = HarnessControllerService._build_revise_payload(
+            actions=actions,
+            preflight=preflight,
+            gate=ChapterImitationGateReport(source_chapter_index=draft.source_chapter_index, draft_title=draft.draft_title),
+            risk=ChapterImitationRiskReport(source_chapter_index=draft.source_chapter_index, draft_title=draft.draft_title),
+        )
         return revised.model_copy(
             update={
                 "risk_gate_notes": revised.risk_gate_notes + preflight.recommended_actions[:3],
                 "method_notes": revised.method_notes + [f"{item.priority}:{item.target}" for item in actions],
-                "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]],
+                "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]] + [json.dumps(revise_payload, ensure_ascii=False)[:300]],
                 "draft_text": revised.draft_text + ("\n\n" + "\n".join(revise_notes) if action_lines else ""),
             }
         )
@@ -164,6 +170,31 @@ class HarnessControllerService:
             "gate_verdict": gate.overall_verdict,
             "risk_overall_level": risk.overall_risk_level,
             "overall_score": score.overall_score,
+        }
+
+    @staticmethod
+    def _build_revise_payload(
+        *,
+        actions: list[ChapterImitationHarnessAction],
+        preflight: ChapterImitationPreflightReport,
+        gate: ChapterImitationGateReport,
+        risk: ChapterImitationRiskReport,
+    ) -> dict[str, object]:
+        return {
+            "ordered_actions": [
+                {
+                    "action_type": item.action_type,
+                    "target": item.target,
+                    "severity": item.severity,
+                    "priority": item.priority,
+                    "instructions": item.instructions,
+                }
+                for item in actions
+            ],
+            "blocking_issues": preflight.blocking_issues,
+            "recommended_actions": preflight.recommended_actions,
+            "gate_verdict": gate.overall_verdict,
+            "risk_overall_level": risk.overall_risk_level,
         }
 
     def list_skill_contracts(self) -> list[ChapterImitationSkillContract]:
@@ -801,6 +832,12 @@ class HarnessControllerService:
                 risk=risk,
             )
             actions = self._sorted_actions(self._recommended_actions(preflight, review, gate, risk))
+            revise_payload = self._build_revise_payload(
+                actions=actions,
+                preflight=preflight,
+                gate=gate,
+                risk=risk,
+            )
             skill_prompt_previews = self.build_skill_prompt_previews(
                 branch_id,
                 source_chapter_index=source_chapter_index,
@@ -818,6 +855,7 @@ class HarnessControllerService:
                     score=score,
                     preflight=preflight,
                     actions=actions,
+                    revise_payload=revise_payload,
                     skill_prompt_previews=skill_prompt_previews,
                     skill_outputs=skill_outputs,
                 )

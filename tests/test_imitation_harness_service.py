@@ -233,6 +233,7 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert "imitation-constraint-pack" in report.rounds[0].skill_outputs
         assert "relationship_watchpoints" in report.rounds[0].skill_outputs["imitation-constraint-pack"]
         assert "likely_gate_failures" in report.rounds[0].skill_outputs["draft-self-check"]
+        assert report.rounds[0].revise_payload
         assert report.action_queue
         assert report.policy_summary
         assert "highest_action_priority" in report.policy_summary
