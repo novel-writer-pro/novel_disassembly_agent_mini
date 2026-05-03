@@ -227,6 +227,8 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert report.rounds[0].skill_prompt_previews
         assert "draft-self-check" in report.rounds[0].skill_prompt_previews
         assert report.rounds[0].skill_outputs
+        assert "chapter-intake" in report.rounds[0].skill_outputs
+        assert "chapter-fact-extractor" in report.rounds[0].skill_outputs
         assert "imitation-constraint-pack" in report.rounds[0].skill_outputs
         assert "relationship_watchpoints" in report.rounds[0].skill_outputs["imitation-constraint-pack"]
         assert "likely_gate_failures" in report.rounds[0].skill_outputs["draft-self-check"]
@@ -366,3 +368,67 @@ def test_harness_actions_include_relationship_rule_and_hook_repairs(tmp_path: Pa
         assert "repair_relationship_transition" in action_types
         assert "repair_world_rule_support" in action_types
         assert "reinforce_ending_hook" in action_types
+
+
+def test_harness_actions_include_relation_and_rule_evidence_repairs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        preflight = service.preflight_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+            skill_outputs={
+                "chapter-intake": {"notes": ["章尾应保持推进感。"]},
+                "chapter-fact-extractor": {
+                    "characters": [],
+                    "events": [],
+                    "relations": [],
+                    "conflicts": [],
+                    "foreshadowing": [],
+                    "worldbuilding_facts": [],
+                },
+                "imitation-constraint-pack": {
+                    "hard_constraints": [],
+                    "soft_constraints": [],
+                    "forbidden_transformations": ["不要直接抄原文句式"],
+                    "continuity_memory": ["旧线索"],
+                    "relationship_watchpoints": ["卫图与二姑关系变化"],
+                    "rule_watchpoints": ["功法资源限制"],
+                },
+                "draft-self-check": {
+                    "blocking_issues": [],
+                    "likely_gate_failures": [],
+                    "recommended_actions": [],
+                },
+            },
+        )
+        actions = service._recommended_actions(  # noqa: SLF001
+            preflight=preflight,
+            review=service.chapter_imitation.review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+            gate=service.chapter_imitation.gate_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+            risk=service.chapter_imitation.risk_review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+        )
+        action_types = {item.action_type for item in actions}
+        assert "repair_relation_evidence" in action_types
+        assert "repair_rule_evidence" in action_types

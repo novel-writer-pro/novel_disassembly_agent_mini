@@ -301,6 +301,57 @@ class HarnessControllerService:
                 if "ending_hook_presence" in likely_failures:
                     recommended_actions.append("补充更明确的章尾钩子。")
 
+        chapter_intake = outputs.get("chapter-intake", {})
+        if isinstance(chapter_intake, dict):
+            intake_notes = [str(item) for item in chapter_intake.get("notes", []) if str(item).strip()]
+            if intake_notes:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="chapter_intake_notes",
+                        status="pass",
+                        notes=intake_notes[:3],
+                    )
+                )
+
+        fact_output = outputs.get("chapter-fact-extractor", {})
+        if isinstance(fact_output, dict):
+            relation_count = len([item for item in fact_output.get("relations", []) if item])
+            rule_count = len([item for item in fact_output.get("worldbuilding_facts", []) if item])
+            if relation_count == 0:
+                recommended_actions.append("补充关系证据，避免关系变化无中间支撑。")
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="fact_relation_coverage",
+                        status="warn",
+                        notes=["chapter-fact-extractor 未提取到关系事实。"],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="fact_relation_coverage",
+                        status="pass",
+                        notes=[f"relations={relation_count}"],
+                    )
+                )
+            if rule_count == 0:
+                recommended_actions.append("补充规则证据，避免关键动作缺少世界规则支撑。")
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="fact_rule_coverage",
+                        status="warn",
+                        notes=["chapter-fact-extractor 未提取到规则事实。"],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="fact_rule_coverage",
+                        status="pass",
+                        notes=[f"worldbuilding_facts={rule_count}"],
+                    )
+                )
+
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
             source_chapter_index=source_chapter_index,
@@ -415,6 +466,32 @@ class HarnessControllerService:
             ),
             window=PlannerContextWindow(recent_chapter_count=3),
         )
+        title, source_text = self.chapter_imitation._source_chapter_text(branch_id, source_chapter_index)  # noqa: SLF001
+        chapter_intake_output = {
+            "chapter_index": source_chapter_index,
+            "normalized_title": title,
+            "cleaned_text": source_text[:2400],
+            "paragraph_blocks": [
+                {"order": idx, "text": block.strip()}
+                for idx, block in enumerate([item for item in source_text.splitlines() if item.strip()][:6], start=1)
+            ],
+            "scene_candidates": [
+                {"order": idx, "text": beat}
+                for idx, beat in enumerate(plan.scene_beats[:4], start=1)
+            ],
+            "notes": [
+                "已提取基础段落块供后续小模型处理。",
+                "应关注章尾钩子与关系/规则敏感点。",
+            ],
+        }
+        fact_output = {
+            "characters": [{"label": item, "evidence": [item], "confidence": 0.6} for item in planner_context.active_characters[:3]],
+            "events": [{"label": item, "evidence": [item], "confidence": 0.6} for item in planner_context.recent_chapter_summaries[:2]],
+            "relations": [{"label": item, "evidence": [item], "confidence": 0.55} for item in planner_context.relationship_state_notes[:3]],
+            "conflicts": [{"label": item, "evidence": [item], "confidence": 0.55} for item in planner_context.active_conflicts[:3]],
+            "foreshadowing": [{"label": item, "evidence": [item], "confidence": 0.5} for item in planner_context.unresolved_threads[:3]],
+            "worldbuilding_facts": [{"label": item, "evidence": [item], "confidence": 0.55} for item in planner_context.world_rules[:3]],
+        }
         constraint_output = {
             "hard_constraints": plan.hard_constraints[:5],
             "soft_constraints": plan.soft_constraints[:5],
@@ -461,6 +538,8 @@ class HarnessControllerService:
         if plan.risk_focus:
             self_check_output["self_notes"].extend(plan.risk_focus[:2])
         return {
+            "chapter-intake": chapter_intake_output,
+            "chapter-fact-extractor": fact_output,
             "imitation-constraint-pack": constraint_output,
             "draft-self-check": self_check_output,
         }
@@ -675,6 +754,22 @@ class HarnessControllerService:
                     action_type="repair_world_rule_support",
                     target="world_rule_support",
                     instructions=["补足越界动作前的规则来源、限制与代价。"],
+                )
+            )
+        if "关系证据" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_relation_evidence",
+                    target="fact_relations",
+                    instructions=["补足人物互动、态度变化与关系状态证据。"],
+                )
+            )
+        if "规则证据" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_rule_evidence",
+                    target="fact_rules",
+                    instructions=["补足世界规则、资源限制与动作代价证据。"],
                 )
             )
         if "章尾钩子" in " ".join(preflight.recommended_actions):
