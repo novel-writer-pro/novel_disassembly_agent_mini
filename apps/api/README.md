@@ -83,6 +83,18 @@
    - `error_code`
    - `retryable`
 
+最小示例：
+
+```bash
+curl "http://127.0.0.1:8000/api/whole-book-imitation-readiness?branch_id=<branch_id>&database_url=<database_url>"
+```
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/whole-book-imitation-run" \
+  -H "Content-Type: application/json" \
+  -d @docs/examples/whole-book-imitation-run.request.sample.json
+```
+
 ## 多作品说明
 
 当前后端数据模型本身就支持：
