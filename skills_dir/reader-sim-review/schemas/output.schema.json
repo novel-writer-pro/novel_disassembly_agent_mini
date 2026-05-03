@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReaderSimReviewOutput",
+  "type": "object",
+  "required": ["reader_profile", "engagement_score", "concerns", "recommended_actions"],
+  "properties": {
+    "reader_profile": {"type": "string"},
+    "engagement_score": {"type": "number"},
+    "concerns": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}
