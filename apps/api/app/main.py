@@ -67,6 +67,7 @@ from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.status_service import StatusService
+from novel_analyzer.services.whole_book_imitation_service import WholeBookImitationService
 
 
 class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
@@ -104,6 +105,7 @@ _API_ENDPOINT_SPECS: list[dict[str, str]] = [
     {"method": "GET", "path": "/api/pipeline/runs"},
     {"method": "GET", "path": "/api/runtime-health"},
     {"method": "GET", "path": "/api/provider-health"},
+    {"method": "POST", "path": "/api/whole-book-imitation-run"},
     {"method": "POST", "path": "/api/search-branch"},
     {"method": "POST", "path": "/api/ask-branch"},
     {"method": "POST", "path": "/api/ask-branch-stream"},
@@ -252,6 +254,36 @@ def _review_contract() -> dict[str, object]:
         "allowed_cluster_statuses": sorted(ALLOWED_CLUSTER_STATUSES),
         "allowed_review_results": sorted(ALLOWED_REVIEW_RESULTS),
     }
+
+
+def _whole_book_mapping_pack(body: dict[str, Any]) -> Any:
+    from novel_analyzer.domain.schemas import StoryMappingPack
+
+    return StoryMappingPack(
+        project_title=str(body.get("project_title") or ""),
+        source_work_name=str(body.get("source_work_name") or ""),
+        target_work_name=str(body.get("target_work_name") or ""),
+        world_mapping=cast(dict[str, str], body.get("world_mapping") or {}),
+        character_mapping=cast(dict[str, str], body.get("character_mapping") or {}),
+        faction_mapping=cast(dict[str, str], body.get("faction_mapping") or {}),
+        power_mapping=cast(dict[str, str], body.get("power_mapping") or {}),
+        rule_overrides=[str(item) for item in cast(list[Any], body.get("rule_overrides") or [])],
+        forbidden_transformations=[
+            str(item) for item in cast(list[Any], body.get("forbidden_transformations") or [])
+        ],
+    )
+
+
+def _whole_book_chapter_goals(body: dict[str, Any]) -> list[tuple[int, str]]:
+    raw_items = cast(list[dict[str, Any]], body.get("chapter_specs") or [])
+    chapter_goals: list[tuple[int, str]] = []
+    for item in raw_items:
+        chapter_index = int(item.get("source_chapter_index") or 0)
+        target_goal = str(item.get("target_goal") or "").strip()
+        if chapter_index <= 0 or not target_goal:
+            raise ValueError("chapter_specs must contain positive source_chapter_index and non-empty target_goal")
+        chapter_goals.append((chapter_index, target_goal))
+    return chapter_goals
 
 
 def _apply_review_filters(
@@ -2056,6 +2088,60 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=asdict(report))
+
+    if path == "/api/whole-book-imitation-run" and method == "POST":
+        body = _body(environ)
+        required = [
+            "branch_id",
+            "project_title",
+            "source_work_name",
+            "target_work_name",
+            "chapter_specs",
+        ]
+        missing_key = next((key for key in required if not body.get(key)), None)
+        if missing_key is not None:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing required field: {missing_key}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = str(body.get("database_url") or "").strip()
+        if database_url:
+            runtime.database_url = database_url
+        try:
+            mapping_pack = _whole_book_mapping_pack(body)
+            chapter_goals = _whole_book_chapter_goals(body)
+            execute = bool(body.get("execute"))
+            max_rounds = int(body.get("max_rounds") or 1)
+            use_llm = bool(body.get("use_llm"))
+            model_name = str(body.get("model_name") or "").strip() or None
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                service = WholeBookImitationService(session)
+                report = (
+                    service.run_in_sandbox(
+                        str(body["branch_id"]),
+                        mapping_pack=mapping_pack,
+                        chapter_goals=chapter_goals,
+                        max_rounds=max_rounds,
+                        use_llm=use_llm,
+                        model_name=model_name,
+                    )
+                    if execute
+                    else service.build_run_queue(
+                        str(body["branch_id"]),
+                        mapping_pack=mapping_pack,
+                        chapter_goals=chapter_goals,
+                    )
+                )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=report.model_dump(mode="json"))
 
     if path == "/api/search-branch":
         ok, missing = _require(params, "branch_id", "q")

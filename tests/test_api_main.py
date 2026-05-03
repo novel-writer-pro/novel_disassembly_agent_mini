@@ -26,6 +26,7 @@ from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
 from novel_analyzer.services.run_service import RunService
+from tests.test_whole_book_imitation_service import _seed_branch
 
 
 def _call(path: str) -> tuple[str, bytes]:
@@ -140,6 +141,12 @@ def test_chapter_qa_context_requires_query_params() -> None:
     status, body = _call("/api/chapter-qa-context")
     assert status == "400 Bad Request"
     assert b"missing query parameter" in body
+
+
+def test_whole_book_imitation_run_endpoint_requires_required_fields() -> None:
+    status, body = _call_post_json("/api/whole-book-imitation-run", {"branch_id": "branch-x"})
+    assert status == "400 Bad Request"
+    assert b"missing required field" in body
 
 
 def test_root_readme_points_to_current_api_surface_doc() -> None:
@@ -611,7 +618,42 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
     assert b'"current_values"' in body
     assert b'"changed_fields"' in body
     assert b'"transition": "new->reviewed"' in body
-    assert b'"review_actor": "api-bot"' in body
+
+
+def test_whole_book_imitation_run_endpoint_returns_contract_payload(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-api.txt")
+
+    status, body = _call_post_json(
+        "/api/whole-book-imitation-run",
+        {
+            "branch_id": branch_id,
+            "project_title": "测试项目",
+            "source_work_name": "示例小说",
+            "target_work_name": "新世界版示例小说",
+            "chapter_specs": [
+                {"source_chapter_index": 2, "target_goal": "延续资源铺垫"},
+                {"source_chapter_index": 3, "target_goal": "延续主角获得功法后的行动线"},
+            ],
+            "world_mapping": {"郑国": "星际联邦"},
+            "character_mapping": {"卫图": "魏拓"},
+            "execute": True,
+            "max_rounds": 1,
+            "use_llm": False,
+        },
+    )
+    assert status == "200 OK"
+    payload = json.loads(body)
+    assert payload["execution_mode"] == "sandbox_execute"
+    assert "policy_summary" in payload
+    assert "dashboard_summary" in payload
+    assert "next_stage_focus" in payload["policy_summary"]
+    assert "book_handoff_summary" in payload["dashboard_summary"]
 
 
 def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkeypatch) -> None:

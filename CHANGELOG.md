@@ -229,6 +229,7 @@
   - `next_stage_focus / book_handoff_summary.top_repair_recommendations`
 - 当前 whole-book 仿写 report 已同步固化到 `docs/interface-manifest.md` 与 `docs/examples/whole-book-imitation-run.sample.json`
 - 当前新增 `export-whole-book-imitation-run`，可把 dry-run / sandbox execute 的整本仿写 report 直接落盘给系统消费
+- 当前新增 `POST /api/whole-book-imitation-run`，系统侧可直接拿 whole-book dry-run / sandbox execute report
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

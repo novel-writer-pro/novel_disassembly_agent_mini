@@ -427,6 +427,7 @@ phase-2 聚合增强字段：
 来源：
 - `novel-analyzer run-whole-book-imitation ...`
 - `novel-analyzer export-whole-book-imitation-run ... <output_path>`
+- `POST /api/whole-book-imitation-run`
 - `WholeBookImitationService.build_run_queue(...)`
 - `WholeBookImitationService.run_in_sandbox(...)`
 

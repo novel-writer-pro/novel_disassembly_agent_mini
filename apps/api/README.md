@@ -40,6 +40,7 @@
 - `GET /api/pipeline/runs?branch_id=...`
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
+- `POST /api/whole-book-imitation-run`
 - `POST /api/search-branch`
 - `POST /api/ask-branch`
 - `POST /api/ask-branch-stream`
