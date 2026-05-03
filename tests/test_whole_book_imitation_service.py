@@ -322,6 +322,9 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert error_sample["error_code"] == "provider_billing_limited"
     assert error_sample["retryable"] is False
     assert error_sample["upstream_status"] == 403
+    assert "### 10.5 whole-book run 错误返回" in manifest
+    assert "provider_billing_limited" in manifest
+    assert "provider_bad_gateway" in manifest
 
     assert sample["execution_mode"] == "sandbox_execute"
     assert sample["contract_version"] == "whole-book-imitation.v1"

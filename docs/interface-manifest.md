@@ -544,6 +544,39 @@ phase-2 聚合增强字段：
 - `docs/whole-book-imitation-api-versioning.md`
 - `docs/whole-book-imitation-api-freeze-readiness.md`
 
+### 10.5 whole-book run 错误返回
+
+当 `POST /api/whole-book-imitation-run` 失败时，当前建议系统至少消费：
+
+- `error`
+- `error_type`
+- `retryable`
+- `upstream_status`
+- `error_code`
+
+当前已明确样例的错误码：
+
+- `provider_billing_limited`
+  - 含义：上游 provider 配额/计费阻断
+  - 当前通常伴随：
+    - `retryable = false`
+    - `upstream_status = 403`
+
+- `provider_bad_gateway`
+  - 含义：上游网关异常
+  - 当前通常伴随：
+    - `retryable = true`
+    - `upstream_status = 502`
+
+- `provider_timeout`
+  - 含义：上游请求超时
+  - 当前通常伴随：
+    - `retryable = true`
+
+说明：
+- 当前错误合同仍按 pre-v1 管理
+- 但这几个字段已经适合作为系统侧自动分流依据
+
 ## 11. Whole-Book Imitation Readiness
 
 来源：
