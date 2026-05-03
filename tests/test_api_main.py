@@ -403,6 +403,8 @@ def test_api_readme_mentions_whole_book_imitation_samples() -> None:
     assert "whole-book-imitation-run.request.sample.json" in readme
     assert "whole-book-imitation-run.sample.json" in readme
     assert "whole-book-imitation-run.error.provider-billing.sample.json" in readme
+    assert "whole-book-imitation-readiness.sample.json" in readme
+    assert "whole-book-imitation-integration-quickstart.md" in readme
 
 
 def test_import_endpoint_requires_uploaded_file() -> None:

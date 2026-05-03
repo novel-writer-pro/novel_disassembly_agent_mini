@@ -63,6 +63,9 @@
   - 请求样例：`docs/examples/whole-book-imitation-run.request.sample.json`
   - 成功响应样例：`docs/examples/whole-book-imitation-run.sample.json`
   - 错误响应样例：`docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`
+- whole-book imitation 最短接入建议：
+  - quickstart：`docs/whole-book-imitation-integration-quickstart.md`
+  - readiness 样例：`docs/examples/whole-book-imitation-readiness.sample.json`
 
 ## 多作品说明
 
