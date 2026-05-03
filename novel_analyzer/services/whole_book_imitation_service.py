@@ -24,6 +24,21 @@ class WholeBookImitationService:
         self.chapter_imitation = ChapterImitationService(session)
         self.harness = HarnessControllerService(session)
 
+    @staticmethod
+    def _strategy_input_from_revise_payload(previous_revise_payload: dict[str, object] | None) -> dict[str, object]:
+        if not previous_revise_payload:
+            return {}
+        ordered = previous_revise_payload.get("ordered_actions", [])
+        if not isinstance(ordered, list):
+            return {}
+        top_actions = [item for item in ordered[:3] if isinstance(item, dict)]
+        return {
+            "prioritized_targets": [str(item.get("target", "")) for item in top_actions if str(item.get("target", "")).strip()],
+            "prioritized_action_types": [str(item.get("action_type", "")) for item in top_actions if str(item.get("action_type", "")).strip()],
+            "blocking_issues": previous_revise_payload.get("blocking_issues", []),
+            "recommended_actions": previous_revise_payload.get("recommended_actions", []),
+        }
+
     def build_plan(
         self,
         branch_id: str,
@@ -143,6 +158,7 @@ class WholeBookImitationService:
 
         for step in report.queue:
             target_goal = step.target_goal
+            strategy_input = self._strategy_input_from_revise_payload(previous_revise_payload)
             if carry_state is not None:
                 inherited_parts = [
                     item
@@ -156,16 +172,9 @@ class WholeBookImitationService:
                 ]
                 if inherited_parts:
                     target_goal = f"{target_goal}｜承接上一生成状态：{'；'.join(inherited_parts[:5])}"
-            if previous_revise_payload:
-                ordered = previous_revise_payload.get("ordered_actions", [])
-                if isinstance(ordered, list) and ordered:
-                    top_targets = [
-                        str(item.get("target"))
-                        for item in ordered[:2]
-                        if isinstance(item, dict) and str(item.get("target", "")).strip()
-                    ]
-                    if top_targets:
-                        target_goal = f"{target_goal}｜优先处理上一章 revise targets：{'、'.join(top_targets)}"
+            top_targets = strategy_input.get("prioritized_targets", [])
+            if isinstance(top_targets, list) and top_targets:
+                target_goal = f"{target_goal}｜优先处理上一章 revise targets：{'、'.join(top_targets[:2])}"
 
             harness_report = self.harness.run_harness(
                 branch_id,
@@ -197,6 +206,7 @@ class WholeBookImitationService:
                     carry_over_state=carry_state,
                     action_queue=harness_report.action_queue,
                     revise_payload=harness_report.rounds[-1].revise_payload if harness_report.rounds else {},
+                    strategy_input=strategy_input,
                     policy_summary=harness_report.policy_summary,
                 )
             )
@@ -251,6 +261,22 @@ class WholeBookImitationService:
                 "high": sum(1 for step in executed_steps if step.overall_risk_level == "high"),
             },
         }
+        dashboard_summary = {
+            "chapter_count": len(executed_steps),
+            "highest_priority_chapters": [item["source_chapter_index"] for item in policy_summary["book_priority_ranking"][:3]],
+            "top_risk_chapters": [
+                step.source_chapter_index
+                for step in executed_steps
+                if step.overall_risk_level in {"medium", "high"}
+            ],
+            "strategy_targets": [
+                {
+                    "source_chapter_index": step.source_chapter_index,
+                    "prioritized_targets": step.strategy_input.get("prioritized_targets", []),
+                }
+                for step in executed_steps
+            ],
+        }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
             project_title=report.project_title,
@@ -260,5 +286,6 @@ class WholeBookImitationService:
             executed_steps=executed_steps,
             final_carry_over_state=carry_state,
             policy_summary=policy_summary,
+            dashboard_summary=dashboard_summary,
             run_notes=run_notes,
         )

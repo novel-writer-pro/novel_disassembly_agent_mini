@@ -180,6 +180,7 @@
 - 当前 round 还新增 `revise_payload`，用于显式观察 ordered actions 如何进入 revise 输入
 - 当前 whole-book report 也开始显式暴露 chapter-level `revise_payload`、`chapter_ranking`、`severity_histogram`
 - 当前 whole-book 层开始尝试消费上一章 `revise_payload` 影响后续章节目标，并补充 `book_priority_ranking / risk_bucket_histogram`
+- 当前 whole-book 层进一步新增 `strategy_input / dashboard_summary`，用于结构化表达跨章节策略反馈与总览面板
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

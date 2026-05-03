@@ -202,6 +202,7 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert report.executed_steps[0].carry_over_state.generated_summary
         assert report.executed_steps[0].action_queue
         assert report.executed_steps[0].revise_payload
+        assert "strategy_input" in report.executed_steps[1].model_dump()
         assert report.executed_steps[0].policy_summary
         assert report.policy_summary["executed_step_count"] == 2
         assert "min_overall_score" in report.policy_summary
@@ -214,3 +215,7 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         ordered = report.executed_steps[0].revise_payload.get("ordered_actions", [])
         assert isinstance(ordered, list)
         assert ordered
+        assert report.executed_steps[1].strategy_input.get("prioritized_targets", [])
+        assert report.dashboard_summary["chapter_count"] == 2
+        assert "highest_priority_chapters" in report.dashboard_summary
+        assert "strategy_targets" in report.dashboard_summary
