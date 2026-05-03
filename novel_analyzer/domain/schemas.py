@@ -822,6 +822,7 @@ class ChapterImitationHarnessRound(BaseModel):
     preflight: ChapterImitationPreflightReport
     actions: list[ChapterImitationHarnessAction] = Field(default_factory=list)
     skill_prompt_previews: dict[str, str] = Field(default_factory=dict)
+    skill_outputs: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 class ChapterImitationHarnessReport(BaseModel):

@@ -168,6 +168,7 @@
   - `preflight-imitation`
   - `harness-imitation`
 - harness round 当前已开始暴露 `skill_prompt_previews`，用于证明它正在消费本地 skill prompt assets，而不只是暴露 contract 名称
+- harness round 当前也开始暴露 `skill_outputs`，用于证明 constraint-pack / self-check 结构化结果已进入 preflight 与 action routing
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

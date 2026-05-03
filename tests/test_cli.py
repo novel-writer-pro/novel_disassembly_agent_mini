@@ -389,3 +389,4 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"skill_contracts"' in harness_result.stdout
     assert '"final_preflight"' in harness_result.stdout
     assert '"skill_prompt_previews"' in harness_result.stdout
+    assert '"skill_outputs"' in harness_result.stdout

@@ -176,6 +176,12 @@ def test_harness_preflight_blocks_too_short_draft(tmp_path: Path) -> None:
             source_chapter_index=3,
             draft=short_draft,
             comparison=comparison,
+            skill_outputs={
+                "draft-self-check": {
+                    "blocking_issues": ["draft_too_short_for_gate"],
+                    "recommended_actions": ["补足中段阻力与章尾钩子。"],
+                }
+            },
         )
         assert report.overall_verdict == "block"
         assert "draft_too_short_for_gate" in report.blocking_issues
@@ -220,3 +226,5 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert report.final_preflight
         assert report.rounds[0].skill_prompt_previews
         assert "draft-self-check" in report.rounds[0].skill_prompt_previews
+        assert report.rounds[0].skill_outputs
+        assert "imitation-constraint-pack" in report.rounds[0].skill_outputs

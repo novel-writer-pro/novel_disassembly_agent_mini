@@ -104,12 +104,14 @@ class HarnessControllerService:
         source_chapter_index: int,
         draft: ChapterImitationDraft,
         comparison: ChapterImitationComparisonReport | None = None,
+        skill_outputs: dict[str, dict[str, object]] | None = None,
     ) -> ChapterImitationPreflightReport:
         compare = comparison or self.chapter_imitation.compare_with_source(
             branch_id,
             source_chapter_index=source_chapter_index,
             draft=draft,
         )
+        outputs = skill_outputs or {}
         checks: list[ChapterImitationPreflightCheck] = []
         blocking_issues: list[str] = []
         recommended_actions: list[str] = []
@@ -193,6 +195,58 @@ class HarnessControllerService:
                     notes=["检测到下一步/钩子相关收束。"],
                 )
             )
+
+        constraint_pack = outputs.get("imitation-constraint-pack", {})
+        if isinstance(constraint_pack, dict):
+            forbidden = [str(item) for item in constraint_pack.get("forbidden_transformations", []) if str(item).strip()]
+            if forbidden:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="constraint_pack_presence",
+                        status="pass",
+                        notes=[f"forbidden_transformations={len(forbidden)}"],
+                    )
+                )
+            else:
+                recommended_actions.append("补齐 forbidden_transformations，明确哪些换皮/越界动作不能做。")
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="constraint_pack_presence",
+                        status="warn",
+                        notes=["constraint pack 未给出明确 forbidden_transformations。"],
+                    )
+                )
+
+        self_check = outputs.get("draft-self-check", {})
+        if isinstance(self_check, dict):
+            predicted_blockers = [str(item) for item in self_check.get("blocking_issues", []) if str(item).strip()]
+            predicted_actions = [str(item) for item in self_check.get("recommended_actions", []) if str(item).strip()]
+            if predicted_blockers:
+                blocking_issues.extend(item for item in predicted_blockers if item not in blocking_issues)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="draft_self_check_blockers",
+                        status="block",
+                        notes=predicted_blockers[:3],
+                    )
+                )
+            elif predicted_actions:
+                recommended_actions.extend(item for item in predicted_actions if item not in recommended_actions)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="draft_self_check_recommendations",
+                        status="warn",
+                        notes=predicted_actions[:3],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="draft_self_check_recommendations",
+                        status="pass",
+                        notes=["draft-self-check 未返回阻断问题。"],
+                    )
+                )
 
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
@@ -284,6 +338,63 @@ class HarnessControllerService:
         previews["comparison"] = json.dumps(compare.model_dump(mode="json"), ensure_ascii=False)[:600]
         return previews
 
+    def build_skill_outputs(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        target_goal: str,
+        draft: ChapterImitationDraft,
+    ) -> dict[str, dict[str, object]]:
+        plan = self.chapter_imitation.build_imitation_plan(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+        )
+        planner_context = self.chapter_imitation.next_chapter_planner.build_context(
+            branch_id,
+            intent=ChapterPlanningIntent(
+                primary_goal=target_goal,
+                emphasis=["保持人物连续性", "保持冲突推进", "保持风格约束"],
+                forbidden_moves=["不要无铺垫升级战力", "不要引入未准备的大设定"],
+                preferred_tone="克制务实",
+                pace="steady",
+            ),
+            window=PlannerContextWindow(recent_chapter_count=3),
+        )
+        constraint_output = {
+            "hard_constraints": plan.hard_constraints[:5],
+            "soft_constraints": plan.soft_constraints[:5],
+            "forbidden_transformations": [
+                item
+                for item in (planner_context.forbidden_moves[:3] + ["不要直接抄原文句式", "不要无铺垫升级战力"])
+                if item
+            ],
+            "continuity_memory": (
+                planner_context.relationship_state_notes[:2]
+                + planner_context.unresolved_threads[:2]
+                + planner_context.world_rules[:2]
+            ),
+        }
+        self_check_output = {
+            "blocking_issues": [],
+            "likely_gate_failures": [],
+            "recommended_actions": [],
+            "self_notes": [],
+        }
+        if len(draft.draft_text) < 180:
+            self_check_output["blocking_issues"].append("draft_too_short_for_gate")
+            self_check_output["recommended_actions"].append("补足中段阻力与章尾钩子。")
+        if "接下来" not in draft.draft_text and "下一步" not in draft.draft_text:
+            self_check_output["likely_gate_failures"].append("ending_hook_presence")
+            self_check_output["recommended_actions"].append("补充明确的下一步钩子。")
+        if plan.risk_focus:
+            self_check_output["self_notes"].extend(plan.risk_focus[:2])
+        return {
+            "imitation-constraint-pack": constraint_output,
+            "draft-self-check": self_check_output,
+        }
+
     def run_harness(
         self,
         branch_id: str,
@@ -321,11 +432,18 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 draft=draft,
             )
+            skill_outputs = self.build_skill_outputs(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                draft=draft,
+            )
             preflight = self.preflight_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 draft=draft,
                 comparison=comparison,
+                skill_outputs=skill_outputs,
             )
             review = self.chapter_imitation.review_draft(
                 branch_id,
@@ -368,6 +486,7 @@ class HarnessControllerService:
                     preflight=preflight,
                     actions=actions,
                     skill_prompt_previews=skill_prompt_previews,
+                    skill_outputs=skill_outputs,
                 )
             )
             final_preflight = preflight
