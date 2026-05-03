@@ -419,6 +419,31 @@ class WholeBookImitationService:
                     ][:8]
                 ],
             },
+            "weak_lane_dominance": sorted(
+                [
+                    {"family": family, "count": count}
+                    for family, count in {
+                        "rhythm": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "rhythm"),
+                        "reader": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "reader"),
+                        "dialogue": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "dialogue"),
+                        "research": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "research"),
+                    }.items()
+                ],
+                key=lambda item: (-item["count"], item["family"]),
+            ),
+            "chapter_flags": [
+                {
+                    "source_chapter_index": step.source_chapter_index,
+                    "highest_action_priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                    "overall_risk_level": step.overall_risk_level,
+                    "weak_families": [
+                        family
+                        for family in step.strategy_input.get("prioritized_families", [])
+                        if family in {"rhythm", "reader", "dialogue", "research"}
+                    ],
+                }
+                for step in executed_steps
+            ],
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
