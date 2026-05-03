@@ -23,6 +23,7 @@ whole-book imitation 线当前已经完成：
 真实 provider-backed whole-book execute 已经成功补到一轮样本。
 
 当前已不再是“缺少成功 provider 样本”，而是：
+- provider 当前运行态已恢复为 `ok`
 - 是否基于成功样本更新 freeze readiness 口径
 - 是否把 `stable_contract_version` 从 pre-v1 往更稳定级别推进
 
@@ -56,4 +57,4 @@ whole-book imitation 线当前已经完成：
 
 ## 5. 一句话总结
 
-> 这条线现在不是“缺成功样本”，而是“已有成功样本，剩余是是否正式提升 freeze / 稳定级别的治理判断”。 
+> 这条线现在不是“缺成功样本”或“provider 不可用”，而是“已有成功样本且 provider 当前可用，剩余是是否正式提升 freeze / 稳定级别的治理判断”。 

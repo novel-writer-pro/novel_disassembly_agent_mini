@@ -4,7 +4,7 @@
 
 当前 whole-book imitation API 更准确的状态是：
 
-> **pre-v1，已具备 system-contract-ready 能力，并已拿到 provider-backed 成功样本，但尚未正式宣布 stable freeze。**
+> **pre-v1，已具备 system-contract-ready 能力，provider 当前可用且已拿到 provider-backed 成功样本，但尚未正式宣布 stable freeze。**
 
 也就是说：
 - 系统可以正式接入
@@ -66,7 +66,13 @@
 
 - `docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json`
 
-因此当前 freeze 未完成的原因，已经不再是“没有成功样本”，而更接近：
+同时，最新 readiness 输出已经反映：
+
+- `provider_health.last_status = ok`
+- `success_events = 7`
+- `last_error = null`
+
+因此当前 freeze 未完成的原因，已经不再是“没有成功样本”或“provider 当前不可用”，而更接近：
 
 > **虽然已有成功 provider-backed evidence，但 stable freeze 的治理口径还未正式收束。**
 

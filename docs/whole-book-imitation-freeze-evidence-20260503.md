@@ -180,3 +180,10 @@ novel-analyzer show-whole-book-imitation-readiness \
 - 当前剩余工作已经从“等待 provider 恢复”转为：
   - 决定是否基于这轮成功 evidence 更新 freeze readiness 口径
   - 决定是否把 `stable_contract_version` 从 pre-v1 往更稳定级别推进
+
+补充：
+- 当前最小真实 provider 调用已成功返回 `OK`
+- 当前 provider health 运行态已刷新为：
+  - `last_status = ok`
+  - `success_events = 7`
+  - `last_error = null`

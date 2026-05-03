@@ -260,6 +260,7 @@
 - 当前新增 `docs/whole-book-imitation-sample-coverage-matrix.md`，明确 request / readiness / error / success 样例各自的 executable regression 覆盖状态
 - 当前新增 `docs/whole-book-imitation-handoff-brief.md`，把当前完成度、唯一阻断、恢复后动作压缩成单页交接说明
 - 当前 success sample 也已补 live stable-field regression，request / readiness / error / success 四类样例现在都有更明确的自动校验覆盖
+- 当前 readiness 已反映 provider 运行态恢复为 `ok`，whole-book 线当前剩余事项已收敛为 stable 级别/治理口径判断
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
