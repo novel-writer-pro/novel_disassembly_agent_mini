@@ -405,6 +405,8 @@ def test_api_readme_mentions_whole_book_imitation_samples() -> None:
     assert "whole-book-imitation-run.error.provider-billing.sample.json" in readme
     assert "whole-book-imitation-readiness.sample.json" in readme
     assert "whole-book-imitation-integration-quickstart.md" in readme
+    assert "whole-book-imitation-sample-coverage-matrix.md" in readme
+    assert "whole-book-imitation-provider-recovery-checklist.md" in readme
     assert "whole-book integration quick path" in readme
     assert "先调 `GET /api/whole-book-imitation-readiness`" in readme
     assert 'curl "http://127.0.0.1:8000/api/whole-book-imitation-readiness' in readme

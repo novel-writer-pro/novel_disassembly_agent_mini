@@ -251,6 +251,7 @@
 - 当前 `apps/api/README.md` 已直接链接 quickstart 与 readiness sample，进一步压缩 whole-book 对接的最短路径
 - 当前 `apps/api/README.md` 已补 whole-book integration quick path，明确 readiness → run → success/error 的读取顺序
 - 当前 `apps/api/README.md` 已补 readiness / run 的 curl quick examples，入口页可直接复制调用
+- 当前 `apps/api/README.md` 也已直接链接 sample coverage matrix 与 provider recovery checklist，最浅入口已覆盖“怎么接 / 覆盖到哪 / 恢复后怎么收尾”
 - 当前新增 request sample 可执行性回归，直接用 `whole-book-imitation-run.request.sample.json` 打 API 校验样例与实现不漂移
 - 当前新增 readiness sample 可执行性回归，确保 `whole-book-imitation-readiness.sample.json` 与 live readiness endpoint 不漂移
 - 当前新增 error sample 形状回归，确保 `whole-book-imitation-run.error.provider-billing.sample.json` 与 live billing-error 返回不漂移

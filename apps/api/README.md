@@ -66,6 +66,8 @@
 - whole-book imitation 最短接入建议：
   - quickstart：`docs/whole-book-imitation-integration-quickstart.md`
   - readiness 样例：`docs/examples/whole-book-imitation-readiness.sample.json`
+  - sample coverage：`docs/whole-book-imitation-sample-coverage-matrix.md`
+  - provider recovery：`docs/whole-book-imitation-provider-recovery-checklist.md`
 
 ### whole-book integration quick path
 
