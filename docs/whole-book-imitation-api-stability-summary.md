@@ -13,6 +13,10 @@
 - CLI / export / API 三个入口已经对齐同一份 report contract
 - 但暂不宣称为完全冻结的 v1，因为后续仍可能继续补 orchestration 语义与版本字段
 
+当前显式版本字段：
+- `contract_version = whole-book-imitation.v1`
+- `stable_contract_version = whole-book-imitation-pre-v1`
+
 ---
 
 ## 2. 当前入口
@@ -37,6 +41,8 @@
 
 ## 3.1 顶层稳定字段
 
+- `contract_version`
+- `stable_contract_version`
 - `branch_id`
 - `project_title`
 - `queue`
@@ -146,11 +152,11 @@
 
 建议至少满足：
 
-1. 增加显式的 `contract_version / stable_contract_version`
-2. whole-book report 的稳定字段集合冻结
-3. API / CLI / export 三路 contract regression 长期稳定
-4. orchestration handoff 语义不再频繁变化
-5. provider-backed sandbox run 完成更多真实回归
+1. whole-book report 的稳定字段集合冻结
+2. API / CLI / export 三路 contract regression 长期稳定
+3. orchestration handoff 语义不再频繁变化
+4. provider-backed sandbox run 完成更多真实回归
+5. 如需升级到正式 v1-stable，再单独收紧增强字段范围
 
 ---
 

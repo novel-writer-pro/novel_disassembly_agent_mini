@@ -323,6 +323,8 @@ class WholeBookImitationService:
         policy_summary = self._queue_policy_summary(queue)
         dashboard_summary = self._queue_dashboard_summary(queue)
         return WholeBookImitationRunReport(
+            contract_version="whole-book-imitation.v1",
+            stable_contract_version="whole-book-imitation-pre-v1",
             branch_id=branch_id,
             project_title=plan.project_title,
             queue=queue,
@@ -724,6 +726,8 @@ class WholeBookImitationService:
         policy_summary["next_stage_focus"] = handoff_summary["next_stage_focus"]
         dashboard_summary["book_handoff_summary"] = handoff_summary
         return WholeBookImitationRunReport(
+            contract_version="whole-book-imitation.v1",
+            stable_contract_version="whole-book-imitation-pre-v1",
             branch_id=report.branch_id,
             project_title=report.project_title,
             queue=report.queue,

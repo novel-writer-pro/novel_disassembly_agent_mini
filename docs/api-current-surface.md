@@ -61,6 +61,9 @@
 - `/api/meta` 应与这里保持一致
 - `apps/api/README.md` 应把这份文档作为当前实现契约入口
 - `docs/api-contract.md` 继续保留，但仅表示未来目标契约，不应被误读为当前实现清单
+- `POST /api/whole-book-imitation-run` 当前返回：
+  - `contract_version = whole-book-imitation.v1`
+  - `stable_contract_version = whole-book-imitation-pre-v1`
 
 ## 3. 维护规则
 

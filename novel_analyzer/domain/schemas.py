@@ -944,6 +944,8 @@ class WholeBookImitationExecutedStep(BaseModel):
 class WholeBookImitationRunReport(BaseModel):
     """Dry-run or sandbox-executed report for a whole-book imitation orchestration."""
 
+    contract_version: str = Field(default="whole-book-imitation.v1")
+    stable_contract_version: str = Field(default="whole-book-imitation-pre-v1")
     branch_id: str
     project_title: str
     queue: list[WholeBookImitationQueueStep] = Field(default_factory=list)

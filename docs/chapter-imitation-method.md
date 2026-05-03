@@ -253,6 +253,8 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 
 当前输出会明确给出：
 
+- `contract_version = "whole-book-imitation.v1"`
+- `stable_contract_version = "whole-book-imitation-pre-v1"`
 - `queue`
   - `order`
   - `source_chapter_index`
@@ -313,6 +315,8 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 
 当前输出会明确给出：
 
+- `contract_version = "whole-book-imitation.v1"`
+- `stable_contract_version = "whole-book-imitation-pre-v1"`
 - `execution_mode = "sandbox_execute"`
 - `queue`
 - `executed_steps`

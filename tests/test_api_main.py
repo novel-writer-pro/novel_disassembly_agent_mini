@@ -649,6 +649,8 @@ def test_whole_book_imitation_run_endpoint_returns_contract_payload(monkeypatch,
     )
     assert status == "200 OK"
     payload = json.loads(body)
+    assert payload["contract_version"] == "whole-book-imitation.v1"
+    assert payload["stable_contract_version"] == "whole-book-imitation-pre-v1"
     assert payload["execution_mode"] == "sandbox_execute"
     assert "policy_summary" in payload
     assert "dashboard_summary" in payload

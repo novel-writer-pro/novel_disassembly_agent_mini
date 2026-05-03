@@ -372,6 +372,8 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert export_result.exit_code == 0
     assert "whole_book_imitation_run_path=" in export_result.stdout
     exported_payload = json.loads(export_path.read_text(encoding="utf-8"))
+    assert exported_payload["contract_version"] == "whole-book-imitation.v1"
+    assert exported_payload["stable_contract_version"] == "whole-book-imitation-pre-v1"
     assert exported_payload["execution_mode"] == "sandbox_execute"
     assert "policy_summary" in exported_payload
     assert "dashboard_summary" in exported_payload

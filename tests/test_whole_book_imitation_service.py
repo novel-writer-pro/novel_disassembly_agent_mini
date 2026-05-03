@@ -173,6 +173,8 @@ def test_whole_book_imitation_service_builds_run_queue(tmp_path: Path) -> None:
         assert report.queue[1].scheduling_priority <= report.queue[0].scheduling_priority
         assert report.queue[1].scheduling_reason
         assert report.policy_summary["queue_length"] == 2
+        assert report.contract_version == "whole-book-imitation.v1"
+        assert report.stable_contract_version == "whole-book-imitation-pre-v1"
         assert "priority_reason_histogram" in report.policy_summary
         assert "queue_priority_preview" in report.dashboard_summary
         assert "top_queue_priority_chapters" in report.dashboard_summary
@@ -205,6 +207,8 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
             use_llm=False,
         )
         assert report.execution_mode == "sandbox_execute"
+        assert report.contract_version == "whole-book-imitation.v1"
+        assert report.stable_contract_version == "whole-book-imitation-pre-v1"
         assert len(report.executed_steps) == 2
         assert report.final_carry_over_state is not None
         assert report.executed_steps[0].carry_over_state.generated_summary
@@ -270,6 +274,8 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
 
     assert "## 10. Whole-Book Imitation Run Report" in manifest
     assert "book_handoff_summary" in manifest
+    assert "contract_version" in manifest
+    assert "stable_contract_version" in manifest
     assert "queue_next_actions" in manifest
     assert "./examples/whole-book-imitation-run.sample.json" in docs_index
     assert "./whole-book-imitation-api-stability-summary.md" in docs_index
@@ -281,6 +287,8 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "POST /api/whole-book-imitation-run" in stability_doc
 
     assert sample["execution_mode"] == "sandbox_execute"
+    assert sample["contract_version"] == "whole-book-imitation.v1"
+    assert sample["stable_contract_version"] == "whole-book-imitation-pre-v1"
     assert "policy_summary" in sample
     assert "dashboard_summary" in sample
     assert "next_stage_focus" in sample["policy_summary"]

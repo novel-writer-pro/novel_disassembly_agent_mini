@@ -436,8 +436,14 @@ phase-2 聚合增强字段：
 - 供 agentOS 或调度器读取“下一步先修什么 / 哪几章优先”
 - 供后续 API/export 层继续冻结为稳定 contract
 
+当前显式版本标记：
+- `contract_version = whole-book-imitation.v1`
+- `stable_contract_version = whole-book-imitation-pre-v1`
+
 ### 10.1 顶层字段
 
+- `contract_version`
+- `stable_contract_version`
 - `branch_id`
 - `project_title`
 - `queue`

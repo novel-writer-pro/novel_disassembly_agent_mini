@@ -56,6 +56,9 @@
   - `POST /api/ask-branch-stream`：返回 `text/event-stream`，适合前端聊天式流式展示
 - 当前本地 WSGI 服务已改为**并发处理请求**，因此某个长拆书 / 问答请求运行时，其他读取型请求不再必然一起被卡死
 - `GET /api/meta` 当前除了兼容字段 `available_endpoints` 外，还返回 `available_endpoint_specs`（`{method, path}` 清单），自动接入或契约校验建议优先消费该字段。
+- `POST /api/whole-book-imitation-run` 当前返回显式版本标记：
+  - `contract_version=whole-book-imitation.v1`
+  - `stable_contract_version=whole-book-imitation-pre-v1`
 
 ## 多作品说明
 

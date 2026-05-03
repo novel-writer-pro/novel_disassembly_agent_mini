@@ -1,4 +1,6 @@
 {
+  "contract_version": "whole-book-imitation.v1",
+  "stable_contract_version": "whole-book-imitation-pre-v1",
   "branch_id": "branch-whole-1",
   "project_title": "测试项目",
   "queue": [
