@@ -10,3 +10,4 @@
 6. [`../../whole-book-imitation-api-stability-summary.md`](../../whole-book-imitation-api-stability-summary.md)
 7. [`../../whole-book-imitation-api-versioning.md`](../../whole-book-imitation-api-versioning.md)
 8. [`../../whole-book-imitation-api-freeze-readiness.md`](../../whole-book-imitation-api-freeze-readiness.md)
+9. [`../../whole-book-imitation-freeze-evidence-20260503.md`](../../whole-book-imitation-freeze-evidence-20260503.md)

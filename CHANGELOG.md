@@ -238,6 +238,7 @@
   - `docs/whole-book-imitation-api-versioning.md`
   - `docs/whole-book-imitation-api-freeze-readiness.md`
   用于说明 breaking-change 规则与正式 freeze 条件
+- 当前新增 `docs/whole-book-imitation-freeze-evidence-20260503.md`，记录真实 provider-backed whole-book run 已触达上游，但被 `403 billing_error / daily usage limit exceeded` 阻断
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

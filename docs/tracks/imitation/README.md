@@ -11,6 +11,7 @@
 8. [`../../whole-book-imitation-api-stability-summary.md`](../../whole-book-imitation-api-stability-summary.md)
 9. [`../../whole-book-imitation-api-versioning.md`](../../whole-book-imitation-api-versioning.md)
 10. [`../../whole-book-imitation-api-freeze-readiness.md`](../../whole-book-imitation-api-freeze-readiness.md)
+11. [`../../whole-book-imitation-freeze-evidence-20260503.md`](../../whole-book-imitation-freeze-evidence-20260503.md)
 
 当前建议理解顺序：
 - 先看方法论与输入输出

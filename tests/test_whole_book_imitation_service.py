@@ -272,6 +272,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     stability_doc = Path("docs/whole-book-imitation-api-stability-summary.md").read_text(encoding="utf-8")
     versioning_doc = Path("docs/whole-book-imitation-api-versioning.md").read_text(encoding="utf-8")
     freeze_doc = Path("docs/whole-book-imitation-api-freeze-readiness.md").read_text(encoding="utf-8")
+    freeze_evidence_doc = Path("docs/whole-book-imitation-freeze-evidence-20260503.md").read_text(encoding="utf-8")
     sample = json.loads(Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8"))
 
     assert "## 10. Whole-Book Imitation Run Report" in manifest
@@ -283,18 +284,23 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "./whole-book-imitation-api-stability-summary.md" in docs_index
     assert "./whole-book-imitation-api-versioning.md" in docs_index
     assert "./whole-book-imitation-api-freeze-readiness.md" in docs_index
+    assert "./whole-book-imitation-freeze-evidence-20260503.md" in docs_index
     assert "whole-book-imitation-run.sample.json" in track_readme
     assert "whole-book-imitation-api-stability-summary.md" in track_readme
     assert "whole-book-imitation-api-versioning.md" in track_readme
     assert "whole-book-imitation-api-freeze-readiness.md" in track_readme
+    assert "whole-book-imitation-freeze-evidence-20260503.md" in track_readme
     assert "whole-book-imitation-run.sample.json" in role_readme
     assert "whole-book-imitation-api-stability-summary.md" in integrator_readme
     assert "whole-book-imitation-api-versioning.md" in integrator_readme
     assert "whole-book-imitation-api-freeze-readiness.md" in integrator_readme
+    assert "whole-book-imitation-freeze-evidence-20260503.md" in integrator_readme
     assert "pre-v1 / system-contract-ready" in stability_doc
     assert "POST /api/whole-book-imitation-run" in stability_doc
     assert "stable_contract_version = whole-book-imitation-pre-v1" in versioning_doc
     assert "pre-v1，已具备 system-contract-ready 能力" in freeze_doc
+    assert "daily usage limit exceeded" in freeze_evidence_doc
+    assert "billing_error" in freeze_evidence_doc
 
     assert sample["execution_mode"] == "sandbox_execute"
     assert sample["contract_version"] == "whole-book-imitation.v1"

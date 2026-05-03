@@ -53,6 +53,19 @@
 
 > 已经适合接入，但还不适合承诺“后续几乎不会再动”。
 
+补充：2026-05-03 已完成一轮真实 provider-backed whole-book execute 尝试，主链已成功触达 provider，但被上游返回：
+
+- `403 Forbidden`
+- `billing_error`
+- `daily usage limit exceeded`
+
+对应证据见：
+- `docs/whole-book-imitation-freeze-evidence-20260503.md`
+
+因此当前 freeze 未完成的原因，更准确地说是：
+
+> **缺少成功完成的 provider-backed freeze evidence，而不是本地主链未跑通。**
+
 ---
 
 ## 4. 进入正式 stable freeze 的建议条件
