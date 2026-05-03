@@ -203,3 +203,5 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert report.executed_steps[0].action_queue
         assert report.executed_steps[0].policy_summary
         assert report.policy_summary["executed_step_count"] == 2
+        assert "min_overall_score" in report.policy_summary
+        assert "max_action_count" in report.policy_summary

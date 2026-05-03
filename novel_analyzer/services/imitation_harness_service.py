@@ -111,6 +111,30 @@ class HarnessControllerService:
         return ("needs_revision", "quality_iteration_required")
 
     @staticmethod
+    def _apply_actions_to_draft(
+        draft: ChapterImitationDraft,
+        *,
+        review: ChapterImitationReviewReport,
+        preflight: ChapterImitationPreflightReport,
+        actions: list[ChapterImitationHarnessAction],
+        base_reviser,
+    ) -> ChapterImitationDraft:
+        revised = base_reviser(draft, review=review)
+        action_lines = [f"[P{item.priority}|{item.severity}] {item.action_type}:{item.target}" for item in actions[:6]]
+        revise_notes = [
+            "【Harness Action Queue】",
+            *action_lines,
+        ]
+        return revised.model_copy(
+            update={
+                "risk_gate_notes": revised.risk_gate_notes + preflight.recommended_actions[:3],
+                "method_notes": revised.method_notes + [f"{item.priority}:{item.target}" for item in actions],
+                "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]],
+                "draft_text": revised.draft_text + ("\n\n" + "\n".join(revise_notes) if action_lines else ""),
+            }
+        )
+
+    @staticmethod
     def _policy_summary(
         *,
         preflight: ChapterImitationPreflightReport,
@@ -820,13 +844,12 @@ class HarnessControllerService:
             if final_verdict == "pass":
                 break
 
-            revised = self.chapter_imitation.revise_draft(draft, review=review)
-            draft = revised.model_copy(
-                update={
-                    "risk_gate_notes": revised.risk_gate_notes + preflight.recommended_actions[:2],
-                    "method_notes": revised.method_notes + [f"{item.priority}:{item.target}" for item in actions],
-                    "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]],
-                }
+            draft = self._apply_actions_to_draft(
+                draft,
+                review=review,
+                preflight=preflight,
+                actions=actions,
+                base_reviser=self.chapter_imitation.revise_draft,
             )
 
         assert final_preflight is not None

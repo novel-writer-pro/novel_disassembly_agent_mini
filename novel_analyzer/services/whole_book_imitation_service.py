@@ -200,8 +200,11 @@ class WholeBookImitationService:
             "executed_step_count": len(executed_steps),
             "highest_action_priority": highest_priority,
             "max_overall_score": max((step.overall_score for step in executed_steps), default=0),
+            "min_overall_score": min((step.overall_score for step in executed_steps), default=0),
             "risk_levels": [step.overall_risk_level for step in executed_steps],
             "stop_reasons": [step.stop_reason for step in executed_steps],
+            "max_action_count": max((len(step.action_queue) for step in executed_steps), default=0),
+            "verdicts": [str(step.policy_summary.get("final_verdict", "")) for step in executed_steps],
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
