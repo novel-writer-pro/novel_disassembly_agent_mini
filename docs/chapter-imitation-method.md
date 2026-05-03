@@ -395,6 +395,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前 whole-book dashboard 还新增 `weak_lane_priority_ranking`，用于观察弱能力族群在整书中的优先级分布
   - 当前 whole-book dashboard 还新增 `weak_lane_histogram`，用于观察四类弱能力的整体分布
   - 当前 whole-book dashboard 还新增 `weak_lane_top_actions`，用于观察弱能力在整书里最靠前的修复动作
+  - 当前 whole-book dashboard 还新增 `top_priority_summary / top_risk_summary`，用于把弱能力信号直接并入整书级优先级与风险汇总
   - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 
 这意味着系统已经从：

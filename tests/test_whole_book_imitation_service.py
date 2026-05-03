@@ -230,3 +230,5 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "family_priority_ranking" in report.dashboard_summary
         assert "weak_lane_histogram" in report.dashboard_summary
         assert "weak_lane_top_actions" in report.dashboard_summary
+        assert "top_priority_summary" in report.dashboard_summary
+        assert "top_risk_summary" in report.dashboard_summary

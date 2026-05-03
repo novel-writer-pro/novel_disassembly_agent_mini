@@ -375,6 +375,50 @@ class WholeBookImitationService:
                 for action in step.action_queue
                 if any(token in action.action_type for token in ("rhythm", "reader", "dialogue", "research"))
             ][:8],
+            "top_priority_summary": {
+                "chapter_indexes": [item["source_chapter_index"] for item in policy_summary["book_priority_ranking"][:3]],
+                "weak_lane_chapters": [
+                    item["source_chapter_index"]
+                    for item in sorted(
+                        [
+                            {
+                                "source_chapter_index": step.source_chapter_index,
+                                "priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                                "weak_family_count": len(
+                                    [
+                                        family
+                                        for family in step.strategy_input.get("prioritized_families", [])
+                                        if family in {"rhythm", "reader", "dialogue", "research"}
+                                    ]
+                                ),
+                            }
+                            for step in executed_steps
+                        ],
+                        key=lambda item: (item["priority"], -item["weak_family_count"], item["source_chapter_index"]),
+                    )[:3]
+                ],
+            },
+            "top_risk_summary": {
+                "chapter_indexes": [
+                    step.source_chapter_index
+                    for step in executed_steps
+                    if step.overall_risk_level in {"medium", "high"}
+                ][:5],
+                "weak_lane_actions": [
+                    item
+                    for item in [
+                        {
+                            "source_chapter_index": step.source_chapter_index,
+                            "action_type": action.action_type,
+                            "severity": action.severity,
+                        }
+                        for step in executed_steps
+                        for action in step.action_queue
+                        if action.severity in {"high", "medium"}
+                        and any(token in action.action_type for token in ("rhythm", "reader", "dialogue", "research"))
+                    ][:8]
+                ],
+            },
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
