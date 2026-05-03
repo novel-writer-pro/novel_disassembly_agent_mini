@@ -283,6 +283,8 @@ class WholeBookImitationService:
                 "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
                 "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
                 "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
+                "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
+                "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
             },
             "cluster_buckets": {
                 "critical": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 1],
@@ -298,6 +300,8 @@ class WholeBookImitationService:
                         "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
                         "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
                         "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
+                        "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
+                        "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
                         "rhythm": sum(1 for step in executed_steps for action in step.action_queue if "rhythm" in action.action_type),
                         "reader": sum(1 for step in executed_steps for action in step.action_queue if "reader" in action.action_type),
                     }.items()

@@ -75,6 +75,18 @@ class HarnessControllerService:
             ["reader_profile", "engagement_score", "concerns", "recommended_actions"],
         ),
         (
+            "dialogue-designer",
+            "分析对话设计、说话人区分与信息效率。",
+            ["draft_text", "chapter_goal", "relationship_context"],
+            ["issues", "speaker_hints", "efficiency_notes", "recommended_actions"],
+        ),
+        (
+            "research-pack",
+            "补 setting / rule / audience expectation 研究提示。",
+            ["chapter_goal", "world_context", "topic_hints"],
+            ["setting_notes", "rule_reminders", "audience_expectation_notes", "caution_points"],
+        ),
+        (
             "draft-reviser",
             "按 harness 指定问题做局部修订，不自由扩散。",
             ["draft_text", "targeted_actions"],
@@ -585,6 +597,59 @@ class HarnessControllerService:
                     )
                 )
 
+        dialogue_output = outputs.get("dialogue-designer", {})
+        if isinstance(dialogue_output, dict):
+            issues = [str(item) for item in dialogue_output.get("issues", []) if str(item).strip()]
+            actions = [str(item) for item in dialogue_output.get("recommended_actions", []) if str(item).strip()]
+            if issues:
+                recommended_actions.extend(item for item in actions if item not in recommended_actions)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="dialogue_designer",
+                        status="warn",
+                        severity="medium",
+                        priority=3,
+                        notes=issues[:3],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="dialogue_designer",
+                        status="pass",
+                        severity="low",
+                        priority=4,
+                        notes=[f"speaker_hints={len(dialogue_output.get('speaker_hints', []))}"],
+                    )
+                )
+
+        research_output = outputs.get("research-pack", {})
+        if isinstance(research_output, dict):
+            cautions = [str(item) for item in research_output.get("caution_points", []) if str(item).strip()]
+            audience_notes = [str(item) for item in research_output.get("audience_expectation_notes", []) if str(item).strip()]
+            if cautions or audience_notes:
+                recommended_actions.extend(item for item in cautions[:2] if item not in recommended_actions)
+                recommended_actions.extend(item for item in audience_notes[:2] if item not in recommended_actions)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="research_pack_review",
+                        status="warn",
+                        severity="medium",
+                        priority=3,
+                        notes=(cautions + audience_notes)[:3],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="research_pack_review",
+                        status="pass",
+                        severity="low",
+                        priority=4,
+                        notes=["research pack 未提示额外 caution。"],
+                    )
+                )
+
         if risk_level := getattr(outputs.get("_risk_meta", {}), "get", lambda *_: None)("overall_risk_level"):
             severity, priority = self._severity_priority("warn", risk_level=str(risk_level))
             checks.append(
@@ -698,6 +763,23 @@ class HarnessControllerService:
                     ensure_ascii=False,
                     indent=2,
                 ),
+            },
+            "dialogue-designer": {
+                "draft_text": draft.draft_text,
+                "chapter_goal": target_goal,
+                "relationship_context_json": json.dumps(plan.soft_constraints[:4], ensure_ascii=False, indent=2),
+            },
+            "research-pack": {
+                "chapter_goal": target_goal,
+                "world_context_json": json.dumps(
+                    {
+                        "world_rules": plan.hard_constraints[:4],
+                        "continuity_memory": plan.soft_constraints[:4],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                "topic_hints_json": json.dumps(plan.risk_focus[:3], ensure_ascii=False, indent=2),
             },
             "chapter-intake": {
                 "chapter_index": str(source_chapter_index),
@@ -869,6 +951,28 @@ class HarnessControllerService:
         if rhythm_output["hook_strength"] < 0.6:
             reader_output["concerns"].append("reader_hook_weak")
             reader_output["recommended_actions"].append("增强章尾期待感，避免读者觉得本章平收。")
+        dialogue_output = {
+            "issues": [],
+            "speaker_hints": planner_context.active_characters[:3],
+            "efficiency_notes": [],
+            "recommended_actions": [],
+        }
+        if "“" not in draft.draft_text and '"' not in draft.draft_text:
+            dialogue_output["issues"].append("dialogue_presence_thin")
+            dialogue_output["recommended_actions"].append("补少量高信息密度对话，增强人物辨识度。")
+        if not planner_context.relationship_state_notes:
+            dialogue_output["issues"].append("speaker_relation_context_thin")
+            dialogue_output["recommended_actions"].append("补说话人态度差异，避免对话无关系层次。")
+        research_output = {
+            "setting_notes": planner_context.world_rules[:3],
+            "rule_reminders": planner_context.world_rules[:3],
+            "audience_expectation_notes": [],
+            "caution_points": [],
+        }
+        if not planner_context.world_rules:
+            research_output["caution_points"].append("当前缺少明确世界规则提醒，易出现设定越界。")
+        if "hook_weak" in rhythm_output["issues"]:
+            research_output["audience_expectation_notes"].append("题材读者通常期待章尾有明确续读驱动力。")
         return {
             "chapter-intake": chapter_intake_output,
             "chapter-fact-extractor": fact_output,
@@ -876,6 +980,8 @@ class HarnessControllerService:
             "draft-self-check": self_check_output,
             "rhythm-analyzer": rhythm_output,
             "reader-sim-review": reader_output,
+            "dialogue-designer": dialogue_output,
+            "research-pack": research_output,
         }
 
     def run_harness(
@@ -1177,6 +1283,26 @@ class HarnessControllerService:
                     severity="medium",
                     priority=3,
                     instructions=["补清读者易卡住的信息点，增强代入感与续读欲。"],
+                )
+            )
+        if "对话" in " ".join(preflight.recommended_actions) or "说话人" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_dialogue_design",
+                    target="dialogue",
+                    severity="medium",
+                    priority=3,
+                    instructions=["补充说话人区分与高信息密度对话。"],
+                )
+            )
+        if "世界规则提醒" in " ".join(preflight.recommended_actions) or "题材读者" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_research_alignment",
+                    target="research_pack",
+                    severity="medium",
+                    priority=3,
+                    instructions=["补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"],
                 )
             )
         if "章尾钩子" in " ".join(preflight.recommended_actions):

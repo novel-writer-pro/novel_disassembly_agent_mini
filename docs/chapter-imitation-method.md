@@ -389,6 +389,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前 whole-book 层进一步新增 `strategy_input / dashboard_summary`，用于结构化表达跨章节策略反馈与总览面板
   - 当前 `strategy_input` 已开始进入 chapter structured constraint 层，dashboard 也新增 `issue_family_histogram / cluster_buckets`
   - 当前还进一步把 rhythm / reader 两类弱能力接入 harness structured outputs，并新增 `issue_family_ranking`
+  - 当前 dialogue / research 两类弱能力也已经开始进入 harness preflight / routing，并在 dashboard taxonomy 中占位
 
 这意味着系统已经从：
 

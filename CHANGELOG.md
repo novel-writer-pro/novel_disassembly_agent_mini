@@ -209,6 +209,7 @@
 - 当前 whole-book 层进一步新增 `strategy_input / dashboard_summary`，用于结构化表达跨章节策略反馈与总览面板
 - 当前 `strategy_input` 已开始进入 chapter structured constraint 层，dashboard 也新增 `issue_family_histogram / cluster_buckets`
 - 当前还继续把 rhythm / reader 两类弱能力接入 harness structured outputs，并新增 `issue_family_ranking`
+- 当前 dialogue / research 两类弱能力也开始进入 harness preflight / routing，并补到 dashboard taxonomy
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

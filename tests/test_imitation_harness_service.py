@@ -465,6 +465,60 @@ def test_harness_actions_include_rhythm_and_reader_repairs(tmp_path: Path) -> No
         assert "repair_reader_engagement" in action_types
 
 
+def test_harness_actions_include_dialogue_and_research_repairs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        preflight = service.preflight_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+            skill_outputs={
+                "dialogue-designer": {
+                    "issues": ["dialogue_presence_thin"],
+                    "speaker_hints": [],
+                    "efficiency_notes": [],
+                    "recommended_actions": ["补一点人物对话，增强辨识度。"],
+                },
+                "research-pack": {
+                    "setting_notes": [],
+                    "rule_reminders": [],
+                    "audience_expectation_notes": ["题材读者期待更明确钩子。"],
+                    "caution_points": ["世界规则提醒不足。"],
+                },
+            },
+        )
+        actions = service._recommended_actions(  # noqa: SLF001
+            preflight=preflight,
+            review=service.chapter_imitation.review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+            gate=service.chapter_imitation.gate_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+            risk=service.chapter_imitation.risk_review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+        )
+        action_types = {item.action_type for item in actions}
+        assert "repair_dialogue_design" in action_types
+        assert "repair_research_alignment" in action_types
+
+
 def test_harness_actions_include_relation_and_rule_evidence_repairs(tmp_path: Path) -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
