@@ -7,3 +7,4 @@
 3. [`../../system-review-consumption-mapping.md`](../../system-review-consumption-mapping.md)
 4. [`../../system-review-display-rules.md`](../../system-review-display-rules.md)
 5. [`../../system-review-integration-checklist.md`](../../system-review-integration-checklist.md)
+6. [`../../whole-book-imitation-api-stability-summary.md`](../../whole-book-imitation-api-stability-summary.md)
