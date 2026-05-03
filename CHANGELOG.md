@@ -156,6 +156,25 @@
 
 ## 2026-05-03
 
+### 仿写/续写全能力矩阵文档补齐
+- 新增 `docs/chapter-imitation-capability-matrix.md`
+- 将仿写/续写能力拆成：
+  - 风控审查
+  - 知识提炼
+  - 章节规划
+  - whole-book 编排
+  - 节奏分析
+  - 对话设计
+  - 文风修辞
+  - 多线叙事
+  - 资料研究
+  - 模拟读者评审
+- 同步标注当前覆盖度、现状、后续优先级，并接入：
+  - `docs/chapter-imitation-method.md`
+  - `docs/architecture/chapter-imitation-harness-architecture.md`
+  - `docs/README.md`
+- 目的：把“我们有没有考虑这些能力、哪些已经利用充分、哪些还没做强”收口为结构化文档，方便后续持续建设
+
 ### 仿写 harness / preflight / local skill contracts 第一版落地
 - 新增 `novel_analyzer/services/imitation_harness_service.py`
 - 新增第一版：

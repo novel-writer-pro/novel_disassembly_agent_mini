@@ -22,6 +22,7 @@
 对应的详细架构文档见：
 
 - `docs/architecture/chapter-imitation-harness-architecture.md`
+- `docs/chapter-imitation-capability-matrix.md`
 
 ---
 

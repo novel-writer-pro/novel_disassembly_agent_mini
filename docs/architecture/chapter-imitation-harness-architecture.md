@@ -419,3 +419,7 @@ RAG / retrieval 在这里主要服务：
 而是：
 
 > **把仿写做成：RAG 约束输入 + skills 分阶段生产 + harness agent 定向修复 + risk audit 最终门控 的受控生成系统。**
+
+补充能力盘点与建设顺序见：
+
+- `docs/chapter-imitation-capability-matrix.md`
