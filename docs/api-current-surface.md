@@ -66,6 +66,11 @@
   - `contract_version = whole-book-imitation.v1`
   - `stable_contract_version = whole-book-imitation-pre-v1`
   - 请求样例：`docs/examples/whole-book-imitation-run.request.sample.json`
+  - provider 配额类错误会返回结构化错误字段：
+    - `error_type`
+    - `retryable`
+    - `upstream_status`
+    - `error_code`
 - `GET /api/whole-book-imitation-readiness` 当前返回：
   - `contract_version = whole-book-imitation-readiness.v1`
   - `stable_contract_version = whole-book-imitation-readiness-pre-v1`

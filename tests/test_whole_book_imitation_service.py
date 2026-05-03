@@ -275,6 +275,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     freeze_evidence_doc = Path("docs/whole-book-imitation-freeze-evidence-20260503.md").read_text(encoding="utf-8")
     readiness_sample = json.loads(Path("docs/examples/whole-book-imitation-readiness.sample.json").read_text(encoding="utf-8"))
     request_sample = json.loads(Path("docs/examples/whole-book-imitation-run.request.sample.json").read_text(encoding="utf-8"))
+    error_sample = json.loads(Path("docs/examples/whole-book-imitation-run.error.provider-billing.sample.json").read_text(encoding="utf-8"))
     sample = json.loads(Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8"))
 
     assert "## 10. Whole-Book Imitation Run Report" in manifest
@@ -289,6 +290,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "./whole-book-imitation-freeze-evidence-20260503.md" in docs_index
     assert "./examples/whole-book-imitation-readiness.sample.json" in docs_index
     assert "./examples/whole-book-imitation-run.request.sample.json" in docs_index
+    assert "./examples/whole-book-imitation-run.error.provider-billing.sample.json" in docs_index
     assert "whole-book-imitation-run.sample.json" in track_readme
     assert "whole-book-imitation-api-stability-summary.md" in track_readme
     assert "whole-book-imitation-api-versioning.md" in track_readme
@@ -296,6 +298,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "whole-book-imitation-freeze-evidence-20260503.md" in track_readme
     assert "whole-book-imitation-readiness.sample.json" in track_readme
     assert "whole-book-imitation-run.request.sample.json" in track_readme
+    assert "whole-book-imitation-run.error.provider-billing.sample.json" in track_readme
     assert "whole-book-imitation-run.sample.json" in role_readme
     assert "whole-book-imitation-api-stability-summary.md" in integrator_readme
     assert "whole-book-imitation-api-versioning.md" in integrator_readme
@@ -303,6 +306,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "whole-book-imitation-freeze-evidence-20260503.md" in integrator_readme
     assert "whole-book-imitation-readiness.sample.json" in integrator_readme
     assert "whole-book-imitation-run.request.sample.json" in integrator_readme
+    assert "whole-book-imitation-run.error.provider-billing.sample.json" in integrator_readme
     assert "pre-v1 / system-contract-ready" in stability_doc
     assert "POST /api/whole-book-imitation-run" in stability_doc
     assert "stable_contract_version = whole-book-imitation-pre-v1" in versioning_doc
@@ -315,6 +319,9 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert request_sample["execute"] is True
     assert request_sample["use_llm"] is True
     assert len(request_sample["chapter_specs"]) >= 2
+    assert error_sample["error_code"] == "provider_billing_limited"
+    assert error_sample["retryable"] is False
+    assert error_sample["upstream_status"] == 403
 
     assert sample["execution_mode"] == "sandbox_execute"
     assert sample["contract_version"] == "whole-book-imitation.v1"

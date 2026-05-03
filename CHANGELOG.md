@@ -244,6 +244,7 @@
 - 当前新增 `GET /api/whole-book-imitation-readiness`，system/agentOS 可直接读取 whole-book freeze readiness 信息而不依赖 CLI
 - 当前新增 `docs/examples/whole-book-imitation-readiness.sample.json`，用于对接方直接参考 readiness payload
 - 当前新增 `docs/examples/whole-book-imitation-run.request.sample.json`，用于对接方直接参考 whole-book run API 请求体
+- 当前新增 `docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`，用于对接方直接参考 provider 配额阻断时的结构化错误返回
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

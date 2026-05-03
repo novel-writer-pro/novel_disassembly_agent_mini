@@ -388,6 +388,34 @@ def _whole_book_readiness_payload(
     }
 
 
+def _whole_book_run_error_payload(exc: Exception) -> tuple[str, dict[str, object]]:
+    message = str(exc)
+    lowered = message.lower()
+    payload: dict[str, object] = {
+        "error": message,
+        "error_type": type(exc).__name__,
+        "retryable": False,
+        "upstream_status": None,
+        "error_code": "whole_book_run_failed",
+    }
+    status = "500 Internal Server Error"
+    if "daily usage limit exceeded" in lowered or "billing_error" in lowered:
+        payload["error_code"] = "provider_billing_limited"
+        payload["retryable"] = False
+        payload["upstream_status"] = 403
+        status = "503 Service Unavailable"
+    elif "bad gateway" in lowered or "502" in lowered:
+        payload["error_code"] = "provider_bad_gateway"
+        payload["retryable"] = True
+        payload["upstream_status"] = 502
+        status = "503 Service Unavailable"
+    elif "timed out" in lowered or "timeout" in lowered:
+        payload["error_code"] = "provider_timeout"
+        payload["retryable"] = True
+        status = "503 Service Unavailable"
+    return status, payload
+
+
 def _apply_review_filters(
     items: list[dict[str, object]],
     filters: dict[str, str],
@@ -2252,10 +2280,11 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     )
                 )
         except Exception as exc:  # noqa: BLE001
+            status, payload = _whole_book_run_error_payload(exc)
             return _response(
                 start_response,
-                status="500 Internal Server Error",
-                payload={"error": str(exc)},
+                status=status,
+                payload=payload,
             )
         return _response(start_response, status="200 OK", payload=report.model_dump(mode="json"))
 

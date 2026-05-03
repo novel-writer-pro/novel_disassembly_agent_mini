@@ -14,6 +14,7 @@
 11. [`../../whole-book-imitation-freeze-evidence-20260503.md`](../../whole-book-imitation-freeze-evidence-20260503.md)
 12. [`../../examples/whole-book-imitation-readiness.sample.json`](../../examples/whole-book-imitation-readiness.sample.json)
 13. [`../../examples/whole-book-imitation-run.request.sample.json`](../../examples/whole-book-imitation-run.request.sample.json)
+14. [`../../examples/whole-book-imitation-run.error.provider-billing.sample.json`](../../examples/whole-book-imitation-run.error.provider-billing.sample.json)
 
 当前建议理解顺序：
 - 先看方法论与输入输出
