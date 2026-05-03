@@ -374,6 +374,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 输出 `skill_contracts / rounds / final_preflight / final_verdict / stop_reason`
   - 当前 round 内已开始暴露 `skill_prompt_previews`，用于观察 harness 实际消费的本地 prompt assets
   - 当前 round 也开始暴露 `skill_outputs`，用于证明 harness 已开始消费结构化本地 skill 输出，而不只是 prompt 预览
+  - 当前 preflight / action routing 已开始消费这些 `skill_outputs`，例如 constraint repair / continuity memory repair
 
 这意味着系统已经从：
 

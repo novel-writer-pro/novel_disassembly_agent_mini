@@ -228,3 +228,65 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert "draft-self-check" in report.rounds[0].skill_prompt_previews
         assert report.rounds[0].skill_outputs
         assert "imitation-constraint-pack" in report.rounds[0].skill_outputs
+
+
+def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        actions = service._recommended_actions(  # noqa: SLF001
+            preflight=service.preflight_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ).model_copy(update={"draft_text": "接下来"}),
+                skill_outputs={
+                    "imitation-constraint-pack": {
+                        "hard_constraints": [],
+                        "soft_constraints": [],
+                        "forbidden_transformations": [],
+                        "continuity_memory": [],
+                    },
+                    "draft-self-check": {
+                        "blocking_issues": ["missing_forbidden_transformations", "continuity_memory_thin"],
+                        "recommended_actions": ["补充 continuity memory。"],
+                    },
+                },
+            ),
+            review=service.chapter_imitation.review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ),
+            ),
+            gate=service.chapter_imitation.gate_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ),
+            ),
+            risk=service.chapter_imitation.risk_review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ),
+            ),
+        )
+        action_types = {item.action_type for item in actions}
+        assert "repair_constraints" in action_types
+        assert "repair_continuity_memory" in action_types

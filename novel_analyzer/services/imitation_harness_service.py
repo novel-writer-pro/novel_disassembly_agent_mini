@@ -385,9 +385,15 @@ class HarnessControllerService:
         if len(draft.draft_text) < 180:
             self_check_output["blocking_issues"].append("draft_too_short_for_gate")
             self_check_output["recommended_actions"].append("补足中段阻力与章尾钩子。")
+        if not constraint_output["forbidden_transformations"]:
+            self_check_output["blocking_issues"].append("missing_forbidden_transformations")
+            self_check_output["recommended_actions"].append("补齐换皮与越界禁止项。")
         if "接下来" not in draft.draft_text and "下一步" not in draft.draft_text:
             self_check_output["likely_gate_failures"].append("ending_hook_presence")
             self_check_output["recommended_actions"].append("补充明确的下一步钩子。")
+        if len(constraint_output["continuity_memory"]) < 2:
+            self_check_output["likely_gate_failures"].append("continuity_memory_thin")
+            self_check_output["recommended_actions"].append("补充关系/线程/规则 continuity memory。")
         if plan.risk_focus:
             self_check_output["self_notes"].extend(plan.risk_focus[:2])
         return {
@@ -548,6 +554,14 @@ class HarnessControllerService:
                     instructions=["补足中段阻力、行动选择与章尾钩子承接。"],
                 )
             )
+        if "missing_forbidden_transformations" in preflight.blocking_issues:
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_constraints",
+                    target="constraint_pack",
+                    instructions=["补齐 forbidden_transformations，避免换皮越界与原文复刻。"],
+                )
+            )
         if gate.needs_human_review:
             actions.append(
                 ChapterImitationHarnessAction(
@@ -562,6 +576,17 @@ class HarnessControllerService:
                     action_type="risk_revision",
                     target="risk_gate",
                     instructions=risk.top_risk_summaries[:2] or risk.coverage_gaps[:2],
+                )
+            )
+        if (
+            "continuity_memory_thin" in " ".join(preflight.recommended_actions)
+            or any("continuity_memory" in issue for issue in preflight.blocking_issues)
+        ):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_continuity_memory",
+                    target="continuity_memory",
+                    instructions=["补充关系推进、未解线程与规则约束的 continuity memory。"],
                 )
             )
         if not actions:
