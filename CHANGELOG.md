@@ -249,6 +249,7 @@
 - 当前 `apps/api/README.md` 已直接链接 whole-book run 的 request / success / error 三类样例，方便 system 对接方快速查阅
 - 当前新增 `docs/whole-book-imitation-integration-quickstart.md`，把 readiness / run / success / error 四类接入路径收口到一页
 - 当前 `apps/api/README.md` 已直接链接 quickstart 与 readiness sample，进一步压缩 whole-book 对接的最短路径
+- 当前 `apps/api/README.md` 已补 whole-book integration quick path，明确 readiness → run → success/error 的读取顺序
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

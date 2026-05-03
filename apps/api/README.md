@@ -67,6 +67,22 @@
   - quickstart：`docs/whole-book-imitation-integration-quickstart.md`
   - readiness 样例：`docs/examples/whole-book-imitation-readiness.sample.json`
 
+### whole-book integration quick path
+
+推荐顺序：
+1. 先调 `GET /api/whole-book-imitation-readiness`
+2. 确认：
+   - `provider.api_key_present=true`
+   - `branch_candidate.chapter_analysis_count >= 2`
+   - `provider.provider_health.last_status` 不是明显异常
+3. 再调 `POST /api/whole-book-imitation-run`
+4. 成功时读：
+   - `policy_summary.next_stage_focus`
+   - `dashboard_summary.book_handoff_summary`
+5. 失败时读：
+   - `error_code`
+   - `retryable`
+
 ## 多作品说明
 
 当前后端数据模型本身就支持：
