@@ -839,6 +839,8 @@ class ChapterImitationHarnessReport(BaseModel):
     rounds: list[ChapterImitationHarnessRound] = Field(default_factory=list)
     final_draft: ChapterImitationDraft
     final_preflight: ChapterImitationPreflightReport
+    action_queue: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    policy_summary: dict[str, object] = Field(default_factory=dict)
     final_verdict: str = Field(default="needs_revision")
     stop_reason: str
 

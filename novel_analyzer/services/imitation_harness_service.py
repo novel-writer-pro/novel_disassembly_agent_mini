@@ -110,6 +110,38 @@ class HarnessControllerService:
             return ("needs_revision", "gate_revision_required")
         return ("needs_revision", "quality_iteration_required")
 
+    @staticmethod
+    def _policy_summary(
+        *,
+        preflight: ChapterImitationPreflightReport,
+        gate: ChapterImitationGateReport,
+        risk: ChapterImitationRiskReport,
+        score: ChapterImitationScoreReport,
+        actions: list[ChapterImitationHarnessAction],
+        final_verdict: str,
+        stop_reason: str,
+    ) -> dict[str, object]:
+        highest_priority = min((item.priority for item in actions), default=4)
+        highest_severity = "low"
+        for item in actions:
+            if item.severity == "high":
+                highest_severity = "high"
+                break
+            if item.severity == "medium":
+                highest_severity = "medium"
+        return {
+            "final_verdict": final_verdict,
+            "stop_reason": stop_reason,
+            "highest_action_priority": highest_priority,
+            "highest_action_severity": highest_severity,
+            "action_count": len(actions),
+            "blocking_issue_count": len(preflight.blocking_issues),
+            "recommended_action_count": len(preflight.recommended_actions),
+            "gate_verdict": gate.overall_verdict,
+            "risk_overall_level": risk.overall_risk_level,
+            "overall_score": score.overall_score,
+        }
+
     def list_skill_contracts(self) -> list[ChapterImitationSkillContract]:
         root = Path(self.settings.skills_dir)
         contracts: list[ChapterImitationSkillContract] = []
@@ -691,6 +723,8 @@ class HarnessControllerService:
         stop_reason = "max_rounds_reached"
         final_preflight: ChapterImitationPreflightReport | None = None
         final_verdict = "needs_revision"
+        final_actions: list[ChapterImitationHarnessAction] = []
+        final_policy_summary: dict[str, object] = {}
 
         for round_index in range(1, max_rounds + 1):
             comparison = self.chapter_imitation.compare_with_source(
@@ -773,6 +807,16 @@ class HarnessControllerService:
                 score=score,
                 actions=actions,
             )
+            final_actions = actions
+            final_policy_summary = self._policy_summary(
+                preflight=preflight,
+                gate=gate,
+                risk=risk,
+                score=score,
+                actions=actions,
+                final_verdict=final_verdict,
+                stop_reason=stop_reason,
+            )
             if final_verdict == "pass":
                 break
 
@@ -793,6 +837,8 @@ class HarnessControllerService:
             rounds=rounds,
             final_draft=draft,
             final_preflight=final_preflight,
+            action_queue=final_actions,
+            policy_summary=final_policy_summary,
             final_verdict=final_verdict,
             stop_reason=stop_reason,
         )

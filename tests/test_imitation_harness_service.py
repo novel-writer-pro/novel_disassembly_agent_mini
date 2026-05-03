@@ -233,6 +233,9 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert "imitation-constraint-pack" in report.rounds[0].skill_outputs
         assert "relationship_watchpoints" in report.rounds[0].skill_outputs["imitation-constraint-pack"]
         assert "likely_gate_failures" in report.rounds[0].skill_outputs["draft-self-check"]
+        assert report.action_queue
+        assert report.policy_summary
+        assert "highest_action_priority" in report.policy_summary
 
 
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:
@@ -519,3 +522,13 @@ def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_p
         )
         assert final_verdict == "needs_revision"
         assert stop_reason in {"critical_action_required", "gate_revision_required", "risk_revision_required"}
+        summary = service._policy_summary(  # noqa: SLF001
+            preflight=preflight,
+            gate=gate,
+            risk=risk,
+            score=score,
+            actions=actions,
+            final_verdict=final_verdict,
+            stop_reason=stop_reason,
+        )
+        assert summary["highest_action_priority"] == min(item.priority for item in actions)
