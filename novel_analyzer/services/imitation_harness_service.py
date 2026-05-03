@@ -1324,7 +1324,7 @@ class HarnessControllerService:
                     action_type="repair_rhythm",
                     target="rhythm",
                     severity="medium",
-                    priority=2,
+                    priority=1 if any(item.check_name == "rhythm_analysis" and item.priority <= 2 for item in preflight.checks) else 2,
                     instructions=["补足节奏起伏与章尾驱动力，避免章节推进过平。"],
                 )
             )
@@ -1334,7 +1334,7 @@ class HarnessControllerService:
                     action_type="repair_reader_engagement",
                     target="reader_engagement",
                     severity="medium",
-                    priority=3,
+                    priority=2 if any(item.check_name == "reader_sim_review" and item.priority <= 2 for item in preflight.checks) else 3,
                     instructions=["补清读者易卡住的信息点，增强代入感与续读欲。"],
                 )
             )
@@ -1344,7 +1344,7 @@ class HarnessControllerService:
                     action_type="repair_dialogue_design",
                     target="dialogue",
                     severity="medium",
-                    priority=3,
+                    priority=2 if any(item.check_name == "dialogue_designer" and item.priority <= 2 for item in preflight.checks) else 3,
                     instructions=["补充说话人区分与高信息密度对话。"],
                 )
             )
@@ -1354,7 +1354,7 @@ class HarnessControllerService:
                     action_type="repair_research_alignment",
                     target="research_pack",
                     severity="medium",
-                    priority=3,
+                    priority=2 if any(item.check_name == "research_pack_review" and item.priority <= 2 for item in preflight.checks) else 3,
                     instructions=["补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"],
                 )
             )

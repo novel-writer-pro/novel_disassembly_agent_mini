@@ -226,4 +226,5 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "dialogue" in report.dashboard_summary["issue_family_histogram"]
         assert "research" in report.dashboard_summary["issue_family_histogram"]
         assert "weak_lane_priority_ranking" in report.dashboard_summary
+        assert "top_weak_lane_chapters" in report.dashboard_summary
         assert "family_priority_ranking" in report.dashboard_summary

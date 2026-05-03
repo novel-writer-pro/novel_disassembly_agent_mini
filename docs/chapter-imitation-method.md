@@ -393,6 +393,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前 strategy_input 还开始携带 `prioritized_families`，并进一步注入 chapter constraint/self-check 层
   - 当前 prioritized family 还会进一步影响 rhythm / reader / dialogue / research 四类弱能力输出的重点修复方向
   - 当前 whole-book dashboard 还新增 `weak_lane_priority_ranking`，用于观察弱能力族群在整书中的优先级分布
+  - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 
 这意味着系统已经从：
 
