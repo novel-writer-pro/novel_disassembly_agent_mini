@@ -89,6 +89,8 @@ class WholeBookImitationService:
             + weak_families[:2]
             + high_risk_families[:2]
         ))
+        merged["top_priority_families"] = weak_families[:4]
+        merged["high_risk_families"] = high_risk_families[:4]
         if weak_families or high_risk_families:
             merged["recommended_actions"] = list(dict.fromkeys(
                 [str(item) for item in strategy_input.get("recommended_actions", []) if str(item).strip()]
@@ -240,6 +242,12 @@ class WholeBookImitationService:
             top_families = strategy_input.get("prioritized_families", [])
             if isinstance(top_families, list) and top_families:
                 target_goal = f"{target_goal}｜重点关注能力族：{'、'.join(top_families[:2])}"
+            top_priority_families = strategy_input.get("top_priority_families", [])
+            if isinstance(top_priority_families, list) and top_priority_families:
+                target_goal = f"{target_goal}｜优先能力摘要：{'、'.join(top_priority_families[:2])}"
+            high_risk_families = strategy_input.get("high_risk_families", [])
+            if isinstance(high_risk_families, list) and high_risk_families:
+                target_goal = f"{target_goal}｜风险能力摘要：{'、'.join(high_risk_families[:2])}"
             if int(strategy_input.get("priority_bias", 4) or 4) <= 2:
                 target_goal = f"{target_goal}｜本章需优先响应上一章高优先级问题"
             if str(strategy_input.get("risk_bias", "low")) in {"medium", "high"}:
@@ -370,6 +378,8 @@ class WholeBookImitationService:
                     "source_chapter_index": step.source_chapter_index,
                     "prioritized_targets": step.strategy_input.get("prioritized_targets", []),
                     "prioritized_families": step.strategy_input.get("prioritized_families", []),
+                    "top_priority_families": step.strategy_input.get("top_priority_families", []),
+                    "high_risk_families": step.strategy_input.get("high_risk_families", []),
                 }
                 for step in executed_steps
             ],

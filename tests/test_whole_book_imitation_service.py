@@ -217,10 +217,13 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert ordered
         assert report.executed_steps[1].strategy_input.get("prioritized_targets", [])
         assert report.executed_steps[1].strategy_input.get("prioritized_families", [])
+        assert report.executed_steps[1].strategy_input.get("top_priority_families", []) is not None
+        assert report.executed_steps[1].strategy_input.get("high_risk_families", []) is not None
         assert report.executed_steps[1].strategy_input.get("recommended_actions", [])
         assert report.dashboard_summary["chapter_count"] == 2
         assert "highest_priority_chapters" in report.dashboard_summary
         assert "strategy_targets" in report.dashboard_summary
+        assert "top_priority_families" in report.dashboard_summary["strategy_targets"][0] or report.dashboard_summary["strategy_targets"][1]["top_priority_families"] is not None
         assert "issue_family_histogram" in report.dashboard_summary
         assert "cluster_buckets" in report.dashboard_summary
         assert "issue_family_ranking" in report.dashboard_summary
