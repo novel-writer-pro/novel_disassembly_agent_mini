@@ -391,6 +391,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前还进一步把 rhythm / reader 两类弱能力接入 harness structured outputs，并新增 `issue_family_ranking`
   - 当前 dialogue / research 两类弱能力也已经开始进入 harness preflight / routing，并在 dashboard taxonomy 中占位
   - 当前 strategy_input 还开始携带 `prioritized_families`，并进一步注入 chapter constraint/self-check 层
+  - 当前 prioritized family 还会进一步影响 rhythm / reader / dialogue / research 四类弱能力输出的重点修复方向
 
 这意味着系统已经从：
 

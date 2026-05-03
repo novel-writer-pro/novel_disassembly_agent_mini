@@ -261,7 +261,7 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
             draft=draft,
             strategy_input={
                 "prioritized_targets": ["relationship_transition", "world_rule_support"],
-                "prioritized_families": ["relationship", "rule"],
+                "prioritized_families": ["relationship", "rule", "dialogue", "research"],
                 "blocking_issues": ["gate_verdict_requires_revision"],
                 "recommended_actions": ["补足关系与规则说明。"],
             },
@@ -270,6 +270,8 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
         self_check_output = outputs["draft-self-check"]
         rhythm_output = outputs["rhythm-analyzer"]
         reader_output = outputs["reader-sim-review"]
+        dialogue_output = outputs["dialogue-designer"]
+        research_output = outputs["research-pack"]
         assert "relationship_transition" in constraint_output["soft_constraints"]
         assert "family:relationship" in constraint_output["soft_constraints"]
         assert "gate_verdict_requires_revision" in constraint_output["forbidden_transformations"]
@@ -277,6 +279,8 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
         assert "family:relationship" in self_check_output["self_notes"]
         assert "hook_strength" in rhythm_output
         assert "engagement_score" in reader_output
+        assert "strategy_dialogue_focus" in dialogue_output["issues"]
+        assert any("research 敏感" in item for item in research_output["caution_points"])
 
 
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:

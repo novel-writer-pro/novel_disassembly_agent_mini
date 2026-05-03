@@ -1009,6 +1009,19 @@ class HarnessControllerService:
             research_output["caution_points"].append("当前缺少明确世界规则提醒，易出现设定越界。")
         if "hook_weak" in rhythm_output["issues"]:
             research_output["audience_expectation_notes"].append("题材读者通常期待章尾有明确续读驱动力。")
+        if strategy:
+            prioritized_families = [str(item) for item in strategy.get("prioritized_families", []) if str(item).strip()]
+            if "dialogue" in prioritized_families:
+                dialogue_output["issues"].append("strategy_dialogue_focus")
+                dialogue_output["recommended_actions"].append("本章优先补对话辨识度、对白信息效率和说话人区分。")
+            if "research" in prioritized_families:
+                research_output["caution_points"].append("本章被标记为 research 敏感，应优先核对设定、规则和题材预期。")
+            if "reader" in prioritized_families:
+                reader_output["concerns"].append("strategy_reader_focus")
+                reader_output["recommended_actions"].append("本章优先补读者易卡点与续读期待。")
+            if "rhythm" in prioritized_families:
+                rhythm_output["issues"].append("strategy_rhythm_focus")
+                rhythm_output["recommended_actions"].append("本章优先优化节奏起伏与章尾收束。")
         return {
             "chapter-intake": chapter_intake_output,
             "chapter-fact-extractor": fact_output,

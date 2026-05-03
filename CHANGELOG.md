@@ -211,6 +211,7 @@
 - 当前还继续把 rhythm / reader 两类弱能力接入 harness structured outputs，并新增 `issue_family_ranking`
 - 当前 dialogue / research 两类弱能力也开始进入 harness preflight / routing，并补到 dashboard taxonomy
 - 当前 strategy_input 还开始携带 `prioritized_families`，并进一步注入 chapter constraint/self-check 层
+- 当前 prioritized family 也开始进一步影响 rhythm / reader / dialogue / research 四类弱能力输出的修复重点
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`
