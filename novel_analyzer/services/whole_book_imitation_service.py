@@ -364,6 +364,17 @@ class WholeBookImitationService:
                 "dialogue": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "dialogue"),
                 "research": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "research"),
             },
+            "weak_lane_top_actions": [
+                {
+                    "source_chapter_index": step.source_chapter_index,
+                    "action_type": action.action_type,
+                    "priority": action.priority,
+                    "severity": action.severity,
+                }
+                for step in executed_steps
+                for action in step.action_queue
+                if any(token in action.action_type for token in ("rhythm", "reader", "dialogue", "research"))
+            ][:8],
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,

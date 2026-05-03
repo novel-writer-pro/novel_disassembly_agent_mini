@@ -214,6 +214,7 @@
 - 当前 prioritized family 也开始进一步影响 rhythm / reader / dialogue / research 四类弱能力输出的修复重点
 - 当前 whole-book dashboard 还新增 `weak_lane_priority_ranking`，用于观察弱能力族群的优先级分布
 - 当前 whole-book dashboard 还新增 `weak_lane_histogram`，用于观察四类弱能力的整体分布
+- 当前 whole-book dashboard 还新增 `weak_lane_top_actions`，用于观察弱能力最靠前的修复动作
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
