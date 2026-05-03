@@ -25,6 +25,36 @@ class WholeBookImitationService:
         self.harness = HarnessControllerService(session)
 
     @staticmethod
+    def _queue_policy_summary(queue: list[WholeBookImitationQueueStep]) -> dict[str, object]:
+        return {
+            "queue_length": len(queue),
+            "highest_queue_priority": min((step.scheduling_priority for step in queue), default=4),
+            "queue_priorities": [step.scheduling_priority for step in queue],
+        }
+
+    @staticmethod
+    def _queue_dashboard_summary(queue: list[WholeBookImitationQueueStep]) -> dict[str, object]:
+        return {
+            "queue_priority_preview": [
+                {
+                    "source_chapter_index": step.source_chapter_index,
+                    "priority": step.scheduling_priority,
+                    "reason": step.scheduling_reason,
+                }
+                for step in sorted(queue, key=lambda item: (item.scheduling_priority, item.source_chapter_index))
+            ],
+            "top_queue_priority_chapters": [
+                step.source_chapter_index
+                for step in sorted(queue, key=lambda item: (item.scheduling_priority, item.source_chapter_index))[:3]
+            ],
+            "queue_cluster_buckets": {
+                "critical": [step.source_chapter_index for step in queue if step.scheduling_priority == 1],
+                "attention": [step.source_chapter_index for step in queue if step.scheduling_priority == 2],
+                "monitor": [step.source_chapter_index for step in queue if step.scheduling_priority >= 3],
+            },
+        }
+
+    @staticmethod
     def _strategy_input_from_revise_payload(previous_revise_payload: dict[str, object] | None) -> dict[str, object]:
         if not previous_revise_payload:
             return {}
@@ -215,6 +245,8 @@ class WholeBookImitationService:
             queue=queue,
             carry_over_notes=carry_over_notes,
             execution_mode="dry_run",
+            policy_summary=self._queue_policy_summary(queue),
+            dashboard_summary=self._queue_dashboard_summary(queue),
             run_notes=run_notes,
         )
 

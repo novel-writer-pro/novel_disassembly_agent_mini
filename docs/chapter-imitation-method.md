@@ -264,6 +264,13 @@ novel-analyzer run-whole-book-imitation <branch_id> \
   - `scheduling_priority`
   - `scheduling_reason`
 - `carry_over_notes`
+- `policy_summary`
+  - `queue_length`
+  - `highest_queue_priority`
+- `dashboard_summary`
+  - `queue_priority_preview`
+  - `top_queue_priority_chapters`
+  - `queue_cluster_buckets`
 - `run_notes`
 
 因此现在已经能把整本仿写从“概念计划”推进到“章节执行队列骨架”。
