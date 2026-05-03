@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResearchPackOutput",
+  "type": "object",
+  "required": ["setting_notes", "rule_reminders", "audience_expectation_notes", "caution_points"],
+  "properties": {
+    "setting_notes": {"type": "array", "items": {"type": "string"}},
+    "rule_reminders": {"type": "array", "items": {"type": "string"}},
+    "audience_expectation_notes": {"type": "array", "items": {"type": "string"}},
+    "caution_points": {"type": "array", "items": {"type": "string"}}
+  }
+}

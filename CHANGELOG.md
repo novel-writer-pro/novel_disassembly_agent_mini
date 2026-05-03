@@ -175,6 +175,13 @@
   - `docs/README.md`
 - 目的：把“我们有没有考虑这些能力、哪些已经利用充分、哪些还没做强”收口为结构化文档，方便后续持续建设
 
+### 对话设计器与 research pack 本地 skill 资产补齐
+- 新增：
+  - `skills_dir/dialogue-designer/`
+  - `skills_dir/research-pack/`
+- 让“对话设计”“资料研究/题材与读者预期”这两类此前覆盖较弱的能力，正式进入本地 skill 资产层
+- 目标：先把能力从概念矩阵推进到真实 skill surface，后续再由 harness/controller 深度消费
+
 ### 仿写 harness / preflight / local skill contracts 第一版落地
 - 新增 `novel_analyzer/services/imitation_harness_service.py`
 - 新增第一版：

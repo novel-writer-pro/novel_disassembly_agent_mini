@@ -13,3 +13,5 @@ def test_project_skills_dir_is_discovered() -> None:
     assert 'draft-self-check' in names
     assert 'rhythm-analyzer' in names
     assert 'reader-sim-review' in names
+    assert 'dialogue-designer' in names
+    assert 'research-pack' in names

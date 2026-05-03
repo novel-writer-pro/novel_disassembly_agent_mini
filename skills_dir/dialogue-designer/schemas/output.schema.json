@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DialogueDesignerOutput",
+  "type": "object",
+  "required": ["issues", "speaker_hints", "efficiency_notes", "recommended_actions"],
+  "properties": {
+    "issues": {"type": "array", "items": {"type": "string"}},
+    "speaker_hints": {"type": "array", "items": {"type": "string"}},
+    "efficiency_notes": {"type": "array", "items": {"type": "string"}},
+    "recommended_actions": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -218,6 +218,8 @@
 6. multi-line planner
 7. book architecture optimizer
 
+> 更新：当前 `rhythm-analyzer` 与 `reader-sim-review` 已作为本地 skill assets 落地；`dialogue-designer` 与 `research-pack` 也已进入本地 skill 资产层，但尚未被 harness 深度消费。
+
 ### 第三批（高级增强）
 8. audience-specific reader panels
 9. world/history external research integration
