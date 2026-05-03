@@ -421,6 +421,7 @@ phase-2 聚合增强字段：
 - [`./examples/review-cluster-summary.stable.sample.json`](./examples/review-cluster-summary.stable.sample.json)
 - [`./examples/review-cluster-summary.stable.v1.sample.json`](./examples/review-cluster-summary.stable.v1.sample.json)
 - [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
+- [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
 
 ## 10. Whole-Book Imitation Run Report
 
@@ -538,3 +539,31 @@ phase-2 聚合增强字段：
 - `docs/whole-book-imitation-api-stability-summary.md`
 - `docs/whole-book-imitation-api-versioning.md`
 - `docs/whole-book-imitation-api-freeze-readiness.md`
+
+## 11. Whole-Book Imitation Readiness
+
+来源：
+- `novel-analyzer show-whole-book-imitation-readiness`
+- `GET /api/whole-book-imitation-readiness`
+
+顶层字段：
+- `contract_version`
+- `stable_contract_version`
+- `whole_book_contract_version`
+- `whole_book_stable_contract_version`
+- `database`
+- `provider`
+- `branch_candidate`
+- `readiness_notes`
+
+建议系统优先消费：
+- `provider.api_key_present`
+- `provider.provider_health.last_status`
+- `provider.provider_health.last_error`
+- `branch_candidate.exists`
+- `branch_candidate.chapter_analysis_count`
+- `branch_candidate.fact_record_count`
+- `branch_candidate.branch_id`
+
+稳定样例：
+- `docs/examples/whole-book-imitation-readiness.sample.json`

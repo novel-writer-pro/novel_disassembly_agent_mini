@@ -129,6 +129,7 @@
 13. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
 14. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
 15. [`./whole-book-imitation-freeze-evidence-20260503.md`](./whole-book-imitation-freeze-evidence-20260503.md)
+16. [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)
