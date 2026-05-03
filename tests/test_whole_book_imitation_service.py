@@ -172,8 +172,10 @@ def test_whole_book_imitation_service_builds_run_queue(tmp_path: Path) -> None:
         assert report.queue[1].scheduling_priority <= report.queue[0].scheduling_priority
         assert report.queue[1].scheduling_reason
         assert report.policy_summary["queue_length"] == 2
+        assert "priority_reason_histogram" in report.policy_summary
         assert "queue_priority_preview" in report.dashboard_summary
         assert "top_queue_priority_chapters" in report.dashboard_summary
+        assert "queue_next_actions" in report.dashboard_summary
         assert report.run_notes
 
 
@@ -245,6 +247,9 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "top_risk_summary" in report.dashboard_summary
         assert "weak_lane_dominance" in report.dashboard_summary
         assert "chapter_flags" in report.dashboard_summary
+        assert "next_stage_focus" in report.policy_summary
+        assert "book_handoff_summary" in report.dashboard_summary
+        assert "top_repair_recommendations" in report.dashboard_summary["book_handoff_summary"]
         assert "weak_lane_action_count" in report.dashboard_summary["top_priority_summary"]
         assert "weak_lane_families" in report.dashboard_summary["top_risk_summary"]
         assert "top_priority_families" in report.dashboard_summary["top_priority_summary"]

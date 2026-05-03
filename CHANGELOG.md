@@ -224,6 +224,9 @@
 - 当前 whole-book executed step 还新增 `scheduling_priority / scheduling_reason`，用于明确章节调度优先级
 - 当前 whole-book queue step 也开始显式暴露 `scheduling_priority / scheduling_reason`
 - 当前 dry-run queue report 也开始输出 `queue_priority_preview / top_queue_priority_chapters / queue_cluster_buckets`
+- 当前 dry-run / sandbox whole-book report 进一步新增：
+  - `priority_reason_histogram / queue_next_actions`
+  - `next_stage_focus / book_handoff_summary.top_repair_recommendations`
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

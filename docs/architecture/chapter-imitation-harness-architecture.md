@@ -251,6 +251,8 @@ chapter N final carry_over_state
 - `run-whole-book-imitation`
 - `carry_over_inputs`
 - `sandbox execute`
+- `queue_next_actions`
+- `book_handoff_summary`
 
 后续就是把 harness 正式接进去。
 
@@ -402,6 +404,13 @@ RAG / retrieval 在这里主要服务：
 4. 给 harness 增加 failure-type routing
 5. 给 whole-book sandbox run 增加 aggregate evaluation
 6. 给 carry-over state 增加更稳定序列化与可回放能力
+
+> 更新：第 5 点已经进入第一批正式落地，当前 whole-book report 已开始输出：
+>
+> - dry-run：`priority_reason_histogram`、`queue_next_actions`
+> - sandbox：`next_stage_focus`、`book_handoff_summary.top_repair_recommendations`
+>
+> 这意味着系统层已经能直接消费“下一步该修什么 / 先看哪几章”，而不是只能读原始步骤明细。
 
 ### P2
 7. 接 agentOS orchestration
