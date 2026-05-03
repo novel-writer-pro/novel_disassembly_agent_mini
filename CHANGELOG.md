@@ -227,6 +227,7 @@
 - 当前 dry-run / sandbox whole-book report 进一步新增：
   - `priority_reason_histogram / queue_next_actions`
   - `next_stage_focus / book_handoff_summary.top_repair_recommendations`
+- 当前 whole-book 仿写 report 已同步固化到 `docs/interface-manifest.md` 与 `docs/examples/whole-book-imitation-run.sample.json`
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

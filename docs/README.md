@@ -124,6 +124,7 @@
 8. [`./system-review-release-checklist.md`](./system-review-release-checklist.md)
 9. [`./examples/chapter-qa-context.sample.json`](./examples/chapter-qa-context.sample.json)
 10. [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)
+11. [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)

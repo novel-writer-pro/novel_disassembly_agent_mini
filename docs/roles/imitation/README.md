@@ -12,6 +12,7 @@
 4. [`../../api-current-surface.md`](../../api-current-surface.md)
 5. [`../../risk-audit-runtime-boundary.md`](../../risk-audit-runtime-boundary.md)
 6. [`../../architecture/risk-audit-semantic-enhancement.md`](../../architecture/risk-audit-semantic-enhancement.md)
+7. [`../../examples/whole-book-imitation-run.sample.json`](../../examples/whole-book-imitation-run.sample.json)
 
 当前边界：
 - 已有单章仿写规划、草案、比较、review、gate、risk、迭代优化

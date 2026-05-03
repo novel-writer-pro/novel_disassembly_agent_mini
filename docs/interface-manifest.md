@@ -405,6 +405,7 @@ phase-2 聚合增强字段：
 - chapter QA context
 - branch QA context
 - thematic contexts
+- whole-book imitation run report（CLI / service contract）
 
 未来允许新增字段，但应尽量保持已有字段名与基础层级不破坏。
 
@@ -419,3 +420,110 @@ phase-2 聚合增强字段：
 - [`./examples/review-cluster-summary.sample.json`](./examples/review-cluster-summary.sample.json)
 - [`./examples/review-cluster-summary.stable.sample.json`](./examples/review-cluster-summary.stable.sample.json)
 - [`./examples/review-cluster-summary.stable.v1.sample.json`](./examples/review-cluster-summary.stable.v1.sample.json)
+- [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
+
+## 10. Whole-Book Imitation Run Report
+
+来源：
+- `novel-analyzer run-whole-book-imitation ...`
+- `WholeBookImitationService.build_run_queue(...)`
+- `WholeBookImitationService.run_in_sandbox(...)`
+
+用途：
+- 供系统直接查看整本仿写/续写编排结果
+- 供 agentOS 或调度器读取“下一步先修什么 / 哪几章优先”
+- 供后续 API/export 层继续冻结为稳定 contract
+
+### 10.1 顶层字段
+
+- `branch_id`
+- `project_title`
+- `queue`
+- `carry_over_notes`
+- `execution_mode`
+- `executed_steps`
+- `final_carry_over_state`
+- `policy_summary`
+- `dashboard_summary`
+- `run_notes`
+
+### 10.2 dry-run 必看字段
+
+当 `execution_mode = "dry_run"` 时，建议系统优先消费：
+
+- `queue[*].order`
+- `queue[*].source_chapter_index`
+- `queue[*].target_goal`
+- `queue[*].prerequisites`
+- `queue[*].carry_over_inputs`
+- `queue[*].risk_focus`
+- `queue[*].scheduling_priority`
+- `queue[*].scheduling_reason`
+
+- `policy_summary.queue_length`
+- `policy_summary.highest_queue_priority`
+- `policy_summary.queue_priorities`
+- `policy_summary.priority_reason_histogram`
+
+- `dashboard_summary.queue_priority_preview`
+- `dashboard_summary.top_queue_priority_chapters`
+- `dashboard_summary.queue_cluster_buckets`
+- `dashboard_summary.queue_next_actions`
+
+### 10.3 sandbox execute 必看字段
+
+当 `execution_mode = "sandbox_execute"` 时，建议系统优先消费：
+
+- `executed_steps[*].source_chapter_index`
+- `executed_steps[*].overall_score`
+- `executed_steps[*].overall_risk_level`
+- `executed_steps[*].stop_reason`
+- `executed_steps[*].scheduling_priority`
+- `executed_steps[*].scheduling_reason`
+- `executed_steps[*].strategy_input`
+- `executed_steps[*].policy_summary`
+- `executed_steps[*].carry_over_state`
+- `executed_steps[*].action_queue`
+- `executed_steps[*].revise_payload`
+
+- `policy_summary.executed_step_count`
+- `policy_summary.chapter_ranking`
+- `policy_summary.book_priority_ranking`
+- `policy_summary.severity_histogram`
+- `policy_summary.risk_bucket_histogram`
+- `policy_summary.next_stage_focus`
+
+- `dashboard_summary.highest_priority_chapters`
+- `dashboard_summary.top_risk_chapters`
+- `dashboard_summary.strategy_targets`
+- `dashboard_summary.top_priority_summary`
+- `dashboard_summary.top_risk_summary`
+- `dashboard_summary.chapter_flags`
+- `dashboard_summary.book_handoff_summary`
+
+### 10.4 `book_handoff_summary`
+
+这是当前最适合系统侧直接读取的聚合层：
+
+- `top_repair_recommendations`
+  - 每项包含：
+    - `action_type`
+    - `count`
+    - `highest_priority`
+    - `highest_severity`
+    - `chapter_indexes`
+    - `targets`
+    - `issue_families`
+- `next_stage_focus`
+- `highest_priority_chapters`
+- `risk_chapters`
+- `final_verdicts`
+
+建议用法：
+- 调度器先看 `next_stage_focus`
+- 任务分派器先看 `top_repair_recommendations`
+- 章节回看列表先看 `highest_priority_chapters`
+- 风险复核列表再看 `risk_chapters`
+
+稳定样例：
+- `docs/examples/whole-book-imitation-run.sample.json`

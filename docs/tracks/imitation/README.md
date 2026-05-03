@@ -7,6 +7,7 @@
 4. [`../../architecture/chapter-imitation-harness-architecture.md`](../../architecture/chapter-imitation-harness-architecture.md)
 5. [`../../api-current-surface.md`](../../api-current-surface.md)
 6. [`../../risk-audit-production-readiness.md`](../../risk-audit-production-readiness.md)
+7. [`../../examples/whole-book-imitation-run.sample.json`](../../examples/whole-book-imitation-run.sample.json)
 
 当前建议理解顺序：
 - 先看方法论与输入输出

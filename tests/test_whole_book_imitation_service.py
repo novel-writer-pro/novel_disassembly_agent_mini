@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -256,3 +257,25 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "high_risk_families" in report.dashboard_summary["top_risk_summary"]
         assert "reason" in report.policy_summary["book_priority_ranking"][0]
         assert "scheduling_priority" in report.dashboard_summary["chapter_flags"][0]
+
+
+def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
+    manifest = Path("docs/interface-manifest.md").read_text(encoding="utf-8")
+    docs_index = Path("docs/README.md").read_text(encoding="utf-8")
+    track_readme = Path("docs/tracks/imitation/README.md").read_text(encoding="utf-8")
+    role_readme = Path("docs/roles/imitation/README.md").read_text(encoding="utf-8")
+    sample = json.loads(Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8"))
+
+    assert "## 10. Whole-Book Imitation Run Report" in manifest
+    assert "book_handoff_summary" in manifest
+    assert "queue_next_actions" in manifest
+    assert "./examples/whole-book-imitation-run.sample.json" in docs_index
+    assert "whole-book-imitation-run.sample.json" in track_readme
+    assert "whole-book-imitation-run.sample.json" in role_readme
+
+    assert sample["execution_mode"] == "sandbox_execute"
+    assert "policy_summary" in sample
+    assert "dashboard_summary" in sample
+    assert "next_stage_focus" in sample["policy_summary"]
+    assert "book_handoff_summary" in sample["dashboard_summary"]
+    assert "top_repair_recommendations" in sample["dashboard_summary"]["book_handoff_summary"]
