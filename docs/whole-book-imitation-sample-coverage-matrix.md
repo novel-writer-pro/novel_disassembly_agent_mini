@@ -6,6 +6,7 @@
 |---|---|---|
 | `docs/examples/whole-book-imitation-run.request.sample.json` | API 请求体样例 | 已有 executable regression |
 | `docs/examples/whole-book-imitation-run.sample.json` | 成功响应样例 | 已有 executable stable-field regression |
+| `docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json` | 真实 provider-backed 成功样例 | 已成功实际运行导出 |
 | `docs/examples/whole-book-imitation-run.error.provider-billing.sample.json` | 错误响应样例 | 已有 executable regression |
 | `docs/examples/whole-book-imitation-readiness.sample.json` | readiness 响应样例 | 已有 executable regression |
 

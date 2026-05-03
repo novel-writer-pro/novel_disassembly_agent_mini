@@ -150,3 +150,33 @@ novel-analyzer show-whole-book-imitation-readiness \
 ## 8. 一句话总结
 
 > 本轮真实回归已经证明：当前 whole-book imitation 主链不是“文档稳定、运行未证”，而是“运行可达真实 provider，但被外部 billing 限制阻断”。
+
+---
+
+## 9. 2026-05-04 provider 恢复后的成功重跑
+
+后续再次使用相同 provider / model：
+
+- `provider = vip1129`
+- `model = gpt-5.4-mini`
+
+重新执行 whole-book sandbox execute 后，已成功导出：
+
+- `docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json`
+
+关键结果：
+- `contract_version = whole-book-imitation.v1`
+- `stable_contract_version = whole-book-imitation-pre-v1`
+- `execution_mode = sandbox_execute`
+- `executed_step_count = 2`
+- `highest_priority_chapters = [3, 2]`
+- `next_stage_focus` 已正常产出
+- 两章 `overall_score = 84`
+- 两章 `overall_risk_level = low`
+
+这说明：
+- provider-backed whole-book 主链已经拿到**成功样本**
+- 之前的外部阻断不再是“绝对无法继续”的状态
+- 当前剩余工作已经从“等待 provider 恢复”转为：
+  - 决定是否基于这轮成功 evidence 更新 freeze readiness 口径
+  - 决定是否把 `stable_contract_version` 从 pre-v1 往更稳定级别推进

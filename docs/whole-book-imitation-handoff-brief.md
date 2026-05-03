@@ -18,17 +18,13 @@ whole-book imitation 线当前已经完成：
 
 ---
 
-## 2. 当前唯一关键阻断
+## 2. 当前关键剩余事项
 
-真实 provider-backed whole-book execute 已经尝试过，且主链能触达上游 provider。
+真实 provider-backed whole-book execute 已经成功补到一轮样本。
 
-当前阻断不是本地代码，而是外部 provider：
-- `403 Forbidden`
-- `billing_error`
-- `daily usage limit exceeded`
-
-所以当前最大的未完成项是：
-> 等 provider 条件恢复后，补一轮成功的 provider-backed freeze evidence。
+当前已不再是“缺少成功 provider 样本”，而是：
+- 是否基于成功样本更新 freeze readiness 口径
+- 是否把 `stable_contract_version` 从 pre-v1 往更稳定级别推进
 
 ---
 
@@ -36,13 +32,10 @@ whole-book imitation 线当前已经完成：
 
 按这个顺序执行：
 
-1. 先跑 readiness
-   - `show-whole-book-imitation-readiness`
-   - 或 `GET /api/whole-book-imitation-readiness`
-2. 再跑 whole-book execute
-3. 保存成功 JSON
-4. 更新 freeze evidence / freeze readiness 文档
-5. 判断是否把 `stable_contract_version` 从 pre-v1 往 stable 提升
+1. 先复核成功样本
+2. 更新 freeze evidence / freeze readiness 文档
+3. 判断是否把 `stable_contract_version` 从 pre-v1 往 stable 提升
+4. 如需更稳，再补更多 provider-backed 成功回归
 
 参考文档：
 - `docs/whole-book-imitation-provider-recovery-checklist.md`
@@ -63,4 +56,4 @@ whole-book imitation 线当前已经完成：
 
 ## 5. 一句话总结
 
-> 这条线现在不是“还没做完”，而是“内部已基本完成，等外部 provider 恢复后做最后一轮成功验证”。
+> 这条线现在不是“缺成功样本”，而是“已有成功样本，剩余是是否正式提升 freeze / 稳定级别的治理判断”。 

@@ -4,7 +4,7 @@
 
 当前 whole-book imitation API 更准确的状态是：
 
-> **pre-v1，已具备 system-contract-ready 能力，但尚未达到正式 stable freeze。**
+> **pre-v1，已具备 system-contract-ready 能力，并已拿到 provider-backed 成功样本，但尚未正式宣布 stable freeze。**
 
 也就是说：
 - 系统可以正式接入
@@ -53,7 +53,7 @@
 
 > 已经适合接入，但还不适合承诺“后续几乎不会再动”。
 
-补充：2026-05-03 已完成一轮真实 provider-backed whole-book execute 尝试，主链已成功触达 provider，但被上游返回：
+补充：2026-05-03 首轮真实 provider-backed whole-book execute 尝试，主链已成功触达 provider，但被上游返回：
 
 - `403 Forbidden`
 - `billing_error`
@@ -62,9 +62,13 @@
 对应证据见：
 - `docs/whole-book-imitation-freeze-evidence-20260503.md`
 
-因此当前 freeze 未完成的原因，更准确地说是：
+后续 2026-05-04 已补到一轮成功的 provider-backed 样本，见：
 
-> **缺少成功完成的 provider-backed freeze evidence，而不是本地主链未跑通。**
+- `docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json`
+
+因此当前 freeze 未完成的原因，已经不再是“没有成功样本”，而更接近：
+
+> **虽然已有成功 provider-backed evidence，但 stable freeze 的治理口径还未正式收束。**
 
 ---
 
