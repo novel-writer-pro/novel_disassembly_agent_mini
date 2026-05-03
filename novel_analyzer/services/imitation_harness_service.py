@@ -653,6 +653,7 @@ class HarnessControllerService:
         source_chapter_index: int,
         target_goal: str,
         draft: ChapterImitationDraft,
+        strategy_input: dict[str, object] | None = None,
     ) -> dict[str, dict[str, object]]:
         plan = self.chapter_imitation.build_imitation_plan(
             branch_id,
@@ -712,6 +713,15 @@ class HarnessControllerService:
             "relationship_watchpoints": planner_context.relationship_state_notes[:3],
             "rule_watchpoints": planner_context.world_rules[:3],
         }
+        strategy = strategy_input or {}
+        if strategy:
+            prioritized_targets = [str(item) for item in strategy.get("prioritized_targets", []) if str(item).strip()]
+            if prioritized_targets:
+                constraint_output["soft_constraints"] = constraint_output["soft_constraints"] + prioritized_targets[:2]
+                constraint_output["continuity_memory"] = constraint_output["continuity_memory"] + prioritized_targets[:2]
+            blocking_issues = [str(item) for item in strategy.get("blocking_issues", []) if str(item).strip()]
+            if blocking_issues:
+                constraint_output["forbidden_transformations"] = constraint_output["forbidden_transformations"] + blocking_issues[:2]
         self_check_output = {
             "blocking_issues": [],
             "likely_gate_failures": [],
@@ -741,6 +751,10 @@ class HarnessControllerService:
             self_check_output["recommended_actions"].append("补足人物动机与选择依据。")
         if plan.risk_focus:
             self_check_output["self_notes"].extend(plan.risk_focus[:2])
+        if strategy:
+            self_check_output["self_notes"].extend(
+                [str(item) for item in strategy.get("recommended_actions", []) if str(item).strip()][:2]
+            )
         return {
             "chapter-intake": chapter_intake_output,
             "chapter-fact-extractor": fact_output,
@@ -757,6 +771,7 @@ class HarnessControllerService:
         max_rounds: int = 2,
         use_llm: bool = False,
         model_name: str | None = None,
+        strategy_input: dict[str, object] | None = None,
     ) -> ChapterImitationHarnessReport:
         skill_contracts = self.list_skill_contracts()
         draft = (
@@ -792,6 +807,7 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 draft=draft,
+                strategy_input=strategy_input,
             )
             preflight = self.preflight_draft(
                 branch_id,

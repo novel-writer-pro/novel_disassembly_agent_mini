@@ -242,6 +242,36 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
             assert "【Harness Action Queue】" in report.final_draft.draft_text
 
 
+def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        outputs = service.build_skill_outputs(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+            draft=draft,
+            strategy_input={
+                "prioritized_targets": ["relationship_transition", "world_rule_support"],
+                "blocking_issues": ["gate_verdict_requires_revision"],
+                "recommended_actions": ["补足关系与规则说明。"],
+            },
+        )
+        constraint_output = outputs["imitation-constraint-pack"]
+        self_check_output = outputs["draft-self-check"]
+        assert "relationship_transition" in constraint_output["soft_constraints"]
+        assert "gate_verdict_requires_revision" in constraint_output["forbidden_transformations"]
+        assert "补足关系与规则说明。" in self_check_output["self_notes"]
+
+
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)

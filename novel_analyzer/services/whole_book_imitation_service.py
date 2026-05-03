@@ -183,6 +183,7 @@ class WholeBookImitationService:
                 max_rounds=max_rounds,
                 use_llm=use_llm,
                 model_name=model_name,
+                strategy_input=strategy_input,
             )
             final_round = harness_report.rounds[-1]
             carry_state = WholeBookCarryOverState(
@@ -276,6 +277,18 @@ class WholeBookImitationService:
                 }
                 for step in executed_steps
             ],
+            "issue_family_histogram": {
+                "constraint": sum(1 for step in executed_steps for action in step.action_queue if "constraint" in action.action_type),
+                "relationship": sum(1 for step in executed_steps for action in step.action_queue if "relationship" in action.action_type or "relation" in action.action_type),
+                "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
+                "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
+                "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
+            },
+            "cluster_buckets": {
+                "critical": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 1],
+                "attention": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 2],
+                "monitor": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) >= 3],
+            },
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
