@@ -72,6 +72,31 @@ class WholeBookImitationService:
             ))
         return merged
 
+    @staticmethod
+    def _augment_strategy_input_with_dashboard(
+        strategy_input: dict[str, object],
+        previous_dashboard_summary: dict[str, object] | None,
+    ) -> dict[str, object]:
+        if not previous_dashboard_summary:
+            return strategy_input
+        merged = dict(strategy_input)
+        top_priority = previous_dashboard_summary.get("top_priority_summary", {})
+        top_risk = previous_dashboard_summary.get("top_risk_summary", {})
+        weak_families = [str(item) for item in top_priority.get("top_priority_families", []) if str(item).strip()]
+        high_risk_families = [str(item) for item in top_risk.get("high_risk_families", []) if str(item).strip()]
+        merged["prioritized_families"] = list(dict.fromkeys(
+            [str(item) for item in strategy_input.get("prioritized_families", []) if str(item).strip()]
+            + weak_families[:2]
+            + high_risk_families[:2]
+        ))
+        if weak_families or high_risk_families:
+            merged["recommended_actions"] = list(dict.fromkeys(
+                [str(item) for item in strategy_input.get("recommended_actions", []) if str(item).strip()]
+                + ([f"承接上一轮 top-priority families：{'、'.join(weak_families[:2])}"] if weak_families else [])
+                + ([f"承接上一轮 top-risk families：{'、'.join(high_risk_families[:2])}"] if high_risk_families else [])
+            ))
+        return merged
+
     def build_plan(
         self,
         branch_id: str,
@@ -189,11 +214,13 @@ class WholeBookImitationService:
         carry_state: WholeBookCarryOverState | None = None
         previous_revise_payload: dict[str, object] | None = None
         previous_policy_summary: dict[str, object] | None = None
+        previous_dashboard_summary: dict[str, object] | None = None
 
         for step in report.queue:
             target_goal = step.target_goal
             strategy_input = self._strategy_input_from_revise_payload(previous_revise_payload)
             strategy_input = self._augment_strategy_input_with_policy(strategy_input, previous_policy_summary)
+            strategy_input = self._augment_strategy_input_with_dashboard(strategy_input, previous_dashboard_summary)
             if carry_state is not None:
                 inherited_parts = [
                     item
@@ -255,6 +282,14 @@ class WholeBookImitationService:
             )
             previous_revise_payload = harness_report.rounds[-1].revise_payload if harness_report.rounds else None
             previous_policy_summary = harness_report.policy_summary
+            previous_dashboard_summary = {
+                "top_priority_summary": {
+                    "top_priority_families": [str(item) for item in harness_report.policy_summary.get("issue_families", []) if str(item).strip()][:3],
+                },
+                "top_risk_summary": {
+                    "high_risk_families": [str(item) for item in harness_report.policy_summary.get("issue_families", []) if str(item).strip()][:3],
+                },
+            }
 
         run_notes = list(report.run_notes)
         run_notes.append("sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。")
