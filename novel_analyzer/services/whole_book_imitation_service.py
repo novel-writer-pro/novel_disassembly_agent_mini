@@ -35,6 +35,7 @@ class WholeBookImitationService:
         return {
             "prioritized_targets": [str(item.get("target", "")) for item in top_actions if str(item.get("target", "")).strip()],
             "prioritized_action_types": [str(item.get("action_type", "")) for item in top_actions if str(item.get("action_type", "")).strip()],
+            "prioritized_families": [str(item.get("issue_family", "")) for item in top_actions if str(item.get("issue_family", "")).strip()],
             "blocking_issues": previous_revise_payload.get("blocking_issues", []),
             "recommended_actions": previous_revise_payload.get("recommended_actions", []),
         }
@@ -175,6 +176,9 @@ class WholeBookImitationService:
             top_targets = strategy_input.get("prioritized_targets", [])
             if isinstance(top_targets, list) and top_targets:
                 target_goal = f"{target_goal}｜优先处理上一章 revise targets：{'、'.join(top_targets[:2])}"
+            top_families = strategy_input.get("prioritized_families", [])
+            if isinstance(top_families, list) and top_families:
+                target_goal = f"{target_goal}｜重点关注能力族：{'、'.join(top_families[:2])}"
 
             harness_report = self.harness.run_harness(
                 branch_id,
@@ -274,6 +278,7 @@ class WholeBookImitationService:
                 {
                     "source_chapter_index": step.source_chapter_index,
                     "prioritized_targets": step.strategy_input.get("prioritized_targets", []),
+                    "prioritized_families": step.strategy_input.get("prioritized_families", []),
                 }
                 for step in executed_steps
             ],
@@ -307,6 +312,16 @@ class WholeBookImitationService:
                     }.items()
                 ],
                 key=lambda item: (-item["count"], item["family"]),
+            ),
+            "family_priority_ranking": sorted(
+                [
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "families": step.strategy_input.get("prioritized_families", []),
+                    }
+                    for step in executed_steps
+                ],
+                key=lambda item: item["source_chapter_index"],
             ),
         }
         return WholeBookImitationRunReport(

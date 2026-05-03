@@ -261,6 +261,7 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
             draft=draft,
             strategy_input={
                 "prioritized_targets": ["relationship_transition", "world_rule_support"],
+                "prioritized_families": ["relationship", "rule"],
                 "blocking_issues": ["gate_verdict_requires_revision"],
                 "recommended_actions": ["补足关系与规则说明。"],
             },
@@ -270,8 +271,10 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
         rhythm_output = outputs["rhythm-analyzer"]
         reader_output = outputs["reader-sim-review"]
         assert "relationship_transition" in constraint_output["soft_constraints"]
+        assert "family:relationship" in constraint_output["soft_constraints"]
         assert "gate_verdict_requires_revision" in constraint_output["forbidden_transformations"]
         assert "补足关系与规则说明。" in self_check_output["self_notes"]
+        assert "family:relationship" in self_check_output["self_notes"]
         assert "hook_strength" in rhythm_output
         assert "engagement_score" in reader_output
 

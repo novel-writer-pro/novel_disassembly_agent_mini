@@ -216,6 +216,7 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert isinstance(ordered, list)
         assert ordered
         assert report.executed_steps[1].strategy_input.get("prioritized_targets", [])
+        assert report.executed_steps[1].strategy_input.get("prioritized_families", [])
         assert report.dashboard_summary["chapter_count"] == 2
         assert "highest_priority_chapters" in report.dashboard_summary
         assert "strategy_targets" in report.dashboard_summary
@@ -224,3 +225,4 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "issue_family_ranking" in report.dashboard_summary
         assert "dialogue" in report.dashboard_summary["issue_family_histogram"]
         assert "research" in report.dashboard_summary["issue_family_histogram"]
+        assert "family_priority_ranking" in report.dashboard_summary

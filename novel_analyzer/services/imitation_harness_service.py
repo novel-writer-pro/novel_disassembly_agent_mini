@@ -112,6 +112,29 @@ class HarnessControllerService:
         return ("low", 4)
 
     @staticmethod
+    def _issue_family_for_action(action_type: str) -> str:
+        lowered = action_type.lower()
+        if "constraint" in lowered:
+            return "constraint"
+        if "relationship" in lowered or "relation" in lowered:
+            return "relationship"
+        if "rule" in lowered:
+            return "rule"
+        if "motivation" in lowered:
+            return "motivation"
+        if "hook" in lowered:
+            return "hook"
+        if "rhythm" in lowered:
+            return "rhythm"
+        if "reader" in lowered:
+            return "reader"
+        if "dialogue" in lowered:
+            return "dialogue"
+        if "research" in lowered:
+            return "research"
+        return "general"
+
+    @staticmethod
     def _sorted_actions(actions: list[ChapterImitationHarnessAction]) -> list[ChapterImitationHarnessAction]:
         return sorted(actions, key=lambda item: (item.priority, item.action_type, item.target))
 
@@ -183,6 +206,7 @@ class HarnessControllerService:
                 break
             if item.severity == "medium":
                 highest_severity = "medium"
+        issue_families = [HarnessControllerService._issue_family_for_action(item.action_type) for item in actions]
         return {
             "final_verdict": final_verdict,
             "stop_reason": stop_reason,
@@ -194,6 +218,7 @@ class HarnessControllerService:
             "gate_verdict": gate.overall_verdict,
             "risk_overall_level": risk.overall_risk_level,
             "overall_score": score.overall_score,
+            "issue_families": issue_families,
         }
 
     @staticmethod
@@ -208,6 +233,7 @@ class HarnessControllerService:
             "ordered_actions": [
                 {
                     "action_type": item.action_type,
+                    "issue_family": HarnessControllerService._issue_family_for_action(item.action_type),
                     "target": item.target,
                     "severity": item.severity,
                     "priority": item.priority,
@@ -219,6 +245,10 @@ class HarnessControllerService:
             "recommended_actions": preflight.recommended_actions,
             "gate_verdict": gate.overall_verdict,
             "risk_overall_level": risk.overall_risk_level,
+            "issue_families": [
+                HarnessControllerService._issue_family_for_action(item.action_type)
+                for item in actions
+            ],
         }
 
     def list_skill_contracts(self) -> list[ChapterImitationSkillContract]:
@@ -881,9 +911,12 @@ class HarnessControllerService:
         strategy = strategy_input or {}
         if strategy:
             prioritized_targets = [str(item) for item in strategy.get("prioritized_targets", []) if str(item).strip()]
+            prioritized_families = [str(item) for item in strategy.get("prioritized_families", []) if str(item).strip()]
             if prioritized_targets:
                 constraint_output["soft_constraints"] = constraint_output["soft_constraints"] + prioritized_targets[:2]
                 constraint_output["continuity_memory"] = constraint_output["continuity_memory"] + prioritized_targets[:2]
+            if prioritized_families:
+                constraint_output["soft_constraints"] = constraint_output["soft_constraints"] + [f"family:{item}" for item in prioritized_families[:2]]
             blocking_issues = [str(item) for item in strategy.get("blocking_issues", []) if str(item).strip()]
             if blocking_issues:
                 constraint_output["forbidden_transformations"] = constraint_output["forbidden_transformations"] + blocking_issues[:2]
@@ -919,6 +952,9 @@ class HarnessControllerService:
         if strategy:
             self_check_output["self_notes"].extend(
                 [str(item) for item in strategy.get("recommended_actions", []) if str(item).strip()][:2]
+            )
+            self_check_output["self_notes"].extend(
+                [f"family:{item}" for item in strategy.get("prioritized_families", []) if str(item).strip()][:2]
             )
         rhythm_output = {
             "pace_label": "steady" if len(plan.scene_beats) <= 4 else "dense",
