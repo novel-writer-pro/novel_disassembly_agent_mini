@@ -18,3 +18,4 @@
 14. [`../../whole-book-imitation-docs-index.md`](../../whole-book-imitation-docs-index.md)
 15. [`../../whole-book-imitation-provider-recovery-checklist.md`](../../whole-book-imitation-provider-recovery-checklist.md)
 16. [`../../whole-book-imitation-sample-coverage-matrix.md`](../../whole-book-imitation-sample-coverage-matrix.md)
+17. [`../../whole-book-imitation-handoff-brief.md`](../../whole-book-imitation-handoff-brief.md)

@@ -19,6 +19,7 @@
 16. [`../../whole-book-imitation-docs-index.md`](../../whole-book-imitation-docs-index.md)
 17. [`../../whole-book-imitation-provider-recovery-checklist.md`](../../whole-book-imitation-provider-recovery-checklist.md)
 18. [`../../whole-book-imitation-sample-coverage-matrix.md`](../../whole-book-imitation-sample-coverage-matrix.md)
+19. [`../../whole-book-imitation-handoff-brief.md`](../../whole-book-imitation-handoff-brief.md)
 
 当前建议理解顺序：
 - 先看方法论与输入输出

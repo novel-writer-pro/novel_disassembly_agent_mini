@@ -278,6 +278,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     docs_index_doc = Path("docs/whole-book-imitation-docs-index.md").read_text(encoding="utf-8")
     recovery_doc = Path("docs/whole-book-imitation-provider-recovery-checklist.md").read_text(encoding="utf-8")
     coverage_doc = Path("docs/whole-book-imitation-sample-coverage-matrix.md").read_text(encoding="utf-8")
+    handoff_doc = Path("docs/whole-book-imitation-handoff-brief.md").read_text(encoding="utf-8")
     readiness_sample = json.loads(Path("docs/examples/whole-book-imitation-readiness.sample.json").read_text(encoding="utf-8"))
     request_sample = json.loads(Path("docs/examples/whole-book-imitation-run.request.sample.json").read_text(encoding="utf-8"))
     error_sample = json.loads(Path("docs/examples/whole-book-imitation-run.error.provider-billing.sample.json").read_text(encoding="utf-8"))
@@ -299,6 +300,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "./whole-book-imitation-docs-index.md" in docs_index
     assert "./whole-book-imitation-provider-recovery-checklist.md" in docs_index
     assert "./whole-book-imitation-sample-coverage-matrix.md" in docs_index
+    assert "./whole-book-imitation-handoff-brief.md" in docs_index
     assert "./examples/whole-book-imitation-run.error.provider-billing.sample.json" in docs_index
     assert "whole-book-imitation-run.sample.json" in track_readme
     assert "whole-book-imitation-api-stability-summary.md" in track_readme
@@ -312,6 +314,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "whole-book-imitation-docs-index.md" in track_readme
     assert "whole-book-imitation-provider-recovery-checklist.md" in track_readme
     assert "whole-book-imitation-sample-coverage-matrix.md" in track_readme
+    assert "whole-book-imitation-handoff-brief.md" in track_readme
     assert "whole-book-imitation-run.sample.json" in role_readme
     assert "whole-book-imitation-api-stability-summary.md" in integrator_readme
     assert "whole-book-imitation-api-versioning.md" in integrator_readme
@@ -324,6 +327,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "whole-book-imitation-docs-index.md" in integrator_readme
     assert "whole-book-imitation-provider-recovery-checklist.md" in integrator_readme
     assert "whole-book-imitation-sample-coverage-matrix.md" in integrator_readme
+    assert "whole-book-imitation-handoff-brief.md" in integrator_readme
     assert "whole-book-imitation-run.error.provider-billing.sample.json" in api_readme
     assert "先 readiness，再 run；成功看 handoff summary，失败看 error_code / retryable。" in quickstart_doc
     assert "最短阅读路径" in docs_index_doc
@@ -331,6 +335,8 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "provider 恢复后，先 readiness，再 execute，再把成功 JSON 摘录回 freeze evidence。" in recovery_doc
     assert "request / readiness / error 三类样例" in coverage_doc
     assert "test_whole_book_imitation_run_request_sample_is_executable" in coverage_doc
+    assert "内部合同与系统接入面已基本收口完成" in handoff_doc
+    assert "当前唯一关键阻断" in handoff_doc
     assert "pre-v1 / system-contract-ready" in stability_doc
     assert "POST /api/whole-book-imitation-run" in stability_doc
     assert "stable_contract_version = whole-book-imitation-pre-v1" in versioning_doc

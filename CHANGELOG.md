@@ -258,6 +258,7 @@
 - 当前新增 `docs/whole-book-imitation-docs-index.md`，把 contract / samples / governance / evidence / quickstart 收口成单页索引
 - 当前新增 `docs/whole-book-imitation-provider-recovery-checklist.md`，明确 provider 恢复后如何重跑 readiness / execute / freeze evidence
 - 当前新增 `docs/whole-book-imitation-sample-coverage-matrix.md`，明确 request / readiness / error / success 样例各自的 executable regression 覆盖状态
+- 当前新增 `docs/whole-book-imitation-handoff-brief.md`，把当前完成度、唯一阻断、恢复后动作压缩成单页交接说明
 - 当前 success sample 也已补 live stable-field regression，request / readiness / error / success 四类样例现在都有更明确的自动校验覆盖
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：

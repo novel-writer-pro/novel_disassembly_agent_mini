@@ -38,6 +38,7 @@
 
 - `docs/whole-book-imitation-freeze-evidence-20260503.md`
 - `docs/whole-book-imitation-provider-recovery-checklist.md`
+- `docs/whole-book-imitation-handoff-brief.md`
 
 ---
 
