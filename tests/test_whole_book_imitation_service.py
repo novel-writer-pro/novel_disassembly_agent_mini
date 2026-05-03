@@ -236,3 +236,5 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "chapter_flags" in report.dashboard_summary
         assert "weak_lane_action_count" in report.dashboard_summary["top_priority_summary"]
         assert "weak_lane_families" in report.dashboard_summary["top_risk_summary"]
+        assert "top_priority_families" in report.dashboard_summary["top_priority_summary"]
+        assert "high_risk_families" in report.dashboard_summary["top_risk_summary"]

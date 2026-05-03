@@ -40,6 +40,38 @@ class WholeBookImitationService:
             "recommended_actions": previous_revise_payload.get("recommended_actions", []),
         }
 
+    @staticmethod
+    def _augment_strategy_input_with_policy(
+        strategy_input: dict[str, object],
+        previous_policy_summary: dict[str, object] | None,
+    ) -> dict[str, object]:
+        if not previous_policy_summary:
+            return strategy_input
+        issue_families = [
+            str(item)
+            for item in previous_policy_summary.get("issue_families", [])
+            if str(item).strip()
+        ]
+        unique_families: list[str] = []
+        seen: set[str] = set()
+        for family in issue_families:
+            if family not in seen:
+                seen.add(family)
+                unique_families.append(family)
+        merged = dict(strategy_input)
+        merged["prioritized_families"] = list(dict.fromkeys(
+            [str(item) for item in strategy_input.get("prioritized_families", []) if str(item).strip()]
+            + unique_families[:3]
+        ))
+        merged["priority_bias"] = int(previous_policy_summary.get("highest_action_priority", 4) or 4)
+        merged["risk_bias"] = str(previous_policy_summary.get("risk_overall_level", "low") or "low")
+        if merged["priority_bias"] <= 2 and unique_families:
+            merged["recommended_actions"] = list(dict.fromkeys(
+                [str(item) for item in strategy_input.get("recommended_actions", []) if str(item).strip()]
+                + [f"优先处理上一章高优先级能力族：{'、'.join(unique_families[:2])}"]
+            ))
+        return merged
+
     def build_plan(
         self,
         branch_id: str,
@@ -156,10 +188,12 @@ class WholeBookImitationService:
         executed_steps: list[WholeBookImitationExecutedStep] = []
         carry_state: WholeBookCarryOverState | None = None
         previous_revise_payload: dict[str, object] | None = None
+        previous_policy_summary: dict[str, object] | None = None
 
         for step in report.queue:
             target_goal = step.target_goal
             strategy_input = self._strategy_input_from_revise_payload(previous_revise_payload)
+            strategy_input = self._augment_strategy_input_with_policy(strategy_input, previous_policy_summary)
             if carry_state is not None:
                 inherited_parts = [
                     item
@@ -179,6 +213,10 @@ class WholeBookImitationService:
             top_families = strategy_input.get("prioritized_families", [])
             if isinstance(top_families, list) and top_families:
                 target_goal = f"{target_goal}｜重点关注能力族：{'、'.join(top_families[:2])}"
+            if int(strategy_input.get("priority_bias", 4) or 4) <= 2:
+                target_goal = f"{target_goal}｜本章需优先响应上一章高优先级问题"
+            if str(strategy_input.get("risk_bias", "low")) in {"medium", "high"}:
+                target_goal = f"{target_goal}｜注意承接上一章的中高风险信号"
 
             harness_report = self.harness.run_harness(
                 branch_id,
@@ -216,6 +254,7 @@ class WholeBookImitationService:
                 )
             )
             previous_revise_payload = harness_report.rounds[-1].revise_payload if harness_report.rounds else None
+            previous_policy_summary = harness_report.policy_summary
 
         run_notes = list(report.run_notes)
         run_notes.append("sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。")
@@ -406,6 +445,22 @@ class WholeBookImitationService:
                     )[:3]
                 ],
                 "weak_lane_action_count": sum(int(step.policy_summary.get("weak_lane_action_count", 0)) for step in executed_steps),
+                "top_priority_families": [
+                    family
+                    for family, count in sorted(
+                        {
+                            family: sum(
+                                1
+                                for step in executed_steps
+                                for item in step.policy_summary.get("issue_families", [])
+                                if str(item) == family and int(step.policy_summary.get("highest_action_priority", 4)) <= 2
+                            )
+                            for family in {"constraint", "relationship", "rule", "motivation", "hook", "dialogue", "research", "rhythm", "reader"}
+                        }.items(),
+                        key=lambda item: (-item[1], item[0]),
+                    )
+                    if count > 0
+                ][:4],
             },
             "top_risk_summary": {
                 "chapter_indexes": [
@@ -431,6 +486,23 @@ class WholeBookImitationService:
                     family
                     for family, count in sorted(
                         weak_lane_counts.items(),
+                        key=lambda item: (-item[1], item[0]),
+                    )
+                    if count > 0
+                ][:4],
+                "high_risk_families": [
+                    family
+                    for family, count in sorted(
+                        {
+                            family: sum(
+                                1
+                                for step in executed_steps
+                                for action in step.action_queue
+                                if step.overall_risk_level in {"medium", "high"}
+                                and family in action.action_type
+                            )
+                            for family in {"rhythm", "reader", "dialogue", "research"}
+                        }.items(),
                         key=lambda item: (-item[1], item[0]),
                     )
                     if count > 0
