@@ -139,6 +139,7 @@ class WholeBookImitationService:
         )
         executed_steps: list[WholeBookImitationExecutedStep] = []
         carry_state: WholeBookCarryOverState | None = None
+        previous_revise_payload: dict[str, object] | None = None
 
         for step in report.queue:
             target_goal = step.target_goal
@@ -155,6 +156,16 @@ class WholeBookImitationService:
                 ]
                 if inherited_parts:
                     target_goal = f"{target_goal}｜承接上一生成状态：{'；'.join(inherited_parts[:5])}"
+            if previous_revise_payload:
+                ordered = previous_revise_payload.get("ordered_actions", [])
+                if isinstance(ordered, list) and ordered:
+                    top_targets = [
+                        str(item.get("target"))
+                        for item in ordered[:2]
+                        if isinstance(item, dict) and str(item.get("target", "")).strip()
+                    ]
+                    if top_targets:
+                        target_goal = f"{target_goal}｜优先处理上一章 revise targets：{'、'.join(top_targets)}"
 
             harness_report = self.harness.run_harness(
                 branch_id,
@@ -189,6 +200,7 @@ class WholeBookImitationService:
                     policy_summary=harness_report.policy_summary,
                 )
             )
+            previous_revise_payload = harness_report.rounds[-1].revise_payload if harness_report.rounds else None
 
         run_notes = list(report.run_notes)
         run_notes.append("sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。")
@@ -217,10 +229,26 @@ class WholeBookImitationService:
                 ],
                 key=lambda item: (item["highest_action_priority"], item["overall_score"]),
             ),
+            "book_priority_ranking": sorted(
+                [
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                        "severity": str(step.policy_summary.get("highest_action_severity", "low")),
+                    }
+                    for step in executed_steps
+                ],
+                key=lambda item: (item["priority"], item["source_chapter_index"]),
+            ),
             "severity_histogram": {
                 "high": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "high"),
                 "medium": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "medium"),
                 "low": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "low"),
+            },
+            "risk_bucket_histogram": {
+                "low": sum(1 for step in executed_steps if step.overall_risk_level == "low"),
+                "medium": sum(1 for step in executed_steps if step.overall_risk_level == "medium"),
+                "high": sum(1 for step in executed_steps if step.overall_risk_level == "high"),
             },
         }
         return WholeBookImitationRunReport(

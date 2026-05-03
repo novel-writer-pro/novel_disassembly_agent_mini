@@ -209,3 +209,6 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "verdicts" in report.policy_summary
         assert "chapter_ranking" in report.policy_summary
         assert "severity_histogram" in report.policy_summary
+        assert "book_priority_ranking" in report.policy_summary
+        assert "risk_bucket_histogram" in report.policy_summary
+        assert "优先处理上一章 revise targets" in report.executed_steps[1].draft_excerpt or report.executed_steps[1].target_goal == "延续主角获得功法后的行动线"

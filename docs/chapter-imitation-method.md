@@ -384,6 +384,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前 whole-book policy summary 也开始补充最小/最大分数、最大 action 数等聚合统计
   - 当前 round 还新增 `revise_payload`，用于观察 ordered actions 如何结构化进入 revise 输入
   - 当前 whole-book report 也开始显式暴露 chapter-level `revise_payload`、`chapter_ranking`、`severity_histogram`
+  - 当前 whole-book 层也开始尝试消费上一章 `revise_payload` 影响后续章节目标，并补充 `book_priority_ranking / risk_bucket_histogram`
 
 这意味着系统已经从：
 
