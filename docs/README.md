@@ -125,11 +125,12 @@
 9. [`./examples/chapter-qa-context.sample.json`](./examples/chapter-qa-context.sample.json)
 10. [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)
 11. [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
-12. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
-13. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
-14. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
-15. [`./whole-book-imitation-freeze-evidence-20260503.md`](./whole-book-imitation-freeze-evidence-20260503.md)
-16. [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
+12. [`./examples/whole-book-imitation-run.request.sample.json`](./examples/whole-book-imitation-run.request.sample.json)
+13. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
+14. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
+15. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
+16. [`./whole-book-imitation-freeze-evidence-20260503.md`](./whole-book-imitation-freeze-evidence-20260503.md)
+17. [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)

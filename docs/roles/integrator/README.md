@@ -12,3 +12,4 @@
 8. [`../../whole-book-imitation-api-freeze-readiness.md`](../../whole-book-imitation-api-freeze-readiness.md)
 9. [`../../whole-book-imitation-freeze-evidence-20260503.md`](../../whole-book-imitation-freeze-evidence-20260503.md)
 10. [`../../examples/whole-book-imitation-readiness.sample.json`](../../examples/whole-book-imitation-readiness.sample.json)
+11. [`../../examples/whole-book-imitation-run.request.sample.json`](../../examples/whole-book-imitation-run.request.sample.json)

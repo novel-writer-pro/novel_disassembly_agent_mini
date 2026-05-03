@@ -1,0 +1,27 @@
+{
+  "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+  "project_title": "freeze-evidence",
+  "source_work_name": "示例小说-fresh10-db-v2",
+  "target_work_name": "示例小说-fresh10-db-v2-仿写评估",
+  "chapter_specs": [
+    {
+      "source_chapter_index": 2,
+      "target_goal": "延续前文资源铺垫与关系推进"
+    },
+    {
+      "source_chapter_index": 3,
+      "target_goal": "延续主角获得功法后的行动线并保持克制成长节奏"
+    }
+  ],
+  "world_mapping": {},
+  "character_mapping": {},
+  "faction_mapping": {},
+  "power_mapping": {},
+  "rule_overrides": [],
+  "forbidden_transformations": [],
+  "execute": true,
+  "max_rounds": 1,
+  "use_llm": true,
+  "model_name": "gpt-5.4-mini",
+  "database_url": "postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer"
+}

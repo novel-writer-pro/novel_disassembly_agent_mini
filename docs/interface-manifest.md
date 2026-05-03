@@ -421,6 +421,7 @@ phase-2 聚合增强字段：
 - [`./examples/review-cluster-summary.stable.sample.json`](./examples/review-cluster-summary.stable.sample.json)
 - [`./examples/review-cluster-summary.stable.v1.sample.json`](./examples/review-cluster-summary.stable.v1.sample.json)
 - [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
+- [`./examples/whole-book-imitation-run.request.sample.json`](./examples/whole-book-imitation-run.request.sample.json)
 - [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
 
 ## 10. Whole-Book Imitation Run Report
@@ -536,6 +537,7 @@ phase-2 聚合增强字段：
 
 稳定样例：
 - `docs/examples/whole-book-imitation-run.sample.json`
+- `docs/examples/whole-book-imitation-run.request.sample.json`
 - `docs/whole-book-imitation-api-stability-summary.md`
 - `docs/whole-book-imitation-api-versioning.md`
 - `docs/whole-book-imitation-api-freeze-readiness.md`

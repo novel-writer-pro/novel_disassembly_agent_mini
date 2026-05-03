@@ -65,6 +65,7 @@
 - `POST /api/whole-book-imitation-run` 当前返回：
   - `contract_version = whole-book-imitation.v1`
   - `stable_contract_version = whole-book-imitation-pre-v1`
+  - 请求样例：`docs/examples/whole-book-imitation-run.request.sample.json`
 - `GET /api/whole-book-imitation-readiness` 当前返回：
   - `contract_version = whole-book-imitation-readiness.v1`
   - `stable_contract_version = whole-book-imitation-readiness-pre-v1`
