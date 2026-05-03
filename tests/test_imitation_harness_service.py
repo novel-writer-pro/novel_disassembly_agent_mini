@@ -524,6 +524,7 @@ def test_harness_actions_include_dialogue_and_research_repairs(tmp_path: Path) -
         action_types = {item.action_type for item in actions}
         assert "repair_dialogue_design" in action_types
         assert "repair_research_alignment" in action_types
+        assert any(item.priority <= 3 for item in actions if item.action_type in {"repair_dialogue_design", "repair_research_alignment"})
 
 
 def test_harness_actions_include_relation_and_rule_evidence_repairs(tmp_path: Path) -> None:

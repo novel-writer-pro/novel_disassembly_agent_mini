@@ -323,6 +323,21 @@ class WholeBookImitationService:
                 ],
                 key=lambda item: item["source_chapter_index"],
             ),
+            "weak_lane_priority_ranking": sorted(
+                [
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "families": [
+                            family
+                            for family in step.strategy_input.get("prioritized_families", [])
+                            if family in {"rhythm", "reader", "dialogue", "research"}
+                        ],
+                        "priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                    }
+                    for step in executed_steps
+                ],
+                key=lambda item: (item["priority"], item["source_chapter_index"]),
+            ),
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,

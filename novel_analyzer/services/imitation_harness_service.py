@@ -580,13 +580,14 @@ class HarnessControllerService:
             actions = [str(item) for item in rhythm_output.get("recommended_actions", []) if str(item).strip()]
             hook_strength = float(rhythm_output.get("hook_strength", 0.0) or 0.0)
             if issues:
+                priority = 2 if any(item in {"hook_weak", "strategy_rhythm_focus"} for item in issues) else 3
                 recommended_actions.extend(item for item in actions if item not in recommended_actions)
                 checks.append(
                     ChapterImitationPreflightCheck(
                         check_name="rhythm_analysis",
                         status="warn",
                         severity="medium",
-                        priority=2,
+                        priority=priority,
                         notes=issues[:3],
                     )
                 )
@@ -606,13 +607,14 @@ class HarnessControllerService:
             concerns = [str(item) for item in reader_output.get("concerns", []) if str(item).strip()]
             actions = [str(item) for item in reader_output.get("recommended_actions", []) if str(item).strip()]
             if concerns:
+                priority = 2 if any(item in {"reader_hook_weak", "strategy_reader_focus"} for item in concerns) else 3
                 recommended_actions.extend(item for item in actions if item not in recommended_actions)
                 checks.append(
                     ChapterImitationPreflightCheck(
                         check_name="reader_sim_review",
                         status="warn",
                         severity="medium",
-                        priority=3,
+                        priority=priority,
                         notes=concerns[:3],
                     )
                 )
@@ -632,13 +634,14 @@ class HarnessControllerService:
             issues = [str(item) for item in dialogue_output.get("issues", []) if str(item).strip()]
             actions = [str(item) for item in dialogue_output.get("recommended_actions", []) if str(item).strip()]
             if issues:
+                priority = 2 if "strategy_dialogue_focus" in issues else 3
                 recommended_actions.extend(item for item in actions if item not in recommended_actions)
                 checks.append(
                     ChapterImitationPreflightCheck(
                         check_name="dialogue_designer",
                         status="warn",
                         severity="medium",
-                        priority=3,
+                        priority=priority,
                         notes=issues[:3],
                     )
                 )
@@ -658,6 +661,7 @@ class HarnessControllerService:
             cautions = [str(item) for item in research_output.get("caution_points", []) if str(item).strip()]
             audience_notes = [str(item) for item in research_output.get("audience_expectation_notes", []) if str(item).strip()]
             if cautions or audience_notes:
+                priority = 2 if any("research 敏感" in item for item in cautions) else 3
                 recommended_actions.extend(item for item in cautions[:2] if item not in recommended_actions)
                 recommended_actions.extend(item for item in audience_notes[:2] if item not in recommended_actions)
                 checks.append(
@@ -665,7 +669,7 @@ class HarnessControllerService:
                         check_name="research_pack_review",
                         status="warn",
                         severity="medium",
-                        priority=3,
+                        priority=priority,
                         notes=(cautions + audience_notes)[:3],
                     )
                 )
