@@ -8,3 +8,5 @@
 4. [`../../system-review-display-rules.md`](../../system-review-display-rules.md)
 5. [`../../system-review-integration-checklist.md`](../../system-review-integration-checklist.md)
 6. [`../../whole-book-imitation-api-stability-summary.md`](../../whole-book-imitation-api-stability-summary.md)
+7. [`../../whole-book-imitation-api-versioning.md`](../../whole-book-imitation-api-versioning.md)
+8. [`../../whole-book-imitation-api-freeze-readiness.md`](../../whole-book-imitation-api-freeze-readiness.md)

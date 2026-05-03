@@ -126,6 +126,8 @@
 10. [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)
 11. [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
 12. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
+13. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
+14. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)

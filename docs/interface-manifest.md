@@ -536,3 +536,5 @@ phase-2 聚合增强字段：
 稳定样例：
 - `docs/examples/whole-book-imitation-run.sample.json`
 - `docs/whole-book-imitation-api-stability-summary.md`
+- `docs/whole-book-imitation-api-versioning.md`
+- `docs/whole-book-imitation-api-freeze-readiness.md`

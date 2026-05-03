@@ -9,6 +9,8 @@
 6. [`../../risk-audit-production-readiness.md`](../../risk-audit-production-readiness.md)
 7. [`../../examples/whole-book-imitation-run.sample.json`](../../examples/whole-book-imitation-run.sample.json)
 8. [`../../whole-book-imitation-api-stability-summary.md`](../../whole-book-imitation-api-stability-summary.md)
+9. [`../../whole-book-imitation-api-versioning.md`](../../whole-book-imitation-api-versioning.md)
+10. [`../../whole-book-imitation-api-freeze-readiness.md`](../../whole-book-imitation-api-freeze-readiness.md)
 
 当前建议理解顺序：
 - 先看方法论与输入输出

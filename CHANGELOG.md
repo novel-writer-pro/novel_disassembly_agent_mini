@@ -234,6 +234,10 @@
 - 当前 whole-book imitation report 已新增显式版本字段：
   - `contract_version=whole-book-imitation.v1`
   - `stable_contract_version=whole-book-imitation-pre-v1`
+- 当前补充：
+  - `docs/whole-book-imitation-api-versioning.md`
+  - `docs/whole-book-imitation-api-freeze-readiness.md`
+  用于说明 breaking-change 规则与正式 freeze 条件
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
