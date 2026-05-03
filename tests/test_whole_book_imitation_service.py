@@ -201,8 +201,11 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert report.final_carry_over_state is not None
         assert report.executed_steps[0].carry_over_state.generated_summary
         assert report.executed_steps[0].action_queue
+        assert report.executed_steps[0].revise_payload
         assert report.executed_steps[0].policy_summary
         assert report.policy_summary["executed_step_count"] == 2
         assert "min_overall_score" in report.policy_summary
         assert "max_action_count" in report.policy_summary
         assert "verdicts" in report.policy_summary
+        assert "chapter_ranking" in report.policy_summary
+        assert "severity_histogram" in report.policy_summary

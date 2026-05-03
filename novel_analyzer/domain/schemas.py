@@ -932,6 +932,7 @@ class WholeBookImitationExecutedStep(BaseModel):
     draft_excerpt: str
     carry_over_state: WholeBookCarryOverState
     action_queue: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    revise_payload: dict[str, object] = Field(default_factory=dict)
     policy_summary: dict[str, object] = Field(default_factory=dict)
 
 

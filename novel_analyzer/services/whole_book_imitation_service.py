@@ -185,6 +185,7 @@ class WholeBookImitationService:
                     draft_excerpt=harness_report.final_draft.draft_text[:240],
                     carry_over_state=carry_state,
                     action_queue=harness_report.action_queue,
+                    revise_payload=harness_report.rounds[-1].revise_payload if harness_report.rounds else {},
                     policy_summary=harness_report.policy_summary,
                 )
             )
@@ -205,6 +206,22 @@ class WholeBookImitationService:
             "stop_reasons": [step.stop_reason for step in executed_steps],
             "max_action_count": max((len(step.action_queue) for step in executed_steps), default=0),
             "verdicts": [str(step.policy_summary.get("final_verdict", "")) for step in executed_steps],
+            "chapter_ranking": sorted(
+                [
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "overall_score": step.overall_score,
+                        "highest_action_priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                    }
+                    for step in executed_steps
+                ],
+                key=lambda item: (item["highest_action_priority"], item["overall_score"]),
+            ),
+            "severity_histogram": {
+                "high": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "high"),
+                "medium": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "medium"),
+                "low": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "low"),
+            },
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
