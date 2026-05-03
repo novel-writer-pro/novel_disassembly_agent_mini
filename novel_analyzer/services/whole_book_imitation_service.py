@@ -358,6 +358,12 @@ class WholeBookImitationService:
                     key=lambda item: (item["priority"], -item["weak_family_count"], item["source_chapter_index"]),
                 )[:3]
             ],
+            "weak_lane_histogram": {
+                "rhythm": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "rhythm"),
+                "reader": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "reader"),
+                "dialogue": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "dialogue"),
+                "research": sum(1 for step in executed_steps for family in step.strategy_input.get("prioritized_families", []) if family == "research"),
+            },
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,

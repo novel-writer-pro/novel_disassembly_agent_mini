@@ -1026,6 +1026,7 @@ class HarnessControllerService:
             if "rhythm" in prioritized_families:
                 rhythm_output["issues"].append("strategy_rhythm_focus")
                 rhythm_output["recommended_actions"].append("本章优先优化节奏起伏与章尾收束。")
+                rhythm_output["hook_strength"] = max(float(rhythm_output["hook_strength"]), 0.55)
         return {
             "chapter-intake": chapter_intake_output,
             "chapter-fact-extractor": fact_output,
