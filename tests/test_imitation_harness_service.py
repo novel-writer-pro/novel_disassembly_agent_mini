@@ -267,9 +267,13 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
         )
         constraint_output = outputs["imitation-constraint-pack"]
         self_check_output = outputs["draft-self-check"]
+        rhythm_output = outputs["rhythm-analyzer"]
+        reader_output = outputs["reader-sim-review"]
         assert "relationship_transition" in constraint_output["soft_constraints"]
         assert "gate_verdict_requires_revision" in constraint_output["forbidden_transformations"]
         assert "补足关系与规则说明。" in self_check_output["self_notes"]
+        assert "hook_strength" in rhythm_output
+        assert "engagement_score" in reader_output
 
 
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:
@@ -407,6 +411,58 @@ def test_harness_actions_include_relationship_rule_and_hook_repairs(tmp_path: Pa
         assert "repair_world_rule_support" in action_types
         assert "reinforce_ending_hook" in action_types
         assert any(item.priority <= 2 for item in actions)
+
+
+def test_harness_actions_include_rhythm_and_reader_repairs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        preflight = service.preflight_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+            skill_outputs={
+                "rhythm-analyzer": {
+                    "issues": ["hook_weak", "pace_too_thin"],
+                    "recommended_actions": ["补足节奏起伏。", "增强读者期待感。"],
+                    "hook_strength": 0.4,
+                },
+                "reader-sim-review": {
+                    "concerns": ["reader_hook_weak"],
+                    "recommended_actions": ["增强读者期待感。"],
+                    "engagement_score": 58,
+                },
+            },
+        )
+        actions = service._recommended_actions(  # noqa: SLF001
+            preflight=preflight,
+            review=service.chapter_imitation.review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+            gate=service.chapter_imitation.gate_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+            risk=service.chapter_imitation.risk_review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=draft,
+            ),
+        )
+        action_types = {item.action_type for item in actions}
+        assert "repair_rhythm" in action_types
+        assert "repair_reader_engagement" in action_types
 
 
 def test_harness_actions_include_relation_and_rule_evidence_repairs(tmp_path: Path) -> None:

@@ -63,6 +63,18 @@ class HarnessControllerService:
             ["blocking_issues", "recommended_actions", "self_notes"],
         ),
         (
+            "rhythm-analyzer",
+            "分析章节节奏、场景密度、钩子强度与张力起伏。",
+            ["draft_text", "scene_plan", "chapter_goal"],
+            ["pace_label", "hook_strength", "tension_curve", "issues", "recommended_actions"],
+        ),
+        (
+            "reader-sim-review",
+            "模拟读者视角，给出清晰度、沉浸感、期待感与疑虑点。",
+            ["draft_text", "chapter_goal", "constraint_pack"],
+            ["reader_profile", "engagement_score", "concerns", "recommended_actions"],
+        ),
+        (
             "draft-reviser",
             "按 harness 指定问题做局部修订，不自由扩散。",
             ["draft_text", "targeted_actions"],
@@ -520,6 +532,59 @@ class HarnessControllerService:
                     )
                 )
 
+        rhythm_output = outputs.get("rhythm-analyzer", {})
+        if isinstance(rhythm_output, dict):
+            issues = [str(item) for item in rhythm_output.get("issues", []) if str(item).strip()]
+            actions = [str(item) for item in rhythm_output.get("recommended_actions", []) if str(item).strip()]
+            hook_strength = float(rhythm_output.get("hook_strength", 0.0) or 0.0)
+            if issues:
+                recommended_actions.extend(item for item in actions if item not in recommended_actions)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="rhythm_analysis",
+                        status="warn",
+                        severity="medium",
+                        priority=2,
+                        notes=issues[:3],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="rhythm_analysis",
+                        status="pass",
+                        severity="low",
+                        priority=4,
+                        notes=[f"hook_strength={hook_strength:.2f}"],
+                    )
+                )
+
+        reader_output = outputs.get("reader-sim-review", {})
+        if isinstance(reader_output, dict):
+            concerns = [str(item) for item in reader_output.get("concerns", []) if str(item).strip()]
+            actions = [str(item) for item in reader_output.get("recommended_actions", []) if str(item).strip()]
+            if concerns:
+                recommended_actions.extend(item for item in actions if item not in recommended_actions)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="reader_sim_review",
+                        status="warn",
+                        severity="medium",
+                        priority=3,
+                        notes=concerns[:3],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="reader_sim_review",
+                        status="pass",
+                        severity="low",
+                        priority=4,
+                        notes=[f"engagement_score={reader_output.get('engagement_score', 0)}"],
+                    )
+                )
+
         if risk_level := getattr(outputs.get("_risk_meta", {}), "get", lambda *_: None)("overall_risk_level"):
             severity, priority = self._severity_priority("warn", risk_level=str(risk_level))
             checks.append(
@@ -606,6 +671,24 @@ class HarnessControllerService:
             "draft-self-check": {
                 "draft_text": draft.draft_text,
                 "source_plan_json": json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                "constraint_pack_json": json.dumps(
+                    {
+                        "hard_constraints": plan.hard_constraints,
+                        "soft_constraints": plan.soft_constraints,
+                        "risk_focus": plan.risk_focus,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+            },
+            "rhythm-analyzer": {
+                "draft_text": draft.draft_text,
+                "scene_plan_json": json.dumps(plan.scene_beats, ensure_ascii=False, indent=2),
+                "chapter_goal": target_goal,
+            },
+            "reader-sim-review": {
+                "draft_text": draft.draft_text,
+                "chapter_goal": target_goal,
                 "constraint_pack_json": json.dumps(
                     {
                         "hard_constraints": plan.hard_constraints,
@@ -755,11 +838,44 @@ class HarnessControllerService:
             self_check_output["self_notes"].extend(
                 [str(item) for item in strategy.get("recommended_actions", []) if str(item).strip()][:2]
             )
+        rhythm_output = {
+            "pace_label": "steady" if len(plan.scene_beats) <= 4 else "dense",
+            "hook_strength": 0.8 if ("接下来" in draft.draft_text or "下一步" in draft.draft_text) else 0.45,
+            "tension_curve": ["setup", "resistance", "response", "hook"][: max(2, min(4, len(plan.scene_beats)))],
+            "issues": [],
+            "recommended_actions": [],
+        }
+        if len(plan.scene_beats) < 3:
+            rhythm_output["issues"].append("scene_progression_thin")
+            rhythm_output["recommended_actions"].append("补充至少一个中段阻力场景，拉开节奏层次。")
+        if rhythm_output["hook_strength"] < 0.6:
+            rhythm_output["issues"].append("hook_weak")
+            rhythm_output["recommended_actions"].append("增强章尾钩子，提升读者续读驱动力。")
+        if len(draft.draft_text) < 220:
+            rhythm_output["issues"].append("pace_too_thin")
+            rhythm_output["recommended_actions"].append("补足节奏起伏，不要只剩结果陈述。")
+        reader_output = {
+            "reader_profile": "core_web_novel_reader",
+            "engagement_score": 78 if rhythm_output["hook_strength"] >= 0.6 else 61,
+            "concerns": [],
+            "recommended_actions": [],
+        }
+        if "决定" not in draft.draft_text and "选择" not in draft.draft_text:
+            reader_output["concerns"].append("motivation_not_explicit")
+            reader_output["recommended_actions"].append("让读者更清楚主角为何做出当前行动选择。")
+        if "关系" not in "".join(plan.soft_constraints) and not planner_context.relationship_state_notes:
+            reader_output["concerns"].append("relationship_signal_thin")
+            reader_output["recommended_actions"].append("补一点人物互动或态度差异，让读者更容易跟住关系线。")
+        if rhythm_output["hook_strength"] < 0.6:
+            reader_output["concerns"].append("reader_hook_weak")
+            reader_output["recommended_actions"].append("增强章尾期待感，避免读者觉得本章平收。")
         return {
             "chapter-intake": chapter_intake_output,
             "chapter-fact-extractor": fact_output,
             "imitation-constraint-pack": constraint_output,
             "draft-self-check": self_check_output,
+            "rhythm-analyzer": rhythm_output,
+            "reader-sim-review": reader_output,
         }
 
     def run_harness(
@@ -1041,6 +1157,26 @@ class HarnessControllerService:
                     severity="medium",
                     priority=3,
                     instructions=["补足世界规则、资源限制与动作代价证据。"],
+                )
+            )
+        if "节奏" in " ".join(preflight.recommended_actions) or "钩子" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_rhythm",
+                    target="rhythm",
+                    severity="medium",
+                    priority=2,
+                    instructions=["补足节奏起伏与章尾驱动力，避免章节推进过平。"],
+                )
+            )
+        if "读者" in " ".join(preflight.recommended_actions) or "期待感" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_reader_engagement",
+                    target="reader_engagement",
+                    severity="medium",
+                    priority=3,
+                    instructions=["补清读者易卡住的信息点，增强代入感与续读欲。"],
                 )
             )
         if "章尾钩子" in " ".join(preflight.recommended_actions):

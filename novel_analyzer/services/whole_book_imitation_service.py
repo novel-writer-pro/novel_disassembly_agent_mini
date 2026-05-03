@@ -289,6 +289,21 @@ class WholeBookImitationService:
                 "attention": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 2],
                 "monitor": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) >= 3],
             },
+            "issue_family_ranking": sorted(
+                [
+                    {"family": family, "count": count}
+                    for family, count in {
+                        "constraint": sum(1 for step in executed_steps for action in step.action_queue if "constraint" in action.action_type),
+                        "relationship": sum(1 for step in executed_steps for action in step.action_queue if "relationship" in action.action_type or "relation" in action.action_type),
+                        "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
+                        "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
+                        "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
+                        "rhythm": sum(1 for step in executed_steps for action in step.action_queue if "rhythm" in action.action_type),
+                        "reader": sum(1 for step in executed_steps for action in step.action_queue if "reader" in action.action_type),
+                    }.items()
+                ],
+                key=lambda item: (-item["count"], item["family"]),
+            ),
         }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
