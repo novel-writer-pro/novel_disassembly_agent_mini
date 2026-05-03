@@ -15,6 +15,7 @@
 12. [`../../examples/whole-book-imitation-readiness.sample.json`](../../examples/whole-book-imitation-readiness.sample.json)
 13. [`../../examples/whole-book-imitation-run.request.sample.json`](../../examples/whole-book-imitation-run.request.sample.json)
 14. [`../../examples/whole-book-imitation-run.error.provider-billing.sample.json`](../../examples/whole-book-imitation-run.error.provider-billing.sample.json)
+15. [`../../whole-book-imitation-integration-quickstart.md`](../../whole-book-imitation-integration-quickstart.md)
 
 当前建议理解顺序：
 - 先看方法论与输入输出
