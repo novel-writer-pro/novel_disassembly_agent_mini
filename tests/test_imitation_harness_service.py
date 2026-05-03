@@ -185,6 +185,7 @@ def test_harness_preflight_blocks_too_short_draft(tmp_path: Path) -> None:
         )
         assert report.overall_verdict == "block"
         assert "draft_too_short_for_gate" in report.blocking_issues
+        assert any(item.severity == "high" and item.priority == 1 for item in report.checks)
 
 
 def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
@@ -368,6 +369,7 @@ def test_harness_actions_include_relationship_rule_and_hook_repairs(tmp_path: Pa
         assert "repair_relationship_transition" in action_types
         assert "repair_world_rule_support" in action_types
         assert "reinforce_ending_hook" in action_types
+        assert any(item.priority <= 2 for item in actions)
 
 
 def test_harness_actions_include_relation_and_rule_evidence_repairs(tmp_path: Path) -> None:
@@ -432,3 +434,28 @@ def test_harness_actions_include_relation_and_rule_evidence_repairs(tmp_path: Pa
         action_types = {item.action_type for item in actions}
         assert "repair_relation_evidence" in action_types
         assert "repair_rule_evidence" in action_types
+
+
+def test_harness_preflight_consumes_gate_and_risk_meta(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        )
+        report = service.preflight_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+            skill_outputs={
+                "_gate_meta": {"overall_verdict": "needs_revision"},
+                "_risk_meta": {"overall_risk_level": "medium"},
+            },
+        )
+        assert "gate_verdict_requires_revision" in report.blocking_issues
+        assert any(item.check_name == "risk_gate_alignment" for item in report.checks)

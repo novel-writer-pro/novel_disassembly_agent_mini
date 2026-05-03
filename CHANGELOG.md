@@ -172,6 +172,7 @@
 - preflight / action routing 现已开始显式消费这些 `skill_outputs`，新增 constraint repair / continuity memory repair 路由
 - 本轮继续补入人物动机 / 关系变化 / 世界规则 / 章尾 hook 方向的 repair routing
 - 本轮进一步把 `chapter-intake / chapter-fact-extractor` 结构化 outputs 接入 preflight 与 routing，新增关系证据 / 规则证据 repair 路由
+- 当前进一步补入 typed `severity / priority`，并开始让 gate/risk meta 信号进入 preflight 与 routing
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

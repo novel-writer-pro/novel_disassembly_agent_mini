@@ -75,6 +75,18 @@ class HarnessControllerService:
         self.settings = settings or get_settings()
         self.chapter_imitation = ChapterImitationService(session, self.settings)
 
+    @staticmethod
+    def _severity_priority(status: str, *, risk_level: str | None = None) -> tuple[str, int]:
+        if status == "block":
+            return ("high", 1)
+        if risk_level == "high":
+            return ("high", 1)
+        if risk_level == "medium":
+            return ("medium", 2)
+        if status == "warn":
+            return ("medium", 2)
+        return ("low", 4)
+
     def list_skill_contracts(self) -> list[ChapterImitationSkillContract]:
         root = Path(self.settings.skills_dir)
         contracts: list[ChapterImitationSkillContract] = []
@@ -126,6 +138,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="length_ratio",
                     status="block",
+                    severity="high",
+                    priority=1,
                     notes=[f"draft/source 长度比过低：{length_ratio:.2f}"],
                 )
             )
@@ -134,6 +148,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="length_ratio",
                     status="pass",
+                    severity="low",
+                    priority=4,
                     notes=[f"draft/source 长度比={length_ratio:.2f}"],
                 )
             )
@@ -145,6 +161,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="structure_alignment",
                     status="block",
+                    severity="high",
+                    priority=1,
                     notes=["comparison.overall_verdict != aligned"],
                 )
             )
@@ -153,6 +171,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="structure_alignment",
                     status="pass",
+                    severity="low",
+                    priority=4,
                     notes=["source skeleton alignment looks acceptable"],
                 )
             )
@@ -165,6 +185,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="direct_copy_guard",
                     status="block",
+                    severity="high",
+                    priority=1,
                     notes=["检测到疑似直接抄原文信号。"],
                 )
             )
@@ -173,6 +195,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="direct_copy_guard",
                     status="pass",
+                    severity="low",
+                    priority=4,
                     notes=["未见直接抄写标记。"],
                 )
             )
@@ -184,6 +208,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="ending_hook_presence",
                     status="warn",
+                    severity="medium",
+                    priority=3,
                     notes=["未检测到显式下一步钩子词。"],
                 )
             )
@@ -192,6 +218,8 @@ class HarnessControllerService:
                 ChapterImitationPreflightCheck(
                     check_name="ending_hook_presence",
                     status="pass",
+                    severity="low",
+                    priority=4,
                     notes=["检测到下一步/钩子相关收束。"],
                 )
             )
@@ -206,6 +234,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="constraint_pack_presence",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=[f"forbidden_transformations={len(forbidden)}"],
                     )
                 )
@@ -215,6 +245,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="constraint_pack_presence",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=["constraint pack 未给出明确 forbidden_transformations。"],
                     )
                 )
@@ -223,6 +255,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="relationship_watchpoints",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=relationship_watch[:3],
                     )
                 )
@@ -232,6 +266,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="relationship_watchpoints",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=["constraint pack 缺少 relationship watchpoints。"],
                     )
                 )
@@ -240,6 +276,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="rule_watchpoints",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=rule_watch[:3],
                     )
                 )
@@ -249,6 +287,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="rule_watchpoints",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=["constraint pack 缺少 rule watchpoints。"],
                     )
                 )
@@ -264,6 +304,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="draft_self_check_blockers",
                         status="block",
+                        severity="high",
+                        priority=1,
                         notes=predicted_blockers[:3],
                     )
                 )
@@ -273,6 +315,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="draft_self_check_recommendations",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=predicted_actions[:3],
                     )
                 )
@@ -281,6 +325,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="draft_self_check_recommendations",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=["draft-self-check 未返回阻断问题。"],
                     )
                 )
@@ -289,6 +335,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="draft_self_check_likely_failures",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=likely_failures[:3],
                     )
                 )
@@ -309,6 +357,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="chapter_intake_notes",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=intake_notes[:3],
                     )
                 )
@@ -323,6 +373,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="fact_relation_coverage",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=["chapter-fact-extractor 未提取到关系事实。"],
                     )
                 )
@@ -331,6 +383,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="fact_relation_coverage",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=[f"relations={relation_count}"],
                     )
                 )
@@ -340,6 +394,8 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="fact_rule_coverage",
                         status="warn",
+                        severity="medium",
+                        priority=2,
                         notes=["chapter-fact-extractor 未提取到规则事实。"],
                     )
                 )
@@ -348,7 +404,45 @@ class HarnessControllerService:
                     ChapterImitationPreflightCheck(
                         check_name="fact_rule_coverage",
                         status="pass",
+                        severity="low",
+                        priority=4,
                         notes=[f"worldbuilding_facts={rule_count}"],
+                    )
+                )
+
+        if risk_level := getattr(outputs.get("_risk_meta", {}), "get", lambda *_: None)("overall_risk_level"):
+            severity, priority = self._severity_priority("warn", risk_level=str(risk_level))
+            checks.append(
+                ChapterImitationPreflightCheck(
+                    check_name="risk_gate_alignment",
+                    status="warn" if str(risk_level) != "low" else "pass",
+                    severity=severity,
+                    priority=priority,
+                    notes=[f"risk_overall_level={risk_level}"],
+                )
+            )
+
+        if gate_verdict := getattr(outputs.get("_gate_meta", {}), "get", lambda *_: None)("overall_verdict"):
+            if str(gate_verdict) == "needs_revision":
+                recommended_actions.append("补足 quality gate 指出的章节问题后再继续。")
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="gate_alignment",
+                        status="block",
+                        severity="high",
+                        priority=1,
+                        notes=[f"gate_verdict={gate_verdict}"],
+                    )
+                )
+                blocking_issues.append("gate_verdict_requires_revision")
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="gate_alignment",
+                        status="pass",
+                        severity="low",
+                        priority=4,
+                        notes=[f"gate_verdict={gate_verdict}"],
                     )
                 )
 
@@ -609,6 +703,15 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 draft=draft,
             )
+            skill_outputs["_gate_meta"] = {"overall_verdict": gate.overall_verdict, "needs_human_review": gate.needs_human_review}
+            skill_outputs["_risk_meta"] = {"overall_risk_level": risk.overall_risk_level}
+            preflight = self.preflight_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                draft=draft,
+                comparison=comparison,
+                skill_outputs=skill_outputs,
+            )
             score = self.chapter_imitation.score_draft(
                 source_chapter_index=source_chapter_index,
                 draft=draft,
@@ -686,6 +789,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="replan",
                     target="source_skeleton",
+                    severity="high",
+                    priority=1,
                     instructions=["先修 scene beats 与原章结构对齐，再继续 prose 修订。"],
                 )
             )
@@ -694,6 +799,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="expand_middle",
                     target="draft_body",
+                    severity="high",
+                    priority=1,
                     instructions=["补足中段阻力、行动选择与章尾钩子承接。"],
                 )
             )
@@ -702,6 +809,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_constraints",
                     target="constraint_pack",
+                    severity="high",
+                    priority=1,
                     instructions=["补齐 forbidden_transformations，避免换皮越界与原文复刻。"],
                 )
             )
@@ -710,14 +819,19 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="quality_revision",
                     target="quality_gate",
+                    severity="medium",
+                    priority=2,
                     instructions=gate.quality_gate_notes[:2] or ["压缩 summary-like 表述，增强章节推进感。"],
                 )
             )
         if risk.overall_risk_level != "low":
+            severity, priority = HarnessControllerService._severity_priority("warn", risk_level=risk.overall_risk_level)
             actions.append(
                 ChapterImitationHarnessAction(
                     action_type="risk_revision",
                     target="risk_gate",
+                    severity=severity,
+                    priority=priority,
                     instructions=risk.top_risk_summaries[:2] or risk.coverage_gaps[:2],
                 )
             )
@@ -729,6 +843,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_continuity_memory",
                     target="continuity_memory",
+                    severity="medium",
+                    priority=2,
                     instructions=["补充关系推进、未解线程与规则约束的 continuity memory。"],
                 )
             )
@@ -737,6 +853,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_character_motivation",
                     target="character_motivation",
+                    severity="medium",
+                    priority=2,
                     instructions=["补足人物为何做出当前选择的支撑证据与过渡。"],
                 )
             )
@@ -745,6 +863,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_relationship_transition",
                     target="relationship_transition",
+                    severity="medium",
+                    priority=2,
                     instructions=["补足关系变化前后的中间事件与态度转折。"],
                 )
             )
@@ -753,6 +873,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_world_rule_support",
                     target="world_rule_support",
+                    severity="medium",
+                    priority=2,
                     instructions=["补足越界动作前的规则来源、限制与代价。"],
                 )
             )
@@ -761,6 +883,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_relation_evidence",
                     target="fact_relations",
+                    severity="medium",
+                    priority=3,
                     instructions=["补足人物互动、态度变化与关系状态证据。"],
                 )
             )
@@ -769,6 +893,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="repair_rule_evidence",
                     target="fact_rules",
+                    severity="medium",
+                    priority=3,
                     instructions=["补足世界规则、资源限制与动作代价证据。"],
                 )
             )
@@ -777,6 +903,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="reinforce_ending_hook",
                     target="ending_hook",
+                    severity="medium",
+                    priority=2,
                     instructions=["补出清晰的下一步驱动与未完成目标。"],
                 )
             )
@@ -785,6 +913,8 @@ class HarnessControllerService:
                 ChapterImitationHarnessAction(
                     action_type="polish",
                     target="draft",
+                    severity="low",
+                    priority=4,
                     instructions=review.revision_directions[:2],
                 )
             )

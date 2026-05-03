@@ -377,6 +377,7 @@ novel-analyzer harness-imitation <branch_id> <source_chapter_index> "<target_goa
   - 当前 preflight / action routing 已开始消费这些 `skill_outputs`，例如 constraint repair / continuity memory repair
   - 当前还新增了人物动机 / 关系变化 / 世界规则 / 章尾 hook 方向的 repair routing
   - 当前也开始纳入 `chapter-intake / chapter-fact-extractor` 的结构化 outputs，用于关系证据 / 规则证据方向的 repair routing
+  - 当前还新增了 typed `severity / priority`，并开始让 gate/risk meta 信号进入 preflight
 
 这意味着系统已经从：
 

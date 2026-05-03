@@ -764,6 +764,8 @@ class ChapterImitationPreflightCheck(BaseModel):
 
     check_name: str
     status: str = Field(default="pass")
+    severity: str = Field(default="low")
+    priority: int = Field(default=3, ge=1, le=5)
     notes: list[str] = Field(default_factory=list)
 
 
@@ -783,6 +785,8 @@ class ChapterImitationHarnessAction(BaseModel):
 
     action_type: str
     target: str
+    severity: str = Field(default="low")
+    priority: int = Field(default=3, ge=1, le=5)
     instructions: list[str] = Field(default_factory=list)
 
 
