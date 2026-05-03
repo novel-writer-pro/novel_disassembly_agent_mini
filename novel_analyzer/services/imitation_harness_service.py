@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -20,8 +21,11 @@ from novel_analyzer.domain.schemas import (
     ChapterImitationRiskReport,
     ChapterImitationScoreReport,
     ChapterImitationSkillContract,
+    ChapterPlanningIntent,
 )
+from novel_analyzer.skills.assets import render_skill_prompt
 from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+from novel_analyzer.services.next_chapter_planner_service import PlannerContextWindow
 
 
 class HarnessControllerService:
@@ -77,6 +81,9 @@ class HarnessControllerService:
         for skill_name, purpose, required_inputs, produced_outputs in self.IMITATION_SKILLS:
             prompt_asset = root / skill_name / "prompts" / "main.md"
             schema_asset = root / skill_name / "schemas" / "output.schema.json"
+            prompt_preview = ""
+            if prompt_asset.exists():
+                prompt_preview = prompt_asset.read_text(encoding="utf-8")[:180]
             contracts.append(
                 ChapterImitationSkillContract(
                     skill_name=skill_name,
@@ -85,6 +92,7 @@ class HarnessControllerService:
                     produced_outputs=produced_outputs,
                     prompt_asset_path=str(prompt_asset),
                     schema_asset_path=str(schema_asset),
+                    prompt_preview=prompt_preview,
                 )
             )
         return contracts
@@ -196,6 +204,86 @@ class HarnessControllerService:
             recommended_actions=recommended_actions,
         )
 
+    def build_skill_prompt_previews(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        target_goal: str,
+        draft: ChapterImitationDraft,
+    ) -> dict[str, str]:
+        title, source_text = self.chapter_imitation._source_chapter_text(branch_id, source_chapter_index)  # noqa: SLF001
+        plan = self.chapter_imitation.build_imitation_plan(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+        )
+        planner_context = self.chapter_imitation.next_chapter_planner.build_context(
+            branch_id,
+            intent=ChapterPlanningIntent(
+                primary_goal=target_goal,
+                emphasis=["保持人物连续性", "保持冲突推进", "保持风格约束"],
+                forbidden_moves=["不要无铺垫升级战力", "不要引入未准备的大设定"],
+                preferred_tone="克制务实",
+                pace="steady",
+            ),
+            window=PlannerContextWindow(recent_chapter_count=3),
+        )
+        compare = self.chapter_imitation.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        payloads = {
+            "imitation-constraint-pack": {
+                "source_plan_json": json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                "branch_context_json": json.dumps(planner_context.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                "mapping_pack_json": "{}",
+                "carry_over_state_json": "{}",
+            },
+            "draft-self-check": {
+                "draft_text": draft.draft_text,
+                "source_plan_json": json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                "constraint_pack_json": json.dumps(
+                    {
+                        "hard_constraints": plan.hard_constraints,
+                        "soft_constraints": plan.soft_constraints,
+                        "risk_focus": plan.risk_focus,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+            },
+            "chapter-intake": {
+                "chapter_index": str(source_chapter_index),
+                "normalized_title": title,
+                "previous_summary": planner_context.recent_chapter_summaries[-1] if planner_context.recent_chapter_summaries else "",
+                "chapter_content": source_text[:2400],
+            },
+            "chapter-fact-extractor": {
+                "chapter_index": str(source_chapter_index),
+                "normalized_title": title,
+                "cleaned_text": source_text[:2400],
+                "prior_context_json": json.dumps(planner_context.recent_chapter_summaries[:2], ensure_ascii=False),
+                "graph_context_json": json.dumps(planner_context.relationship_state_notes[:3], ensure_ascii=False),
+                "state_summary_json": json.dumps(
+                    {
+                        "unresolved_threads": planner_context.unresolved_threads[:3],
+                        "world_rules": planner_context.world_rules[:3],
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+        }
+        previews: dict[str, str] = {}
+        for skill_name, variables in payloads.items():
+            try:
+                previews[skill_name] = render_skill_prompt(skill_name, variables, self.settings)[:600]
+            except FileNotFoundError:
+                continue
+        previews["comparison"] = json.dumps(compare.model_dump(mode="json"), ensure_ascii=False)[:600]
+        return previews
+
     def run_harness(
         self,
         branch_id: str,
@@ -262,6 +350,12 @@ class HarnessControllerService:
                 risk=risk,
             )
             actions = self._recommended_actions(preflight, review, gate, risk)
+            skill_prompt_previews = self.build_skill_prompt_previews(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                draft=draft,
+            )
             rounds.append(
                 ChapterImitationHarnessRound(
                     round_index=round_index,
@@ -273,6 +367,7 @@ class HarnessControllerService:
                     score=score,
                     preflight=preflight,
                     actions=actions,
+                    skill_prompt_previews=skill_prompt_previews,
                 )
             )
             final_preflight = preflight

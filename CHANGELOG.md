@@ -167,6 +167,7 @@
   - `show-imitation-skill-contracts`
   - `preflight-imitation`
   - `harness-imitation`
+- harness round 当前已开始暴露 `skill_prompt_previews`，用于证明它正在消费本地 skill prompt assets，而不只是暴露 contract 名称
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

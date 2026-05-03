@@ -150,6 +150,7 @@ def test_harness_lists_skill_contracts(tmp_path: Path) -> None:
         assert "chapter-intake" in names
         assert "imitation-constraint-pack" in names
         assert "draft-self-check" in names
+        assert any(item.prompt_preview for item in contracts if item.skill_name == "chapter-intake")
 
 
 def test_harness_preflight_blocks_too_short_draft(tmp_path: Path) -> None:
@@ -217,3 +218,5 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert report.skill_contracts
         assert report.rounds
         assert report.final_preflight
+        assert report.rounds[0].skill_prompt_previews
+        assert "draft-self-check" in report.rounds[0].skill_prompt_previews

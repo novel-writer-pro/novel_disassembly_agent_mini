@@ -756,6 +756,7 @@ class ChapterImitationSkillContract(BaseModel):
     produced_outputs: list[str] = Field(default_factory=list)
     prompt_asset_path: str = Field(default="")
     schema_asset_path: str = Field(default="")
+    prompt_preview: str = Field(default="")
 
 
 class ChapterImitationPreflightCheck(BaseModel):
@@ -820,6 +821,7 @@ class ChapterImitationHarnessRound(BaseModel):
     score: ChapterImitationScoreReport
     preflight: ChapterImitationPreflightReport
     actions: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    skill_prompt_previews: dict[str, str] = Field(default_factory=dict)
 
 
 class ChapterImitationHarnessReport(BaseModel):
