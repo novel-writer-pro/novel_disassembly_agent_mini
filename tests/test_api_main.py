@@ -806,6 +806,38 @@ def test_whole_book_imitation_readiness_sample_is_executable(monkeypatch, tmp_pa
     assert result["branch_candidate"]["chapter_analysis_count"] >= 1
 
 
+def test_whole_book_imitation_success_sample_matches_live_stable_fields(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-api-success-sample.txt")
+
+    request_payload = json.loads(
+        Path("docs/examples/whole-book-imitation-run.request.sample.json").read_text(encoding="utf-8")
+    )
+    request_payload["branch_id"] = branch_id
+    request_payload["use_llm"] = False
+    request_payload["execute"] = True
+    request_payload.pop("database_url", None)
+
+    status, body = _call_post_json("/api/whole-book-imitation-run", request_payload)
+    assert status == "200 OK"
+    live_payload = json.loads(body)
+    sample_payload = json.loads(
+        Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8")
+    )
+    assert live_payload["contract_version"] == sample_payload["contract_version"]
+    assert live_payload["stable_contract_version"] == sample_payload["stable_contract_version"]
+    assert live_payload["execution_mode"] == sample_payload["execution_mode"]
+    assert "policy_summary" in live_payload
+    assert "dashboard_summary" in live_payload
+    assert "next_stage_focus" in live_payload["policy_summary"]
+    assert "book_handoff_summary" in live_payload["dashboard_summary"]
+
+
 def test_review_cluster_history_endpoint_handles_unmigrated_review_tables(monkeypatch) -> None:
     engine = create_engine('sqlite+pysqlite:///:memory:', future=True)
     factory = sessionmaker(bind=engine, future=True)
