@@ -228,6 +228,8 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert "draft-self-check" in report.rounds[0].skill_prompt_previews
         assert report.rounds[0].skill_outputs
         assert "imitation-constraint-pack" in report.rounds[0].skill_outputs
+        assert "relationship_watchpoints" in report.rounds[0].skill_outputs["imitation-constraint-pack"]
+        assert "likely_gate_failures" in report.rounds[0].skill_outputs["draft-self-check"]
 
 
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:
@@ -290,3 +292,77 @@ def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -
         action_types = {item.action_type for item in actions}
         assert "repair_constraints" in action_types
         assert "repair_continuity_memory" in action_types
+
+
+def test_harness_actions_include_relationship_rule_and_hook_repairs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        ).model_copy(update={"draft_text": "短草案"})
+        preflight = service.preflight_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+            skill_outputs={
+                "imitation-constraint-pack": {
+                    "hard_constraints": [],
+                    "soft_constraints": [],
+                    "forbidden_transformations": ["不要直接抄原文句式"],
+                    "continuity_memory": [],
+                    "relationship_watchpoints": [],
+                    "rule_watchpoints": [],
+                },
+                "draft-self-check": {
+                    "blocking_issues": [],
+                    "likely_gate_failures": [
+                        "relationship_transition_thin",
+                        "world_rule_support_thin",
+                        "ending_hook_presence",
+                        "character_motivation_drift",
+                    ],
+                    "recommended_actions": [],
+                },
+            },
+        )
+        actions = service._recommended_actions(  # noqa: SLF001
+            preflight=preflight,
+            review=service.chapter_imitation.review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ),
+            ),
+            gate=service.chapter_imitation.gate_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ),
+            ),
+            risk=service.chapter_imitation.risk_review_draft(
+                branch_id,
+                source_chapter_index=3,
+                draft=service.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=3,
+                    target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+                ),
+            ),
+        )
+        action_types = {item.action_type for item in actions}
+        assert "repair_character_motivation" in action_types
+        assert "repair_relationship_transition" in action_types
+        assert "repair_world_rule_support" in action_types
+        assert "reinforce_ending_hook" in action_types

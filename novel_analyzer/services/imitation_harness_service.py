@@ -199,6 +199,8 @@ class HarnessControllerService:
         constraint_pack = outputs.get("imitation-constraint-pack", {})
         if isinstance(constraint_pack, dict):
             forbidden = [str(item) for item in constraint_pack.get("forbidden_transformations", []) if str(item).strip()]
+            relationship_watch = [str(item) for item in constraint_pack.get("relationship_watchpoints", []) if str(item).strip()]
+            rule_watch = [str(item) for item in constraint_pack.get("rule_watchpoints", []) if str(item).strip()]
             if forbidden:
                 checks.append(
                     ChapterImitationPreflightCheck(
@@ -216,11 +218,46 @@ class HarnessControllerService:
                         notes=["constraint pack 未给出明确 forbidden_transformations。"],
                     )
                 )
+            if relationship_watch:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="relationship_watchpoints",
+                        status="pass",
+                        notes=relationship_watch[:3],
+                    )
+                )
+            else:
+                recommended_actions.append("补充 relationship_watchpoints，明确关系推进敏感点。")
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="relationship_watchpoints",
+                        status="warn",
+                        notes=["constraint pack 缺少 relationship watchpoints。"],
+                    )
+                )
+            if rule_watch:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="rule_watchpoints",
+                        status="pass",
+                        notes=rule_watch[:3],
+                    )
+                )
+            else:
+                recommended_actions.append("补充 rule_watchpoints，明确世界规则敏感点。")
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="rule_watchpoints",
+                        status="warn",
+                        notes=["constraint pack 缺少 rule watchpoints。"],
+                    )
+                )
 
         self_check = outputs.get("draft-self-check", {})
         if isinstance(self_check, dict):
             predicted_blockers = [str(item) for item in self_check.get("blocking_issues", []) if str(item).strip()]
             predicted_actions = [str(item) for item in self_check.get("recommended_actions", []) if str(item).strip()]
+            likely_failures = [str(item) for item in self_check.get("likely_gate_failures", []) if str(item).strip()]
             if predicted_blockers:
                 blocking_issues.extend(item for item in predicted_blockers if item not in blocking_issues)
                 checks.append(
@@ -247,6 +284,22 @@ class HarnessControllerService:
                         notes=["draft-self-check 未返回阻断问题。"],
                     )
                 )
+            if likely_failures:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="draft_self_check_likely_failures",
+                        status="warn",
+                        notes=likely_failures[:3],
+                    )
+                )
+                if "character_motivation_drift" in likely_failures:
+                    recommended_actions.append("补足人物动机支撑，避免角色行为漂移。")
+                if "relationship_transition_thin" in likely_failures:
+                    recommended_actions.append("补足关系变化前后的中间证据。")
+                if "world_rule_support_thin" in likely_failures:
+                    recommended_actions.append("补足规则支撑，避免越界动作无来源。")
+                if "ending_hook_presence" in likely_failures:
+                    recommended_actions.append("补充更明确的章尾钩子。")
 
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
@@ -375,6 +428,8 @@ class HarnessControllerService:
                 + planner_context.unresolved_threads[:2]
                 + planner_context.world_rules[:2]
             ),
+            "relationship_watchpoints": planner_context.relationship_state_notes[:3],
+            "rule_watchpoints": planner_context.world_rules[:3],
         }
         self_check_output = {
             "blocking_issues": [],
@@ -388,12 +443,21 @@ class HarnessControllerService:
         if not constraint_output["forbidden_transformations"]:
             self_check_output["blocking_issues"].append("missing_forbidden_transformations")
             self_check_output["recommended_actions"].append("补齐换皮与越界禁止项。")
+        if not constraint_output["relationship_watchpoints"]:
+            self_check_output["likely_gate_failures"].append("relationship_transition_thin")
+            self_check_output["recommended_actions"].append("补充关系变化敏感点。")
+        if not constraint_output["rule_watchpoints"]:
+            self_check_output["likely_gate_failures"].append("world_rule_support_thin")
+            self_check_output["recommended_actions"].append("补充规则敏感点。")
         if "接下来" not in draft.draft_text and "下一步" not in draft.draft_text:
             self_check_output["likely_gate_failures"].append("ending_hook_presence")
             self_check_output["recommended_actions"].append("补充明确的下一步钩子。")
         if len(constraint_output["continuity_memory"]) < 2:
             self_check_output["likely_gate_failures"].append("continuity_memory_thin")
             self_check_output["recommended_actions"].append("补充关系/线程/规则 continuity memory。")
+        if "决定" not in draft.draft_text and "选择" not in draft.draft_text:
+            self_check_output["likely_gate_failures"].append("character_motivation_drift")
+            self_check_output["recommended_actions"].append("补足人物动机与选择依据。")
         if plan.risk_focus:
             self_check_output["self_notes"].extend(plan.risk_focus[:2])
         return {
@@ -587,6 +651,38 @@ class HarnessControllerService:
                     action_type="repair_continuity_memory",
                     target="continuity_memory",
                     instructions=["补充关系推进、未解线程与规则约束的 continuity memory。"],
+                )
+            )
+        if "人物动机" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_character_motivation",
+                    target="character_motivation",
+                    instructions=["补足人物为何做出当前选择的支撑证据与过渡。"],
+                )
+            )
+        if "关系变化" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_relationship_transition",
+                    target="relationship_transition",
+                    instructions=["补足关系变化前后的中间事件与态度转折。"],
+                )
+            )
+        if "规则支撑" in " ".join(preflight.recommended_actions) or "规则敏感点" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_world_rule_support",
+                    target="world_rule_support",
+                    instructions=["补足越界动作前的规则来源、限制与代价。"],
+                )
+            )
+        if "章尾钩子" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="reinforce_ending_hook",
+                    target="ending_hook",
+                    instructions=["补出清晰的下一步驱动与未完成目标。"],
                 )
             )
         if not actions:
