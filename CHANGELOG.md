@@ -253,6 +253,7 @@
 - 当前 `apps/api/README.md` 已补 readiness / run 的 curl quick examples，入口页可直接复制调用
 - 当前新增 request sample 可执行性回归，直接用 `whole-book-imitation-run.request.sample.json` 打 API 校验样例与实现不漂移
 - 当前新增 readiness sample 可执行性回归，确保 `whole-book-imitation-readiness.sample.json` 与 live readiness endpoint 不漂移
+- 当前新增 error sample 形状回归，确保 `whole-book-imitation-run.error.provider-billing.sample.json` 与 live billing-error 返回不漂移
 - 当前新增 `docs/whole-book-imitation-docs-index.md`，把 contract / samples / governance / evidence / quickstart 收口成单页索引
 - 当前新增 `docs/whole-book-imitation-provider-recovery-checklist.md`，明确 provider 恢复后如何重跑 readiness / execute / freeze evidence
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`

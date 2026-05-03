@@ -723,6 +723,44 @@ def test_whole_book_imitation_run_endpoint_classifies_provider_billing_errors(mo
     assert payload["upstream_status"] == 403
 
 
+def test_whole_book_imitation_error_sample_matches_billing_error_shape(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-api-error-sample.txt")
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("Error code: 403 - {'error': {'message': 'daily usage limit exceeded', 'type': 'billing_error'}}")
+
+    monkeypatch.setattr("apps.api.app.main.WholeBookImitationService.run_in_sandbox", _boom)
+    status, body = _call_post_json(
+        "/api/whole-book-imitation-run",
+        {
+            "branch_id": branch_id,
+            "project_title": "测试项目",
+            "source_work_name": "示例小说",
+            "target_work_name": "新世界版示例小说",
+            "chapter_specs": [
+                {"source_chapter_index": 2, "target_goal": "延续资源铺垫"},
+                {"source_chapter_index": 3, "target_goal": "延续主角获得功法后的行动线"},
+            ],
+            "execute": True,
+        },
+    )
+    assert status == "503 Service Unavailable"
+    payload = json.loads(body)
+    sample = json.loads(
+        Path("docs/examples/whole-book-imitation-run.error.provider-billing.sample.json").read_text(encoding="utf-8")
+    )
+    assert payload["error_type"] == sample["error_type"]
+    assert payload["retryable"] == sample["retryable"]
+    assert payload["upstream_status"] == sample["upstream_status"]
+    assert payload["error_code"] == sample["error_code"]
+
+
 def test_whole_book_imitation_run_request_sample_is_executable(monkeypatch, tmp_path) -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)
