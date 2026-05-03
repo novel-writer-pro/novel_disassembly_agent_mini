@@ -87,6 +87,29 @@ class HarnessControllerService:
             return ("medium", 2)
         return ("low", 4)
 
+    @staticmethod
+    def _sorted_actions(actions: list[ChapterImitationHarnessAction]) -> list[ChapterImitationHarnessAction]:
+        return sorted(actions, key=lambda item: (item.priority, item.action_type, item.target))
+
+    @staticmethod
+    def _aggregate_stop_reason(
+        *,
+        preflight: ChapterImitationPreflightReport,
+        gate: ChapterImitationGateReport,
+        risk: ChapterImitationRiskReport,
+        score: ChapterImitationScoreReport,
+        actions: list[ChapterImitationHarnessAction],
+    ) -> tuple[str, str]:
+        if preflight.overall_verdict == "pass" and gate.overall_verdict != "needs_revision" and risk.overall_risk_level == "low" and score.overall_score >= 80:
+            return ("pass", "harness_quality_threshold_reached")
+        if any(item.priority == 1 for item in actions):
+            return ("needs_revision", "critical_action_required")
+        if risk.overall_risk_level != "low":
+            return ("needs_revision", "risk_revision_required")
+        if gate.overall_verdict == "needs_revision":
+            return ("needs_revision", "gate_revision_required")
+        return ("needs_revision", "quality_iteration_required")
+
     def list_skill_contracts(self) -> list[ChapterImitationSkillContract]:
         root = Path(self.settings.skills_dir)
         contracts: list[ChapterImitationSkillContract] = []
@@ -719,7 +742,7 @@ class HarnessControllerService:
                 gate=gate,
                 risk=risk,
             )
-            actions = self._recommended_actions(preflight, review, gate, risk)
+            actions = self._sorted_actions(self._recommended_actions(preflight, review, gate, risk))
             skill_prompt_previews = self.build_skill_prompt_previews(
                 branch_id,
                 source_chapter_index=source_chapter_index,
@@ -743,15 +766,14 @@ class HarnessControllerService:
             )
             final_preflight = preflight
 
-            if (
-                preflight.overall_verdict == "pass"
-                and comparison.overall_verdict == "aligned"
-                and gate.overall_verdict != "needs_revision"
-                and risk.overall_risk_level == "low"
-                and score.overall_score >= 80
-            ):
-                stop_reason = "harness_quality_threshold_reached"
-                final_verdict = "pass"
+            final_verdict, stop_reason = self._aggregate_stop_reason(
+                preflight=preflight,
+                gate=gate,
+                risk=risk,
+                score=score,
+                actions=actions,
+            )
+            if final_verdict == "pass":
                 break
 
             revised = self.chapter_imitation.revise_draft(draft, review=review)
@@ -761,7 +783,6 @@ class HarnessControllerService:
                     "method_notes": revised.method_notes + [item.target for item in actions],
                 }
             )
-            final_verdict = "needs_revision"
 
         assert final_preflight is not None
         return ChapterImitationHarnessReport(

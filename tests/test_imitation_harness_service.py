@@ -459,3 +459,63 @@ def test_harness_preflight_consumes_gate_and_risk_meta(tmp_path: Path) -> None:
         )
         assert "gate_verdict_requires_revision" in report.blocking_issues
         assert any(item.check_name == "risk_gate_alignment" for item in report.checks)
+
+
+def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+        ).model_copy(update={"draft_text": "短草案"})
+        comparison = service.chapter_imitation.compare_with_source(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+        )
+        gate = service.chapter_imitation.gate_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+        )
+        risk = service.chapter_imitation.risk_review_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+        )
+        score = service.chapter_imitation.score_draft(
+            source_chapter_index=3,
+            draft=draft,
+            comparison=comparison,
+            gate=gate,
+            risk=risk,
+        )
+        preflight = service.preflight_draft(
+            branch_id,
+            source_chapter_index=3,
+            draft=draft,
+            comparison=comparison,
+            skill_outputs={
+                "_gate_meta": {"overall_verdict": "needs_revision"},
+                "_risk_meta": {"overall_risk_level": "medium"},
+                "draft-self-check": {"blocking_issues": ["draft_too_short_for_gate"], "recommended_actions": []},
+            },
+        )
+        actions = service._sorted_actions(  # noqa: SLF001
+            service._recommended_actions(preflight, service.chapter_imitation.review_draft(branch_id, source_chapter_index=3, draft=draft), gate, risk)  # noqa: SLF001
+        )
+        assert actions == sorted(actions, key=lambda item: (item.priority, item.action_type, item.target))
+        final_verdict, stop_reason = service._aggregate_stop_reason(  # noqa: SLF001
+            preflight=preflight,
+            gate=gate,
+            risk=risk,
+            score=score,
+            actions=actions,
+        )
+        assert final_verdict == "needs_revision"
+        assert stop_reason in {"critical_action_required", "gate_revision_required", "risk_revision_required"}
