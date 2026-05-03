@@ -135,6 +135,7 @@
 19. [`./whole-book-imitation-integration-quickstart.md`](./whole-book-imitation-integration-quickstart.md)
 20. [`./whole-book-imitation-docs-index.md`](./whole-book-imitation-docs-index.md)
 21. [`./whole-book-imitation-provider-recovery-checklist.md`](./whole-book-imitation-provider-recovery-checklist.md)
+22. [`./whole-book-imitation-sample-coverage-matrix.md`](./whole-book-imitation-sample-coverage-matrix.md)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)

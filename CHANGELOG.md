@@ -256,6 +256,7 @@
 - 当前新增 error sample 形状回归，确保 `whole-book-imitation-run.error.provider-billing.sample.json` 与 live billing-error 返回不漂移
 - 当前新增 `docs/whole-book-imitation-docs-index.md`，把 contract / samples / governance / evidence / quickstart 收口成单页索引
 - 当前新增 `docs/whole-book-imitation-provider-recovery-checklist.md`，明确 provider 恢复后如何重跑 readiness / execute / freeze evidence
+- 当前新增 `docs/whole-book-imitation-sample-coverage-matrix.md`，明确 request / readiness / error / success 样例各自的 executable regression 覆盖状态
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

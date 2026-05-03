@@ -30,6 +30,7 @@
 - `docs/examples/whole-book-imitation-run.sample.json`
 - `docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`
 - `docs/examples/whole-book-imitation-readiness.sample.json`
+- `docs/whole-book-imitation-sample-coverage-matrix.md`
 
 ---
 
