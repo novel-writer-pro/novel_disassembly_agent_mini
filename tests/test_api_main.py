@@ -398,6 +398,13 @@ def test_api_readme_mentions_review_and_search_endpoints() -> None:
         assert needle in readme
 
 
+def test_api_readme_mentions_whole_book_imitation_samples() -> None:
+    readme = Path("apps/api/README.md").read_text(encoding="utf-8")
+    assert "whole-book-imitation-run.request.sample.json" in readme
+    assert "whole-book-imitation-run.sample.json" in readme
+    assert "whole-book-imitation-run.error.provider-billing.sample.json" in readme
+
+
 def test_import_endpoint_requires_uploaded_file() -> None:
     captured: dict[str, Any] = {}
 

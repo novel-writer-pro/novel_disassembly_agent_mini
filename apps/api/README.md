@@ -60,6 +60,9 @@
 - `POST /api/whole-book-imitation-run` 当前返回显式版本标记：
   - `contract_version=whole-book-imitation.v1`
   - `stable_contract_version=whole-book-imitation-pre-v1`
+  - 请求样例：`docs/examples/whole-book-imitation-run.request.sample.json`
+  - 成功响应样例：`docs/examples/whole-book-imitation-run.sample.json`
+  - 错误响应样例：`docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`
 
 ## 多作品说明
 
