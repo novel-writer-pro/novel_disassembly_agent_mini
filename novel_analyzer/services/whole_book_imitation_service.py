@@ -41,6 +41,21 @@ class WholeBookImitationService:
         }
 
     @staticmethod
+    def _scheduling_priority(strategy_input: dict[str, object]) -> tuple[int, str]:
+        priority_bias = int(strategy_input.get("priority_bias", 4) or 4)
+        risk_bias = str(strategy_input.get("risk_bias", "low") or "low")
+        prioritized_families = [
+            str(item)
+            for item in strategy_input.get("prioritized_families", [])
+            if str(item).strip()
+        ]
+        if priority_bias <= 1 or risk_bias == "high":
+            return (1, "承接上一章高优先级/高风险信号")
+        if prioritized_families:
+            return (min(priority_bias, 2), f"优先处理能力族：{'、'.join(prioritized_families[:2])}")
+        return (priority_bias, "常规连续推进")
+
+    @staticmethod
     def _augment_strategy_input_with_policy(
         strategy_input: dict[str, object],
         previous_policy_summary: dict[str, object] | None,
@@ -252,6 +267,7 @@ class WholeBookImitationService:
                 target_goal = f"{target_goal}｜本章需优先响应上一章高优先级问题"
             if str(strategy_input.get("risk_bias", "low")) in {"medium", "high"}:
                 target_goal = f"{target_goal}｜注意承接上一章的中高风险信号"
+            scheduling_priority, scheduling_reason = self._scheduling_priority(strategy_input)
 
             harness_report = self.harness.run_harness(
                 branch_id,
@@ -285,6 +301,8 @@ class WholeBookImitationService:
                     action_queue=harness_report.action_queue,
                     revise_payload=harness_report.rounds[-1].revise_payload if harness_report.rounds else {},
                     strategy_input=strategy_input,
+                    scheduling_priority=scheduling_priority,
+                    scheduling_reason=scheduling_reason,
                     policy_summary=harness_report.policy_summary,
                 )
             )
@@ -330,8 +348,9 @@ class WholeBookImitationService:
                 [
                     {
                         "source_chapter_index": step.source_chapter_index,
-                        "priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                        "priority": step.scheduling_priority,
                         "severity": str(step.policy_summary.get("highest_action_severity", "low")),
+                        "reason": step.scheduling_reason,
                     }
                     for step in executed_steps
                 ],
@@ -570,6 +589,8 @@ class WholeBookImitationService:
                     "source_chapter_index": step.source_chapter_index,
                     "highest_action_priority": int(step.policy_summary.get("highest_action_priority", 4)),
                     "overall_risk_level": step.overall_risk_level,
+                    "scheduling_priority": step.scheduling_priority,
+                    "scheduling_reason": step.scheduling_reason,
                     "weak_families": [
                         family
                         for family in step.strategy_input.get("prioritized_families", [])

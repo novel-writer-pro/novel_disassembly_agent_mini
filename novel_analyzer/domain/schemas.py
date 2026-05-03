@@ -934,6 +934,8 @@ class WholeBookImitationExecutedStep(BaseModel):
     action_queue: list[ChapterImitationHarnessAction] = Field(default_factory=list)
     revise_payload: dict[str, object] = Field(default_factory=dict)
     strategy_input: dict[str, object] = Field(default_factory=dict)
+    scheduling_priority: int = Field(default=4, ge=1, le=5)
+    scheduling_reason: str = Field(default="")
     policy_summary: dict[str, object] = Field(default_factory=dict)
 
 

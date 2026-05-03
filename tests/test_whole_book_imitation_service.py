@@ -203,6 +203,8 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert report.executed_steps[0].action_queue
         assert report.executed_steps[0].revise_payload
         assert "strategy_input" in report.executed_steps[1].model_dump()
+        assert report.executed_steps[1].scheduling_priority >= 1
+        assert report.executed_steps[1].scheduling_reason
         assert report.executed_steps[0].policy_summary
         assert report.policy_summary["executed_step_count"] == 2
         assert "min_overall_score" in report.policy_summary
@@ -242,3 +244,5 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "weak_lane_families" in report.dashboard_summary["top_risk_summary"]
         assert "top_priority_families" in report.dashboard_summary["top_priority_summary"]
         assert "high_risk_families" in report.dashboard_summary["top_risk_summary"]
+        assert "reason" in report.policy_summary["book_priority_ranking"][0]
+        assert "scheduling_priority" in report.dashboard_summary["chapter_flags"][0]
