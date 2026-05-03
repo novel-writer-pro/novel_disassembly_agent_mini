@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from _pytest.monkeypatch import MonkeyPatch
@@ -344,6 +345,37 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"execution_mode": "sandbox_execute"' in sandbox_result.stdout
     assert '"executed_steps"' in sandbox_result.stdout
     assert '"final_carry_over_state"' in sandbox_result.stdout
+
+    export_path = tmp_path / "whole-book-imitation-run.json"
+    export_result = runner.invoke(
+        app,
+        [
+            "export-whole-book-imitation-run",
+            "branch-cli-1",
+            "测试项目",
+            "示例小说",
+            "新世界版示例小说",
+            str(export_path),
+            "2:延续资源铺垫",
+            "3:延续主角获得功法后的行动线",
+            "--world-map",
+            "郑国=星际联邦",
+            "--character-map",
+            "卫图=魏拓",
+            "--execute",
+            "--max-rounds",
+            "1",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert export_result.exit_code == 0
+    assert "whole_book_imitation_run_path=" in export_result.stdout
+    exported_payload = json.loads(export_path.read_text(encoding="utf-8"))
+    assert exported_payload["execution_mode"] == "sandbox_execute"
+    assert "policy_summary" in exported_payload
+    assert "dashboard_summary" in exported_payload
+    assert "book_handoff_summary" in exported_payload["dashboard_summary"]
 
     contract_result = runner.invoke(
         app,

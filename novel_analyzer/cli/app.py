@@ -71,6 +71,52 @@ def _render_branch_report(bundle: dict[str, object]) -> str:
     return render_branch_report(bundle)
 
 
+def _mapping_pairs(items: list[str]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for item in items:
+        left, _, right = item.partition("=")
+        if left and right:
+            result[left] = right
+    return result
+
+
+def _parse_chapter_goal_spec(chapter_spec: list[str]) -> list[tuple[int, str]]:
+    chapter_goals: list[tuple[int, str]] = []
+    for item in chapter_spec:
+        chapter_text, _, goal = item.partition(":")
+        if not chapter_text or not goal:
+            raise typer.Exit(code=1)
+        chapter_goals.append((int(chapter_text), goal))
+    return chapter_goals
+
+
+def _build_story_mapping_pack(
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    *,
+    world_map: list[str],
+    character_map: list[str],
+    faction_map: list[str],
+    power_map: list[str],
+    rule_override: list[str],
+    forbidden_transformation: list[str],
+) -> Any:
+    from novel_analyzer.domain.schemas import StoryMappingPack
+
+    return StoryMappingPack(
+        project_title=project_title,
+        source_work_name=source_work_name,
+        target_work_name=target_work_name,
+        world_mapping=_mapping_pairs(world_map),
+        character_mapping=_mapping_pairs(character_map),
+        faction_mapping=_mapping_pairs(faction_map),
+        power_mapping=_mapping_pairs(power_map),
+        rule_overrides=rule_override,
+        forbidden_transformations=forbidden_transformation,
+    )
+
+
 def _ingest_and_start_pipeline(**kwargs: Any) -> Any:
     from novel_analyzer.application import ingest_and_start_pipeline
 
@@ -1447,34 +1493,17 @@ def plan_whole_book_imitation(
     database_url: str | None = None,
 ) -> None:
     """Build a whole-book imitation orchestration skeleton."""
-
-    from novel_analyzer.domain.schemas import StoryMappingPack
-
-    def _pairs(items: list[str]) -> dict[str, str]:
-        result: dict[str, str] = {}
-        for item in items:
-            left, _, right = item.partition("=")
-            if left and right:
-                result[left] = right
-        return result
-
-    chapter_goals: list[tuple[int, str]] = []
-    for item in chapter_spec:
-        chapter_text, _, goal = item.partition(":")
-        if not chapter_text or not goal:
-            raise typer.Exit(code=1)
-        chapter_goals.append((int(chapter_text), goal))
-
-    mapping_pack = StoryMappingPack(
-        project_title=project_title,
-        source_work_name=source_work_name,
-        target_work_name=target_work_name,
-        world_mapping=_pairs(world_map),
-        character_mapping=_pairs(character_map),
-        faction_mapping=_pairs(faction_map),
-        power_mapping=_pairs(power_map),
-        rule_overrides=rule_override,
-        forbidden_transformations=forbidden_transformation,
+    chapter_goals = _parse_chapter_goal_spec(chapter_spec)
+    mapping_pack = _build_story_mapping_pack(
+        project_title,
+        source_work_name,
+        target_work_name,
+        world_map=world_map,
+        character_map=character_map,
+        faction_map=faction_map,
+        power_map=power_map,
+        rule_override=rule_override,
+        forbidden_transformation=forbidden_transformation,
     )
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
@@ -1507,34 +1536,17 @@ def run_whole_book_imitation(
     database_url: str | None = None,
 ) -> None:
     """Build a dry-run queue or execute a sandbox whole-book imitation run."""
-
-    from novel_analyzer.domain.schemas import StoryMappingPack
-
-    def _pairs(items: list[str]) -> dict[str, str]:
-        result: dict[str, str] = {}
-        for item in items:
-            left, _, right = item.partition("=")
-            if left and right:
-                result[left] = right
-        return result
-
-    chapter_goals: list[tuple[int, str]] = []
-    for item in chapter_spec:
-        chapter_text, _, goal = item.partition(":")
-        if not chapter_text or not goal:
-            raise typer.Exit(code=1)
-        chapter_goals.append((int(chapter_text), goal))
-
-    mapping_pack = StoryMappingPack(
-        project_title=project_title,
-        source_work_name=source_work_name,
-        target_work_name=target_work_name,
-        world_mapping=_pairs(world_map),
-        character_mapping=_pairs(character_map),
-        faction_mapping=_pairs(faction_map),
-        power_mapping=_pairs(power_map),
-        rule_overrides=rule_override,
-        forbidden_transformations=forbidden_transformation,
+    chapter_goals = _parse_chapter_goal_spec(chapter_spec)
+    mapping_pack = _build_story_mapping_pack(
+        project_title,
+        source_work_name,
+        target_work_name,
+        world_map=world_map,
+        character_map=character_map,
+        faction_map=faction_map,
+        power_map=power_map,
+        rule_override=rule_override,
+        forbidden_transformation=forbidden_transformation,
     )
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
@@ -1557,6 +1569,64 @@ def run_whole_book_imitation(
             )
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def export_whole_book_imitation_run(
+    branch_id: str,
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    output_path: Path,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
+    execute: bool = typer.Option(False, "--execute", help="Run sandbox iteration instead of dry-run queue only."),
+    max_rounds: int = typer.Option(1, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Export a whole-book imitation run report JSON for downstream systems."""
+
+    chapter_goals = _parse_chapter_goal_spec(chapter_spec)
+    mapping_pack = _build_story_mapping_pack(
+        project_title,
+        source_work_name,
+        target_work_name,
+        world_map=world_map,
+        character_map=character_map,
+        faction_map=faction_map,
+        power_map=power_map,
+        rule_override=rule_override,
+        forbidden_transformation=forbidden_transformation,
+    )
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _whole_book_imitation_service(session)
+        report = (
+            service.run_in_sandbox(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+            )
+            if execute
+            else service.build_run_queue(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+            )
+        )
+        output_path.write_text(report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+        echo(f"whole_book_imitation_run_path={output_path}")
 
 
 @app.command()

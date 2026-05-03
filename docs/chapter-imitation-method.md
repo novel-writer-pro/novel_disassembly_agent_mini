@@ -277,6 +277,20 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 
 因此现在已经能把整本仿写从“概念计划”推进到“章节执行队列骨架”。
 
+如果要把该结果直接落盘供系统消费，建议使用：
+
+```bash
+novel-analyzer export-whole-book-imitation-run <branch_id> \
+  "测试项目" \
+  "示例小说" \
+  "新世界版示例小说" \
+  ./whole-book-imitation-run.json \
+  "2:延续资源铺垫" \
+  "3:延续主角获得功法后的行动线" \
+  --world-map "郑国=星际联邦" \
+  --character-map "卫图=魏拓"
+```
+
 ---
 
 ## 10. 整本 sandbox execute（当前最终推荐入口）
@@ -327,6 +341,23 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 - 仍不会把生成正文写入 live branch artifact
 - 当前 carry-over 仍然是 sandbox report state，不是正式生产内容发布
 - 更适合作为“整本仿写实验链 / 评估链 / agentOS 编排链”的稳定中间层
+
+如果要把 sandbox execute 的结果直接导出给下游系统，建议使用：
+
+```bash
+novel-analyzer export-whole-book-imitation-run <branch_id> \
+  "测试项目" \
+  "示例小说" \
+  "新世界版示例小说" \
+  ./whole-book-imitation-run.execute.json \
+  "2:延续资源铺垫" \
+  "3:延续主角获得功法后的行动线" \
+  --world-map "郑国=星际联邦" \
+  --character-map "卫图=魏拓" \
+  --execute \
+  --max-rounds 1 \
+  --use-llm
+```
 
 ---
 
