@@ -40,6 +40,7 @@
 - `GET /api/pipeline/runs?branch_id=...`
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
+- `GET /api/whole-book-imitation-readiness`
 - `POST /api/whole-book-imitation-run`
 - `POST /api/search-branch`
 - `POST /api/ask-branch`
@@ -76,6 +77,7 @@
   便于小说空间 / 多作品管理页直接显示每本书的运行状态
 - `GET /api/runtime-health`：返回 `.cache/novel-analyzer/` 与历史 `.omx/` 运行时文件的数量与迁移状态，便于排查重启后文件问题
 - `GET /api/provider-health`：返回最近一次 ask/ask-stream 使用的 provider 状态，便于前端系统健康面板展示 503 / 降级情况
+- `GET /api/whole-book-imitation-readiness`：返回 whole-book freeze 检查所需的 contract/provider/branch readiness 信息
 - `GET /api/job-events?branch_id=...&limit=100`：返回章节任务事件流，供后续任务控制台或排障流程查看章节级执行过程
 - `POST /api/pipeline/start-range`：以后台异步方式启动一段连续拆书任务（当前最小版本要求从 `next_chapter` 开始）
 - `GET /api/pipeline/status?pipeline_run_id=...`：查看某个后台 pipeline run 状态

@@ -16,6 +16,7 @@ from urllib.parse import parse_qs
 from uuid import uuid4
 from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
+from sqlalchemy import func, select
 
 from novel_analyzer.application import (
     cancel_pipeline_run,
@@ -46,8 +47,10 @@ from novel_analyzer.runtime.review_batch_execution import (
 )
 from novel_analyzer.database.models import (
     AnalysisRun,
+    ChapterArtifact,
     ChapterManifest,
     ChapterSegment,
+    FactRecord,
     NovelSource,
     RunBranch,
 )
@@ -105,6 +108,7 @@ _API_ENDPOINT_SPECS: list[dict[str, str]] = [
     {"method": "GET", "path": "/api/pipeline/runs"},
     {"method": "GET", "path": "/api/runtime-health"},
     {"method": "GET", "path": "/api/provider-health"},
+    {"method": "GET", "path": "/api/whole-book-imitation-readiness"},
     {"method": "POST", "path": "/api/whole-book-imitation-run"},
     {"method": "POST", "path": "/api/search-branch"},
     {"method": "POST", "path": "/api/ask-branch"},
@@ -284,6 +288,104 @@ def _whole_book_chapter_goals(body: dict[str, Any]) -> list[tuple[int, str]]:
             raise ValueError("chapter_specs must contain positive source_chapter_index and non-empty target_goal")
         chapter_goals.append((chapter_index, target_goal))
     return chapter_goals
+
+
+def _whole_book_readiness_payload(
+    branch_id: str | None,
+    database_url: str | None,
+) -> dict[str, object]:
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    with factory() as session:
+        target_branch_id = branch_id or session.scalar(
+            select(ChapterArtifact.branch_id)
+            .where(ChapterArtifact.artifact_type == "chapter_analysis")
+            .group_by(ChapterArtifact.branch_id)
+            .order_by(func.count(ChapterArtifact.id).desc())
+            .limit(1)
+        )
+
+        branch_summary: dict[str, object] = {
+            "branch_id": target_branch_id or "",
+            "exists": False,
+            "chapter_analysis_count": 0,
+            "fact_record_count": 0,
+            "chapter_span": {"min": None, "max": None},
+            "run_id": "",
+            "branch_name": "",
+            "status": "",
+            "novel_title": "",
+        }
+        if target_branch_id:
+            branch = session.get(RunBranch, target_branch_id)
+            if branch is not None:
+                analysis_count = session.scalar(
+                    select(func.count())
+                    .select_from(ChapterArtifact)
+                    .where(
+                        ChapterArtifact.branch_id == target_branch_id,
+                        ChapterArtifact.artifact_type == "chapter_analysis",
+                    )
+                ) or 0
+                fact_count = session.scalar(
+                    select(func.count())
+                    .select_from(FactRecord)
+                    .where(FactRecord.branch_id == target_branch_id)
+                ) or 0
+                chapter_min, chapter_max = session.execute(
+                    select(
+                        func.min(ChapterArtifact.chapter_index),
+                        func.max(ChapterArtifact.chapter_index),
+                    ).where(
+                        ChapterArtifact.branch_id == target_branch_id,
+                        ChapterArtifact.artifact_type == "chapter_analysis",
+                    )
+                ).one()
+                novel_title = session.scalar(
+                    select(NovelSource.title)
+                    .join(AnalysisRun, AnalysisRun.novel_id == NovelSource.id)
+                    .where(AnalysisRun.id == branch.run_id)
+                ) or ""
+                branch_summary = {
+                    "branch_id": target_branch_id,
+                    "exists": True,
+                    "chapter_analysis_count": int(analysis_count),
+                    "fact_record_count": int(fact_count),
+                    "chapter_span": {"min": chapter_min, "max": chapter_max},
+                    "run_id": branch.run_id,
+                    "branch_name": branch.name,
+                    "status": branch.status,
+                    "novel_title": novel_title,
+                }
+
+    provider_health = read_provider_health(runtime)
+    return {
+        "contract_version": "whole-book-imitation-readiness.v1",
+        "stable_contract_version": "whole-book-imitation-readiness-pre-v1",
+        "whole_book_contract_version": "whole-book-imitation.v1",
+        "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+        "database": {
+            "masked_database_url": runtime.masked_database_url,
+            "effective_db_name": runtime.effective_db_name,
+        },
+        "provider": {
+            "provider_name": runtime.llm_provider_name,
+            "base_url": runtime.resolved_llm_base_url,
+            "api_key_present": bool(runtime.resolved_llm_api_key),
+            "model_name": runtime.llm_model_name,
+            "stage_model_name": runtime.llm_stage_model_name,
+            "qa_model_name": runtime.llm_qa_model_name,
+            "provider_health": asdict(provider_health),
+        },
+        "branch_candidate": branch_summary,
+        "readiness_notes": [
+            "如果 api_key_present=false，则不能做真实 provider-backed whole-book execute。",
+            "如果 provider_health.last_status=degraded，应先确认上游 provider 是否恢复。",
+            "如果 branch_candidate.chapter_analysis_count < 2，则不适合做 whole-book imitation freeze evidence。",
+        ],
+    }
 
 
 def _apply_review_filters(
@@ -2088,6 +2190,20 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=asdict(report))
+
+    if path == "/api/whole-book-imitation-readiness":
+        try:
+            payload = _whole_book_readiness_payload(
+                params.get("branch_id"),
+                params.get("database_url"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
 
     if path == "/api/whole-book-imitation-run" and method == "POST":
         body = _body(environ)

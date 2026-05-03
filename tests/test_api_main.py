@@ -149,6 +149,24 @@ def test_whole_book_imitation_run_endpoint_requires_required_fields() -> None:
     assert b"missing required field" in body
 
 
+def test_whole_book_imitation_readiness_endpoint_returns_payload(monkeypatch, tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
+
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-readiness.txt")
+
+    status, body = _call(f"/api/whole-book-imitation-readiness?branch_id={branch_id}")
+    assert status == "200 OK"
+    payload = json.loads(body)
+    assert payload["contract_version"] == "whole-book-imitation-readiness.v1"
+    assert payload["whole_book_contract_version"] == "whole-book-imitation.v1"
+    assert payload["branch_candidate"]["branch_id"] == branch_id
+    assert payload["branch_candidate"]["chapter_analysis_count"] >= 1
+
+
 def test_root_readme_points_to_current_api_surface_doc() -> None:
     readme = Path("README.md").read_text(encoding="utf-8")
     assert "docs/api-current-surface.md" in readme

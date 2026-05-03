@@ -241,6 +241,7 @@
 - 当前新增 `docs/whole-book-imitation-freeze-evidence-20260503.md`，记录真实 provider-backed whole-book run 已触达上游，但被 `403 billing_error / daily usage limit exceeded` 阻断
 - 当前新增 `show-whole-book-imitation-readiness`，可在重跑真实 provider 回归前一次性检查 contract/version、provider 配置、provider health 与 branch 数据准备度
 - 当前已在真实 `novel_analyzer` 数据库上执行 `show-whole-book-imitation-readiness`，确认 branch `62e636f0-c901-4167-aa1c-aff3da9c83ef` 具备 11 个 chapter_analysis / 232 条 fact_records，provider 配置存在但 health 状态仍为 `degraded`
+- 当前新增 `GET /api/whole-book-imitation-readiness`，system/agentOS 可直接读取 whole-book freeze readiness 信息而不依赖 CLI
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
