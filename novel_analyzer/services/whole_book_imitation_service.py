@@ -163,6 +163,8 @@ class WholeBookImitationService:
         for order, (chapter_index, goal) in enumerate(chapter_goals, start=1):
             prerequisites = []
             carry_over_inputs: dict[str, list[str]] = {}
+            scheduling_priority = 4
+            scheduling_reason = "常规章节顺序"
             if previous_label is not None:
                 prerequisites.append(f"完成上一章节仿写并确认 carry-over：{previous_label}")
                 carry_over_notes.append(
@@ -175,6 +177,8 @@ class WholeBookImitationService:
                     "previous_generated_rule_state": [f"{previous_label} 形成的规则/约束变化"],
                     "previous_goal": [previous_goal or ""],
                 }
+                scheduling_priority = 2
+                scheduling_reason = f"承接上一章节 {previous_label} 的 carry-over 与策略反馈"
             queue.append(
                 WholeBookImitationQueueStep(
                     order=order,
@@ -194,6 +198,8 @@ class WholeBookImitationService:
                         "plot_logic_consistency",
                         "world_rule_consistency",
                     ],
+                    scheduling_priority=scheduling_priority,
+                    scheduling_reason=scheduling_reason,
                 )
             )
             previous_label = f"第{chapter_index}章"

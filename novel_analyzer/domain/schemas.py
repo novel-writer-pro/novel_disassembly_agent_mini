@@ -906,6 +906,8 @@ class WholeBookImitationQueueStep(BaseModel):
     carry_over_inputs: dict[str, list[str]] = Field(default_factory=dict)
     expected_outputs: list[str] = Field(default_factory=list)
     risk_focus: list[str] = Field(default_factory=list)
+    scheduling_priority: int = Field(default=4, ge=1, le=5)
+    scheduling_reason: str = Field(default="")
 
 
 class WholeBookCarryOverState(BaseModel):

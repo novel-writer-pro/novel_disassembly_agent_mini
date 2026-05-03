@@ -169,6 +169,8 @@ def test_whole_book_imitation_service_builds_run_queue(tmp_path: Path) -> None:
         assert report.queue
         assert report.queue[0].expected_outputs
         assert report.queue[1].carry_over_inputs
+        assert report.queue[1].scheduling_priority <= report.queue[0].scheduling_priority
+        assert report.queue[1].scheduling_reason
         assert report.run_notes
 
 

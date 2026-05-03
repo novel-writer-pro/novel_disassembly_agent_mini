@@ -261,6 +261,8 @@ novel-analyzer run-whole-book-imitation <branch_id> \
   - `carry_over_inputs`
   - `expected_outputs`
   - `risk_focus`
+  - `scheduling_priority`
+  - `scheduling_reason`
 - `carry_over_notes`
 - `run_notes`
 
