@@ -134,6 +134,7 @@
 18. [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
 19. [`./whole-book-imitation-integration-quickstart.md`](./whole-book-imitation-integration-quickstart.md)
 20. [`./whole-book-imitation-docs-index.md`](./whole-book-imitation-docs-index.md)
+21. [`./whole-book-imitation-provider-recovery-checklist.md`](./whole-book-imitation-provider-recovery-checklist.md)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)

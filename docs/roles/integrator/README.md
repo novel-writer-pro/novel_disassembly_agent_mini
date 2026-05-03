@@ -16,3 +16,4 @@
 12. [`../../examples/whole-book-imitation-run.error.provider-billing.sample.json`](../../examples/whole-book-imitation-run.error.provider-billing.sample.json)
 13. [`../../whole-book-imitation-integration-quickstart.md`](../../whole-book-imitation-integration-quickstart.md)
 14. [`../../whole-book-imitation-docs-index.md`](../../whole-book-imitation-docs-index.md)
+15. [`../../whole-book-imitation-provider-recovery-checklist.md`](../../whole-book-imitation-provider-recovery-checklist.md)
