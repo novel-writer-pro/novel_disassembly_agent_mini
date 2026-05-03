@@ -391,6 +391,21 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     assert '"imitation-constraint-pack"' in contract_result.stdout
     assert '"draft-self-check"' in contract_result.stdout
 
+    readiness_result = runner.invoke(
+        app,
+        [
+            "show-whole-book-imitation-readiness",
+            "--branch-id",
+            "branch-cli-1",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert readiness_result.exit_code == 0
+    assert '"whole_book_contract_version": "whole-book-imitation.v1"' in readiness_result.stdout
+    assert '"api_key_present"' in readiness_result.stdout
+    assert '"branch_id": "branch-cli-1"' in readiness_result.stdout
+
     preflight_result = runner.invoke(
         app,
         [

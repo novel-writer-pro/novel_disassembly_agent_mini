@@ -346,6 +346,17 @@ novel-analyzer run-whole-book-imitation <branch_id> \
 - 当前 carry-over 仍然是 sandbox report state，不是正式生产内容发布
 - 更适合作为“整本仿写实验链 / 评估链 / agentOS 编排链”的稳定中间层
 
+在发起真实 provider-backed freeze evidence 之前，建议先执行：
+
+```bash
+novel-analyzer show-whole-book-imitation-readiness --branch-id <branch_id>
+```
+
+用于先确认：
+- provider 配置是否存在
+- 当前 provider health 是否 degraded
+- 当前 branch 是否具备足够章节/事实基础
+
 如果要把 sandbox execute 的结果直接导出给下游系统，建议使用：
 
 ```bash

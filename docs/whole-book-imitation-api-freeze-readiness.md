@@ -92,6 +92,21 @@
 - 已正式冻结
 - 后续字段不会再动
 
+## 5.1 建议先跑的 readiness 命令
+
+在真正重跑 provider-backed evidence 之前，建议先执行：
+
+```bash
+novel-analyzer show-whole-book-imitation-readiness --branch-id <branch_id>
+```
+
+它会结构化输出：
+- 当前 whole-book contract 版本标记
+- 数据库目标
+- provider 配置是否存在
+- 最近 provider health 状态
+- 当前 branch 是否具备足够的 chapter_analysis / fact_records
+
 ---
 
 ## 6. 一句话总结

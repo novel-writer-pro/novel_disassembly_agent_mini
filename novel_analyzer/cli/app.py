@@ -7,13 +7,21 @@ from pathlib import Path
 from typing import Any
 
 import typer
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 from typer import echo
 
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.migrations import upgrade_database
-from novel_analyzer.database.models import ChapterManifest, WindowArtifact
+from novel_analyzer.database.models import (
+    AnalysisRun,
+    ChapterArtifact,
+    FactRecord,
+    NovelSource,
+    RunBranch,
+    ChapterManifest,
+    WindowArtifact,
+)
 from novel_analyzer.database.postgres_checks import postgres_capability_report
 from novel_analyzer.database.session import (
     create_session_factory,
@@ -21,6 +29,7 @@ from novel_analyzer.database.session import (
     ensure_database_exists,
 )
 from novel_analyzer.runtime.storage import describe_runtime_storage, migrate_legacy_runtime_dirs
+from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.runtime.cluster_review_state import (
     read_cluster_review_history,
     read_cluster_review_state,
@@ -115,6 +124,111 @@ def _build_story_mapping_pack(
         rule_overrides=rule_override,
         forbidden_transformations=forbidden_transformation,
     )
+
+
+def _whole_book_readiness_payload(
+    session: Session,
+    settings: Settings,
+    *,
+    branch_id: str | None = None,
+) -> dict[str, object]:
+    target_branch_id = branch_id
+    if not target_branch_id:
+        target_branch_id = session.scalar(
+            select(ChapterArtifact.branch_id)
+            .where(ChapterArtifact.artifact_type == "chapter_analysis")
+            .group_by(ChapterArtifact.branch_id)
+            .order_by(func.count(ChapterArtifact.id).desc())
+            .limit(1)
+        )
+
+    branch_summary: dict[str, object] = {
+        "branch_id": target_branch_id or "",
+        "exists": False,
+        "chapter_analysis_count": 0,
+        "fact_record_count": 0,
+        "chapter_span": {"min": None, "max": None},
+        "run_id": "",
+        "branch_name": "",
+        "status": "",
+        "novel_title": "",
+    }
+    if target_branch_id:
+        branch = session.get(RunBranch, target_branch_id)
+        if branch is not None:
+            analysis_count = session.scalar(
+                select(func.count())
+                .select_from(ChapterArtifact)
+                .where(
+                    ChapterArtifact.branch_id == target_branch_id,
+                    ChapterArtifact.artifact_type == "chapter_analysis",
+                )
+            ) or 0
+            fact_count = session.scalar(
+                select(func.count())
+                .select_from(FactRecord)
+                .where(FactRecord.branch_id == target_branch_id)
+            ) or 0
+            chapter_min, chapter_max = session.execute(
+                select(
+                    func.min(ChapterArtifact.chapter_index),
+                    func.max(ChapterArtifact.chapter_index),
+                ).where(
+                    ChapterArtifact.branch_id == target_branch_id,
+                    ChapterArtifact.artifact_type == "chapter_analysis",
+                )
+            ).one()
+            novel_title = session.scalar(
+                select(NovelSource.title)
+                .join(AnalysisRun, AnalysisRun.novel_id == NovelSource.id)
+                .where(AnalysisRun.id == branch.run_id)
+            ) or ""
+            branch_summary = {
+                "branch_id": target_branch_id,
+                "exists": True,
+                "chapter_analysis_count": int(analysis_count),
+                "fact_record_count": int(fact_count),
+                "chapter_span": {"min": chapter_min, "max": chapter_max},
+                "run_id": branch.run_id,
+                "branch_name": branch.name,
+                "status": branch.status,
+                "novel_title": novel_title,
+            }
+
+    provider_health = read_provider_health(settings)
+    return {
+        "contract_version": "whole-book-imitation-readiness.v1",
+        "stable_contract_version": "whole-book-imitation-readiness-pre-v1",
+        "whole_book_contract_version": "whole-book-imitation.v1",
+        "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+        "database": {
+            "masked_database_url": settings.masked_database_url,
+            "effective_db_name": settings.effective_db_name,
+        },
+        "provider": {
+            "provider_name": settings.llm_provider_name,
+            "base_url": settings.resolved_llm_base_url,
+            "api_key_present": bool(settings.resolved_llm_api_key),
+            "model_name": settings.llm_model_name,
+            "stage_model_name": settings.llm_stage_model_name,
+            "qa_model_name": settings.llm_qa_model_name,
+            "provider_health": {
+                "provider_name": provider_health.provider_name,
+                "model_name": provider_health.model_name,
+                "last_status": provider_health.last_status,
+                "degraded_events": provider_health.degraded_events,
+                "success_events": provider_health.success_events,
+                "last_error": provider_health.last_error,
+                "last_updated_at": provider_health.last_updated_at,
+            },
+        },
+        "branch_candidate": branch_summary,
+        "readiness_notes": [
+            "如果 api_key_present=false，则不能做真实 provider-backed whole-book execute。",
+            "如果 provider_health.last_status=degraded，应先确认上游 provider 是否恢复。",
+            "如果 branch_candidate.chapter_analysis_count < 2，则不适合做 whole-book imitation freeze evidence。",
+        ],
+    }
 
 
 def _ingest_and_start_pipeline(**kwargs: Any) -> Any:
@@ -1638,6 +1752,24 @@ def show_imitation_skill_contracts(database_url: str | None = None) -> None:
     with factory() as session:
         payload = _imitation_harness_service(session, settings).list_skill_contracts()
         echo(json.dumps([item.model_dump(mode="json") for item in payload], ensure_ascii=False, indent=2))
+
+
+@app.command()
+def show_whole_book_imitation_readiness(
+    branch_id: str = typer.Option("", "--branch-id"),
+    database_url: str | None = None,
+) -> None:
+    """Show provider/database/branch readiness evidence for whole-book imitation freeze checks."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _whole_book_readiness_payload(
+            session,
+            settings,
+            branch_id=branch_id or None,
+        )
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 @app.command()

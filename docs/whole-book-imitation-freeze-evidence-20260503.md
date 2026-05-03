@@ -13,6 +13,29 @@
 
 ## 2. 本轮环境结论
 
+### readiness 命令输出（真实数据库）
+
+已执行：
+
+```bash
+novel-analyzer show-whole-book-imitation-readiness \
+  --branch-id 62e636f0-c901-4167-aa1c-aff3da9c83ef \
+  --database-url "postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer"
+```
+
+关键输出：
+- `whole_book_contract_version = whole-book-imitation.v1`
+- `whole_book_stable_contract_version = whole-book-imitation-pre-v1`
+- `provider.api_key_present = true`
+- `provider.provider_health.last_status = degraded`
+- `branch_candidate.chapter_analysis_count = 11`
+- `branch_candidate.fact_record_count = 232`
+
+这说明：
+- 当前不是“配置缺失”
+- 当前 branch 数据量足以支撑最小 whole-book freeze evidence
+- 当前真正不稳定点仍然主要集中在上游 provider 状态与配额
+
 ### 数据库侧
 - 本地 PostgreSQL 可连接
 - `d2` 库结构存在但无作品数据
