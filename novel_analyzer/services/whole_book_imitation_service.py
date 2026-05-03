@@ -266,6 +266,23 @@ class WholeBookImitationService:
                 "high": sum(1 for step in executed_steps if step.overall_risk_level == "high"),
             },
         }
+        weak_family_counts = {
+            "constraint": sum(1 for step in executed_steps for action in step.action_queue if "constraint" in action.action_type),
+            "relationship": sum(1 for step in executed_steps for action in step.action_queue if "relationship" in action.action_type or "relation" in action.action_type),
+            "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
+            "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
+            "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
+            "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
+            "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
+            "rhythm": sum(1 for step in executed_steps for action in step.action_queue if "rhythm" in action.action_type),
+            "reader": sum(1 for step in executed_steps for action in step.action_queue if "reader" in action.action_type),
+        }
+        weak_lane_counts = {
+            "rhythm": sum(1 for step in executed_steps for action in step.action_queue if "rhythm" in action.action_type),
+            "reader": sum(1 for step in executed_steps for action in step.action_queue if "reader" in action.action_type),
+            "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
+            "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
+        }
         dashboard_summary = {
             "chapter_count": len(executed_steps),
             "highest_priority_chapters": [item["source_chapter_index"] for item in policy_summary["book_priority_ranking"][:3]],
@@ -283,13 +300,13 @@ class WholeBookImitationService:
                 for step in executed_steps
             ],
             "issue_family_histogram": {
-                "constraint": sum(1 for step in executed_steps for action in step.action_queue if "constraint" in action.action_type),
-                "relationship": sum(1 for step in executed_steps for action in step.action_queue if "relationship" in action.action_type or "relation" in action.action_type),
-                "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
-                "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
-                "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
-                "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
-                "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
+                "constraint": weak_family_counts["constraint"],
+                "relationship": weak_family_counts["relationship"],
+                "rule": weak_family_counts["rule"],
+                "motivation": weak_family_counts["motivation"],
+                "hook": weak_family_counts["hook"],
+                "dialogue": weak_family_counts["dialogue"],
+                "research": weak_family_counts["research"],
             },
             "cluster_buckets": {
                 "critical": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 1],
@@ -299,20 +316,11 @@ class WholeBookImitationService:
             "issue_family_ranking": sorted(
                 [
                     {"family": family, "count": count}
-                    for family, count in {
-                        "constraint": sum(1 for step in executed_steps for action in step.action_queue if "constraint" in action.action_type),
-                        "relationship": sum(1 for step in executed_steps for action in step.action_queue if "relationship" in action.action_type or "relation" in action.action_type),
-                        "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
-                        "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
-                        "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
-                        "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
-                        "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
-                        "rhythm": sum(1 for step in executed_steps for action in step.action_queue if "rhythm" in action.action_type),
-                        "reader": sum(1 for step in executed_steps for action in step.action_queue if "reader" in action.action_type),
-                    }.items()
+                    for family, count in weak_family_counts.items()
                 ],
                 key=lambda item: (-item["count"], item["family"]),
             ),
+            "weak_family_counts": weak_lane_counts,
             "family_priority_ranking": sorted(
                 [
                     {
@@ -397,6 +405,7 @@ class WholeBookImitationService:
                         key=lambda item: (item["priority"], -item["weak_family_count"], item["source_chapter_index"]),
                     )[:3]
                 ],
+                "weak_lane_action_count": sum(int(step.policy_summary.get("weak_lane_action_count", 0)) for step in executed_steps),
             },
             "top_risk_summary": {
                 "chapter_indexes": [
@@ -418,6 +427,14 @@ class WholeBookImitationService:
                         and any(token in action.action_type for token in ("rhythm", "reader", "dialogue", "research"))
                     ][:8]
                 ],
+                "weak_lane_families": [
+                    family
+                    for family, count in sorted(
+                        weak_lane_counts.items(),
+                        key=lambda item: (-item[1], item[0]),
+                    )
+                    if count > 0
+                ][:4],
             },
             "weak_lane_dominance": sorted(
                 [

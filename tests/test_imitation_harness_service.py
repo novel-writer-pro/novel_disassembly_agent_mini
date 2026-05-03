@@ -237,6 +237,7 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert report.action_queue
         assert report.policy_summary
         assert "highest_action_priority" in report.policy_summary
+        assert "weak_lane_action_count" in report.policy_summary
         if report.final_verdict != "pass":
             assert any("ACTION:" in item for item in report.final_draft.comparison_notes)
             assert "【Harness Action Queue】" in report.final_draft.draft_text
@@ -664,7 +665,16 @@ def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_p
         actions = service._sorted_actions(  # noqa: SLF001
             service._recommended_actions(preflight, service.chapter_imitation.review_draft(branch_id, source_chapter_index=3, draft=draft), gate, risk)  # noqa: SLF001
         )
-        assert actions == sorted(actions, key=lambda item: (item.priority, item.action_type, item.target))
+        assert actions == sorted(
+            actions,
+            key=lambda item: (
+                item.priority,
+                service._family_sort_rank(item.action_type),  # noqa: SLF001
+                {"high": 0, "medium": 1, "low": 2}.get(item.severity, 3),
+                item.action_type,
+                item.target,
+            ),
+        )
         final_verdict, stop_reason = service._aggregate_stop_reason(  # noqa: SLF001
             preflight=preflight,
             gate=gate,
@@ -684,3 +694,4 @@ def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_p
             stop_reason=stop_reason,
         )
         assert summary["highest_action_priority"] == min(item.priority for item in actions)
+        assert "weak_lane_action_count" in summary

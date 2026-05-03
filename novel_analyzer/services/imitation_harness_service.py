@@ -135,8 +135,25 @@ class HarnessControllerService:
         return "general"
 
     @staticmethod
+    def _family_sort_rank(action_type: str) -> int:
+        family = HarnessControllerService._issue_family_for_action(action_type)
+        if family in {"rhythm", "reader", "dialogue", "research"}:
+            return 0
+        return 1
+
+    @staticmethod
     def _sorted_actions(actions: list[ChapterImitationHarnessAction]) -> list[ChapterImitationHarnessAction]:
-        return sorted(actions, key=lambda item: (item.priority, item.action_type, item.target))
+        severity_rank = {"high": 0, "medium": 1, "low": 2}
+        return sorted(
+            actions,
+            key=lambda item: (
+                item.priority,
+                HarnessControllerService._family_sort_rank(item.action_type),
+                severity_rank.get(item.severity, 3),
+                item.action_type,
+                item.target,
+            ),
+        )
 
     @staticmethod
     def _aggregate_stop_reason(
@@ -213,6 +230,7 @@ class HarnessControllerService:
             "highest_action_priority": highest_priority,
             "highest_action_severity": highest_severity,
             "action_count": len(actions),
+            "weak_lane_action_count": sum(1 for item in actions if HarnessControllerService._family_sort_rank(item.action_type) == 0),
             "blocking_issue_count": len(preflight.blocking_issues),
             "recommended_action_count": len(preflight.recommended_actions),
             "gate_verdict": gate.overall_verdict,
