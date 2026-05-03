@@ -175,6 +175,7 @@
 - 当前进一步补入 typed `severity / priority`，并开始让 gate/risk meta 信号进入 preflight 与 routing
 - 当前 `severity / priority` 已开始影响 action 排序与 stop policy 聚合决策
 - 当前 harness report 还新增 `action_queue / policy_summary`，用于输出排序后的 action 队列与聚合控制摘要
+- 当前 ordered `action_queue` 已开始写回 revise 输入痕迹，whole-book sandbox report 也开始聚合 chapter harness 的 policy summary
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`
   - `draft-self-check`

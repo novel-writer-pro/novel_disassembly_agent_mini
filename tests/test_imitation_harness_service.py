@@ -236,6 +236,8 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert report.action_queue
         assert report.policy_summary
         assert "highest_action_priority" in report.policy_summary
+        if report.final_verdict != "pass":
+            assert any("ACTION:" in item for item in report.final_draft.comparison_notes)
 
 
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:

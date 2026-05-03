@@ -824,7 +824,8 @@ class HarnessControllerService:
             draft = revised.model_copy(
                 update={
                     "risk_gate_notes": revised.risk_gate_notes + preflight.recommended_actions[:2],
-                    "method_notes": revised.method_notes + [item.target for item in actions],
+                    "method_notes": revised.method_notes + [f"{item.priority}:{item.target}" for item in actions],
+                    "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]],
                 }
             )
 

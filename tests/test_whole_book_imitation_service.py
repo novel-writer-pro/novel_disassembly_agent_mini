@@ -200,3 +200,6 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert len(report.executed_steps) == 2
         assert report.final_carry_over_state is not None
         assert report.executed_steps[0].carry_over_state.generated_summary
+        assert report.executed_steps[0].action_queue
+        assert report.executed_steps[0].policy_summary
+        assert report.policy_summary["executed_step_count"] == 2

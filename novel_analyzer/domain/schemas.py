@@ -930,6 +930,8 @@ class WholeBookImitationExecutedStep(BaseModel):
     draft_title: str
     draft_excerpt: str
     carry_over_state: WholeBookCarryOverState
+    action_queue: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    policy_summary: dict[str, object] = Field(default_factory=dict)
 
 
 class WholeBookImitationRunReport(BaseModel):
@@ -942,4 +944,5 @@ class WholeBookImitationRunReport(BaseModel):
     execution_mode: str = Field(default="dry_run")
     executed_steps: list[WholeBookImitationExecutedStep] = Field(default_factory=list)
     final_carry_over_state: WholeBookCarryOverState | None = Field(default=None)
+    policy_summary: dict[str, object] = Field(default_factory=dict)
     run_notes: list[str] = Field(default_factory=list)

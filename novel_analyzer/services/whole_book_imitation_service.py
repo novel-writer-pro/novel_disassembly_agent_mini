@@ -13,6 +13,7 @@ from novel_analyzer.domain.schemas import (
     WholeBookImitationRunReport,
 )
 from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+from novel_analyzer.services.imitation_harness_service import HarnessControllerService
 
 
 class WholeBookImitationService:
@@ -21,6 +22,7 @@ class WholeBookImitationService:
     def __init__(self, session: Session) -> None:
         self.session = session
         self.chapter_imitation = ChapterImitationService(session)
+        self.harness = HarnessControllerService(session)
 
     def build_plan(
         self,
@@ -154,7 +156,7 @@ class WholeBookImitationService:
                 if inherited_parts:
                     target_goal = f"{target_goal}｜承接上一生成状态：{'；'.join(inherited_parts[:5])}"
 
-            iteration = self.chapter_imitation.iterate_draft(
+            harness_report = self.harness.run_harness(
                 branch_id,
                 source_chapter_index=step.source_chapter_index,
                 target_goal=target_goal,
@@ -162,32 +164,45 @@ class WholeBookImitationService:
                 use_llm=use_llm,
                 model_name=model_name,
             )
-            final_round = iteration.rounds[-1]
+            final_round = harness_report.rounds[-1]
             carry_state = WholeBookCarryOverState(
                 source_chapter_index=step.source_chapter_index,
-                generated_summary=iteration.final_draft.draft_text[:220],
+                generated_summary=harness_report.final_draft.draft_text[:220],
                 relationship_state=final_round.review.risk_gate_notes[:3],
                 unresolved_threads=final_round.risk.top_risk_summaries[:3] or final_round.risk.coverage_gaps[:3],
                 rule_state=final_round.risk.top_risk_types[:3],
-                next_constraints=iteration.final_draft.risk_gate_notes[:4],
+                next_constraints=harness_report.final_draft.risk_gate_notes[:4],
             )
             executed_steps.append(
                 WholeBookImitationExecutedStep(
                     order=step.order,
                     source_chapter_index=step.source_chapter_index,
                     target_goal=step.target_goal,
-                    stop_reason=iteration.stop_reason,
+                    stop_reason=harness_report.stop_reason,
                     overall_score=final_round.score.overall_score,
                     overall_risk_level=final_round.risk.overall_risk_level,
-                    draft_title=iteration.final_draft.draft_title,
-                    draft_excerpt=iteration.final_draft.draft_text[:240],
+                    draft_title=harness_report.final_draft.draft_title,
+                    draft_excerpt=harness_report.final_draft.draft_text[:240],
                     carry_over_state=carry_state,
+                    action_queue=harness_report.action_queue,
+                    policy_summary=harness_report.policy_summary,
                 )
             )
 
         run_notes = list(report.run_notes)
         run_notes.append("sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。")
         run_notes.append("当前仍是内存态 sandbox，不会把生成正文写入 live branch artifact。")
+        highest_priority = min(
+            (int(step.policy_summary.get("highest_action_priority", 4)) for step in executed_steps),
+            default=4,
+        )
+        policy_summary = {
+            "executed_step_count": len(executed_steps),
+            "highest_action_priority": highest_priority,
+            "max_overall_score": max((step.overall_score for step in executed_steps), default=0),
+            "risk_levels": [step.overall_risk_level for step in executed_steps],
+            "stop_reasons": [step.stop_reason for step in executed_steps],
+        }
         return WholeBookImitationRunReport(
             branch_id=report.branch_id,
             project_title=report.project_title,
@@ -196,5 +211,6 @@ class WholeBookImitationService:
             execution_mode="sandbox_execute",
             executed_steps=executed_steps,
             final_carry_over_state=carry_state,
+            policy_summary=policy_summary,
             run_notes=run_notes,
         )
