@@ -18,6 +18,7 @@ from novel_analyzer.database.models import (
     RetrievalDocument,
 )
 from novel_analyzer.embedding.service import get_embedding_provider
+from novel_analyzer.rerank.service import DisabledRerankProvider, get_rerank_provider
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,6 +142,47 @@ class RetrievalService:
             score=float(row["score"]),
             keyword_list=cls._coerce_keywords(row["keyword_list"]),
         )
+
+    @staticmethod
+    def _hit_rerank_text(hit: RetrievalHit) -> str:
+        keywords = ", ".join(hit.keyword_list[:8])
+        return "\n".join(
+            part for part in [hit.title.strip(), hit.summary_text.strip(), keywords.strip()] if part
+        )
+
+    def _apply_rerank(
+        self,
+        query: str,
+        hits: list[RetrievalHit],
+        *,
+        limit: int,
+    ) -> list[RetrievalHit]:
+        if not hits:
+            return hits
+        provider = get_rerank_provider(self.settings)
+        if isinstance(provider, DisabledRerankProvider):
+            return hits[:limit]
+        try:
+            rerank_scores = provider.rerank(
+                query,
+                [self._hit_rerank_text(hit) for hit in hits],
+            )
+        except Exception:
+            return hits[:limit]
+        reranked = sorted(
+            zip(hits, rerank_scores, strict=True),
+            key=lambda item: (-item[1], -item[0].score, item[0].chapter_index),
+        )
+        return [
+            RetrievalHit(
+                chapter_index=hit.chapter_index,
+                title=hit.title,
+                summary_text=hit.summary_text,
+                score=float(score),
+                keyword_list=hit.keyword_list,
+            )
+            for hit, score in reranked[:limit]
+        ]
 
     def _fts_config_name(self) -> str:
         if self.session.bind is None or self.session.bind.dialect.name != 'postgresql':
@@ -280,6 +322,7 @@ class RetrievalService:
         if self.session.bind is None:
             raise ValueError("session is not bound")
         dialect = self.session.bind.dialect.name
+        fetch_limit = max(limit * 4, limit)
         if dialect == "postgresql":
             config_name = self._fts_config_name()
             sql = text(
@@ -302,10 +345,10 @@ class RetrievalService:
             )
             rows = self.session.execute(
                 sql,
-                {"branch_id": branch_id, "query": query, "limit": limit},
+                {"branch_id": branch_id, "query": query, "limit": fetch_limit},
             ).mappings().all()
             if rows:
-                return [self._row_to_hit(row) for row in rows]
+                return self._apply_rerank(query, [self._row_to_hit(row) for row in rows], limit=limit)
 
             fallback_rows = self.session.execute(
                 text(
@@ -323,10 +366,14 @@ class RetrievalService:
                     LIMIT :limit
                     """
                 ),
-                {"branch_id": branch_id, "query": query, "limit": limit},
+                {"branch_id": branch_id, "query": query, "limit": fetch_limit},
             ).mappings().all()
             if fallback_rows:
-                return [self._row_to_hit(row) for row in fallback_rows]
+                return self._apply_rerank(
+                    query,
+                    [self._row_to_hit(row) for row in fallback_rows],
+                    limit=limit,
+                )
 
             tokens = [token.strip() for token in query.split() if token.strip()]
             if not tokens:
@@ -352,10 +399,19 @@ class RetrievalService:
                 LIMIT :limit
                 """
             )
+            params["limit"] = fetch_limit
             like_rows = self.session.execute(sql_like, params).mappings().all()
             if like_rows:
-                return [self._row_to_hit(row) for row in like_rows]
-            return self._keyword_overlap_fallback(branch_id, query, limit)
+                return self._apply_rerank(
+                    query,
+                    [self._row_to_hit(row) for row in like_rows],
+                    limit=limit,
+                )
+            return self._apply_rerank(
+                query,
+                self._keyword_overlap_fallback(branch_id, query, fetch_limit),
+                limit=limit,
+            )
 
         raise RuntimeError(
             "Only PostgreSQL is supported for retrieval search; "

@@ -389,7 +389,7 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 
 ### P2
 - thematic contexts 的专题排序与证据密度增强
-- 问答 rerank / gate 模型接入优化
+- 在已落地 retrieval/QA rerank 的基础上，继续向风险审查主链内扩展 rerank / gate 模型
 - branch 级多专题联动问答
 
 ### P3

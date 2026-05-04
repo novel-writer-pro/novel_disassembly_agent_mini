@@ -261,6 +261,7 @@
 - 当前新增 `docs/whole-book-imitation-handoff-brief.md`，把当前完成度、唯一阻断、恢复后动作压缩成单页交接说明
 - 当前 success sample 也已补 live stable-field regression，request / readiness / error / success 四类样例现在都有更明确的自动校验覆盖
 - 当前 readiness 已反映 provider 运行态恢复为 `ok`，whole-book 线当前剩余事项已收敛为 stable 级别/治理口径判断
+- 当前 retrieval/QA 主链已新增本地 ONNX rerank 接入，默认模型为 `onnx-community/bge-reranker-v2-m3-ONNX`，会在 `search_branch` 召回后执行 rerank，并在 provider 不可用时自动回退原始召回顺序
 - 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
 - 本地 `skills_dir` 新增：
   - `imitation-constraint-pack`

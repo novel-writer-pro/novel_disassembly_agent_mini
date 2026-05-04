@@ -8,7 +8,7 @@ from novel_analyzer.config.settings import Settings
 from novel_analyzer.database.models import ChunkEmbedding, RetrievalChunk, RetrievalDocument
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.services.ingest_service import IngestService
-from novel_analyzer.services.retrieval_service import RetrievalService
+from novel_analyzer.services.retrieval_service import RetrievalHit, RetrievalService
 from novel_analyzer.services.run_service import RunService
 
 
@@ -102,3 +102,46 @@ def test_default_fts_config_remains_simple_without_pg_jieba(tmp_path: Path) -> N
         _, branch = RunService(session).create_run(novel.id, manifest.id)
         service = RetrievalService(session, Settings())
         assert service._fts_config_name() == 'simple'
+
+
+def test_apply_rerank_reorders_hits(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _FakeRerankProvider:
+        def rerank(self, query: str, documents: list[str]) -> list[float]:
+            _ = query, documents
+            return [0.2, 0.9]
+
+    with _session() as session:
+        service = RetrievalService(session, Settings(rerank_model_name='fake-model'))
+        monkeypatch.setattr(
+            'novel_analyzer.services.retrieval_service.get_rerank_provider',
+            lambda settings=None: _FakeRerankProvider(),
+        )
+        hits = [
+            RetrievalHit(chapter_index=1, title='一', summary_text='弱相关', score=0.8, keyword_list=['卫图']),
+            RetrievalHit(chapter_index=2, title='二', summary_text='强相关', score=0.1, keyword_list=['命格']),
+        ]
+        reranked = service._apply_rerank('命格', hits, limit=2)
+        assert [hit.chapter_index for hit in reranked] == [2, 1]
+        assert reranked[0].score == pytest.approx(0.9)
+        assert reranked[1].score == pytest.approx(0.2)
+
+
+def test_apply_rerank_falls_back_when_provider_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _BrokenRerankProvider:
+        def rerank(self, query: str, documents: list[str]) -> list[float]:
+            _ = query, documents
+            raise RuntimeError('rerank unavailable')
+
+    with _session() as session:
+        service = RetrievalService(session, Settings(rerank_model_name='fake-model'))
+        monkeypatch.setattr(
+            'novel_analyzer.services.retrieval_service.get_rerank_provider',
+            lambda settings=None: _BrokenRerankProvider(),
+        )
+        hits = [
+            RetrievalHit(chapter_index=1, title='一', summary_text='命格出现', score=0.8, keyword_list=['卫图']),
+            RetrievalHit(chapter_index=2, title='二', summary_text='资源铺垫', score=0.1, keyword_list=['资源']),
+        ]
+        reranked = service._apply_rerank('命格', hits, limit=2)
+        assert [hit.chapter_index for hit in reranked] == [1, 2]
+        assert reranked[0].score == pytest.approx(0.8)
