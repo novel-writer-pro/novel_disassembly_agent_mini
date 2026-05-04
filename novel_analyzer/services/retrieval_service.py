@@ -43,6 +43,16 @@ class RetrievalHit:
     keyword_list: list[str]
 
 
+@dataclass(frozen=True, slots=True)
+class RetrievalSearchDiagnostics:
+    """Raw and reranked retrieval views for inspection/evaluation."""
+
+    query: str
+    raw_hits: list[RetrievalHit]
+    reranked_hits: list[RetrievalHit]
+    rerank_applied: bool
+
+
 class RetrievalService:
     """Materializes retrieval-friendly rows from validated chapter analysis."""
 
@@ -156,24 +166,24 @@ class RetrievalService:
         hits: list[RetrievalHit],
         *,
         limit: int,
-    ) -> list[RetrievalHit]:
+    ) -> tuple[list[RetrievalHit], bool]:
         if not hits:
-            return hits
+            return hits, False
         provider = get_rerank_provider(self.settings)
         if isinstance(provider, DisabledRerankProvider):
-            return hits[:limit]
+            return hits[:limit], False
         try:
             rerank_scores = provider.rerank(
                 query,
                 [self._hit_rerank_text(hit) for hit in hits],
             )
         except Exception:
-            return hits[:limit]
+            return hits[:limit], False
         reranked = sorted(
             zip(hits, rerank_scores, strict=True),
             key=lambda item: (-item[1], -item[0].score, item[0].chapter_index),
         )
-        return [
+        return ([
             RetrievalHit(
                 chapter_index=hit.chapter_index,
                 title=hit.title,
@@ -182,7 +192,7 @@ class RetrievalService:
                 keyword_list=hit.keyword_list,
             )
             for hit, score in reranked[:limit]
-        ]
+        ], True)
 
     def _fts_config_name(self) -> str:
         if self.session.bind is None or self.session.bind.dialect.name != 'postgresql':
@@ -316,9 +326,8 @@ class RetrievalService:
         self.session.refresh(document)
         return document
 
-    def search_branch(self, branch_id: str, query: str, limit: int = 5) -> list[RetrievalHit]:
-        """Search retrieval documents for a branch."""
-
+    def _search_branch_raw(self, branch_id: str, query: str, limit: int) -> list[RetrievalHit]:
+        """Return retrieval hits before rerank ordering."""
         if self.session.bind is None:
             raise ValueError("session is not bound")
         dialect = self.session.bind.dialect.name
@@ -348,7 +357,7 @@ class RetrievalService:
                 {"branch_id": branch_id, "query": query, "limit": fetch_limit},
             ).mappings().all()
             if rows:
-                return self._apply_rerank(query, [self._row_to_hit(row) for row in rows], limit=limit)
+                return [self._row_to_hit(row) for row in rows]
 
             fallback_rows = self.session.execute(
                 text(
@@ -369,11 +378,7 @@ class RetrievalService:
                 {"branch_id": branch_id, "query": query, "limit": fetch_limit},
             ).mappings().all()
             if fallback_rows:
-                return self._apply_rerank(
-                    query,
-                    [self._row_to_hit(row) for row in fallback_rows],
-                    limit=limit,
-                )
+                return [self._row_to_hit(row) for row in fallback_rows]
 
             tokens = [token.strip() for token in query.split() if token.strip()]
             if not tokens:
@@ -402,18 +407,34 @@ class RetrievalService:
             params["limit"] = fetch_limit
             like_rows = self.session.execute(sql_like, params).mappings().all()
             if like_rows:
-                return self._apply_rerank(
-                    query,
-                    [self._row_to_hit(row) for row in like_rows],
-                    limit=limit,
-                )
-            return self._apply_rerank(
-                query,
-                self._keyword_overlap_fallback(branch_id, query, fetch_limit),
-                limit=limit,
-            )
+                return [self._row_to_hit(row) for row in like_rows]
+            return self._keyword_overlap_fallback(branch_id, query, fetch_limit)
 
         raise RuntimeError(
             "Only PostgreSQL is supported for retrieval search; "
             "SQLite fallback has been removed."
+        )
+
+    def search_branch(self, branch_id: str, query: str, limit: int = 5) -> list[RetrievalHit]:
+        """Search retrieval documents for a branch."""
+
+        raw_hits = self._search_branch_raw(branch_id, query, limit)
+        reranked_hits, _ = self._apply_rerank(query, raw_hits, limit=limit)
+        return reranked_hits
+
+    def search_branch_with_diagnostics(
+        self,
+        branch_id: str,
+        query: str,
+        limit: int = 5,
+    ) -> RetrievalSearchDiagnostics:
+        """Return raw and reranked hits for inspection."""
+
+        raw_hits = self._search_branch_raw(branch_id, query, limit)
+        reranked_hits, rerank_applied = self._apply_rerank(query, raw_hits, limit=limit)
+        return RetrievalSearchDiagnostics(
+            query=query,
+            raw_hits=raw_hits,
+            reranked_hits=reranked_hits,
+            rerank_applied=rerank_applied,
         )

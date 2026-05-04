@@ -120,7 +120,8 @@ def test_apply_rerank_reorders_hits(monkeypatch: pytest.MonkeyPatch) -> None:
             RetrievalHit(chapter_index=1, title='一', summary_text='弱相关', score=0.8, keyword_list=['卫图']),
             RetrievalHit(chapter_index=2, title='二', summary_text='强相关', score=0.1, keyword_list=['命格']),
         ]
-        reranked = service._apply_rerank('命格', hits, limit=2)
+        reranked, rerank_applied = service._apply_rerank('命格', hits, limit=2)
+        assert rerank_applied is True
         assert [hit.chapter_index for hit in reranked] == [2, 1]
         assert reranked[0].score == pytest.approx(0.9)
         assert reranked[1].score == pytest.approx(0.2)
@@ -142,6 +143,36 @@ def test_apply_rerank_falls_back_when_provider_errors(monkeypatch: pytest.Monkey
             RetrievalHit(chapter_index=1, title='一', summary_text='命格出现', score=0.8, keyword_list=['卫图']),
             RetrievalHit(chapter_index=2, title='二', summary_text='资源铺垫', score=0.1, keyword_list=['资源']),
         ]
-        reranked = service._apply_rerank('命格', hits, limit=2)
+        reranked, rerank_applied = service._apply_rerank('命格', hits, limit=2)
+        assert rerank_applied is False
         assert [hit.chapter_index for hit in reranked] == [1, 2]
         assert reranked[0].score == pytest.approx(0.8)
+        assert reranked[1].score == pytest.approx(0.1)
+
+
+def test_search_branch_with_diagnostics_preserves_raw_and_reranked_views(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _session() as session:
+        service = RetrievalService(session, Settings())
+        raw_hits = [
+            RetrievalHit(chapter_index=1, title='一', summary_text='弱相关', score=0.8, keyword_list=['卫图']),
+            RetrievalHit(chapter_index=2, title='二', summary_text='强相关', score=0.1, keyword_list=['命格']),
+        ]
+        reranked_hits = [
+            RetrievalHit(chapter_index=2, title='二', summary_text='强相关', score=0.95, keyword_list=['命格']),
+            RetrievalHit(chapter_index=1, title='一', summary_text='弱相关', score=0.25, keyword_list=['卫图']),
+        ]
+
+        monkeypatch.setattr(service, '_search_branch_raw', lambda branch_id, query, limit: raw_hits)
+        monkeypatch.setattr(
+            service,
+            '_apply_rerank',
+            lambda query, hits, *, limit: (reranked_hits, True),
+        )
+
+        diagnostics = service.search_branch_with_diagnostics('branch-1', '命格', limit=2)
+        assert diagnostics.query == '命格'
+        assert diagnostics.rerank_applied is True
+        assert diagnostics.raw_hits == raw_hits
+        assert diagnostics.reranked_hits == reranked_hits
