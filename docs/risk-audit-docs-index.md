@@ -110,6 +110,13 @@ fresh 真库核验结果。适合回答：
 - 样例小说前 10 章 fresh DB 结果是什么
 - 哪些是真实低风险候选
 - 当前系统是在内容层面有问题，还是 small-model 子路径存在稳定性债
+- 后续 cluster-review schema 升级后，branch report 是否还能在真库主路径导出
+
+### `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
+sample branch report 的 post-migration 样例。适合回答：
+- 升级 cluster-review schema 后，真库 branch report 长什么样
+- `Review Storage` 是否已经回到 DB 主路径
+- sample novel fresh10 当前停在第几章、失败/运行 job 是否清零
 
 ### `architecture/README.md`
 架构专题总入口。适合回答：

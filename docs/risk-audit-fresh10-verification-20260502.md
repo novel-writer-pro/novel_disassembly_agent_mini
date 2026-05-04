@@ -154,3 +154,54 @@ small-model pipeline 存在 schema 漂移：
 ## 7. 一句话结论
 
 > 样例小说前 10 章已经在 fresh PostgreSQL 真库中完整跑通；内容层面未见明确 OOC / 规则冲突 / 崩坏，仅存在少量 low 级人工复核候选，系统层面剩余问题主要是 small-model schema 收口，而不是主链不可生产。
+
+---
+
+## 8. 2026-05-04 后续补充：review schema 升级与 branch report 复验
+
+在后续示例小说复验中，真实 PostgreSQL `novel_analyzer` 库暴露出一个额外问题：
+
+- `cluster_review_records` 缺 `review_actor`
+- `cluster_review_event_records` 缺 `previous_cluster_status / previous_review_result / previous_review_actor / review_actor`
+
+处理动作：
+
+1. leader 先补了读取兼容，确保旧表也能导出报告；
+2. 再新增正式 Alembic 迁移 `20260504_01_cluster_review_actor_compat`，把缺列在真实 DB 上补齐；
+3. 执行：
+
+```bash
+./.venv/bin/python -m novel_analyzer.cli.app init-db \
+  --database-url "postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer"
+
+./.venv/bin/python -m novel_analyzer.cli.app db-capabilities \
+  --database-url "postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer"
+```
+
+结果：
+
+- `initialized_schema=true`
+- `missing_cluster_review_columns=`
+- `ok=true`
+
+随后重新导出 branch report：
+
+```bash
+./.venv/bin/python -m novel_analyzer.cli.app export-branch-report \
+  ac9449b9-7326-474f-bb72-4416375a7491 \
+  62e636f0-c901-4167-aa1c-aff3da9c83ef \
+  /tmp/sample-branch-report-post-migration-20260504.md \
+  --database-url "postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer"
+```
+
+复验结果：
+
+- `completed_chapters: 10`
+- `failed_jobs: 0`
+- `running_jobs: 0`
+- `next_chapter: 11`
+- `Review Storage: 当前 review 数据来自数据库主路径。`
+
+归档样例：
+
+- `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
