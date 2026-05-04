@@ -389,6 +389,14 @@ def db_capabilities(database_url: str | None = None) -> None:
     echo(f"available_text_search_configs={','.join(report.available_text_search_configs)}")
     echo(f"missing_tables={','.join(report.missing_tables)}")
     echo(f"missing_extensions={','.join(report.missing_extensions)}")
+    if report.missing_cluster_review_columns:
+        items = [
+            f"{table}:{','.join(columns)}"
+            for table, columns in sorted(report.missing_cluster_review_columns.items())
+        ]
+        echo(f"missing_cluster_review_columns={';'.join(items)}")
+    else:
+        echo("missing_cluster_review_columns=")
     echo(f"ok={str(report.ok).lower()}")
     if not report.ok:
         raise typer.Exit(code=1)
