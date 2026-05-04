@@ -62,6 +62,13 @@ upgrade. It intentionally avoids UI changes and keeps the checker contracts stab
   - `execution_mode = sandbox_execute`
   - `executed_steps = 2`
   - dashboard includes `repair_lane_diagnostics`, `long_book_consistency_diagnostics`, and `book_handoff_summary`
+- Whole-book provider-backed rerun on the same branch also succeeded with `--use-llm`:
+  - output: `/tmp/whole-book-provider-rerun-20260504.json`
+  - `execution_mode = sandbox_execute`
+  - `executed_steps = 2`
+  - chapter 2: `overall_score = 84`, `overall_risk_level = low`, `stop_reason = quality_iteration_required`
+  - chapter 3: `overall_score = 84`, `overall_risk_level = low`, `stop_reason = critical_action_required`
+  - despite readiness still reporting provider health `degraded`, the live provider path was reachable for this rerun
 - Branch validation succeeded:
   - `validate-branch 62e636f0-c901-4167-aa1c-aff3da9c83ef` → `issue_count=0`
 - Sample branch Markdown report rerun initially failed on legacy DB review tables that lacked
