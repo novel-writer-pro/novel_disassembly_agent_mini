@@ -12,6 +12,10 @@
 推荐阅读顺序：
 1. [`./feature-checkout-template.md`](./feature-checkout-template.md)
 2. [`./architecture-mainline-checkout-20260504.md`](./architecture-mainline-checkout-20260504.md)
+3. [`./retrieval-checkout-20260504.md`](./retrieval-checkout-20260504.md)
+4. [`./risk-semantic-checkout-20260504.md`](./risk-semantic-checkout-20260504.md)
+5. [`./imitation-checkout-20260504.md`](./imitation-checkout-20260504.md)
+6. [`./eval-governance-checkout-20260504.md`](./eval-governance-checkout-20260504.md)
 
 维护规则：
 - 每次跨能力线推进（retrieval / risk / imitation / eval / docs IA）都应该补一份 checkout。

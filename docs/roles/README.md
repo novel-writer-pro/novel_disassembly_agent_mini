@@ -7,3 +7,5 @@
 - [`./imitation/README.md`](./imitation/README.md)
 
 - [`../api-current-surface.md`](../api-current-surface.md)
+- [`../features/README.md`](../features/README.md)
+- [`../strategy/docs-governance-and-handoff-checklist.md`](../strategy/docs-governance-and-handoff-checklist.md)

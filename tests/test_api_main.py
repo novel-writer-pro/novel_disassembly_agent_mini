@@ -366,6 +366,37 @@ def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> N
     assert "architecture-mainline-checkout-20260504.md" in handoff
 
 
+def test_docs_indexes_point_to_capability_checkouts_and_governance_guides() -> None:
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    roles = Path("docs/roles/README.md").read_text(encoding="utf-8")
+    maintainer = Path("docs/roles/maintainer/README.md").read_text(encoding="utf-8")
+    backend = Path("docs/roles/backend/README.md").read_text(encoding="utf-8")
+    features = Path("docs/features/README.md").read_text(encoding="utf-8")
+
+    for needle in [
+        "./features/retrieval-checkout-20260504.md",
+        "./features/risk-semantic-checkout-20260504.md",
+        "./features/imitation-checkout-20260504.md",
+        "./features/eval-governance-checkout-20260504.md",
+        "./strategy/docs-governance-and-handoff-checklist.md",
+        "./strategy/docs-information-architecture-guide.md",
+    ]:
+        assert needle in readme
+
+    assert "../features/README.md" in roles
+    assert "docs-governance-and-handoff-checklist.md" in roles
+    assert "feature-checkout-template.md" in maintainer
+    assert "docs-information-architecture-guide.md" in maintainer
+    assert "retrieval-checkout-20260504.md" in backend
+    assert "risk-semantic-checkout-20260504.md" in backend
+    assert "imitation-checkout-20260504.md" in backend
+    assert "eval-governance-checkout-20260504.md" in backend
+    assert "retrieval-checkout-20260504.md" in features
+    assert "risk-semantic-checkout-20260504.md" in features
+    assert "imitation-checkout-20260504.md" in features
+    assert "eval-governance-checkout-20260504.md" in features
+
+
 def test_api_current_surface_doc_matches_route_inventory() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
