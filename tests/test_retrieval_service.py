@@ -266,6 +266,11 @@ def test_search_branch_with_diagnostics_preserves_raw_and_reranked_views(
         assert diagnostics.rerank_applied is True
         assert diagnostics.fusion_applied is False
         assert diagnostics.route_counts == {"fts": 2}
+        assert diagnostics.route_diagnostics is not None
+        assert diagnostics.route_diagnostics[0].route == "fts"
+        assert diagnostics.route_diagnostics[0].hit_count == 2
+        assert diagnostics.raw_latency_ms >= 0.0
+        assert diagnostics.rerank_latency_ms >= 0.0
         assert diagnostics.raw_hits == raw_hits
         assert diagnostics.reranked_hits == reranked_hits
 
@@ -334,3 +339,40 @@ def test_search_branch_uses_rrf_hook_before_rerank(monkeypatch: pytest.MonkeyPat
         diagnostics = service.search_branch_with_diagnostics("branch-rrf", "命格", limit=2)
         assert diagnostics.rerank_applied is False
         assert [hit.chapter_index for hit in diagnostics.raw_hits] == [2, 1, 3]
+        assert diagnostics.route_counts == {"route_1": 2, "route_2": 2}
+        assert [
+            item.route for item in diagnostics.route_diagnostics or []
+        ] == ["route_1", "route_2"]
+
+
+def test_search_branch_public_contract_stays_plain_hit_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _session() as session:
+        service = RetrievalService(session, Settings(rerank_backend="disabled"))
+        lane = [
+            RetrievalHit(
+                chapter_index=7,
+                title="七",
+                summary_text="命格兑现",
+                score=0.9,
+                keyword_list=["命格"],
+            )
+        ]
+        monkeypatch.setattr(
+            service,
+            "_collect_recall_candidates",
+            lambda branch_id, query, limit: [lane],
+        )
+
+        hits = service.search_branch("branch-public", "命格", limit=1)
+
+        assert isinstance(hits, list)
+        assert hits == lane
+        assert set(hits[0].__dataclass_fields__) == {
+            "chapter_index",
+            "title",
+            "summary_text",
+            "score",
+            "keyword_list",
+        }

@@ -1,5 +1,5 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -237,7 +237,10 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert report.dashboard_summary["chapter_count"] == 2
         assert "highest_priority_chapters" in report.dashboard_summary
         assert "strategy_targets" in report.dashboard_summary
-        assert "top_priority_families" in report.dashboard_summary["strategy_targets"][0] or report.dashboard_summary["strategy_targets"][1]["top_priority_families"] is not None
+        assert (
+            "top_priority_families" in report.dashboard_summary["strategy_targets"][0]
+            or report.dashboard_summary["strategy_targets"][1]["top_priority_families"] is not None
+        )
         assert "issue_family_histogram" in report.dashboard_summary
         assert "cluster_buckets" in report.dashboard_summary
         assert "issue_family_ranking" in report.dashboard_summary
@@ -251,6 +254,12 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "top_priority_summary" in report.dashboard_summary
         assert "top_risk_summary" in report.dashboard_summary
         assert "weak_lane_dominance" in report.dashboard_summary
+        assert "repair_lane_diagnostics" in report.dashboard_summary
+        assert "long_book_consistency_diagnostics" in report.dashboard_summary
+        assert "repair_lane_diagnostics" in report.policy_summary
+        assert "long_book_consistency_diagnostics" in report.policy_summary
+        assert "style" in report.dashboard_summary["repair_lane_diagnostics"]["lane_order"]
+        assert "reader_sim" in report.dashboard_summary["repair_lane_diagnostics"]["lane_order"]
         assert "chapter_flags" in report.dashboard_summary
         assert "next_stage_focus" in report.policy_summary
         assert "book_handoff_summary" in report.dashboard_summary
@@ -258,6 +267,11 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "weak_lane_action_count" in report.dashboard_summary["top_priority_summary"]
         assert "weak_lane_families" in report.dashboard_summary["top_risk_summary"]
         assert "top_priority_families" in report.dashboard_summary["top_priority_summary"]
+        diagnostics = report.policy_summary["long_book_consistency_diagnostics"]
+        assert diagnostics["diagnostic_version"] == "long-book-consistency-diagnostics.v1"
+        assert diagnostics["chapter_count"] == 2
+        assert diagnostics["requires_consistency_pass"] is True
+        assert report.dashboard_summary["long_book_consistency_diagnostics"] == diagnostics
         assert "high_risk_families" in report.dashboard_summary["top_risk_summary"]
         assert "reason" in report.policy_summary["book_priority_ranking"][0]
         assert "scheduling_priority" in report.dashboard_summary["chapter_flags"][0]
@@ -269,21 +283,49 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     track_readme = Path("docs/tracks/imitation/README.md").read_text(encoding="utf-8")
     role_readme = Path("docs/roles/imitation/README.md").read_text(encoding="utf-8")
     integrator_readme = Path("docs/roles/integrator/README.md").read_text(encoding="utf-8")
-    stability_doc = Path("docs/whole-book-imitation-api-stability-summary.md").read_text(encoding="utf-8")
+    stability_doc = Path("docs/whole-book-imitation-api-stability-summary.md").read_text(
+        encoding="utf-8"
+    )
     versioning_doc = Path("docs/whole-book-imitation-api-versioning.md").read_text(encoding="utf-8")
-    freeze_doc = Path("docs/whole-book-imitation-api-freeze-readiness.md").read_text(encoding="utf-8")
-    freeze_evidence_doc = Path("docs/whole-book-imitation-freeze-evidence-20260503.md").read_text(encoding="utf-8")
+    freeze_doc = Path("docs/whole-book-imitation-api-freeze-readiness.md").read_text(
+        encoding="utf-8"
+    )
+    freeze_evidence_doc = Path("docs/whole-book-imitation-freeze-evidence-20260503.md").read_text(
+        encoding="utf-8"
+    )
     api_readme = Path("apps/api/README.md").read_text(encoding="utf-8")
-    quickstart_doc = Path("docs/whole-book-imitation-integration-quickstart.md").read_text(encoding="utf-8")
+    quickstart_doc = Path("docs/whole-book-imitation-integration-quickstart.md").read_text(
+        encoding="utf-8"
+    )
     docs_index_doc = Path("docs/whole-book-imitation-docs-index.md").read_text(encoding="utf-8")
-    recovery_doc = Path("docs/whole-book-imitation-provider-recovery-checklist.md").read_text(encoding="utf-8")
-    coverage_doc = Path("docs/whole-book-imitation-sample-coverage-matrix.md").read_text(encoding="utf-8")
+    recovery_doc = Path("docs/whole-book-imitation-provider-recovery-checklist.md").read_text(
+        encoding="utf-8"
+    )
+    coverage_doc = Path("docs/whole-book-imitation-sample-coverage-matrix.md").read_text(
+        encoding="utf-8"
+    )
     handoff_doc = Path("docs/whole-book-imitation-handoff-brief.md").read_text(encoding="utf-8")
-    readiness_sample = json.loads(Path("docs/examples/whole-book-imitation-readiness.sample.json").read_text(encoding="utf-8"))
-    request_sample = json.loads(Path("docs/examples/whole-book-imitation-run.request.sample.json").read_text(encoding="utf-8"))
-    error_sample = json.loads(Path("docs/examples/whole-book-imitation-run.error.provider-billing.sample.json").read_text(encoding="utf-8"))
-    provider_success_sample = json.loads(Path("docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json").read_text(encoding="utf-8"))
-    sample = json.loads(Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8"))
+    readiness_sample = json.loads(
+        Path("docs/examples/whole-book-imitation-readiness.sample.json").read_text(encoding="utf-8")
+    )
+    request_sample = json.loads(
+        Path("docs/examples/whole-book-imitation-run.request.sample.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    error_sample = json.loads(
+        Path("docs/examples/whole-book-imitation-run.error.provider-billing.sample.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    provider_success_sample = json.loads(
+        Path(
+            "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json"
+        ).read_text(encoding="utf-8")
+    )
+    sample = json.loads(
+        Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8")
+    )
 
     assert "## 10. Whole-Book Imitation Run Report" in manifest
     assert "book_handoff_summary" in manifest
@@ -332,10 +374,16 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "whole-book-imitation-sample-coverage-matrix.md" in integrator_readme
     assert "whole-book-imitation-handoff-brief.md" in integrator_readme
     assert "whole-book-imitation-run.error.provider-billing.sample.json" in api_readme
-    assert "先 readiness，再 run；成功看 handoff summary，失败看 error_code / retryable。" in quickstart_doc
+    assert (
+        "先 readiness，再 run；成功看 handoff summary，失败看 error_code / retryable。"
+        in quickstart_doc
+    )
     assert "最短阅读路径" in docs_index_doc
     assert "whole-book-imitation-run.request.sample.json" in docs_index_doc
-    assert "provider 恢复后，先 readiness，再 execute，再把成功 JSON 摘录回 freeze evidence。" in recovery_doc
+    assert (
+        "provider 恢复后，先 readiness，再 execute，再把成功 JSON 摘录回 freeze evidence。"
+        in recovery_doc
+    )
     assert "request / readiness / error 三类样例" in coverage_doc
     assert "test_whole_book_imitation_run_request_sample_is_executable" in coverage_doc
     assert "内部合同与系统接入面已基本收口完成" in handoff_doc
@@ -368,4 +416,8 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "dashboard_summary" in sample
     assert "next_stage_focus" in sample["policy_summary"]
     assert "book_handoff_summary" in sample["dashboard_summary"]
+    assert "repair_lane_diagnostics" in sample["dashboard_summary"]
+    assert "long_book_consistency_diagnostics" in sample["dashboard_summary"]
+    assert "style" in sample["dashboard_summary"]["repair_lane_diagnostics"]["lane_order"]
+    assert "reader_sim" in sample["dashboard_summary"]["repair_lane_diagnostics"]["lane_order"]
     assert "top_repair_recommendations" in sample["dashboard_summary"]["book_handoff_summary"]

@@ -22,6 +22,7 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 ## Newcomer Path
 - 想快速上手：[`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)
 - 想看接口与样例：[`./docs/interface-manifest.md`](./docs/interface-manifest.md) + [`./docs/examples/*.sample.json`](./docs/examples/)
+- 想看跨主线 eval/governance 冻结口径：[`./docs/eval-governance-sample-release-contract.md`](./docs/eval-governance-sample-release-contract.md) + [`./docs/examples/eval-governance-cross-lane-bundle.sample.json`](./docs/examples/eval-governance-cross-lane-bundle.sample.json)
 - 想看当前 API 实现契约：[`./docs/api-current-surface.md`](./docs/api-current-surface.md)
 - 想看交付全貌：[`./docs/final-handoff.md`](./docs/final-handoff.md)
 - 想看系统审查能力：[`./docs/risk-audit-capability.md`](./docs/risk-audit-capability.md)

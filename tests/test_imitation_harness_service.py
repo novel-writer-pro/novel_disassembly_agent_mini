@@ -227,6 +227,7 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert report.final_preflight
         assert report.rounds[0].skill_prompt_previews
         assert "draft-self-check" in report.rounds[0].skill_prompt_previews
+        assert any(contract.skill_name == "style-calibrator" for contract in report.skill_contracts)
         assert report.rounds[0].skill_outputs
         assert "chapter-intake" in report.rounds[0].skill_outputs
         assert "chapter-fact-extractor" in report.rounds[0].skill_outputs
@@ -262,13 +263,14 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
             draft=draft,
             strategy_input={
                 "prioritized_targets": ["relationship_transition", "world_rule_support"],
-                "prioritized_families": ["relationship", "rule", "dialogue", "research"],
+                "prioritized_families": ["relationship", "rule", "style", "dialogue", "reader_sim", "research"],
                 "blocking_issues": ["gate_verdict_requires_revision"],
                 "recommended_actions": ["补足关系与规则说明。"],
             },
         )
         constraint_output = outputs["imitation-constraint-pack"]
         self_check_output = outputs["draft-self-check"]
+        style_output = outputs["style-calibrator"]
         rhythm_output = outputs["rhythm-analyzer"]
         reader_output = outputs["reader-sim-review"]
         dialogue_output = outputs["dialogue-designer"]
@@ -278,9 +280,13 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
         assert "gate_verdict_requires_revision" in constraint_output["forbidden_transformations"]
         assert "补足关系与规则说明。" in self_check_output["self_notes"]
         assert "family:relationship" in self_check_output["self_notes"]
+        assert "prose_density_label" in style_output
+        assert "style_axes" in style_output
         assert "hook_strength" in rhythm_output
         assert "engagement_score" in reader_output
+        assert "strategy_style_focus" in style_output["style_issues"]
         assert "strategy_dialogue_focus" in dialogue_output["issues"]
+        assert "strategy_reader_focus" in reader_output["concerns"]
         assert any("research 敏感" in item for item in research_output["caution_points"])
 
 
@@ -660,6 +666,12 @@ def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_p
                 "_gate_meta": {"overall_verdict": "needs_revision"},
                 "_risk_meta": {"overall_risk_level": "medium"},
                 "draft-self-check": {"blocking_issues": ["draft_too_short_for_gate"], "recommended_actions": []},
+                "style-calibrator": {
+                    "style_axes": [],
+                    "style_issues": ["prose_density_thin"],
+                    "prose_density_label": "thin",
+                    "recommended_actions": ["补齐文风轴与句密度。"],
+                },
             },
         )
         actions = service._sorted_actions(  # noqa: SLF001
@@ -695,3 +707,4 @@ def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_p
         )
         assert summary["highest_action_priority"] == min(item.priority for item in actions)
         assert "weak_lane_action_count" in summary
+        assert "reader_sim" in summary["issue_families"] or "style" in summary["issue_families"]

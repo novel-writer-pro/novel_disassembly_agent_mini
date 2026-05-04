@@ -20,7 +20,17 @@ class WholeBookImitationService:
     """Compose chapter-level imitation into a whole-book planning skeleton."""
 
     WEAK_LANE_FAMILIES = {"rhythm", "reader", "dialogue", "research"}
-    ISSUE_FAMILIES = {"constraint", "relationship", "rule", "motivation", "hook", "dialogue", "research", "rhythm", "reader"}
+    ISSUE_FAMILIES = {
+        "constraint",
+        "relationship",
+        "rule",
+        "motivation",
+        "hook",
+        "dialogue",
+        "research",
+        "rhythm",
+        "reader",
+    }
 
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -31,7 +41,9 @@ class WholeBookImitationService:
     def _queue_policy_summary(cls, queue: list[WholeBookImitationQueueStep]) -> dict[str, object]:
         reason_histogram: dict[str, int] = {}
         for step in queue:
-            reason_histogram[step.scheduling_reason] = reason_histogram.get(step.scheduling_reason, 0) + 1
+            reason_histogram[step.scheduling_reason] = (
+                reason_histogram.get(step.scheduling_reason, 0) + 1
+            )
         return {
             "queue_length": len(queue),
             "highest_queue_priority": min((step.scheduling_priority for step in queue), default=4),
@@ -40,8 +52,12 @@ class WholeBookImitationService:
         }
 
     @classmethod
-    def _queue_dashboard_summary(cls, queue: list[WholeBookImitationQueueStep]) -> dict[str, object]:
-        ordered_queue = sorted(queue, key=lambda item: (item.scheduling_priority, item.source_chapter_index))
+    def _queue_dashboard_summary(
+        cls, queue: list[WholeBookImitationQueueStep]
+    ) -> dict[str, object]:
+        ordered_queue = sorted(
+            queue, key=lambda item: (item.scheduling_priority, item.source_chapter_index)
+        )
         return {
             "queue_priority_preview": [
                 {
@@ -51,11 +67,19 @@ class WholeBookImitationService:
                 }
                 for step in ordered_queue
             ],
-            "top_queue_priority_chapters": [step.source_chapter_index for step in ordered_queue[:3]],
+            "top_queue_priority_chapters": [
+                step.source_chapter_index for step in ordered_queue[:3]
+            ],
             "queue_cluster_buckets": {
-                "critical": [step.source_chapter_index for step in queue if step.scheduling_priority == 1],
-                "attention": [step.source_chapter_index for step in queue if step.scheduling_priority == 2],
-                "monitor": [step.source_chapter_index for step in queue if step.scheduling_priority >= 3],
+                "critical": [
+                    step.source_chapter_index for step in queue if step.scheduling_priority == 1
+                ],
+                "attention": [
+                    step.source_chapter_index for step in queue if step.scheduling_priority == 2
+                ],
+                "monitor": [
+                    step.source_chapter_index for step in queue if step.scheduling_priority >= 3
+                ],
             },
             "queue_next_actions": [
                 f"优先处理第{step.source_chapter_index}章：{step.scheduling_reason}"
@@ -64,7 +88,9 @@ class WholeBookImitationService:
         }
 
     @classmethod
-    def _summarize_action_queue(cls, executed_steps: list[WholeBookImitationExecutedStep]) -> list[dict[str, object]]:
+    def _summarize_action_queue(
+        cls, executed_steps: list[WholeBookImitationExecutedStep]
+    ) -> list[dict[str, object]]:
         summary: dict[str, dict[str, object]] = {}
         for step in executed_steps:
             for action in step.action_queue:
@@ -83,22 +109,18 @@ class WholeBookImitationService:
                 item["count"] = int(item["count"]) + 1
                 item["highest_priority"] = min(int(item["highest_priority"]), action.priority)
                 severity_rank = {"low": 1, "medium": 2, "high": 3}
-                if severity_rank.get(action.severity, 0) > severity_rank.get(str(item["highest_severity"]), 0):
+                if severity_rank.get(action.severity, 0) > severity_rank.get(
+                    str(item["highest_severity"]), 0
+                ):
                     item["highest_severity"] = action.severity
                 if step.source_chapter_index not in item["chapter_indexes"]:
                     item["chapter_indexes"].append(step.source_chapter_index)
                 if action.target and action.target not in item["targets"]:
                     item["targets"].append(action.target)
-                inferred_family = next(
-                    (
-                        family
-                        for family in cls.ISSUE_FAMILIES
-                        if family == action.target or family in action.action_type
-                    ),
-                    "",
-                )
-                if inferred_family and inferred_family not in item["issue_families"]:
-                    item["issue_families"].append(inferred_family)
+                inferred_families = cls._families_for_action(action.action_type, action.target)
+                for inferred_family in inferred_families:
+                    if inferred_family and inferred_family not in item["issue_families"]:
+                        item["issue_families"].append(inferred_family)
         return sorted(
             summary.values(),
             key=lambda item: (
@@ -109,6 +131,48 @@ class WholeBookImitationService:
         )
 
     @classmethod
+    def _long_book_consistency_diagnostics(
+        cls,
+        executed_steps: list[WholeBookImitationExecutedStep],
+    ) -> dict[str, object]:
+        """Summarize cross-chapter consistency risks from whole-book execution state."""
+
+        weak_lane_counts = {family: 0 for family in sorted(cls.WEAK_LANE_FAMILIES)}
+        carry_over_gaps: list[dict[str, object]] = []
+        for step in executed_steps:
+            step_families = set()
+            for action in step.action_queue:
+                for family in cls.WEAK_LANE_FAMILIES:
+                    if family in action.action_type or family == action.target:
+                        weak_lane_counts[family] += 1
+                        step_families.add(family)
+            if step.source_chapter_index > 1 and not step.strategy_input.get(
+                "prioritized_families"
+            ):
+                carry_over_gaps.append(
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "reason": "missing_prioritized_families_from_previous_step",
+                    }
+                )
+            if step_families and not step.carry_over_state.next_constraints:
+                carry_over_gaps.append(
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "reason": "weak_lane_actions_without_next_constraints",
+                    }
+                )
+        return {
+            "chapter_count": len(executed_steps),
+            "weak_lane_counts": weak_lane_counts,
+            "carry_over_gap_count": len(carry_over_gaps),
+            "carry_over_gaps": carry_over_gaps[:8],
+            "requires_consistency_pass": bool(carry_over_gaps)
+            or any(count > 0 for count in weak_lane_counts.values()),
+            "diagnostic_version": "long-book-consistency-diagnostics.v1",
+        }
+
+    @classmethod
     def _book_handoff_summary(
         cls,
         executed_steps: list[WholeBookImitationExecutedStep],
@@ -116,8 +180,12 @@ class WholeBookImitationService:
         dashboard_summary: dict[str, object],
     ) -> dict[str, object]:
         top_actions = cls._summarize_action_queue(executed_steps)[:5]
-        priority_families = list(dashboard_summary.get("top_priority_summary", {}).get("top_priority_families", []))[:3]
-        risk_families = list(dashboard_summary.get("top_risk_summary", {}).get("high_risk_families", []))[:3]
+        priority_families = list(
+            dashboard_summary.get("top_priority_summary", {}).get("top_priority_families", [])
+        )[:3]
+        risk_families = list(
+            dashboard_summary.get("top_risk_summary", {}).get("high_risk_families", [])
+        )[:3]
         next_focus = [
             f"优先处理能力族：{'、'.join(priority_families[:2])}" for _ in [0] if priority_families
         ]
@@ -125,18 +193,23 @@ class WholeBookImitationService:
             f"高风险能力族复核：{'、'.join(risk_families[:2])}" for _ in [0] if risk_families
         ]
         next_focus += [
-            f"先回看第{chapter}章的高优先级修复链" for chapter in list(dashboard_summary.get("highest_priority_chapters", []))[:2]
+            f"先回看第{chapter}章的高优先级修复链"
+            for chapter in list(dashboard_summary.get("highest_priority_chapters", []))[:2]
         ]
         return {
             "top_repair_recommendations": top_actions,
             "next_stage_focus": next_focus[:4],
-            "highest_priority_chapters": list(dashboard_summary.get("highest_priority_chapters", []))[:3],
+            "highest_priority_chapters": list(
+                dashboard_summary.get("highest_priority_chapters", [])
+            )[:3],
             "risk_chapters": list(dashboard_summary.get("top_risk_chapters", []))[:5],
             "final_verdicts": list(policy_summary.get("verdicts", [])),
         }
 
     @staticmethod
-    def _strategy_input_from_revise_payload(previous_revise_payload: dict[str, object] | None) -> dict[str, object]:
+    def _strategy_input_from_revise_payload(
+        previous_revise_payload: dict[str, object] | None,
+    ) -> dict[str, object]:
         if not previous_revise_payload:
             return {}
         ordered = previous_revise_payload.get("ordered_actions", [])
@@ -144,9 +217,21 @@ class WholeBookImitationService:
             return {}
         top_actions = [item for item in ordered[:3] if isinstance(item, dict)]
         return {
-            "prioritized_targets": [str(item.get("target", "")) for item in top_actions if str(item.get("target", "")).strip()],
-            "prioritized_action_types": [str(item.get("action_type", "")) for item in top_actions if str(item.get("action_type", "")).strip()],
-            "prioritized_families": [str(item.get("issue_family", "")) for item in top_actions if str(item.get("issue_family", "")).strip()],
+            "prioritized_targets": [
+                str(item.get("target", ""))
+                for item in top_actions
+                if str(item.get("target", "")).strip()
+            ],
+            "prioritized_action_types": [
+                str(item.get("action_type", ""))
+                for item in top_actions
+                if str(item.get("action_type", "")).strip()
+            ],
+            "prioritized_families": [
+                str(item.get("issue_family", ""))
+                for item in top_actions
+                if str(item.get("issue_family", "")).strip()
+            ],
             "blocking_issues": previous_revise_payload.get("blocking_issues", []),
             "recommended_actions": previous_revise_payload.get("recommended_actions", []),
         }
@@ -185,17 +270,31 @@ class WholeBookImitationService:
                 seen.add(family)
                 unique_families.append(family)
         merged = dict(strategy_input)
-        merged["prioritized_families"] = list(dict.fromkeys(
-            [str(item) for item in strategy_input.get("prioritized_families", []) if str(item).strip()]
-            + unique_families[:3]
-        ))
-        merged["priority_bias"] = int(previous_policy_summary.get("highest_action_priority", 4) or 4)
+        merged["prioritized_families"] = list(
+            dict.fromkeys(
+                [
+                    str(item)
+                    for item in strategy_input.get("prioritized_families", [])
+                    if str(item).strip()
+                ]
+                + unique_families[:3]
+            )
+        )
+        merged["priority_bias"] = int(
+            previous_policy_summary.get("highest_action_priority", 4) or 4
+        )
         merged["risk_bias"] = str(previous_policy_summary.get("risk_overall_level", "low") or "low")
         if merged["priority_bias"] <= 2 and unique_families:
-            merged["recommended_actions"] = list(dict.fromkeys(
-                [str(item) for item in strategy_input.get("recommended_actions", []) if str(item).strip()]
-                + [f"优先处理上一章高优先级能力族：{'、'.join(unique_families[:2])}"]
-            ))
+            merged["recommended_actions"] = list(
+                dict.fromkeys(
+                    [
+                        str(item)
+                        for item in strategy_input.get("recommended_actions", [])
+                        if str(item).strip()
+                    ]
+                    + [f"优先处理上一章高优先级能力族：{'、'.join(unique_families[:2])}"]
+                )
+            )
         return merged
 
     @staticmethod
@@ -208,22 +307,162 @@ class WholeBookImitationService:
         merged = dict(strategy_input)
         top_priority = previous_dashboard_summary.get("top_priority_summary", {})
         top_risk = previous_dashboard_summary.get("top_risk_summary", {})
-        weak_families = [str(item) for item in top_priority.get("top_priority_families", []) if str(item).strip()]
-        high_risk_families = [str(item) for item in top_risk.get("high_risk_families", []) if str(item).strip()]
-        merged["prioritized_families"] = list(dict.fromkeys(
-            [str(item) for item in strategy_input.get("prioritized_families", []) if str(item).strip()]
-            + weak_families[:2]
-            + high_risk_families[:2]
-        ))
+        weak_families = [
+            str(item) for item in top_priority.get("top_priority_families", []) if str(item).strip()
+        ]
+        high_risk_families = [
+            str(item) for item in top_risk.get("high_risk_families", []) if str(item).strip()
+        ]
+        merged["prioritized_families"] = list(
+            dict.fromkeys(
+                [
+                    str(item)
+                    for item in strategy_input.get("prioritized_families", [])
+                    if str(item).strip()
+                ]
+                + weak_families[:2]
+                + high_risk_families[:2]
+            )
+        )
         merged["top_priority_families"] = weak_families[:4]
         merged["high_risk_families"] = high_risk_families[:4]
         if weak_families or high_risk_families:
-            merged["recommended_actions"] = list(dict.fromkeys(
-                [str(item) for item in strategy_input.get("recommended_actions", []) if str(item).strip()]
-                + ([f"承接上一轮 top-priority families：{'、'.join(weak_families[:2])}"] if weak_families else [])
-                + ([f"承接上一轮 top-risk families：{'、'.join(high_risk_families[:2])}"] if high_risk_families else [])
-            ))
+            merged["recommended_actions"] = list(
+                dict.fromkeys(
+                    [
+                        str(item)
+                        for item in strategy_input.get("recommended_actions", [])
+                        if str(item).strip()
+                    ]
+                    + (
+                        [f"承接上一轮 top-priority families：{'、'.join(weak_families[:2])}"]
+                        if weak_families
+                        else []
+                    )
+                    + (
+                        [f"承接上一轮 top-risk families：{'、'.join(high_risk_families[:2])}"]
+                        if high_risk_families
+                        else []
+                    )
+                )
+            )
         return merged
+
+
+    @classmethod
+    def _long_book_consistency_diagnostics(
+        cls,
+        executed_steps: list[WholeBookImitationExecutedStep],
+    ) -> dict[str, object]:
+        """Summarize whole-book continuity signals without changing API contracts."""
+
+        continuity_gaps: list[dict[str, object]] = []
+        previous_state: WholeBookCarryOverState | None = None
+        for step in executed_steps:
+            if previous_state is not None and not step.carry_over_state.generated_summary.strip():
+                continuity_gaps.append(
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "reason": "missing_generated_summary",
+                    }
+                )
+            if previous_state is not None and not step.strategy_input.get("prioritized_families", []):
+                continuity_gaps.append(
+                    {
+                        "source_chapter_index": step.source_chapter_index,
+                        "reason": "missing_previous_repair_family_feedback",
+                    }
+                )
+            previous_state = step.carry_over_state
+        return {
+            "contract": "whole-book-consistency-diagnostics.v1",
+            "diagnostic_version": "long-book-consistency-diagnostics.v1",
+            "chapter_count": len(executed_steps),
+            "continuity_gap_count": len(continuity_gaps),
+            "continuity_gaps": continuity_gaps[:8],
+            "carry_over_chapters": [step.source_chapter_index for step in executed_steps if step.carry_over_state],
+            "requires_consistency_pass": len(executed_steps) > 1 or bool(continuity_gaps),
+        }
+
+    @classmethod
+    def _repair_lane_coverage(
+        cls,
+        executed_steps: list[WholeBookImitationExecutedStep],
+    ) -> dict[str, object]:
+        lanes = {
+            "style": ("style", "voice"),
+            "rhythm": ("rhythm",),
+            "dialogue": ("dialogue",),
+            "reader_sim": ("reader", "reader_sim"),
+        }
+        coverage: dict[str, dict[str, object]] = {}
+        for lane, tokens in lanes.items():
+            matching_actions = [
+                action
+                for step in executed_steps
+                for action in step.action_queue
+                if any(token in action.action_type for token in tokens)
+                or any(token in str(action.target) for token in tokens)
+            ]
+            coverage[lane] = {
+                "action_count": len(matching_actions),
+                "covered": bool(matching_actions),
+                "top_actions": [action.action_type for action in matching_actions[:4]],
+            }
+        return {
+            "contract": "whole-book-repair-lane-coverage.v1",
+            "lanes": coverage,
+            "missing_lanes": [lane for lane, item in coverage.items() if not bool(item["covered"])],
+        }
+
+    @classmethod
+    def _repair_lane_diagnostics(
+        cls,
+        executed_steps: list[WholeBookImitationExecutedStep],
+    ) -> dict[str, object]:
+        coverage = cls._repair_lane_coverage(executed_steps)
+        lanes = coverage["lanes"] if isinstance(coverage.get("lanes"), dict) else {}
+        lane_order = ["style", "rhythm", "dialogue", "reader_sim"]
+        return {
+            "contract": "whole-book-repair-lane-diagnostics.v1",
+            "lane_order": lane_order,
+            "lanes": lanes,
+            "missing_lanes": coverage.get("missing_lanes", []),
+            "open_lane_count": sum(
+                1 for lane in lane_order if isinstance(lanes.get(lane), dict) and lanes[lane].get("covered")
+            ),
+        }
+
+    @classmethod
+    def _normalize_family(cls, value: object) -> str:
+        text = str(value or "").strip().lower()
+        if not text:
+            return ""
+        if text in {"reader", "reader_sim"}:
+            return "reader_sim"
+        if text in {"style", "voice"}:
+            return "style"
+        return text
+
+    @classmethod
+    def _families_for_action(cls, action_type: str, target: str) -> list[str]:
+        haystack = f"{action_type} {target}".lower()
+        families: list[str] = []
+        for family, aliases in {
+            "style": ("style", "voice"),
+            "rhythm": ("rhythm",),
+            "dialogue": ("dialogue",),
+            "research": ("research",),
+            "reader_sim": ("reader", "reader_sim"),
+            "relationship": ("relationship", "relation"),
+            "rule": ("rule",),
+            "constraint": ("constraint",),
+            "motivation": ("motivation",),
+            "hook": ("hook",),
+        }.items():
+            if any(alias in haystack for alias in aliases):
+                families.append(family)
+        return families
 
     def build_plan(
         self,
@@ -359,8 +598,12 @@ class WholeBookImitationService:
         for step in report.queue:
             target_goal = step.target_goal
             strategy_input = self._strategy_input_from_revise_payload(previous_revise_payload)
-            strategy_input = self._augment_strategy_input_with_policy(strategy_input, previous_policy_summary)
-            strategy_input = self._augment_strategy_input_with_dashboard(strategy_input, previous_dashboard_summary)
+            strategy_input = self._augment_strategy_input_with_policy(
+                strategy_input, previous_policy_summary
+            )
+            strategy_input = self._augment_strategy_input_with_dashboard(
+                strategy_input, previous_dashboard_summary
+            )
             if carry_state is not None:
                 inherited_parts = [
                     item
@@ -373,10 +616,14 @@ class WholeBookImitationService:
                     if item
                 ]
                 if inherited_parts:
-                    target_goal = f"{target_goal}｜承接上一生成状态：{'；'.join(inherited_parts[:5])}"
+                    target_goal = (
+                        f"{target_goal}｜承接上一生成状态：{'；'.join(inherited_parts[:5])}"
+                    )
             top_targets = strategy_input.get("prioritized_targets", [])
             if isinstance(top_targets, list) and top_targets:
-                target_goal = f"{target_goal}｜优先处理上一章 revise targets：{'、'.join(top_targets[:2])}"
+                target_goal = (
+                    f"{target_goal}｜优先处理上一章 revise targets：{'、'.join(top_targets[:2])}"
+                )
             top_families = strategy_input.get("prioritized_families", [])
             if isinstance(top_families, list) and top_families:
                 target_goal = f"{target_goal}｜重点关注能力族：{'、'.join(top_families[:2])}"
@@ -406,7 +653,8 @@ class WholeBookImitationService:
                 source_chapter_index=step.source_chapter_index,
                 generated_summary=harness_report.final_draft.draft_text[:220],
                 relationship_state=final_round.review.risk_gate_notes[:3],
-                unresolved_threads=final_round.risk.top_risk_summaries[:3] or final_round.risk.coverage_gaps[:3],
+                unresolved_threads=final_round.risk.top_risk_summaries[:3]
+                or final_round.risk.coverage_gaps[:3],
                 rule_state=final_round.risk.top_risk_types[:3],
                 next_constraints=harness_report.final_draft.risk_gate_notes[:4],
             )
@@ -422,27 +670,43 @@ class WholeBookImitationService:
                     draft_excerpt=harness_report.final_draft.draft_text[:240],
                     carry_over_state=carry_state,
                     action_queue=harness_report.action_queue,
-                    revise_payload=harness_report.rounds[-1].revise_payload if harness_report.rounds else {},
+                    revise_payload=harness_report.rounds[-1].revise_payload
+                    if harness_report.rounds
+                    else {},
                     strategy_input=strategy_input,
                     scheduling_priority=scheduling_priority,
                     scheduling_reason=scheduling_reason,
                     policy_summary=harness_report.policy_summary,
                 )
             )
-            previous_revise_payload = harness_report.rounds[-1].revise_payload if harness_report.rounds else None
+            previous_revise_payload = (
+                harness_report.rounds[-1].revise_payload if harness_report.rounds else None
+            )
             previous_policy_summary = harness_report.policy_summary
             previous_dashboard_summary = {
                 "top_priority_summary": {
-                    "top_priority_families": [str(item) for item in harness_report.policy_summary.get("issue_families", []) if str(item).strip()][:3],
+                    "top_priority_families": [
+                        str(item)
+                        for item in harness_report.policy_summary.get("issue_families", [])
+                        if str(item).strip()
+                    ][:3],
                 },
                 "top_risk_summary": {
-                    "high_risk_families": [str(item) for item in harness_report.policy_summary.get("issue_families", []) if str(item).strip()][:3],
+                    "high_risk_families": [
+                        str(item)
+                        for item in harness_report.policy_summary.get("issue_families", [])
+                        if str(item).strip()
+                    ][:3],
                 },
             }
 
         run_notes = list(report.run_notes)
-        run_notes.append("sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。")
+        run_notes.append(
+            "sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。"
+        )
         run_notes.append("当前仍是内存态 sandbox，不会把生成正文写入 live branch artifact。")
+        long_book_diagnostics = self._long_book_consistency_diagnostics(executed_steps)
+        repair_lane_coverage = self._repair_lane_coverage(executed_steps)
         highest_priority = min(
             (int(step.policy_summary.get("highest_action_priority", 4)) for step in executed_steps),
             default=4,
@@ -455,13 +719,17 @@ class WholeBookImitationService:
             "risk_levels": [step.overall_risk_level for step in executed_steps],
             "stop_reasons": [step.stop_reason for step in executed_steps],
             "max_action_count": max((len(step.action_queue) for step in executed_steps), default=0),
-            "verdicts": [str(step.policy_summary.get("final_verdict", "")) for step in executed_steps],
+            "verdicts": [
+                str(step.policy_summary.get("final_verdict", "")) for step in executed_steps
+            ],
             "chapter_ranking": sorted(
                 [
                     {
                         "source_chapter_index": step.source_chapter_index,
                         "overall_score": step.overall_score,
-                        "highest_action_priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                        "highest_action_priority": int(
+                            step.policy_summary.get("highest_action_priority", 4)
+                        ),
                     }
                     for step in executed_steps
                 ],
@@ -480,9 +748,24 @@ class WholeBookImitationService:
                 key=lambda item: (item["priority"], item["source_chapter_index"]),
             ),
             "severity_histogram": {
-                "high": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "high"),
-                "medium": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "medium"),
-                "low": sum(1 for step in executed_steps for action in step.action_queue if action.severity == "low"),
+                "high": sum(
+                    1
+                    for step in executed_steps
+                    for action in step.action_queue
+                    if action.severity == "high"
+                ),
+                "medium": sum(
+                    1
+                    for step in executed_steps
+                    for action in step.action_queue
+                    if action.severity == "medium"
+                ),
+                "low": sum(
+                    1
+                    for step in executed_steps
+                    for action in step.action_queue
+                    if action.severity == "low"
+                ),
             },
             "risk_bucket_histogram": {
                 "low": sum(1 for step in executed_steps if step.overall_risk_level == "low"),
@@ -491,23 +774,91 @@ class WholeBookImitationService:
             },
         }
         weak_family_counts = {
-            "constraint": sum(1 for step in executed_steps for action in step.action_queue if "constraint" in action.action_type),
-            "relationship": sum(1 for step in executed_steps for action in step.action_queue if "relationship" in action.action_type or "relation" in action.action_type),
-            "rule": sum(1 for step in executed_steps for action in step.action_queue if "rule" in action.action_type),
-            "motivation": sum(1 for step in executed_steps for action in step.action_queue if "motivation" in action.action_type),
-            "hook": sum(1 for step in executed_steps for action in step.action_queue if "hook" in action.action_type),
-            "dialogue": sum(1 for step in executed_steps for action in step.action_queue if "dialogue" in action.action_type),
-            "research": sum(1 for step in executed_steps for action in step.action_queue if "research" in action.action_type),
-            "rhythm": sum(1 for step in executed_steps for action in step.action_queue if "rhythm" in action.action_type),
-            "reader": sum(1 for step in executed_steps for action in step.action_queue if "reader" in action.action_type),
+            "constraint": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "constraint" in action.action_type
+            ),
+            "relationship": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "relationship" in action.action_type or "relation" in action.action_type
+            ),
+            "rule": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "rule" in action.action_type
+            ),
+            "motivation": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "motivation" in action.action_type
+            ),
+            "hook": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "hook" in action.action_type
+            ),
+            "dialogue": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "dialogue" in action.action_type
+            ),
+            "research": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "research" in action.action_type
+            ),
+            "rhythm": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "rhythm" in action.action_type
+            ),
+            "reader": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "reader" in action.action_type
+            ),
+            "reader_sim": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "reader_sim" in action.action_type
+            ),
+            "style": sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if "style" in action.action_type or "voice" in action.action_type
+            ),
         }
         weak_lane_counts = {
-            family: sum(1 for step in executed_steps for action in step.action_queue if family in action.action_type)
+            family: sum(
+                1
+                for step in executed_steps
+                for action in step.action_queue
+                if family in action.action_type
+            )
             for family in self.WEAK_LANE_FAMILIES
         }
+        repair_lane_diagnostics = self._repair_lane_diagnostics(executed_steps)
+        long_book_consistency_diagnostics = self._long_book_consistency_diagnostics(executed_steps)
+        policy_summary["repair_lane_diagnostics"] = repair_lane_diagnostics
+        policy_summary["long_book_consistency_diagnostics"] = long_book_consistency_diagnostics
         dashboard_summary = {
             "chapter_count": len(executed_steps),
-            "highest_priority_chapters": [item["source_chapter_index"] for item in policy_summary["book_priority_ranking"][:3]],
+            "highest_priority_chapters": [
+                item["source_chapter_index"] for item in policy_summary["book_priority_ranking"][:3]
+            ],
             "top_risk_chapters": [
                 step.source_chapter_index
                 for step in executed_steps
@@ -531,11 +882,26 @@ class WholeBookImitationService:
                 "hook": weak_family_counts["hook"],
                 "dialogue": weak_family_counts["dialogue"],
                 "research": weak_family_counts["research"],
+                "rhythm": weak_family_counts["rhythm"],
+                "reader_sim": weak_family_counts["reader_sim"],
+                "style": weak_family_counts["style"],
             },
             "cluster_buckets": {
-                "critical": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 1],
-                "attention": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) == 2],
-                "monitor": [step.source_chapter_index for step in executed_steps if int(step.policy_summary.get("highest_action_priority", 4)) >= 3],
+                "critical": [
+                    step.source_chapter_index
+                    for step in executed_steps
+                    if int(step.policy_summary.get("highest_action_priority", 4)) == 1
+                ],
+                "attention": [
+                    step.source_chapter_index
+                    for step in executed_steps
+                    if int(step.policy_summary.get("highest_action_priority", 4)) == 2
+                ],
+                "monitor": [
+                    step.source_chapter_index
+                    for step in executed_steps
+                    if int(step.policy_summary.get("highest_action_priority", 4)) >= 3
+                ],
             },
             "issue_family_ranking": sorted(
                 [
@@ -560,9 +926,9 @@ class WholeBookImitationService:
                     {
                         "source_chapter_index": step.source_chapter_index,
                         "families": [
-                            family
+                            self._normalize_family(family)
                             for family in step.strategy_input.get("prioritized_families", [])
-                            if family in self.WEAK_LANE_FAMILIES
+                            if self._normalize_family(family) in self.WEAK_LANE_FAMILIES
                         ],
                         "priority": int(step.policy_summary.get("highest_action_priority", 4)),
                     }
@@ -580,14 +946,20 @@ class WholeBookImitationService:
                             "weak_family_count": len(
                                 [
                                     family
-                                    for family in step.strategy_input.get("prioritized_families", [])
+                                    for family in step.strategy_input.get(
+                                        "prioritized_families", []
+                                    )
                                     if family in self.WEAK_LANE_FAMILIES
                                 ]
                             ),
                         }
                         for step in executed_steps
                     ],
-                    key=lambda item: (item["priority"], -item["weak_family_count"], item["source_chapter_index"]),
+                    key=lambda item: (
+                        item["priority"],
+                        -item["weak_family_count"],
+                        item["source_chapter_index"],
+                    ),
                 )[:3]
             ],
             "weak_lane_histogram": {
@@ -595,7 +967,7 @@ class WholeBookImitationService:
                     1
                     for step in executed_steps
                     for item in step.strategy_input.get("prioritized_families", [])
-                    if item == family
+                    if self._normalize_family(item) == family
                 )
                 for family in self.WEAK_LANE_FAMILIES
             },
@@ -608,31 +980,45 @@ class WholeBookImitationService:
                 }
                 for step in executed_steps
                 for action in step.action_queue
-                if any(token in action.action_type for token in self.WEAK_LANE_FAMILIES)
+                if any(family in self.WEAK_LANE_FAMILIES for family in self._families_for_action(action.action_type, action.target))
             ][:8],
             "top_priority_summary": {
-                "chapter_indexes": [item["source_chapter_index"] for item in policy_summary["book_priority_ranking"][:3]],
+                "chapter_indexes": [
+                    item["source_chapter_index"]
+                    for item in policy_summary["book_priority_ranking"][:3]
+                ],
                 "weak_lane_chapters": [
                     item["source_chapter_index"]
                     for item in sorted(
                         [
                             {
                                 "source_chapter_index": step.source_chapter_index,
-                                "priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                                "priority": int(
+                                    step.policy_summary.get("highest_action_priority", 4)
+                                ),
                                 "weak_family_count": len(
                                     [
                                         family
-                                        for family in step.strategy_input.get("prioritized_families", [])
+                                        for family in step.strategy_input.get(
+                                            "prioritized_families", []
+                                        )
                                         if family in self.WEAK_LANE_FAMILIES
                                     ]
                                 ),
                             }
                             for step in executed_steps
                         ],
-                        key=lambda item: (item["priority"], -item["weak_family_count"], item["source_chapter_index"]),
+                        key=lambda item: (
+                            item["priority"],
+                            -item["weak_family_count"],
+                            item["source_chapter_index"],
+                        ),
                     )[:3]
                 ],
-                "weak_lane_action_count": sum(int(step.policy_summary.get("weak_lane_action_count", 0)) for step in executed_steps),
+                "weak_lane_action_count": sum(
+                    int(step.policy_summary.get("weak_lane_action_count", 0))
+                    for step in executed_steps
+                ),
                 "top_priority_families": [
                     family
                     for family, count in sorted(
@@ -641,7 +1027,8 @@ class WholeBookImitationService:
                                 1
                                 for step in executed_steps
                                 for item in step.policy_summary.get("issue_families", [])
-                                if str(item) == family and int(step.policy_summary.get("highest_action_priority", 4)) <= 2
+                                if str(item) == family
+                                and int(step.policy_summary.get("highest_action_priority", 4)) <= 2
                             )
                             for family in self.ISSUE_FAMILIES
                         }.items(),
@@ -667,7 +1054,7 @@ class WholeBookImitationService:
                         for step in executed_steps
                         for action in step.action_queue
                         if action.severity in {"high", "medium"}
-                        and any(token in action.action_type for token in self.WEAK_LANE_FAMILIES)
+                        and any(family in self.WEAK_LANE_FAMILIES for family in self._families_for_action(action.action_type, action.target))
                     ][:8]
                 ],
                 "weak_lane_families": [
@@ -687,7 +1074,7 @@ class WholeBookImitationService:
                                 for step in executed_steps
                                 for action in step.action_queue
                                 if step.overall_risk_level in {"medium", "high"}
-                                and family in action.action_type
+                                and family in self._families_for_action(action.action_type, action.target)
                             )
                             for family in self.WEAK_LANE_FAMILIES
                         }.items(),
@@ -700,31 +1087,45 @@ class WholeBookImitationService:
                 [
                     {"family": family, "count": count}
                     for family, count in {
-                        family: sum(1 for step in executed_steps for item in step.strategy_input.get("prioritized_families", []) if item == family)
+                        family: sum(
+                            1
+                            for step in executed_steps
+                            for item in step.strategy_input.get("prioritized_families", [])
+                            if item == family
+                        )
                         for family in self.WEAK_LANE_FAMILIES
                     }.items()
                 ],
                 key=lambda item: (-item["count"], item["family"]),
             ),
+            "repair_lane_diagnostics": repair_lane_diagnostics,
+            "long_book_consistency_diagnostics": long_book_consistency_diagnostics,
             "chapter_flags": [
                 {
                     "source_chapter_index": step.source_chapter_index,
-                    "highest_action_priority": int(step.policy_summary.get("highest_action_priority", 4)),
+                    "highest_action_priority": int(
+                        step.policy_summary.get("highest_action_priority", 4)
+                    ),
                     "overall_risk_level": step.overall_risk_level,
                     "scheduling_priority": step.scheduling_priority,
                     "scheduling_reason": step.scheduling_reason,
                     "weak_families": [
-                        family
+                        self._normalize_family(family)
                         for family in step.strategy_input.get("prioritized_families", [])
-                        if family in self.WEAK_LANE_FAMILIES
+                        if self._normalize_family(family) in self.WEAK_LANE_FAMILIES
                     ],
                 }
                 for step in executed_steps
             ],
         }
-        handoff_summary = self._book_handoff_summary(executed_steps, policy_summary, dashboard_summary)
+        long_book_diagnostics = self._long_book_consistency_diagnostics(executed_steps)
+        handoff_summary = self._book_handoff_summary(
+            executed_steps, policy_summary, dashboard_summary
+        )
         policy_summary["next_stage_focus"] = handoff_summary["next_stage_focus"]
+        policy_summary["long_book_consistency_diagnostics"] = long_book_diagnostics
         dashboard_summary["book_handoff_summary"] = handoff_summary
+        dashboard_summary["long_book_consistency_diagnostics"] = long_book_diagnostics
         return WholeBookImitationRunReport(
             contract_version="whole-book-imitation.v1",
             stable_contract_version="whole-book-imitation-pre-v1",

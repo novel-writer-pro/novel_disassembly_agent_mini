@@ -304,9 +304,14 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
 - [`./examples/chapter-qa-context.sample.json`](./examples/chapter-qa-context.sample.json)
 - [`./examples/branch-qa-context.sample.json`](./examples/branch-qa-context.sample.json)
+- [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
 
 操作手册：
 - [`./cli-operations-manual.md`](./cli-operations-manual.md)
+
+Eval / governance 冻结口径：
+- [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
+- release handoff 只有在 cross-lane bundle 的 `freeze_policy.may_freeze=true` 时才能标记为 freeze-ready；否则必须逐项抄送 `release_blockers`。
 
 ---
 

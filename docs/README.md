@@ -28,6 +28,7 @@
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
 - [`./architecture/chapter-imitation-harness-architecture.md`](./architecture/chapter-imitation-harness-architecture.md)
 - [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
+- [`./mainline-architecture-upgrade-review-20260504.md`](./mainline-architecture-upgrade-review-20260504.md)
 
 ---
 
@@ -90,6 +91,8 @@
 6. [`./review-template.md`](./review-template.md)
 7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
 8. [`./chapter-imitation-method.md`](./chapter-imitation-method.md)
+9. [`./mainline-architecture-upgrade-review-20260504.md`](./mainline-architecture-upgrade-review-20260504.md)
+10. [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
 
 ### 说明
 - 第 1 步：先看完整交付说明
@@ -138,6 +141,8 @@
 22. [`./whole-book-imitation-provider-recovery-checklist.md`](./whole-book-imitation-provider-recovery-checklist.md)
 23. [`./whole-book-imitation-sample-coverage-matrix.md`](./whole-book-imitation-sample-coverage-matrix.md)
 24. [`./whole-book-imitation-handoff-brief.md`](./whole-book-imitation-handoff-brief.md)
+25. [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
+26. [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
 
 ### 交付与维护类文档
 1. [`./final-handoff.md`](./final-handoff.md)

@@ -213,7 +213,117 @@
     "next_stage_focus": [
       "优先处理能力族：relationship、rule",
       "先回看第3章的高优先级修复链"
-    ]
+    ],
+    "repair_lane_diagnostics": {
+      "lane_order": [
+        "style",
+        "rhythm",
+        "dialogue",
+        "reader_sim"
+      ],
+      "open_lane_count": 3,
+      "lanes": [
+        {
+          "family": "style",
+          "action_count": 1,
+          "affected_chapters": [
+            2
+          ],
+          "highest_priority": 2,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 2,
+              "action_type": "repair_style_calibration",
+              "target": "style",
+              "priority": 2,
+              "severity": "medium"
+            }
+          ]
+        },
+        {
+          "family": "rhythm",
+          "action_count": 2,
+          "affected_chapters": [
+            2,
+            3
+          ],
+          "highest_priority": 1,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 2,
+              "action_type": "repair_rhythm",
+              "target": "rhythm",
+              "priority": 2,
+              "severity": "medium"
+            }
+          ]
+        },
+        {
+          "family": "dialogue",
+          "action_count": 1,
+          "affected_chapters": [
+            3
+          ],
+          "highest_priority": 3,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 3,
+              "action_type": "repair_dialogue_design",
+              "target": "dialogue",
+              "priority": 3,
+              "severity": "medium"
+            }
+          ]
+        },
+        {
+          "family": "reader_sim",
+          "action_count": 1,
+          "affected_chapters": [
+            3
+          ],
+          "highest_priority": 3,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 3,
+              "action_type": "repair_reader_engagement",
+              "target": "reader_engagement",
+              "priority": 3,
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    "long_book_consistency_diagnostics": {
+      "chapter_count": 2,
+      "carry_over_gap_count": 1,
+      "carry_over_gaps": [
+        {
+          "source_chapter_index": 2,
+          "missing": [
+            "rule_state"
+          ],
+          "scheduling_priority": 4
+        }
+      ],
+      "repeated_repair_families": [
+        {
+          "family": "rhythm",
+          "chapters": [
+            2,
+            3
+          ]
+        }
+      ],
+      "chapters_needing_consistency_review": [
+        2,
+        3
+      ]
+    }
   },
   "dashboard_summary": {
     "chapter_count": 2,
@@ -267,7 +377,7 @@
       "chapter_indexes": [],
       "weak_lane_families": [
         "dialogue",
-        "reader",
+        "reader_sim",
         "research",
         "rhythm"
       ],
@@ -316,6 +426,116 @@
       "final_verdicts": [
         "needs_revision",
         "needs_revision"
+      ]
+    },
+    "repair_lane_diagnostics": {
+      "lane_order": [
+        "style",
+        "rhythm",
+        "dialogue",
+        "reader_sim"
+      ],
+      "open_lane_count": 3,
+      "lanes": [
+        {
+          "family": "style",
+          "action_count": 1,
+          "affected_chapters": [
+            2
+          ],
+          "highest_priority": 2,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 2,
+              "action_type": "repair_style_calibration",
+              "target": "style",
+              "priority": 2,
+              "severity": "medium"
+            }
+          ]
+        },
+        {
+          "family": "rhythm",
+          "action_count": 2,
+          "affected_chapters": [
+            2,
+            3
+          ],
+          "highest_priority": 1,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 2,
+              "action_type": "repair_rhythm",
+              "target": "rhythm",
+              "priority": 2,
+              "severity": "medium"
+            }
+          ]
+        },
+        {
+          "family": "dialogue",
+          "action_count": 1,
+          "affected_chapters": [
+            3
+          ],
+          "highest_priority": 3,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 3,
+              "action_type": "repair_dialogue_design",
+              "target": "dialogue",
+              "priority": 3,
+              "severity": "medium"
+            }
+          ]
+        },
+        {
+          "family": "reader_sim",
+          "action_count": 1,
+          "affected_chapters": [
+            3
+          ],
+          "highest_priority": 3,
+          "highest_severity": "medium",
+          "top_actions": [
+            {
+              "source_chapter_index": 3,
+              "action_type": "repair_reader_engagement",
+              "target": "reader_engagement",
+              "priority": 3,
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    "long_book_consistency_diagnostics": {
+      "chapter_count": 2,
+      "carry_over_gap_count": 1,
+      "carry_over_gaps": [
+        {
+          "source_chapter_index": 2,
+          "missing": [
+            "rule_state"
+          ],
+          "scheduling_priority": 4
+        }
+      ],
+      "repeated_repair_families": [
+        {
+          "family": "rhythm",
+          "chapters": [
+            2,
+            3
+          ]
+        }
+      ],
+      "chapters_needing_consistency_review": [
+        2,
+        3
       ]
     }
   },

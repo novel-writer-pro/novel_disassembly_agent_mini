@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -62,6 +63,9 @@ class RetrievalSearchDiagnostics:
     rerank_applied: bool
     fusion_applied: bool = False
     route_counts: dict[str, int] | None = None
+    route_diagnostics: list[RetrievalRouteDiagnostics] | None = None
+    raw_latency_ms: float = 0.0
+    rerank_latency_ms: float = 0.0
 
 
 class RetrievalService:
@@ -448,6 +452,31 @@ class RetrievalService:
         fused_hits.sort(key=lambda item: (-item.score, item.chapter_index))
         return fused_hits[:limit]
 
+
+    @staticmethod
+    def _elapsed_ms(start: float) -> float:
+        return max(0.0, (time.perf_counter() - start) * 1000.0)
+
+    def _timed_route(
+        self,
+        *,
+        route_name: str,
+        started_at: float,
+        rows: list[RowMapping],
+        route_diagnostics: list[RetrievalRouteDiagnostics],
+    ) -> tuple[str, list[RetrievalHit]] | None:
+        hits = [self._row_to_hit(row) for row in rows]
+        route_diagnostics.append(
+            RetrievalRouteDiagnostics(
+                route=route_name,
+                hit_count=len(hits),
+                latency_ms=self._elapsed_ms(started_at),
+            )
+        )
+        if not hits:
+            return None
+        return (route_name, hits)
+
     def _search_branch_routes(
         self,
         branch_id: str,
@@ -455,10 +484,23 @@ class RetrievalService:
         limit: int,
     ) -> list[tuple[str, list[RetrievalHit]]]:
         """Return raw retrieval routes before RRF and rerank ordering."""
+
+        routes, _ = self._search_branch_routes_with_diagnostics(branch_id, query, limit)
+        return routes
+
+    def _search_branch_routes_with_diagnostics(
+        self,
+        branch_id: str,
+        query: str,
+        limit: int,
+    ) -> tuple[list[tuple[str, list[RetrievalHit]]], list[RetrievalRouteDiagnostics]]:
+        """Return raw retrieval routes and per-route timing for evaluation."""
+
         if self.session.bind is None:
             raise ValueError("session is not bound")
         dialect = self.session.bind.dialect.name
         fetch_limit = max(limit * 4, limit)
+        route_diagnostics: list[RetrievalRouteDiagnostics] = []
         if dialect == "postgresql":
             routes: list[tuple[str, list[RetrievalHit]]] = []
             config_name = self._fts_config_name()
@@ -480,6 +522,7 @@ class RetrievalService:
                 LIMIT :limit
                 """
             )
+            started_at = time.perf_counter()
             rows = (
                 self.session.execute(
                     fulltext_sql,
@@ -488,9 +531,16 @@ class RetrievalService:
                 .mappings()
                 .all()
             )
-            if rows:
-                routes.append(("fts", [self._row_to_hit(row) for row in rows]))
+            route = self._timed_route(
+                route_name="fts",
+                started_at=started_at,
+                rows=list(rows),
+                route_diagnostics=route_diagnostics,
+            )
+            if route is not None:
+                routes.append(route)
 
+            started_at = time.perf_counter()
             fallback_rows = (
                 self.session.execute(
                     text(
@@ -513,14 +563,20 @@ class RetrievalService:
                 .mappings()
                 .all()
             )
-            if fallback_rows:
-                routes.append(("similarity", [self._row_to_hit(row) for row in fallback_rows]))
+            route = self._timed_route(
+                route_name="similarity",
+                started_at=started_at,
+                rows=list(fallback_rows),
+                route_diagnostics=route_diagnostics,
+            )
+            if route is not None:
+                routes.append(route)
 
             tokens = [token.strip() for token in query.split() if token.strip()]
             if not tokens:
                 tokens = [query]
             clauses: list[str] = []
-            params: dict[str, object] = {"branch_id": branch_id, "limit": limit}
+            params: dict[str, object] = {"branch_id": branch_id, "limit": fetch_limit}
             for index, token in enumerate(tokens):
                 key = f"token_{index}"
                 clauses.append(f"title ILIKE :{key} OR bm25_text ILIKE :{key}")
@@ -540,14 +596,29 @@ class RetrievalService:
                 LIMIT :limit
                 """
             )
-            params["limit"] = fetch_limit
+            started_at = time.perf_counter()
             like_rows = self.session.execute(sql_like, params).mappings().all()
-            if like_rows:
-                routes.append(("like", [self._row_to_hit(row) for row in like_rows]))
+            route = self._timed_route(
+                route_name="like",
+                started_at=started_at,
+                rows=list(like_rows),
+                route_diagnostics=route_diagnostics,
+            )
+            if route is not None:
+                routes.append(route)
+
+            started_at = time.perf_counter()
             keyword_hits = self._keyword_overlap_fallback(branch_id, query, fetch_limit)
+            route_diagnostics.append(
+                RetrievalRouteDiagnostics(
+                    route="keyword",
+                    hit_count=len(keyword_hits),
+                    latency_ms=self._elapsed_ms(started_at),
+                )
+            )
             if keyword_hits:
                 routes.append(("keyword", keyword_hits))
-            return routes
+            return routes, route_diagnostics
 
         raise RuntimeError(
             "Only PostgreSQL is supported for retrieval search; SQLite fallback has been removed."
@@ -584,22 +655,38 @@ class RetrievalService:
         query: str,
         limit: int = 5,
     ) -> RetrievalSearchDiagnostics:
-        """Return raw and reranked hits for inspection."""
+        """Return raw/reranked hits plus route and latency diagnostics for eval."""
 
+        route_diagnostics: list[RetrievalRouteDiagnostics]
+        raw_started_at = time.perf_counter()
         try:
-            routes = self._search_branch_routes(branch_id, query, limit)
+            routes, route_diagnostics = self._search_branch_routes_with_diagnostics(
+                branch_id,
+                query,
+                limit,
+            )
         except RuntimeError:
-            routes = [
-                (f"route_{index + 1}", hits)
-                for index, hits in enumerate(
-                    self._collect_recall_candidates(branch_id, query, limit)
-                )
+            try:
+                routes = self._search_branch_routes(branch_id, query, limit)
+            except RuntimeError:
+                routes = [
+                    (f"route_{index + 1}", hits)
+                    for index, hits in enumerate(
+                        self._collect_recall_candidates(branch_id, query, limit)
+                    )
+                ]
+            route_diagnostics = [
+                RetrievalRouteDiagnostics(route=route_name, hit_count=len(hits), latency_ms=0.0)
+                for route_name, hits in routes
             ]
         raw_hits = self._fuse_recall_lists(
             [hits for _route_name, hits in routes],
             limit=max(limit * 4, limit),
         )
+        raw_latency_ms = self._elapsed_ms(raw_started_at)
+        rerank_started_at = time.perf_counter()
         reranked_hits, rerank_applied = self._apply_rerank(query, raw_hits, limit=limit)
+        rerank_latency_ms = self._elapsed_ms(rerank_started_at)
         return RetrievalSearchDiagnostics(
             query=query,
             raw_hits=raw_hits,
@@ -607,4 +694,7 @@ class RetrievalService:
             rerank_applied=rerank_applied,
             fusion_applied=len(routes) > 1,
             route_counts={route_name: len(hits) for route_name, hits in routes},
+            route_diagnostics=route_diagnostics,
+            raw_latency_ms=raw_latency_ms,
+            rerank_latency_ms=rerank_latency_ms,
         )

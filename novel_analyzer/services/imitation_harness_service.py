@@ -63,6 +63,12 @@ class HarnessControllerService:
             ["blocking_issues", "recommended_actions", "self_notes"],
         ),
         (
+            "style-calibrator",
+            "校准文风轴、句密度与仿写口吻，输出可进入修订队列的 style repair 信号。",
+            ["draft_text", "style_axes", "source_excerpt", "strategy_input"],
+            ["style_axes", "style_issues", "prose_density_label", "recommended_actions"],
+        ),
+        (
             "rhythm-analyzer",
             "分析章节节奏、场景密度、钩子强度与张力起伏。",
             ["draft_text", "scene_plan", "chapter_goal"],
@@ -124,10 +130,12 @@ class HarnessControllerService:
             return "motivation"
         if "hook" in lowered:
             return "hook"
+        if "style" in lowered or "prose" in lowered:
+            return "style"
         if "rhythm" in lowered:
             return "rhythm"
         if "reader" in lowered:
-            return "reader"
+            return "reader_sim"
         if "dialogue" in lowered:
             return "dialogue"
         if "research" in lowered:
@@ -137,7 +145,7 @@ class HarnessControllerService:
     @staticmethod
     def _family_sort_rank(action_type: str) -> int:
         family = HarnessControllerService._issue_family_for_action(action_type)
-        if family in {"rhythm", "reader", "dialogue", "research"}:
+        if family in {"style", "rhythm", "reader_sim", "dialogue"}:
             return 0
         return 1
 
@@ -592,6 +600,33 @@ class HarnessControllerService:
                     )
                 )
 
+        style_output = outputs.get("style-calibrator", {})
+        if isinstance(style_output, dict):
+            issues = [str(item) for item in style_output.get("style_issues", []) if str(item).strip()]
+            actions = [str(item) for item in style_output.get("recommended_actions", []) if str(item).strip()]
+            if issues:
+                priority = 2 if "strategy_style_focus" in issues else 3
+                recommended_actions.extend(item for item in actions if item not in recommended_actions)
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="style_calibrator",
+                        status="warn",
+                        severity="medium",
+                        priority=priority,
+                        notes=issues[:3],
+                    )
+                )
+            else:
+                checks.append(
+                    ChapterImitationPreflightCheck(
+                        check_name="style_calibrator",
+                        status="pass",
+                        severity="low",
+                        priority=4,
+                        notes=[f"prose_density={style_output.get('prose_density_label', 'balanced')}"],
+                    )
+                )
+
         rhythm_output = outputs.get("rhythm-analyzer", {})
         if isinstance(rhythm_output, dict):
             issues = [str(item) for item in rhythm_output.get("issues", []) if str(item).strip()]
@@ -978,6 +1013,21 @@ class HarnessControllerService:
             self_check_output["self_notes"].extend(
                 [f"family:{item}" for item in strategy.get("prioritized_families", []) if str(item).strip()][:2]
             )
+        style_output = {
+            "style_axes": plan.style_axes[:4],
+            "style_issues": [],
+            "prose_density_label": "thin" if len(draft.draft_text) < 220 else "balanced",
+            "recommended_actions": [],
+        }
+        if not plan.style_axes:
+            style_output["style_issues"].append("style_axes_missing")
+            style_output["recommended_actions"].append("补齐文风轴，明确句密度、克制推进与口吻边界。")
+        if len(draft.method_notes) < 2:
+            style_output["style_issues"].append("style_method_notes_thin")
+            style_output["recommended_actions"].append("补充仿写方法说明，避免只保留剧情骨架。")
+        if style_output["prose_density_label"] == "thin":
+            style_output["style_issues"].append("prose_density_thin")
+            style_output["recommended_actions"].append("扩写关键动作与心理过渡，提升文风贴合度。")
         rhythm_output = {
             "pace_label": "steady" if len(plan.scene_beats) <= 4 else "dense",
             "hook_strength": 0.8 if ("接下来" in draft.draft_text or "下一步" in draft.draft_text) else 0.45,
@@ -1033,12 +1083,15 @@ class HarnessControllerService:
             research_output["audience_expectation_notes"].append("题材读者通常期待章尾有明确续读驱动力。")
         if strategy:
             prioritized_families = [str(item) for item in strategy.get("prioritized_families", []) if str(item).strip()]
+            if "style" in prioritized_families:
+                style_output["style_issues"].append("strategy_style_focus")
+                style_output["recommended_actions"].append("本章优先校准文风轴、句密度和仿写口吻。")
             if "dialogue" in prioritized_families:
                 dialogue_output["issues"].append("strategy_dialogue_focus")
                 dialogue_output["recommended_actions"].append("本章优先补对话辨识度、对白信息效率和说话人区分。")
             if "research" in prioritized_families:
                 research_output["caution_points"].append("本章被标记为 research 敏感，应优先核对设定、规则和题材预期。")
-            if "reader" in prioritized_families:
+            if "reader" in prioritized_families or "reader_sim" in prioritized_families:
                 reader_output["concerns"].append("strategy_reader_focus")
                 reader_output["recommended_actions"].append("本章优先补读者易卡点与续读期待。")
             if "rhythm" in prioritized_families:
@@ -1050,6 +1103,7 @@ class HarnessControllerService:
             "chapter-fact-extractor": fact_output,
             "imitation-constraint-pack": constraint_output,
             "draft-self-check": self_check_output,
+            "style-calibrator": style_output,
             "rhythm-analyzer": rhythm_output,
             "reader-sim-review": reader_output,
             "dialogue-designer": dialogue_output,
@@ -1335,6 +1389,16 @@ class HarnessControllerService:
                     severity="medium",
                     priority=3,
                     instructions=["补足世界规则、资源限制与动作代价证据。"],
+                )
+            )
+        if "文风" in " ".join(preflight.recommended_actions) or "句密度" in " ".join(preflight.recommended_actions) or "仿写口吻" in " ".join(preflight.recommended_actions):
+            actions.append(
+                ChapterImitationHarnessAction(
+                    action_type="repair_style_calibration",
+                    target="style",
+                    severity="medium",
+                    priority=2 if any(item.check_name == "style_calibrator" and item.priority <= 2 for item in preflight.checks) else 3,
+                    instructions=["校准文风轴、句密度与仿写口吻，避免只保留剧情骨架。"],
                 )
             )
         if "节奏" in " ".join(preflight.recommended_actions) or "钩子" in " ".join(preflight.recommended_actions):

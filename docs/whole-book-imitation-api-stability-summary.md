@@ -91,6 +91,8 @@
 - `policy_summary.severity_histogram`
 - `policy_summary.risk_bucket_histogram`
 - `policy_summary.next_stage_focus`
+- `policy_summary.repair_lane_diagnostics`
+- `policy_summary.long_book_consistency_diagnostics`
 - `dashboard_summary.highest_priority_chapters`
 - `dashboard_summary.top_risk_chapters`
 - `dashboard_summary.strategy_targets`
@@ -98,6 +100,8 @@
 - `dashboard_summary.top_risk_summary`
 - `dashboard_summary.chapter_flags`
 - `dashboard_summary.book_handoff_summary`
+- `dashboard_summary.repair_lane_diagnostics`
+- `dashboard_summary.long_book_consistency_diagnostics`
 
 ---
 

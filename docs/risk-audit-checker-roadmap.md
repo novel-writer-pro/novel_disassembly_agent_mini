@@ -281,3 +281,11 @@
 > 当前路线不是继续无限加 checker，而是先把已经进入 roster 的 5 个 checker 做成真正可解释、可聚合、可交付的系统审查能力。
 
 当前 phase-2 第一轮已经证明：plot / timeline / power 三类 checker 可以继续沿“结构化信号 -> 更具体候选 -> 风险卡/cluster 消费”的路径稳定演进。
+
+## Round 2 semantic signal closure
+
+Semantic signal rows now carry stable `metadata_json.canonical_key` values and explicit
+`metadata_json.evidence_reason` strings. Candidate links add
+`evidence_json.candidate_reason` and endpoint canonical keys. This preserves checker
+verdict contracts while giving later evidence-pack and cluster tooling deterministic
+sample identifiers.

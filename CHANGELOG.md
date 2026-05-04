@@ -1,3 +1,12 @@
+## 2026-05-04
+- Added executable eval/governance cross-lane sample bundle coverage via `CrossLaneSampleBundle`, `EvalGovernanceService.evaluate_sample_bundle()`, and `docs/examples/eval-governance-cross-lane-bundle.sample.json`.
+- Documented the `eval-governance-freeze.v1` handoff gate across README, docs index, final handoff, release handoff, and the eval governance sample release contract.
+- Added `sample_count_by_lane` to the freeze policy so handoffs can prove every required lane is represented by the evaluated bundle.
+
+### Mainline architecture upgrade review docs
+- Added `docs/mainline-architecture-upgrade-review-20260504.md` to document the retrieval/RRF/rerank, risk semantic, whole-book imitation/generation, and eval/governance upgrade lanes.
+- Linked the review from `docs/README.md` so maintainers can find the cross-lane release criteria, freeze policy, and handoff checklist.
+
 ## 2026-05-01
 
 ### future target API 契约文档补 current surface 回链

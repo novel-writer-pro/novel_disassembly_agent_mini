@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import cast
 
 from sqlalchemy import delete, select, text
@@ -19,8 +20,11 @@ class StoredRiskSignal:
     signal_type: str
     raw_text: str
     canonical_label: str
+    canonical_group: str
+    canonical_key: str
     confidence: float
     chapter_index: int
+    evidence_reasons: list[str]
 
 
 class RiskSignalStoreService:
@@ -30,6 +34,29 @@ class RiskSignalStoreService:
         self.session = session
         self.settings = settings or get_settings()
         self.embedding_provider = get_embedding_provider(self.settings)
+
+    @staticmethod
+    def canonical_key(signal_type: str, label: str, group: str = "") -> str:
+        """Return a stable, checker-contract-safe canonical key for semantic signals."""
+
+        base = group.strip() or label.strip() or signal_type.strip() or "signal"
+        normalized = re.sub(r"\s+", "-", base.lower())
+        normalized = re.sub(r"[^0-9a-zA-Z\u4e00-\u9fff_.:-]+", "-", normalized)
+        normalized = normalized.strip("-._:") or "signal"
+        return f"{signal_type.strip() or 'signal'}:{normalized}"
+
+    @staticmethod
+    def _evidence_reasons(item: dict[str, object], source_field: str, raw_text: str) -> list[str]:
+        raw_reasons = item.get("evidence_reasons", [])
+        if isinstance(raw_reasons, list):
+            reasons = [str(reason).strip() for reason in raw_reasons if str(reason).strip()]
+        else:
+            reasons = [str(raw_reasons).strip()] if str(raw_reasons).strip() else []
+        if not reasons and source_field:
+            reasons.append(f"extracted_from:{source_field}")
+        if raw_text and not any(reason.startswith("raw_text:") for reason in reasons):
+            reasons.append(f"raw_text:{raw_text[:80]}")
+        return reasons[:5]
 
     def replace_branch_chapter_signals(
         self,
@@ -47,25 +74,36 @@ class RiskSignalStoreService:
         texts_needing_vectors: list[str] = []
         text_indices: list[int] = []
         for item in items:
-            vector = [float(x) for x in item.get('vector_payload', []) if isinstance(x, (int, float))]
-            raw_text = str(item.get('raw_text') or '')
+            vector = [
+                float(x) for x in item.get("vector_payload", []) if isinstance(x, (int, float))
+            ]
+            raw_text = str(item.get("raw_text") or "")
             if not vector and raw_text.strip():
                 text_indices.append(len(records))
                 texts_needing_vectors.append(raw_text)
+            signal_type = str(item.get('signal_type') or '')
+            source_field = str(item.get('source_field') or '')
+            canonical_label = str(item.get('canonical_label') or raw_text)
+            canonical_group = str(item.get('canonical_group') or signal_type)
+            canonical_key = str(item.get('canonical_key') or self.canonical_key(signal_type, canonical_label, canonical_group))
+            metadata = dict(item.get('metadata_json') or {})
+            evidence_reasons = self._evidence_reasons(item, source_field, raw_text)
+            metadata.setdefault('canonical_key', canonical_key)
+            metadata.setdefault('evidence_reasons', evidence_reasons)
             record = RiskSemanticSignalRecord(
                 branch_id=branch_id,
                 chapter_index=chapter_index,
-                signal_type=str(item.get('signal_type') or ''),
-                source_field=str(item.get('source_field') or ''),
+                signal_type=str(item.get("signal_type") or ""),
+                source_field=str(item.get("source_field") or ""),
                 raw_text=raw_text,
-                canonical_label=str(item.get('canonical_label') or ''),
-                canonical_group=str(item.get('canonical_group') or ''),
-                confidence=float(item.get('confidence') or 0.0),
-                metadata_json=dict(item.get('metadata_json') or {}),
+                canonical_label=str(item.get("canonical_label") or ""),
+                canonical_group=str(item.get("canonical_group") or ""),
+                confidence=float(item.get("confidence") or 0.0),
+                metadata_json=dict(item.get("metadata_json") or {}),
                 vector_payload=vector,
                 vector_text=("[" + ",".join(str(float(x)) for x in vector) + "]") if vector else "",
                 vector_dim=len(vector),
-                status=str(item.get('status') or 'ready'),
+                status=str(item.get("status") or "ready"),
             )
             self.session.add(record)
             records.append(record)
@@ -74,7 +112,9 @@ class RiskSignalStoreService:
                 embedded = self.embedding_provider.embed_texts(texts_needing_vectors)
                 for record_index, vector in zip(text_indices, embedded, strict=True):
                     records[record_index].vector_payload = [float(x) for x in vector]
-                    records[record_index].vector_text = "[" + ",".join(str(float(x)) for x in vector) + "]"
+                    records[record_index].vector_text = (
+                        "[" + ",".join(str(float(x)) for x in vector) + "]"
+                    )
                     records[record_index].vector_dim = len(vector)
             except Exception:
                 pass
@@ -85,13 +125,18 @@ class RiskSignalStoreService:
                 signal_type=record.signal_type,
                 raw_text=record.raw_text,
                 canonical_label=record.canonical_label,
+                canonical_group=record.canonical_group,
+                canonical_key=str(record.metadata_json.get("canonical_key") or self.canonical_key(record.signal_type, record.canonical_label, record.canonical_group)),
                 confidence=record.confidence,
                 chapter_index=record.chapter_index,
+                evidence_reasons=[str(item) for item in record.metadata_json.get("evidence_reasons", [])],
             )
             for record in records
         ]
 
-    def list_branch_chapter_signals(self, branch_id: str, chapter_index: int) -> list[StoredRiskSignal]:
+    def list_branch_chapter_signals(
+        self, branch_id: str, chapter_index: int
+    ) -> list[StoredRiskSignal]:
         rows = self.session.scalars(
             select(RiskSemanticSignalRecord)
             .where(RiskSemanticSignalRecord.branch_id == branch_id)
@@ -104,8 +149,11 @@ class RiskSignalStoreService:
                 signal_type=row.signal_type,
                 raw_text=row.raw_text,
                 canonical_label=row.canonical_label,
+                canonical_group=row.canonical_group,
+                canonical_key=str(row.metadata_json.get("canonical_key") or self.canonical_key(row.signal_type, row.canonical_label, row.canonical_group)),
                 confidence=row.confidence,
                 chapter_index=row.chapter_index,
+                evidence_reasons=[str(item) for item in row.metadata_json.get("evidence_reasons", [])],
             )
             for row in rows
         ]
@@ -123,7 +171,9 @@ class RiskSignalStoreService:
             .where(RiskSemanticSignalRecord.branch_id == branch_id)
             .where(RiskSemanticSignalRecord.signal_type == signal_type)
             .where(RiskSemanticSignalRecord.chapter_index < before_chapter_index)
-            .order_by(RiskSemanticSignalRecord.chapter_index.desc(), RiskSemanticSignalRecord.raw_text)
+            .order_by(
+                RiskSemanticSignalRecord.chapter_index.desc(), RiskSemanticSignalRecord.raw_text
+            )
             .limit(limit)
         ).all()
         return [
@@ -132,14 +182,23 @@ class RiskSignalStoreService:
                 signal_type=row.signal_type,
                 raw_text=row.raw_text,
                 canonical_label=row.canonical_label,
+                canonical_group=row.canonical_group,
+                canonical_key=str(row.metadata_json.get("canonical_key") or self.canonical_key(row.signal_type, row.canonical_label, row.canonical_group)),
                 confidence=row.confidence,
                 chapter_index=row.chapter_index,
+                evidence_reasons=[str(item) for item in row.metadata_json.get("evidence_reasons", [])],
             )
             for row in rows
         ]
 
     @staticmethod
+    def _canonical_key(signal_type: str, text: str) -> str:
+        normalized = "".join(ch.lower() for ch in text.strip() if not ch.isspace())
+        return f"{signal_type}:{normalized[:80]}" if normalized else signal_type
+
+    @classmethod
     def build_signal_items(
+        cls,
         *,
         artifact_payload: dict[str, object],
         checker_results: list[dict[str, object]],
@@ -153,15 +212,23 @@ class RiskSignalStoreService:
                 text = str(value).strip()
                 if not text:
                     continue
+                canonical_group = signal_type
+                canonical_key = RiskSignalStoreService.canonical_key(signal_type, text, canonical_group)
                 items.append(
                     {
                         "signal_type": signal_type,
                         "source_field": source_field,
                         "raw_text": text,
                         "canonical_label": text,
-                        "canonical_group": signal_type,
+                        "canonical_group": canonical_group,
+                        "canonical_key": canonical_key,
                         "confidence": 0.5,
-                        "metadata_json": {},
+                        "metadata_json": {
+                            "canonical_key": RiskSignalStoreService._canonical_key(
+                                signal_type, text
+                            ),
+                            "evidence_reason": f"artifact:{source_field}",
+                        },
                         "vector_payload": [],
                         "status": "ready",
                     }
@@ -169,22 +236,82 @@ class RiskSignalStoreService:
 
         state_summary = artifact_payload.get("state_summary", {})
         if isinstance(state_summary, dict):
-            add_many("relationship", "state_summary.stable_relations", [str(x) for x in state_summary.get("stable_relations", [])])
-            add_many("relationship", "state_summary.evolved_relations", [str(x) for x in state_summary.get("evolved_relations", [])])
-            add_many("foreshadow", "state_summary.new_foreshadowing", [str(x) for x in state_summary.get("new_foreshadowing", [])])
-            add_many("foreshadow", "state_summary.paid_off_foreshadowing", [str(x) for x in state_summary.get("paid_off_foreshadowing", [])])
-            add_many("rule_scope", "state_summary.observed_world_rules", [str(x) for x in state_summary.get("observed_world_rules", [])])
-            add_many("rule_scope", "state_summary.constraining_world_rules", [str(x) for x in state_summary.get("constraining_world_rules", [])])
-            add_many("conflict_thread", "state_summary.new_conflicts", [str(x) for x in state_summary.get("new_conflicts", [])])
-            add_many("conflict_thread", "state_summary.escalated_conflicts", [str(x) for x in state_summary.get("escalated_conflicts", [])])
+            add_many(
+                "relationship",
+                "state_summary.stable_relations",
+                [str(x) for x in state_summary.get("stable_relations", [])],
+            )
+            add_many(
+                "relationship",
+                "state_summary.evolved_relations",
+                [str(x) for x in state_summary.get("evolved_relations", [])],
+            )
+            add_many(
+                "foreshadow",
+                "state_summary.new_foreshadowing",
+                [str(x) for x in state_summary.get("new_foreshadowing", [])],
+            )
+            add_many(
+                "foreshadow",
+                "state_summary.paid_off_foreshadowing",
+                [str(x) for x in state_summary.get("paid_off_foreshadowing", [])],
+            )
+            add_many(
+                "rule_scope",
+                "state_summary.observed_world_rules",
+                [str(x) for x in state_summary.get("observed_world_rules", [])],
+            )
+            add_many(
+                "rule_scope",
+                "state_summary.constraining_world_rules",
+                [str(x) for x in state_summary.get("constraining_world_rules", [])],
+            )
+            add_many(
+                "conflict_thread",
+                "state_summary.new_conflicts",
+                [str(x) for x in state_summary.get("new_conflicts", [])],
+            )
+            add_many(
+                "conflict_thread",
+                "state_summary.escalated_conflicts",
+                [str(x) for x in state_summary.get("escalated_conflicts", [])],
+            )
 
-        add_many("unsupported", "unsupported_inferences", [str(x) for x in artifact_payload.get("unsupported_inferences", [])])
-        add_many("ambiguous", "ambiguous_points", [str(x) for x in artifact_payload.get("ambiguous_points", [])])
-        add_many("transition", "state_transition_notes", [str(x) for x in artifact_payload.get("state_transition_notes", [])])
-        add_many("resolution", "evidence_backed_resolutions", [str(x) for x in artifact_payload.get("evidence_backed_resolutions", [])])
-        add_many("thread", "unresolved_threads", [str(x) for x in artifact_payload.get("unresolved_threads", [])])
-        add_many("timeline_anchor", "timeline_signals", [str(x) for x in artifact_payload.get("timeline_signals", [])])
-        add_many("power_state", "power_signals", [str(x) for x in artifact_payload.get("power_signals", [])])
+        add_many(
+            "unsupported",
+            "unsupported_inferences",
+            [str(x) for x in artifact_payload.get("unsupported_inferences", [])],
+        )
+        add_many(
+            "ambiguous",
+            "ambiguous_points",
+            [str(x) for x in artifact_payload.get("ambiguous_points", [])],
+        )
+        add_many(
+            "transition",
+            "state_transition_notes",
+            [str(x) for x in artifact_payload.get("state_transition_notes", [])],
+        )
+        add_many(
+            "resolution",
+            "evidence_backed_resolutions",
+            [str(x) for x in artifact_payload.get("evidence_backed_resolutions", [])],
+        )
+        add_many(
+            "thread",
+            "unresolved_threads",
+            [str(x) for x in artifact_payload.get("unresolved_threads", [])],
+        )
+        add_many(
+            "timeline_anchor",
+            "timeline_signals",
+            [str(x) for x in artifact_payload.get("timeline_signals", [])],
+        )
+        add_many(
+            "power_state",
+            "power_signals",
+            [str(x) for x in artifact_payload.get("power_signals", [])],
+        )
 
         for result in checker_results:
             checker_name = str(result.get("checker_name") or "")
@@ -205,7 +332,11 @@ class RiskSignalStoreService:
                         "canonical_label": summary,
                         "canonical_group": str(risk.get("risk_type") or checker_name),
                         "confidence": float(risk.get("confidence") or 0.0),
-                        "metadata_json": {"risk_type": str(risk.get("risk_type") or "")},
+                        "metadata_json": {
+                            "risk_type": str(risk.get("risk_type") or ""),
+                            "canonical_key": cls._canonical_key(f"checker:{checker_name}", summary),
+                            "evidence_reason": f"checker:{checker_name}:risk_summary",
+                        },
                         "vector_payload": [],
                         "status": "ready",
                     }
@@ -232,7 +363,9 @@ class RiskSignalStoreService:
             )
             if pg_hits:
                 return pg_hits
-        stmt = select(RiskSemanticSignalRecord).where(RiskSemanticSignalRecord.branch_id == branch_id)
+        stmt = select(RiskSemanticSignalRecord).where(
+            RiskSemanticSignalRecord.branch_id == branch_id
+        )
         if signal_type:
             stmt = stmt.where(RiskSemanticSignalRecord.signal_type == signal_type)
         if before_chapter_index is not None:
@@ -261,8 +394,11 @@ class RiskSignalStoreService:
                 signal_type=row.signal_type,
                 raw_text=row.raw_text,
                 canonical_label=row.canonical_label,
+                canonical_group=row.canonical_group,
+                canonical_key=str(row.metadata_json.get("canonical_key") or self.canonical_key(row.signal_type, row.canonical_label, row.canonical_group)),
                 confidence=row.confidence,
                 chapter_index=row.chapter_index,
+                evidence_reasons=[str(item) for item in row.metadata_json.get("evidence_reasons", [])],
             )
             for _, row in scored[:limit]
         ]
@@ -287,7 +423,7 @@ class RiskSignalStoreService:
             return []
         vector_literal = "[" + ",".join(f"{float(value):.8f}" for value in query_vector) + "]"
         sql = """
-            SELECT id, signal_type, raw_text, canonical_label, confidence, chapter_index
+            SELECT id, signal_type, raw_text, canonical_label, canonical_group, confidence, chapter_index
             FROM risk_semantic_signals
             WHERE branch_id = :branch_id
               AND (:signal_type = '' OR signal_type = :signal_type)
@@ -297,16 +433,20 @@ class RiskSignalStoreService:
             LIMIT :limit
         """
         try:
-            rows = self.session.execute(
-                text(sql),
-                {
-                    "branch_id": branch_id,
-                    "signal_type": signal_type,
-                    "before_chapter_index": before_chapter_index,
-                    "query_vector": vector_literal,
-                    "limit": limit,
-                },
-            ).mappings().all()
+            rows = (
+                self.session.execute(
+                    text(sql),
+                    {
+                        "branch_id": branch_id,
+                        "signal_type": signal_type,
+                        "before_chapter_index": before_chapter_index,
+                        "query_vector": vector_literal,
+                        "limit": limit,
+                    },
+                )
+                .mappings()
+                .all()
+            )
         except Exception:
             return []
         return [
@@ -315,8 +455,11 @@ class RiskSignalStoreService:
                 signal_type=str(row["signal_type"]),
                 raw_text=str(row["raw_text"]),
                 canonical_label=str(row["canonical_label"]),
+                canonical_group=str(row["canonical_group"]),
+                canonical_key=self.canonical_key(str(row["signal_type"]), str(row["canonical_label"]), str(row["canonical_group"])),
                 confidence=float(row["confidence"]),
                 chapter_index=int(row["chapter_index"]),
+                evidence_reasons=[],
             )
             for row in rows
         ]

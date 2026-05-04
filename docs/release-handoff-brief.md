@@ -63,6 +63,8 @@
 ### 3.2 接入者（前端 / 工具 / 下游 agent）
 1. [`./interface-manifest.md`](./interface-manifest.md)
 2. [`./examples/`](./examples/)
+3. [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
+4. [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
 3. [`./final-handoff.md`](./final-handoff.md)
 
 ### 3.3 开发者 / 维护者
@@ -209,3 +211,8 @@
 - 可在阅读页直接检索人物 / 事件 / 冲突 / 关键词
 - 可直接发起“人物背景 / 冲突前因后果 / 关系变化”等问答
 - 回答会返回引用章节、证据摘要、推理路径和图谱信号
+
+
+## 10. Eval / governance freeze gate
+
+Before a release handoff claims freeze readiness, run the cross-lane sample bundle through `EvalGovernanceService.evaluate_sample_bundle()`. The handoff must include `bundle_id`, stable contract versions, `sample_count_by_lane`, lane summaries, release blockers, and `freeze_policy.may_freeze`. If `may_freeze=false`, the release remains blocked even when individual lane docs look complete.

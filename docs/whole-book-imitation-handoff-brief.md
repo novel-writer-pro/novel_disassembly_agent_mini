@@ -58,3 +58,10 @@ whole-book imitation 线当前已经完成：
 ## 5. 一句话总结
 
 > 这条线现在不是“缺成功样本”或“provider 不可用”，而是“已有成功样本且 provider 当前可用，剩余是是否正式提升 freeze / 稳定级别的治理判断”。 
+
+## Round 2 long-book consistency diagnostics
+
+Whole-book sandbox execution now emits `long_book_consistency_diagnostics` in both
+`policy_summary` and `dashboard_summary`. The bundle records weak-lane counts, carry-over
+gaps, and whether the handoff requires an additional consistency pass across style/rhythm,
+dialogue, reader-simulation, and research repair lanes.
