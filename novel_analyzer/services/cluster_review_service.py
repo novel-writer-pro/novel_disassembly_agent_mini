@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
@@ -45,6 +45,11 @@ class ClusterReviewService:
         return ("relation" in message and "does not exist" in message) or "no such table" in message
 
     @staticmethod
+    def _is_missing_column_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return ("column" in message and "does not exist" in message) or "no such column" in message
+
+    @staticmethod
     def _validate(cluster_status: str, review_result: str, review_notes: str) -> None:
         if cluster_status not in ALLOWED_CLUSTER_STATUSES:
             raise ValueError(
@@ -76,6 +81,9 @@ class ClusterReviewService:
                 .order_by(ClusterReviewRecord.cluster_key)
             ).all()
         except (OperationalError, ProgrammingError) as exc:
+            if self._is_missing_column_error(exc):
+                self.session.rollback()
+                return self._read_branch_legacy(branch_id)
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -92,6 +100,34 @@ class ClusterReviewService:
             for row in rows
         }
 
+    def _read_branch_legacy(self, branch_id: str) -> dict[str, dict[str, str]]:
+        rows = (
+            self.session.execute(
+                text(
+                    """
+                    SELECT cluster_key, cluster_status, review_result, review_notes, review_owner, resolved_at_text
+                    FROM cluster_review_records
+                    WHERE branch_id = :branch_id AND visibility = 'active'
+                    ORDER BY cluster_key
+                    """
+                ),
+                {"branch_id": branch_id},
+            )
+            .mappings()
+            .all()
+        )
+        return {
+            str(row["cluster_key"]): {
+                "cluster_status": str(row["cluster_status"] or ""),
+                "review_result": str(row["review_result"] or ""),
+                "review_notes": str(row["review_notes"] or ""),
+                "review_owner": str(row["review_owner"] or ""),
+                "review_actor": str(row["review_owner"] or ""),
+                "resolved_at": str(row["resolved_at_text"] or ""),
+            }
+            for row in rows
+        }
+
     def read_history(self, branch_id: str, cluster_key: str) -> list[dict[str, object]]:
         try:
             rows = self.session.scalars(
@@ -101,6 +137,9 @@ class ClusterReviewService:
                 .order_by(ClusterReviewEventRecord.created_at)
             ).all()
         except (OperationalError, ProgrammingError) as exc:
+            if self._is_missing_column_error(exc):
+                self.session.rollback()
+                return self._read_history_legacy(branch_id, cluster_key)
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -132,6 +171,64 @@ class ClusterReviewService:
                     current=current,
                     created_at=row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
                     event_type=row.event_type,
+                )
+            )
+        return events
+
+    def _read_history_legacy(self, branch_id: str, cluster_key: str) -> list[dict[str, object]]:
+        rows = (
+            self.session.execute(
+                text(
+                    """
+                    SELECT
+                        previous_review_notes,
+                        previous_review_owner,
+                        previous_resolved_at_text,
+                        cluster_status,
+                        review_result,
+                        review_notes,
+                        review_owner,
+                        resolved_at_text,
+                        event_type,
+                        created_at
+                    FROM cluster_review_event_records
+                    WHERE branch_id = :branch_id AND cluster_key = :cluster_key
+                    ORDER BY created_at
+                    """
+                ),
+                {"branch_id": branch_id, "cluster_key": cluster_key},
+            )
+            .mappings()
+            .all()
+        )
+        events: list[dict[str, object]] = []
+        for index, row in enumerate(rows, start=1):
+            previous = {
+                "cluster_status": "",
+                "review_result": "",
+                "review_notes": str(row["previous_review_notes"] or ""),
+                "review_owner": str(row["previous_review_owner"] or ""),
+                "review_actor": str(row["previous_review_owner"] or ""),
+                "resolved_at": str(row["previous_resolved_at_text"] or ""),
+            }
+            current = {
+                "cluster_status": str(row["cluster_status"] or ""),
+                "review_result": str(row["review_result"] or ""),
+                "review_notes": str(row["review_notes"] or ""),
+                "review_owner": str(row["review_owner"] or ""),
+                "review_actor": str(row["review_owner"] or ""),
+                "resolved_at": str(row["resolved_at_text"] or ""),
+            }
+            created_at = row["created_at"]
+            events.append(
+                build_review_history_event(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    event_index=index,
+                    previous=previous,
+                    current=current,
+                    created_at=created_at.isoformat() if hasattr(created_at, "isoformat") else "",
+                    event_type=str(row["event_type"] or ""),
                 )
             )
         return events

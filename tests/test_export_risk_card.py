@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
@@ -761,6 +761,78 @@ def test_cluster_review_service_persists_review_record_in_database(tmp_path: Pat
         assert history[1]["review_actor"] == "review-bot"
         assert history[0]["event_type"] == "assignment_update"
         assert history[1]["event_type"] == "assignment_update"
+
+
+def test_cluster_review_service_reads_legacy_db_schema_without_review_actor_columns() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE cluster_review_records (
+                    branch_id TEXT,
+                    cluster_key TEXT,
+                    cluster_status TEXT,
+                    review_result TEXT,
+                    review_notes TEXT,
+                    review_owner TEXT,
+                    resolved_at_text TEXT,
+                    visibility TEXT
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE cluster_review_event_records (
+                    branch_id TEXT,
+                    cluster_key TEXT,
+                    cluster_status TEXT,
+                    review_result TEXT,
+                    review_notes TEXT,
+                    review_owner TEXT,
+                    resolved_at_text TEXT,
+                    event_type TEXT,
+                    created_at TEXT,
+                    previous_review_notes TEXT,
+                    previous_review_owner TEXT,
+                    previous_resolved_at_text TEXT
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO cluster_review_records
+                (branch_id, cluster_key, cluster_status, review_result, review_notes, review_owner, resolved_at_text, visibility)
+                VALUES
+                ('branch-x', 'cluster-y', 'needs_review', 'deferred', 'legacy row', 'editor-a', '', 'active')
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO cluster_review_event_records
+                (branch_id, cluster_key, cluster_status, review_result, review_notes, review_owner, resolved_at_text, event_type, created_at, previous_review_notes, previous_review_owner, previous_resolved_at_text)
+                VALUES
+                ('branch-x', 'cluster-y', 'needs_review', 'deferred', 'legacy row', 'editor-a', '', 'note_update', '2026-05-04T10:00:00Z', '', '', '')
+                """
+            )
+        )
+
+    with Session(engine) as session:
+        service = ClusterReviewService(session)
+        state = service.read_branch("branch-x")
+        history = service.read_history("branch-x", "cluster-y")
+
+    assert state["cluster-y"]["review_owner"] == "editor-a"
+    assert state["cluster-y"]["review_actor"] == "editor-a"
+    assert history[0]["review_owner"] == "editor-a"
+    assert history[0]["review_actor"] == "editor-a"
+    assert history[0]["previous_review_actor"] == ""
 
 
 def test_cluster_review_history_event_type_distinguishes_owner_only_updates(tmp_path: Path) -> None:

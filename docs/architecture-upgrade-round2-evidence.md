@@ -49,3 +49,24 @@ upgrade. It intentionally avoids UI changes and keeps the checker contracts stab
 2. Run full type check (`mypy novel_analyzer`) before release handoff.
 3. Run lint on modified files and keep this lane UI-free.
 4. Attach this evidence pack to the release handoff note with command output.
+
+## 2026-05-04 fresh sample rerun evidence
+
+- Whole-book readiness against sample branch `62e636f0-c901-4167-aa1c-aff3da9c83ef`
+  (DB `novel_analyzer`) succeeded and reported:
+  - `whole_book_contract_version = whole-book-imitation.v1`
+  - `chapter_analysis_count = 11`
+  - provider health currently `degraded`, with latest error `503 Service temporarily unavailable`
+- Whole-book sandbox rerun on the same branch succeeded:
+  - output: `/tmp/whole-book-sandbox-rerun-20260504.json`
+  - `execution_mode = sandbox_execute`
+  - `executed_steps = 2`
+  - dashboard includes `repair_lane_diagnostics`, `long_book_consistency_diagnostics`, and `book_handoff_summary`
+- Branch validation succeeded:
+  - `validate-branch 62e636f0-c901-4167-aa1c-aff3da9c83ef` → `issue_count=0`
+- Sample branch Markdown report rerun initially failed on legacy DB review tables that lacked
+  `review_actor` / older event-history columns; leader patched `ClusterReviewService` to read
+  legacy schemas with `review_owner` fallback and the report rerun then succeeded:
+  - output: `/tmp/sample-branch-report-20260504.md`
+  - report confirms `completed_chapters = 10`, `failed_jobs = 0`, `running_jobs = 0`,
+    `next_chapter = 11`, and review storage remains on the DB path.
