@@ -71,6 +71,7 @@
 
 来源：
 - `novel-analyzer export-branch-bundle <run_id> <branch_id> <output_path>`
+- `novel-analyzer export-branch-report <run_id> <branch_id> <output_path>`（Markdown 下游阅读面）
 
 顶层字段：
 - `status`
@@ -151,6 +152,24 @@
 
 稳定样例：
 - `docs/examples/branch-bundle-review-summary.sample.json`
+
+### 2.6 branch report smoke artifact
+
+为了让维护者快速确认“数据库 schema + review workflow + branch 导出”这一整条链路仍然可用，
+当前文档链额外保留了一个真实 smoke 产物：
+
+- `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
+
+它对应如下最小运维链路：
+
+1. `init-db`
+2. `db-capabilities`
+3. `export-branch-report`
+
+适合用于回答：
+- cluster-review schema 升级后，真实 sample branch 是否还能导出 Markdown report
+- review 数据是否仍从数据库主路径读取
+- sample branch 当前已完成章节数 / 失败数 / 下一章指针是否正常
 
 ### 2.5 review workflow stability note
 

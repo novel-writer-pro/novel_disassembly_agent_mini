@@ -154,6 +154,22 @@
 ```
 `branch-report` 的 `content_type` 为 `text/markdown`。
 
+**Operational smoke path**
+
+对于真实 PostgreSQL 运行时，当前推荐把下面三步视为最小 smoke chain：
+
+1. `init-db`
+2. `db-capabilities`
+3. `export-branch-report`
+
+它们共同验证：
+- Alembic schema 已升级
+- cluster-review 相关缺列已被发现或修复
+- branch 级 Markdown export 仍可在真实 sample branch 上成功导出
+
+参考样例：
+- `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
+
 ### 2.8 POST /branches/{branch_id}/recovery/retry-chapter
 ### 2.9 POST /branches/{branch_id}/recovery/retry-failed
 ### 2.10 POST /branches/{branch_id}/recovery/clear-running

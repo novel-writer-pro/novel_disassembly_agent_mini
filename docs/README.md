@@ -23,12 +23,21 @@
 
 ### 按架构专题
 - [`./architecture/README.md`](./architecture/README.md)
+- [`./architecture/ai-novel-system-blueprint.md`](./architecture/ai-novel-system-blueprint.md)
 - [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
 - [`./architecture/risk-audit-embedding-pgvector-implementation-spec.md`](./architecture/risk-audit-embedding-pgvector-implementation-spec.md)
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
 - [`./architecture/chapter-imitation-harness-architecture.md`](./architecture/chapter-imitation-harness-architecture.md)
 - [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
 - [`./mainline-architecture-upgrade-review-20260504.md`](./mainline-architecture-upgrade-review-20260504.md)
+
+### 新的治理 / 战略入口
+- [`./features/README.md`](./features/README.md)
+- [`./features/feature-checkout-template.md`](./features/feature-checkout-template.md)
+- [`./features/architecture-mainline-checkout-20260504.md`](./features/architecture-mainline-checkout-20260504.md)
+- [`./product/ai-novel-product-strategy.md`](./product/ai-novel-product-strategy.md)
+- [`./strategy/ai-novel-system-benchmark.md`](./strategy/ai-novel-system-benchmark.md)
+- [`./whitepaper/ai-novel-system-whitepaper.md`](./whitepaper/ai-novel-system-whitepaper.md)
 
 ---
 

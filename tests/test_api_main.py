@@ -328,6 +328,44 @@ def test_docs_index_points_to_fresh10_and_chapter_planning_docs() -> None:
     assert "risk-audit-fresh10-verification-20260502.md" in completion
 
 
+def test_core_docs_describe_postgres_smoke_chain() -> None:
+    manifest = Path("docs/interface-manifest.md").read_text(encoding="utf-8")
+    contract = Path("docs/api-contract.md").read_text(encoding="utf-8")
+    handoff = Path("docs/release-handoff-brief.md").read_text(encoding="utf-8")
+
+    for text in [manifest, contract, handoff]:
+        assert "sample-branch-report.post-migration-20260504.sample.md" in text
+        assert "init-db" in text
+        assert "db-capabilities" in text
+        assert "export-branch-report" in text
+
+
+def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> None:
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    product = Path("docs/roles/product/README.md").read_text(encoding="utf-8")
+    backend = Path("docs/roles/backend/README.md").read_text(encoding="utf-8")
+    handoff = Path("docs/release-handoff-brief.md").read_text(encoding="utf-8")
+
+    for needle in [
+        "./features/README.md",
+        "./features/feature-checkout-template.md",
+        "./features/architecture-mainline-checkout-20260504.md",
+        "./product/ai-novel-product-strategy.md",
+        "./strategy/ai-novel-system-benchmark.md",
+        "./whitepaper/ai-novel-system-whitepaper.md",
+        "./architecture/ai-novel-system-blueprint.md",
+    ]:
+        assert needle in readme
+
+    assert "ai-novel-product-strategy.md" in product
+    assert "ai-novel-system-benchmark.md" in product
+    assert "ai-novel-system-whitepaper.md" in product
+    assert "ai-novel-system-blueprint.md" in backend
+    assert "architecture-mainline-checkout-20260504.md" in backend
+    assert "feature-checkout-template.md" in handoff
+    assert "architecture-mainline-checkout-20260504.md" in handoff
+
+
 def test_api_current_surface_doc_matches_route_inventory() -> None:
     source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
     route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
