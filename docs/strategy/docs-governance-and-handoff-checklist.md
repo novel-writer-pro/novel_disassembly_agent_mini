@@ -17,6 +17,7 @@
 - [ ] `init-db`
 - [ ] `db-capabilities`
 - [ ] `export-branch-report`
+- [ ] `python -m scripts.check_sample_branch <run_id> <branch_id> <output_path>`
 - [ ] `show-whole-book-imitation-readiness`
 - [ ] whole-book provider/sample evidence 可定位
 

@@ -95,6 +95,7 @@
 1. `init-db`
 2. `db-capabilities`
 3. `export-branch-report`
+4. `python -m scripts.check_sample_branch <run_id> <branch_id> <output_path>`
 
 原因：
 - `init-db` 负责把真实 PostgreSQL schema 推到当前 Alembic head
