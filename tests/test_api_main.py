@@ -351,15 +351,20 @@ def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> N
         "./features/feature-checkout-template.md",
         "./features/architecture-mainline-checkout-20260504.md",
         "./product/ai-novel-product-strategy.md",
+        "./product/ai-novel-capability-scorecard.md",
         "./strategy/ai-novel-system-benchmark.md",
+        "./strategy/docs-faq-and-consolidation-guide.md",
         "./whitepaper/ai-novel-system-whitepaper.md",
+        "./whitepaper/ai-novel-system-whitepaper-v2.md",
         "./architecture/ai-novel-system-blueprint.md",
     ]:
         assert needle in readme
 
     assert "ai-novel-product-strategy.md" in product
+    assert "ai-novel-capability-scorecard.md" in product
     assert "ai-novel-system-benchmark.md" in product
     assert "ai-novel-system-whitepaper.md" in product
+    assert "ai-novel-system-whitepaper-v2.md" in product
     assert "ai-novel-system-blueprint.md" in backend
     assert "architecture-mainline-checkout-20260504.md" in backend
     assert "feature-checkout-template.md" in handoff

@@ -40,10 +40,13 @@
 - [`./features/imitation-checkout-20260504.md`](./features/imitation-checkout-20260504.md)
 - [`./features/eval-governance-checkout-20260504.md`](./features/eval-governance-checkout-20260504.md)
 - [`./product/ai-novel-product-strategy.md`](./product/ai-novel-product-strategy.md)
+- [`./product/ai-novel-capability-scorecard.md`](./product/ai-novel-capability-scorecard.md)
 - [`./strategy/ai-novel-system-benchmark.md`](./strategy/ai-novel-system-benchmark.md)
 - [`./strategy/docs-governance-and-handoff-checklist.md`](./strategy/docs-governance-and-handoff-checklist.md)
 - [`./strategy/docs-information-architecture-guide.md`](./strategy/docs-information-architecture-guide.md)
+- [`./strategy/docs-faq-and-consolidation-guide.md`](./strategy/docs-faq-and-consolidation-guide.md)
 - [`./whitepaper/ai-novel-system-whitepaper.md`](./whitepaper/ai-novel-system-whitepaper.md)
+- [`./whitepaper/ai-novel-system-whitepaper-v2.md`](./whitepaper/ai-novel-system-whitepaper-v2.md)
 
 ---
 
