@@ -92,6 +92,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['direct_revision_loop_pack']['contract_version'] == 'direct-revision-loop-pack.v1'
         assert pack['direct_revision_loop_pack']['revised_blocks']
         assert pack['direct_revision_loop_pack']['revision_text']
+        assert pack['automatic_rewrite_guidance_pack']['contract_version'] == 'automatic-rewrite-guidance-pack.v1'
+        assert pack['automatic_rewrite_guidance_pack']['rewrite_steps']
+        assert pack['automatic_rewrite_guidance_pack']['guidance_text']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

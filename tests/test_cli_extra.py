@@ -327,6 +327,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'chapter_draft_preparation_pack': {'contract_version': 'chapter-draft-preparation-pack.v1', 'scene_outline': [{}]},
                 'direct_draft_skeleton_pack': {'contract_version': 'direct-draft-skeleton-pack.v1', 'scene_blocks': [{}], 'draft_text': 'x'},
                 'direct_revision_loop_pack': {'contract_version': 'direct-revision-loop-pack.v1', 'revised_blocks': [{}], 'revision_text': 'x'},
+                'automatic_rewrite_guidance_pack': {'contract_version': 'automatic-rewrite-guidance-pack.v1', 'rewrite_steps': [{}], 'guidance_text': 'x'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -362,6 +363,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'chapter_draft_preparation_pack' in payload
     assert 'direct_draft_skeleton_pack' in payload
     assert 'direct_revision_loop_pack' in payload
+    assert 'automatic_rewrite_guidance_pack' in payload
 
 
 

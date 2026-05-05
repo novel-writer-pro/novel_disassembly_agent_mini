@@ -430,6 +430,48 @@ class NovelAssistantService:
             "blocking_risks": list(direct_draft_skeleton_pack.get("blocking_risks", []))[:3],
         }
 
+
+    @staticmethod
+    def _automatic_rewrite_guidance_pack(
+        *,
+        direct_revision_loop_pack: dict[str, object],
+        reader_feedback_pack: dict[str, object],
+    ) -> dict[str, object]:
+        revised_blocks = list(direct_revision_loop_pack.get("revised_blocks", []))
+        feedback_hypotheses = list(reader_feedback_pack.get("pain_point_hypotheses", []))
+        rewrite_steps = []
+        for item in revised_blocks[:3]:
+            if not isinstance(item, dict):
+                continue
+            rewrite_steps.append(
+                {
+                    "scene_index": item.get("scene_index"),
+                    "rewrite_goal": item.get("revision_goal", ""),
+                    "must_keep": item.get("must_keep", [])[:3],
+                    "rewrite_actions": [
+                        "先保持 must_keep 不丢失，再重写冲突展开。",
+                        "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。",
+                    ],
+                }
+            )
+        guidance_text = "\n".join([
+            "# 自动改写指导",
+            "- 先锁定 must_keep，再处理逻辑/节奏/对白问题。",
+            "- 每次改写只处理一个场景块，避免整体重写导致连续性漂移。",
+            f"- 读者风险假设：{'；'.join(feedback_hypotheses[:2])}" if feedback_hypotheses else "",
+        ]).strip()
+        return {
+            "contract_version": "automatic-rewrite-guidance-pack.v1",
+            "guidance_text": guidance_text,
+            "rewrite_steps": rewrite_steps,
+            "reader_feedback_hypotheses": feedback_hypotheses[:3],
+            "rewrite_checklist": [
+                "先修逻辑，再修节奏，再修文风。",
+                "每轮改写后回看 must_keep 是否仍在。",
+                "避免为追求流畅度而丢失 payoff / turning point。",
+            ],
+        }
+
     @staticmethod
     def _preparation_guidance(
         *,
@@ -596,6 +638,10 @@ class NovelAssistantService:
             direct_draft_skeleton_pack=direct_draft_skeleton_pack,
             editor_revision_pack=editor_revision_pack,
         )
+        automatic_rewrite_guidance_pack = self._automatic_rewrite_guidance_pack(
+            direct_revision_loop_pack=direct_revision_loop_pack,
+            reader_feedback_pack=reader_feedback_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -626,6 +672,7 @@ class NovelAssistantService:
                 "chapter_draft_preparation",
                 "direct_draft_skeleton",
                 "direct_revision_loop",
+                "automatic_rewrite_guidance",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -646,6 +693,7 @@ class NovelAssistantService:
             "chapter_draft_preparation_pack": chapter_draft_preparation_pack,
             "direct_draft_skeleton_pack": direct_draft_skeleton_pack,
             "direct_revision_loop_pack": direct_revision_loop_pack,
+            "automatic_rewrite_guidance_pack": automatic_rewrite_guidance_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

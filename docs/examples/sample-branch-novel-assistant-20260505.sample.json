@@ -59,7 +59,8 @@
     "retrieval_benchmark",
     "chapter_draft_preparation",
     "direct_draft_skeleton",
-    "direct_revision_loop"
+    "direct_revision_loop",
+    "automatic_rewrite_guidance"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -119,7 +120,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 60.0,
+    "avg_raw_latency_ms": 62.53,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -133,8 +134,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 63.097706995904446,
-        "rerank_latency_ms": 0.00490799720864743,
+        "raw_latency_ms": 41.87705600634217,
+        "rerank_latency_ms": 0.004886998794972897,
         "raw_top_chapters": [
           2,
           1,
@@ -162,8 +163,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 43.67427599208895,
-        "rerank_latency_ms": 0.00498400186188519,
+        "raw_latency_ms": 103.46735500206705,
+        "rerank_latency_ms": 0.006463000318035483,
         "raw_top_chapters": [
           1,
           2,
@@ -191,8 +192,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 73.22222599759698,
-        "rerank_latency_ms": 0.005842986865900457,
+        "raw_latency_ms": 42.24540400900878,
+        "rerank_latency_ms": 0.006051006494089961,
         "raw_top_chapters": [
           10,
           9,
@@ -694,6 +695,55 @@
     "blocking_risks": [
       "存在 1 个 needs_review 问题簇，草稿前应优先确认。",
       "存在 10 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "automatic_rewrite_guidance_pack": {
+    "contract_version": "automatic-rewrite-guidance-pack.v1",
+    "guidance_text": "# 自动改写指导\n- 先锁定 must_keep，再处理逻辑/节奏/对白问题。\n- 每次改写只处理一个场景块，避免整体重写导致连续性漂移。\n- 读者风险假设：读者可能感到部分逻辑/衔接点仍不够顺。",
+    "rewrite_steps": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      }
+    ],
+    "reader_feedback_hypotheses": [
+      "读者可能感到部分逻辑/衔接点仍不够顺。"
+    ],
+    "rewrite_checklist": [
+      "先修逻辑，再修节奏，再修文风。",
+      "每轮改写后回看 must_keep 是否仍在。",
+      "避免为追求流畅度而丢失 payoff / turning point。"
     ]
   },
   "audit_conclusion": {
@@ -2694,8 +2744,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 66.55321599100716,
-    "rerank_latency_ms": 0.008445000275969505,
+    "raw_latency_ms": 82.33938600460533,
+    "rerank_latency_ms": 0.00742400879971683,
     "raw_hits": [
       {
         "chapter_index": 2,

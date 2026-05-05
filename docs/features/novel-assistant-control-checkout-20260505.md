@@ -95,3 +95,8 @@
 - assistant pack 现已提供 `direct_revision_loop_pack`。
 - 真实样例中已给出 `revision_text` 与 3 个 `revised_blocks`。
 - 这让 draft skeleton 后面直接接上了结构化修稿闭环。
+
+## 14. Automatic rewrite guidance
+- assistant pack 现已提供 `automatic_rewrite_guidance_pack`。
+- 真实样例中已给出 `guidance_text` 与 3 个 `rewrite_steps`。
+- 这让 revision loop 后面继续接上结构化改写指导，而不是只停在复查。
