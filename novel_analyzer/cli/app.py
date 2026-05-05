@@ -802,6 +802,43 @@ def search_branch(
             )
 
 
+@app.command()
+def search_branch_diagnostics(
+    branch_id: str,
+    query: str,
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Show retrieval raw/rerank diagnostics for a branch query."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _retrieval_service(session, settings).search_branch_with_diagnostics(
+            branch_id, query, limit
+        )
+        echo(f"query={payload.query}")
+        echo(f"raw_hit_count={len(payload.raw_hits)}")
+        echo(f"reranked_hit_count={len(payload.reranked_hits)}")
+        echo(f"fusion_applied={payload.fusion_applied}")
+        echo(f"rerank_applied={payload.rerank_applied}")
+        echo(f"raw_latency_ms={payload.raw_latency_ms:.2f}")
+        echo(f"rerank_latency_ms={payload.rerank_latency_ms:.2f}")
+        echo(f"route_counts={payload.route_counts or {}}")
+        for route in payload.route_diagnostics or []:
+            echo(
+                f"route={route.route} | hit_count={route.hit_count} | latency_ms={route.latency_ms:.2f}"
+            )
+        for hit in payload.raw_hits[:limit]:
+            echo(
+                f"raw_hit=chapter_index={hit.chapter_index} | score={hit.score:.4f} | title={hit.title}"
+            )
+        for hit in payload.reranked_hits[:limit]:
+            echo(
+                f"reranked_hit=chapter_index={hit.chapter_index} | score={hit.score:.4f} | title={hit.title}"
+            )
+
+
 
 @app.command()
 def ask_branch(

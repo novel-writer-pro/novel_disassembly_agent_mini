@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from novel_analyzer.cli.app import app
 from novel_analyzer.runtime.cluster_review_state import write_cluster_review_state
 from tests.cli_test_support import patch_cli_sqlite_runtime
+from novel_analyzer.services.retrieval_service import RetrievalHit, RetrievalRouteDiagnostics, RetrievalSearchDiagnostics
 
 runner = CliRunner()
 
@@ -176,3 +177,45 @@ def test_author_knowledge_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'chapter_cards' in payload
     assert 'knowledge_index' in payload
     assert 'recommended_questions' in payload
+
+
+def test_search_branch_diagnostics_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(
+        app,
+        ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
+    )
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    class _FakeRetrievalService:
+        def search_branch_with_diagnostics(self, branch_id: str, query: str, limit: int) -> RetrievalSearchDiagnostics:
+            _ = branch_id, query, limit
+            return RetrievalSearchDiagnostics(
+                query='卫图',
+                raw_hits=[RetrievalHit(chapter_index=1, title='命格初现', summary_text='卫图觉醒命格', score=1.2, keyword_list=['卫图'])],
+                reranked_hits=[RetrievalHit(chapter_index=1, title='命格初现', summary_text='卫图觉醒命格', score=0.9, keyword_list=['卫图'])],
+                rerank_applied=True,
+                fusion_applied=True,
+                route_counts={'entity_exact': 1, 'vector': 1},
+                route_diagnostics=[RetrievalRouteDiagnostics(route='entity_exact', hit_count=1, latency_ms=1.5)],
+                raw_latency_ms=3.0,
+                rerank_latency_ms=8.0,
+            )
+
+    monkeypatch.setattr('novel_analyzer.cli.app._retrieval_service', lambda session, settings: _FakeRetrievalService())
+    result = runner.invoke(
+        app,
+        ['search-branch-diagnostics', run_lines['branch_id'], '卫图', '--database-url', db_url],
+    )
+    assert result.exit_code == 0
+    assert 'query=卫图' in result.stdout
+    assert 'fusion_applied=True' in result.stdout
+    assert 'rerank_applied=True' in result.stdout
+    assert 'route=entity_exact' in result.stdout
+    assert 'raw_hit=chapter_index=1' in result.stdout
