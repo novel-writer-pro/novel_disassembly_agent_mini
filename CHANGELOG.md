@@ -5,6 +5,7 @@
 - 手册覆盖拆书、检索/RRF/rerank、风险检测、续写/仿写、whole-book、reader feedback、governance/archive 的人工验收路径。
 - 同时补入“薄弱点溯源”方法，要求问题按源文本层 / 知识层 / 检索层 / 控制生成层 / 治理层定位，而不是只给模糊结论。
 - `docs/README.md` 已同步把这份手册挂到使用者主路径，方便后续手动测试与商业化验收。
+- 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 
 ## 2026-05-05
 

@@ -70,15 +70,17 @@
 2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
 3. [`./real-run-checklist.md`](./real-run-checklist.md)
 4. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
-5. [`./review-template.md`](./review-template.md)
-6. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+5. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
+6. [`./review-template.md`](./review-template.md)
+7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
 - 第 2 步：再看日常使用细节
 - 第 3 步：真实小说试跑前看清单
 - 第 4 步：按全能力手册做拆书 / 检索 / 风险 / 仿写 / 治理人工测试
-- 第 5 步：试跑后用模板做复盘
+- 第 5 步：用人工测试记录模板沉淀结论与薄弱点
+- 第 6 步：试跑后用模板做复盘
 
 ---
 
@@ -140,10 +142,11 @@
 2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
 3. [`./real-run-checklist.md`](./real-run-checklist.md)
 4. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
-5. [`./review-template.md`](./review-template.md)
-6. [`./session-handoff-manual.md`](./session-handoff-manual.md)
-7. [`../apps/web/README.md`](../apps/web/README.md)
-8. [`../apps/api/README.md`](../apps/api/README.md)
+5. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
+6. [`./review-template.md`](./review-template.md)
+7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+8. [`../apps/web/README.md`](../apps/web/README.md)
+9. [`../apps/api/README.md`](../apps/api/README.md)
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)
