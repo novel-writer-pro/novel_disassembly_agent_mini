@@ -84,6 +84,8 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['creation_control_pack']['contract_version'] == 'creation-control-pack.v1'
         assert pack['editor_revision_pack']['contract_version'] == 'editor-revision-pack.v1'
         assert pack['reader_feedback_pack']['contract_version'] == 'reader-feedback-pack.v1'
+        assert pack['chapter_draft_preparation_pack']['contract_version'] == 'chapter-draft-preparation-pack.v1'
+        assert pack['chapter_draft_preparation_pack']['scene_outline']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

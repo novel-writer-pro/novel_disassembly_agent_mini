@@ -80,3 +80,8 @@
 - next chapter planner 的 `scene_plan` 已开始消费 `future_chapter_outline`。
 - 真实 assistant 样例中，scene2 / scene3 的 must_include 与 foreshadow_to_touch 已出现 future outline 派生信号。
 - 这意味着未来章节骨架不再只是交接文档，而是进入了单章续写编排。
+
+## 11. Direct draft preparation
+- assistant pack 现已提供 `chapter_draft_preparation_pack`。
+- 真实样例中已给出 `draft_goal / draft_conflict / draft_payoff / draft_turning_point`。
+- 这让“长线规划 -> 单章规划 -> 起草前准备”形成了直接闭环。

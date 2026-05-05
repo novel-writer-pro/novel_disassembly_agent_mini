@@ -324,6 +324,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'creation_control_pack': {'contract_version': 'creation-control-pack.v1'},
                 'editor_revision_pack': {'contract_version': 'editor-revision-pack.v1'},
                 'reader_feedback_pack': {'contract_version': 'reader-feedback-pack.v1'},
+                'chapter_draft_preparation_pack': {'contract_version': 'chapter-draft-preparation-pack.v1', 'scene_outline': [{}]},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -356,6 +357,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'creation_control_pack' in payload
     assert 'editor_revision_pack' in payload
     assert 'reader_feedback_pack' in payload
+    assert 'chapter_draft_preparation_pack' in payload
 
 
 

@@ -299,6 +299,48 @@ class NovelAssistantService:
         }
 
     @staticmethod
+    def _chapter_draft_preparation_pack(
+        *,
+        knowledge_pack: dict[str, object],
+        continuation_pack: dict[str, object] | None,
+        imitation_pack: dict[str, object] | None,
+        risk_summary: dict[str, object],
+        review_summary: dict[str, object],
+    ) -> dict[str, object]:
+        story_bible = knowledge_pack.get("story_bible_pack", {}) if isinstance(knowledge_pack, dict) else {}
+        continuation_pack = continuation_pack or {}
+        imitation_pack = imitation_pack or {}
+        future_outline = list(story_bible.get("future_chapter_outline", [])) if isinstance(story_bible, dict) else []
+        first_outline = future_outline[0] if future_outline and isinstance(future_outline[0], dict) else {}
+        draft_checklist = [
+            "先按 chapter_goal / core_conflict 写出场景草骨架，再补对白与细节。",
+            "优先兑现 payoff_target 与 turning_point，不要只推进表面事件。",
+            "写完后对照 risk_notes / style_axes / rule_constraints 做一次自检。",
+        ]
+        blocking_risks = []
+        needs_review_count = int(review_summary.get("needs_review_count", 0) or 0)
+        risk_card_count = int(risk_summary.get("risk_card_count", 0) or 0)
+        if needs_review_count > 0:
+            blocking_risks.append(f"存在 {needs_review_count} 个 needs_review 问题簇，草稿前应优先确认。")
+        if risk_card_count > 0:
+            blocking_risks.append(f"存在 {risk_card_count} 张 risk card，起草时要规避高风险路径。")
+        return {
+            "contract_version": "chapter-draft-preparation-pack.v1",
+            "draft_goal": continuation_pack.get("chapter_goal", ""),
+            "draft_conflict": first_outline.get("core_conflict") or continuation_pack.get("main_conflict", ""),
+            "draft_payoff": first_outline.get("payoff_target", ""),
+            "draft_turning_point": first_outline.get("turning_point", ""),
+            "scene_outline": continuation_pack.get("scene_plan", []),
+            "style_axes": imitation_pack.get("style_axes", []),
+            "scene_beats": imitation_pack.get("scene_beats", []),
+            "future_chapter_outline": future_outline[:3],
+            "character_focus": list(story_bible.get("character_cards", []))[:3],
+            "rule_focus": list(story_bible.get("world_rules_digest", []))[:4],
+            "draft_checklist": draft_checklist,
+            "blocking_risks": blocking_risks,
+        }
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -450,6 +492,13 @@ class NovelAssistantService:
             review_summary=review_summary,
             continuation_pack=continuation_pack,
         )
+        chapter_draft_preparation_pack = self._chapter_draft_preparation_pack(
+            knowledge_pack=knowledge_pack,
+            continuation_pack=continuation_pack,
+            imitation_pack=imitation_pack,
+            risk_summary=risk_summary,
+            review_summary=review_summary,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -477,6 +526,7 @@ class NovelAssistantService:
                 "editor_revision",
                 "reader_feedback_loop",
                 "retrieval_benchmark",
+                "chapter_draft_preparation",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -494,6 +544,7 @@ class NovelAssistantService:
             "creation_control_pack": creation_control_pack,
             "editor_revision_pack": editor_revision_pack,
             "reader_feedback_pack": reader_feedback_pack,
+            "chapter_draft_preparation_pack": chapter_draft_preparation_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
