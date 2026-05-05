@@ -160,3 +160,8 @@
 - assistant pack 现已提供 `final_governance_summary_pack`。
 - 真实样例中已给出 `governance_status` 与 `governance_summary`。
 - 这让整个 release / rollback / recovery 治理链最终收口成总览式治理摘要。
+
+## 27. Governance dashboard
+- assistant pack 现已提供 `governance_dashboard_pack`。
+- CLI 已支持 `show-governance-dashboard` / `export-governance-dashboard`。
+- 真实样例中已给出 dashboard_status / summary_card / operator_brief。

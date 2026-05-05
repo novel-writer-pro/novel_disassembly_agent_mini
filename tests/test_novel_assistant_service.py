@@ -131,6 +131,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['final_governance_summary_pack']['contract_version'] == 'final-governance-summary-pack.v1'
         assert pack['final_governance_summary_pack']['governance_summary']
         assert pack['final_governance_summary_pack']['governance_status']
+        assert pack['governance_dashboard_pack']['contract_version'] == 'governance-dashboard-pack.v1'
+        assert pack['governance_dashboard_pack']['dashboard_status']
+        assert pack['governance_dashboard_pack']['summary_card']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

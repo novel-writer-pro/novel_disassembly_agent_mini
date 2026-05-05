@@ -827,6 +827,27 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _governance_dashboard_pack(
+        *,
+        final_governance_summary_pack: dict[str, object],
+        publish_ready_release_pack: dict[str, object],
+        sample_based_release_criteria_bundle: dict[str, object],
+        release_decision_freeze_artifact_pack: dict[str, object],
+        operator_release_brief_pack: dict[str, object],
+    ) -> dict[str, object]:
+        return {
+            "contract_version": "governance-dashboard-pack.v1",
+            "dashboard_status": final_governance_summary_pack.get("governance_status", "guarded"),
+            "summary_card": final_governance_summary_pack.get("governance_summary", ""),
+            "release_gate": publish_ready_release_pack.get("release_gate", {}),
+            "criteria": sample_based_release_criteria_bundle.get("criteria", {}),
+            "decision": release_decision_freeze_artifact_pack.get("decision", "no_go"),
+            "operator_status": operator_release_brief_pack.get("operator_status", "pending"),
+            "operator_brief": operator_release_brief_pack.get("brief_summary", ""),
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -1050,6 +1071,13 @@ class NovelAssistantService:
             release_ops_runbook_pack=release_ops_runbook_pack,
             recovery_closure_artifact_pack=recovery_closure_artifact_pack,
         )
+        governance_dashboard_pack = self._governance_dashboard_pack(
+            final_governance_summary_pack=final_governance_summary_pack,
+            publish_ready_release_pack=publish_ready_release_pack,
+            sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
+            release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+            operator_release_brief_pack=operator_release_brief_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1093,6 +1121,7 @@ class NovelAssistantService:
                 "postmortem_recovery_record",
                 "recovery_closure_artifact",
                 "final_governance_summary",
+                "governance_dashboard",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1126,6 +1155,7 @@ class NovelAssistantService:
             "postmortem_recovery_record_pack": postmortem_recovery_record_pack,
             "recovery_closure_artifact_pack": recovery_closure_artifact_pack,
             "final_governance_summary_pack": final_governance_summary_pack,
+            "governance_dashboard_pack": governance_dashboard_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
