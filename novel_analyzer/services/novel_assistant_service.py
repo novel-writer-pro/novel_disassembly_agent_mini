@@ -852,6 +852,33 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _release_review_note_pack(
+        *,
+        governance_report_brief_pack: dict[str, object],
+        publish_ready_release_pack: dict[str, object],
+        sample_based_release_criteria_bundle: dict[str, object],
+    ) -> dict[str, object]:
+        release_gate = dict(publish_ready_release_pack.get("release_gate", {}))
+        criteria = dict(sample_based_release_criteria_bundle.get("criteria", {}))
+        note_lines = [
+            "# Release Review Note",
+            "",
+            f"- candidate_review_ready: {release_gate.get('candidate_review_ready')}",
+            f"- whole_book_ready: {release_gate.get('whole_book_ready')}",
+            f"- ready_for_release: {release_gate.get('ready_for_release')}",
+            f"- criteria_ready: {criteria.get('ready_for_bundle_review')}",
+            f"- governance_brief: {governance_report_brief_pack.get('summary_card', '')}",
+        ]
+        note_text = "\n".join(note_lines).strip() + "\n"
+        return {
+            "contract_version": "release-review-note-pack.v1",
+            "note_text": note_text,
+            "review_status": "ready" if release_gate.get("ready_for_release") else "blocked",
+            "note_summary": governance_report_brief_pack.get("summary_card", ""),
+        }
+
+
+    @staticmethod
     def _governance_dashboard_pack(
         *,
         final_governance_summary_pack: dict[str, object],
@@ -1107,6 +1134,11 @@ class NovelAssistantService:
             governance_dashboard_pack=governance_dashboard_pack,
             final_governance_summary_pack=final_governance_summary_pack,
         )
+        release_review_note_pack = self._release_review_note_pack(
+            governance_report_brief_pack=governance_report_brief_pack,
+            publish_ready_release_pack=publish_ready_release_pack,
+            sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1152,6 +1184,7 @@ class NovelAssistantService:
                 "final_governance_summary",
                 "governance_dashboard",
                 "governance_report_brief",
+                "release_review_note",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1187,6 +1220,7 @@ class NovelAssistantService:
             "final_governance_summary_pack": final_governance_summary_pack,
             "governance_dashboard_pack": governance_dashboard_pack,
             "governance_report_brief_pack": governance_report_brief_pack,
+            "release_review_note_pack": release_review_note_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

@@ -170,3 +170,8 @@
 - assistant pack 现已提供 `governance_report_brief_pack`。
 - CLI 已支持 `export-governance-report-brief`。
 - 真实样例中已给出 markdown brief，可直接给管理/运营侧消费。
+
+## 29. Release review note
+- assistant pack 现已提供 `release_review_note_pack`。
+- CLI 已支持 `export-release-review-note`。
+- 真实样例中已给出 markdown release review note，可直接进入 release review 讨论。

@@ -164,6 +164,7 @@
 19. [`./examples/sample-branch-retrieval-benchmark-20260505.sample.json`](./examples/sample-branch-retrieval-benchmark-20260505.sample.json)
 20. [`./examples/sample-branch-governance-dashboard-20260505.sample.json`](./examples/sample-branch-governance-dashboard-20260505.sample.json)
 21. [`./examples/sample-branch-governance-report-brief-20260505.sample.md`](./examples/sample-branch-governance-report-brief-20260505.sample.md)
+22. [`./examples/sample-branch-release-review-note-20260505.sample.md`](./examples/sample-branch-release-review-note-20260505.sample.md)
 19. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
 20. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
 21. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
