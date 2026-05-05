@@ -1,3 +1,12 @@
+## 2026-05-05
+
+### AI 小说助手主链与治理导出升级
+- 新增并持续扩展了 novel assistant 主链：planning / control / revision / rewrite / candidate / governance / archive。
+- 关键能力包括：story bible、future chapter outline、draft preparation、direct skeleton、revision loop、automatic rewrite、final candidate、publish-ready release、sample-based release criteria、freeze artifact、handoff approval、operator brief、runbook、rollback、postmortem、closure、governance summary、external report bundle、final release archive。
+- 新增真实 reader feedback ingestion 与 live PostgreSQL 验证样例。
+- 新增 whole-book consistency backflow 到 candidate/release/governance surfaces。
+- 每轮遇到的挑战（例如旧库缺表降级、sample-derived backflow、markdown 拼接错误）均通过测试、样例刷新和文档收口闭环。
+
 ## 2026-05-04
 - Added executable eval/governance cross-lane sample bundle coverage via `CrossLaneSampleBundle`, `EvalGovernanceService.evaluate_sample_bundle()`, and `docs/examples/eval-governance-cross-lane-bundle.sample.json`.
 - Documented the `eval-governance-freeze.v1` handoff gate across README, docs index, final handoff, release handoff, and the eval governance sample release contract.
