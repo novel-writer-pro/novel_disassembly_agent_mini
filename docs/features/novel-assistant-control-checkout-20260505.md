@@ -75,3 +75,8 @@
 - story bible 现已提供 `future_chapter_outline`。
 - 真实样例中已给出未来 3 章的 goal / core_conflict / payoff_target / turning_point。
 - 这让长线规划开始具备“可执行 outline”形态，而不只是抽象结构。
+
+## 10. Scene-level 主链接入
+- next chapter planner 的 `scene_plan` 已开始消费 `future_chapter_outline`。
+- 真实 assistant 样例中，scene2 / scene3 的 must_include 与 foreshadow_to_touch 已出现 future outline 派生信号。
+- 这意味着未来章节骨架不再只是交接文档，而是进入了单章续写编排。

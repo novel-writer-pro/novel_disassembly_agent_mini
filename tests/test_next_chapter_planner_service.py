@@ -134,3 +134,7 @@ def test_next_chapter_planner_builds_context_and_plan() -> None:
         assert any("长线兑现：" in item for item in plan.risk_notes)
         assert plan.foreshadow_to_touch
         assert any("volume_goal=" in item for item in context.planning_notes)
+        assert any("chapter_outline:" in item for item in plan.foreshadow_to_touch)
+        assert any("关系" in note or "机会" in note for note in plan.scene_plan[0].risk_notes)
+        assert any("持续通过修炼累积可转化能力" in item or "长线冲突" in item for item in plan.scene_plan[1].must_include)
+        assert any("关键关系带来机会" in item for item in plan.scene_plan[2].must_include)
