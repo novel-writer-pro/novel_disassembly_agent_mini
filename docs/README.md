@@ -169,6 +169,7 @@
 24. [`./examples/sample-reader-feedback-summary-20260505.sample.json`](./examples/sample-reader-feedback-summary-20260505.sample.json)
 25. [`./examples/sample-branch-external-report-bundle-20260505.sample.json`](./examples/sample-branch-external-report-bundle-20260505.sample.json)
 26. [`./examples/sample-branch-external-report-bundle-20260505.sample.md`](./examples/sample-branch-external-report-bundle-20260505.sample.md)
+27. [`./examples/sample-branch-final-release-archive-20260505.sample.json`](./examples/sample-branch-final-release-archive-20260505.sample.json)
 19. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
 20. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
 21. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)

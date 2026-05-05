@@ -1,0 +1,181 @@
+{
+  "contract_version": "final-release-archive-pack.v1",
+  "candidate": {
+    "contract_version": "final-draft-candidate-pack.v1",
+    "candidate_title": "完成赎身/脱籍并争取进入更高身份路径",
+    "candidate_text": "# 候选稿：完成赎身/脱籍并争取进入更高身份路径\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion",
+    "candidate_blocks": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "rewrite_prompt": "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程"
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "rewrite_prompt": "身份与身契限制；保持家庭与婚后协作稳定"
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "rewrite_prompt": "身份与身契限制"
+      }
+    ],
+    "review_gate": {
+      "needs_review_count": 1,
+      "risk_card_count": 10,
+      "negative_feedback_signal_count": 2,
+      "ready_for_candidate_review": false
+    },
+    "candidate_checklist": [
+      "候选稿必须保留 must_keep 与 payoff / turning point。",
+      "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+      "如果 risk_card_count 较高，不要直接进入最终定稿。"
+    ],
+    "reader_feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
+  },
+  "freeze_artifact": {
+    "contract_version": "release-decision-freeze-artifact-pack.v1",
+    "decision": "no_go",
+    "freeze_artifact": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "criteria_snapshot": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "release_gate_snapshot": {
+        "candidate_review_ready": false,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      }
+    },
+    "decision_summary": "当前仍处于 no-go / freeze 保守状态。",
+    "next_actions": [
+      "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+      "若 go，则保留 freeze_artifact 并进入 release review。"
+    ]
+  },
+  "handoff_record": {
+    "contract_version": "handoff-approval-record-pack.v1",
+    "approval_status": "pending",
+    "handoff_record": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "release_summary": "候选稿仍需复核后再发布。"
+    },
+    "approval_checklist": [
+      "确认 freeze_artifact 与 release_gate 快照可回溯。",
+      "确认候选稿、release criteria、risk evidence 已一并交接。",
+      "进入 approval 前记录最终 decision 与责任人。"
+    ]
+  },
+  "external_report_bundle": {
+    "contract_version": "external-report-bundle-pack.v1",
+    "dashboard": {
+      "contract_version": "governance-dashboard-pack.v1",
+      "dashboard_status": "guarded",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "release_gate": {
+        "candidate_review_ready": false,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      },
+      "criteria": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "decision": "no_go",
+      "operator_status": "pending",
+      "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+      "whole_book_consistency": {
+        "requires_consistency_pass": true,
+        "release_impact": "whole_book_consistency_blocks_release",
+        "next_stage_focus": [
+          "优先处理能力族：relationship、rule",
+          "先回看第5章的高优先级修复链",
+          "先回看第4章的高优先级修复链"
+        ]
+      }
+    },
+    "brief": {
+      "contract_version": "governance-report-brief-pack.v1",
+      "dashboard_status": "guarded",
+      "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "review_note": {
+      "contract_version": "release-review-note-pack.v1",
+      "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+      "review_status": "blocked",
+      "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "approval_memo": {
+      "contract_version": "approval-decision-memo-pack.v1",
+      "decision_verdict": "REJECT",
+      "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "memo_status": "rejected"
+    },
+    "runbook": {
+      "contract_version": "release-ops-runbook-pack.v1",
+      "runbook_status": "blocked",
+      "runbook_steps": [
+        "检查 operator brief 与 freeze_artifact 是否一致。",
+        "确认 release gate / sample criteria / risk evidence 的最新快照。",
+        "若 decision=no_go，则生成阻断清单并停止发布动作。",
+        "若 decision=go，则进入人工 approval 与 release review。"
+      ],
+      "blockers": [
+        "release_gate_or_sample_criteria_not_ready"
+      ],
+      "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+      "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+    },
+    "rollback": {
+      "contract_version": "incident-rollback-pack.v1",
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "rollback_steps": [
+        "停止当前发布/扩散动作。",
+        "回退到上一版候选稿或安全版本。",
+        "重新收集 risk / review / release gate 快照。",
+        "完成问题修复后重新进入 freeze review。"
+      ],
+      "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+    },
+    "governance_summary": {
+      "contract_version": "final-governance-summary-pack.v1",
+      "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "governance_status": "guarded",
+      "governance_checklist": [
+        "先看 release_ready 与 criteria_ready。",
+        "再看 decision / approval_status / runbook_status。",
+        "最后确认 closure_status 与 recovery 记录是否完备。"
+      ]
+    }
+  },
+  "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。"
+}

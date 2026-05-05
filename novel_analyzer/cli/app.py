@@ -1238,6 +1238,37 @@ def export_external_report_markdown(
         output_path.write_text(str(report.get("markdown_text", "")), encoding='utf-8')
         echo(f"external_report_markdown_path={output_path}")
 
+
+@app.command()
+def export_final_release_archive(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the final release archive bundle to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        archive = payload.get("final_release_archive_pack", {})
+        output_path.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"final_release_archive_path={output_path}")
+
 @app.command()
 def show_raw_output(
     branch_id: str,

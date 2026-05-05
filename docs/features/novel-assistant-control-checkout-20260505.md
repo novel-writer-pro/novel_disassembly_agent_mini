@@ -200,3 +200,8 @@
 - assistant pack 现已提供 `external_report_markdown_pack`。
 - CLI 已支持 `export-external-report-markdown`。
 - 样例：`sample-branch-external-report-bundle-20260505.sample.md`。
+
+## 35. Final release archive
+- assistant pack 现已提供 `final_release_archive_pack`。
+- CLI 已支持 `export-final-release-archive`。
+- 样例：`sample-branch-final-release-archive-20260505.sample.json`。
