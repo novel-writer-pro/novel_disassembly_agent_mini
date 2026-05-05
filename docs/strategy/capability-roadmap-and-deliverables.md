@@ -14,6 +14,7 @@
 ## 当前交付物
 - retrieval diagnostics CLI
 - author knowledge CLI / service
+- novel assistant capability pack
 - whole-book provider success sample
 - sample branch smoke script
 - migration/self-check chain

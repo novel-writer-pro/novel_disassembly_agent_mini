@@ -23,10 +23,12 @@
 ## 5. 交付物
 - `novel_analyzer/services/retrieval_service.py`
 - `novel_analyzer/services/author_knowledge_service.py`
+- `novel_analyzer/services/novel_assistant_service.py`
 - `novel_analyzer/cli/app.py`
 - `docs/architecture/independent-agent-knowledge-and-retrieval.md`
 - `docs/examples/sample-branch-search-diagnostics-20260505.sample.json`
 - `docs/examples/sample-branch-author-knowledge-20260505.sample.json`
+- `docs/examples/sample-branch-novel-assistant-20260505.sample.json`
 
 ## 6. 下一步闭环
 1. retrieval 真实 branch benchmark

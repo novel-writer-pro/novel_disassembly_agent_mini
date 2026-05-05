@@ -285,3 +285,52 @@ def test_export_search_branch_diagnostics_cli(monkeypatch: MonkeyPatch, tmp_path
     assert payload['query'] == '卫图'
     assert payload['route_counts']['entity_exact'] == 1
     assert payload['rerank_applied'] is True
+
+
+
+def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(
+        app,
+        ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
+    )
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    class _FakeAssistantService:
+        def build_branch_assistant_pack(self, branch_id: str, **kwargs):
+            return {
+                'contract_version': 'novel-assistant.v1',
+                'branch_id': branch_id,
+                'assistant_summary': {'chapter_count': 2},
+                'supported_actions': ['retrieve_evidence', 'answer_question'],
+                'recommended_next_actions': ['先看 author knowledge'],
+                'author_knowledge': {'contract_version': 'author-knowledge.v1'},
+                'audit_conclusion': {'content_judgement': 'ok'},
+                'review_summary': {},
+                'risk_summary': {},
+                'retrieval_diagnostics': None,
+                'qa_answer': None,
+            }
+
+    monkeypatch.setattr('novel_analyzer.cli.app._novel_assistant_service', lambda session, settings: _FakeAssistantService())
+    out = tmp_path / 'assistant.json'
+    export_result = runner.invoke(
+        app,
+        ['export-novel-assistant', run_lines['branch_id'], str(out), '--database-url', db_url],
+    )
+    show_result = runner.invoke(
+        app,
+        ['show-novel-assistant', run_lines['branch_id'], '--database-url', db_url],
+    )
+    assert export_result.exit_code == 0
+    assert show_result.exit_code == 0
+    payload = json.loads(out.read_text(encoding='utf-8'))
+    assert payload['contract_version'] == 'novel-assistant.v1'
+    assert 'supported_actions' in payload
+    assert 'assistant_summary' in payload
