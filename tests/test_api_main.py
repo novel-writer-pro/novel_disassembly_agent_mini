@@ -321,6 +321,8 @@ def test_docs_index_points_to_fresh10_and_chapter_planning_docs() -> None:
     )
     assert "./risk-audit-fresh10-verification-20260502.md" in readme
     assert "./examples/sample-branch-report.post-migration-20260504.sample.md" in readme
+    assert "./examples/sample-branch-search-diagnostics-20260505.sample.json" in readme
+    assert "./examples/sample-branch-author-knowledge-20260505.sample.json" in readme
     assert "./chapter-planning-capability-proposal.md" in readme
     assert "risk-audit-fresh10-verification-20260502.md" in risk_index
     assert "sample-branch-report.post-migration-20260504.sample.md" in risk_index

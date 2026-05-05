@@ -41,6 +41,9 @@ flowchart TD
 - retrieval 已具备：`fts` / `similarity` / `like` / `keyword` / `entity_exact` / `vector`
 - diagnostics 已具备：raw/reranked/route/latency 可见性
 - author knowledge 已具备：chapter cards、knowledge index、entity profiles、relationship/rule/thread 聚合
+- 真实样例已固化：
+  - `docs/examples/sample-branch-search-diagnostics-20260505.sample.json`
+  - `docs/examples/sample-branch-author-knowledge-20260505.sample.json`
 
 ## 4. 设计原则
 1. retrieval 与 author knowledge 都是 **domain capability**，不是平台绑定能力。
