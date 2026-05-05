@@ -184,6 +184,8 @@ def test_author_knowledge_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'story_bible_pack' in payload
     assert payload['story_bible_pack']['motivation_tree']['contract_version'] == 'motivation-tree.v1'
     assert payload['story_bible_pack']['growth_arc']['contract_version'] == 'growth-arc.v1'
+    assert payload['story_bible_pack']['volume_outline']['contract_version'] == 'volume-outline.v1'
+    assert payload['story_bible_pack']['arc_outline']['contract_version'] == 'arc-outline.v1'
     assert 'recommended_questions' in payload
 
     focused_out = tmp_path / 'author-knowledge-focused.json'

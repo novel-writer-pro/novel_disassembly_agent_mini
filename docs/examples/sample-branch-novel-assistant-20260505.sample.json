@@ -116,8 +116,8 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 50.15,
-    "avg_rerank_latency_ms": 0.01,
+    "avg_raw_latency_ms": 53.78,
+    "avg_rerank_latency_ms": 0.0,
     "rerank_coverage_ratio": 0.0,
     "cases": [
       {
@@ -130,8 +130,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 46.2602609914029,
-        "rerank_latency_ms": 0.006596994353458285,
+        "raw_latency_ms": 43.32314900238998,
+        "rerank_latency_ms": 0.004464003723114729,
         "raw_top_chapters": [
           2,
           1,
@@ -159,8 +159,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 55.98037400341127,
-        "rerank_latency_ms": 0.0049539958126842976,
+        "raw_latency_ms": 73.1896099896403,
+        "rerank_latency_ms": 0.005736001185141504,
         "raw_top_chapters": [
           1,
           2,
@@ -188,8 +188,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 48.206141000264324,
-        "rerank_latency_ms": 0.005384994437918067,
+        "raw_latency_ms": 44.824245997006074,
+        "rerank_latency_ms": 0.004588990123011172,
         "raw_top_chapters": [
           10,
           9,
@@ -2142,6 +2142,53 @@
           "只推进事件，不推进人物选择逻辑"
         ]
       },
+      "volume_outline": {
+        "contract_version": "volume-outline.v1",
+        "volume_goal": "完成赎身/脱籍并争取进入更高身份路径",
+        "opening_status": "本章以卫图夜起喂马、抽旱烟缓解疲惫为日常底色，穿插其从佃奴升为李宅马倌的过往，以及眉心金光闪烁、准备去找二姑等信息，呈现出“低处谋变”的过渡状态。",
+        "mid_volume_turns": [
+          "把关键关系入口转成持续资源通路",
+          "让主角在资源/身份/家庭之间做更难选择"
+        ],
+        "late_volume_payoffs": [
+          "让赎身/脱籍主线迎来一次实质性推进",
+          "让前期修炼与关系经营开始兑现为新位置或新风险"
+        ],
+        "gating_threads": [],
+        "required_payoffs": [
+          "保持家庭与婚后协作稳定",
+          "持续通过修炼累积可转化能力",
+          "经营关键关系以换取资源与信息入口"
+        ]
+      },
+      "arc_outline": {
+        "contract_version": "arc-outline.v1",
+        "arc_name": "身份突破与能力积累弧",
+        "setup": [
+          "确认主角受限的初始位置与现实代价",
+          "建立修炼、关系、家庭三条支撑线"
+        ],
+        "progression": [
+          "获得关键关系入口",
+          "开始修炼/资源积累",
+          "形成婚后协作与现实筹划",
+          "把资源积累转成身份跃迁机会",
+          "验证主角是否能承受更高代价与风险"
+        ],
+        "turning_points": [
+          "关键关系带来机会，但同时抬高代价",
+          "资源或身份压力迫使主角提前行动"
+        ],
+        "payoff_targets": [
+          "主角获得可验证的新位置或新资格",
+          "关系线不只是陪衬，而要影响主线选择"
+        ],
+        "anti_patterns": [
+          "无铺垫的战力或身份跃迁",
+          "关系变化缺少中间证据",
+          "只推进事件，不推进人物选择逻辑"
+        ]
+      },
       "arc_questions": [
         "主角当前最核心的长期目标是否稳定？",
         "哪些关系会决定下一阶段资源或身份突破？",
@@ -2371,8 +2418,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 64.4716039969353,
-    "rerank_latency_ms": 0.007398994057439268,
+    "raw_latency_ms": 60.25834100728389,
+    "rerank_latency_ms": 0.008114002412185073,
     "raw_hits": [
       {
         "chapter_index": 2,

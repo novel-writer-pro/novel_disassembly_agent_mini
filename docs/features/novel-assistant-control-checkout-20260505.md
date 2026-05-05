@@ -4,6 +4,7 @@
 - assistant composition layer 再升级
 - author knowledge 的 story bible pack
 - story bible 第二层：character_cards / motivation_tree / growth_arc
+- story bible 第三层：volume_outline / arc_outline
 - retrieval benchmark 系统化
 - 原创前期规划 / 创作过程控制 / 编辑改稿 / 读者反馈闭环 四个控制包落地
 - 目标：让小说助手从“检索+仿写准备”推进到“可商业化创作控制面”
@@ -40,6 +41,7 @@
 ## 5. Fresh evidence
 - author knowledge sample 已包含 `story_bible_pack`，assistant sample 已包含其嵌套版本。
 - 最新样例已进一步包含 `character_cards`、`motivation_tree`、`growth_arc`。
+- 最新样例已包含 `volume_outline` 与 `arc_outline`。
 ### 5.1 回归
 - `./.venv/bin/pytest -q tests/test_novel_assistant_service.py tests/test_cli_extra.py::test_novel_assistant_cli tests/test_cli_extra.py::test_export_retrieval_benchmark_cli`
 - 结果：`3 passed`

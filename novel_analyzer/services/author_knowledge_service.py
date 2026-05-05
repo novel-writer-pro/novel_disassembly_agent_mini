@@ -139,6 +139,39 @@ class AuthorKnowledgeService:
                 "只推进事件，不推进人物选择逻辑",
             ],
         }
+        volume_outline = {
+            "contract_version": "volume-outline.v1",
+            "volume_goal": primary_goal,
+            "opening_status": backbone[0]["summary"] if backbone else premise,
+            "mid_volume_turns": [
+                "把关键关系入口转成持续资源通路",
+                "让主角在资源/身份/家庭之间做更难选择",
+            ],
+            "late_volume_payoffs": [
+                "让赎身/脱籍主线迎来一次实质性推进",
+                "让前期修炼与关系经营开始兑现为新位置或新风险",
+            ],
+            "gating_threads": threads[:4],
+            "required_payoffs": support_goals[:3] or ["家庭线与身份线必须发生交叉兑现"],
+        }
+        arc_outline = {
+            "contract_version": "arc-outline.v1",
+            "arc_name": "身份突破与能力积累弧",
+            "setup": [
+                "确认主角受限的初始位置与现实代价",
+                "建立修炼、关系、家庭三条支撑线",
+            ],
+            "progression": growth_arc["completed_beats"] + growth_arc["next_beats"][:2],
+            "turning_points": [
+                "关键关系带来机会，但同时抬高代价",
+                "资源或身份压力迫使主角提前行动",
+            ],
+            "payoff_targets": [
+                "主角获得可验证的新位置或新资格",
+                "关系线不只是陪衬，而要影响主线选择",
+            ],
+            "anti_patterns": growth_arc["regression_risks"],
+        }
         return {
             "contract_version": "story-bible-pack.v1",
             "premise": premise,
@@ -150,6 +183,8 @@ class AuthorKnowledgeService:
             "character_cards": character_cards,
             "motivation_tree": motivation_tree,
             "growth_arc": growth_arc,
+            "volume_outline": volume_outline,
+            "arc_outline": arc_outline,
             "arc_questions": [
                 "主角当前最核心的长期目标是否稳定？",
                 "哪些关系会决定下一阶段资源或身份突破？",

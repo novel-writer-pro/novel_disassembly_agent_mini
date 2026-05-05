@@ -41,7 +41,7 @@ flowchart TD
 ## 3. 当前能力
 - retrieval 已具备：`fts` / `similarity` / `like` / `keyword` / `entity_exact` / `vector`
 - diagnostics 已具备：raw/reranked/route/latency 可见性
-- author knowledge 已具备：chapter cards、knowledge index、entity profiles、relationship/rule/thread 聚合、story bible pack，以及角色卡/动机树/成长弧骨架
+- author knowledge 已具备：chapter cards、knowledge index、entity profiles、relationship/rule/thread 聚合、story bible pack，以及角色卡/动机树/成长弧/卷级弧线骨架
 - 真实样例已固化：
   - `docs/examples/sample-branch-search-diagnostics-20260505.sample.json`
   - `docs/examples/sample-branch-author-knowledge-20260505.sample.json`
