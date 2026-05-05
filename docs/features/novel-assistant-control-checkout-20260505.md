@@ -209,3 +209,7 @@
 ## 36. Release delivery archive index
 - 已新增 `release-delivery-archive-index-20260505.md`。
 - 用于集中导航 candidate / governance / archive / feedback / whole-book 样例。
+
+## 37. Whole-book live sandbox sample
+- 已新增 `whole-book-imitation-run.sandbox-live-20260505.sample.json`。
+- `whole_book_consistency_backflow_pack` 现优先消费这份 live sandbox 样例，而不是旧的 provider sample。

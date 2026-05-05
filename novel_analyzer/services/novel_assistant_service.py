@@ -86,6 +86,7 @@ class NovelAssistantService:
     @staticmethod
     def _whole_book_consistency_backflow_pack() -> dict[str, object]:
         sample_paths = [
+            "docs/examples/whole-book-imitation-run.sandbox-live-20260505.sample.json",
             "docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json",
             "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json",
         ]
