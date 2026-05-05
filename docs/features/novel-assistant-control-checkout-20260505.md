@@ -125,3 +125,8 @@
 - assistant pack 现已提供 `release_decision_freeze_artifact_pack`。
 - 真实样例中已给出 `decision`、`freeze_artifact` 与 `decision_summary`。
 - 这让 sample-based release criteria 之后继续接上了显式的 go/no-go/freeze 决策面。
+
+## 20. Handoff / approval record
+- assistant pack 现已提供 `handoff_approval_record_pack`。
+- 真实样例中已给出 `approval_status` 与 `handoff_record`。
+- 这让 freeze 决策之后继续接上了可交接、可审批、可留档的交付面。

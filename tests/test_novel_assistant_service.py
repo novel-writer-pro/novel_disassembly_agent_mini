@@ -110,6 +110,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['release_decision_freeze_artifact_pack']['contract_version'] == 'release-decision-freeze-artifact-pack.v1'
         assert pack['release_decision_freeze_artifact_pack']['decision'] in {'go', 'no_go'}
         assert pack['release_decision_freeze_artifact_pack']['freeze_artifact']
+        assert pack['handoff_approval_record_pack']['contract_version'] == 'handoff-approval-record-pack.v1'
+        assert pack['handoff_approval_record_pack']['approval_status']
+        assert pack['handoff_approval_record_pack']['handoff_record']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

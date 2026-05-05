@@ -333,6 +333,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'publish_ready_release_pack': {'contract_version': 'publish-ready-release-pack.v1', 'release_gate': {}, 'release_summary': 'x'},
                 'sample_based_release_criteria_bundle': {'contract_version': 'sample-based-release-criteria-bundle.v1', 'criteria': {}, 'bundle_summary': 'x'},
                 'release_decision_freeze_artifact_pack': {'contract_version': 'release-decision-freeze-artifact-pack.v1', 'decision': 'no_go', 'freeze_artifact': {}},
+                'handoff_approval_record_pack': {'contract_version': 'handoff-approval-record-pack.v1', 'approval_status': 'pending', 'handoff_record': {}},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -374,6 +375,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'publish_ready_release_pack' in payload
     assert 'sample_based_release_criteria_bundle' in payload
     assert 'release_decision_freeze_artifact_pack' in payload
+    assert 'handoff_approval_record_pack' in payload
 
 
 

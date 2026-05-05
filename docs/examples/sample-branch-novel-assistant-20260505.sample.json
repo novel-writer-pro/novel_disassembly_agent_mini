@@ -65,7 +65,8 @@
     "final_draft_candidate",
     "publish_ready_release",
     "sample_based_release_criteria",
-    "release_decision_freeze_artifact"
+    "release_decision_freeze_artifact",
+    "handoff_approval_record"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -125,7 +126,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 56.81,
+    "avg_raw_latency_ms": 58.72,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -139,8 +140,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 55.91865099268034,
-        "rerank_latency_ms": 0.0060349993873387575,
+        "raw_latency_ms": 62.869583009160124,
+        "rerank_latency_ms": 0.007437993190251291,
         "raw_top_chapters": [
           2,
           1,
@@ -168,8 +169,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 40.10312500759028,
-        "rerank_latency_ms": 0.005453999619930983,
+        "raw_latency_ms": 46.5335100016091,
+        "rerank_latency_ms": 0.014692996046505868,
         "raw_top_chapters": [
           1,
           2,
@@ -197,8 +198,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 74.41869399917778,
-        "rerank_latency_ms": 0.00683200778439641,
+        "raw_latency_ms": 66.7706310050562,
+        "rerank_latency_ms": 0.011779993656091392,
         "raw_top_chapters": [
           10,
           9,
@@ -881,6 +882,20 @@
     "next_actions": [
       "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
       "若 go，则保留 freeze_artifact 并进入 release review。"
+    ]
+  },
+  "handoff_approval_record_pack": {
+    "contract_version": "handoff-approval-record-pack.v1",
+    "approval_status": "pending",
+    "handoff_record": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "release_summary": "候选稿仍需复核后再发布。"
+    },
+    "approval_checklist": [
+      "确认 freeze_artifact 与 release_gate 快照可回溯。",
+      "确认候选稿、release criteria、risk evidence 已一并交接。",
+      "进入 approval 前记录最终 decision 与责任人。"
     ]
   },
   "audit_conclusion": {
@@ -2881,8 +2896,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 63.57619799382519,
-    "rerank_latency_ms": 0.009866998880170286,
+    "raw_latency_ms": 74.66184299846645,
+    "rerank_latency_ms": 0.007705995813012123,
     "raw_hits": [
       {
         "chapter_index": 2,
