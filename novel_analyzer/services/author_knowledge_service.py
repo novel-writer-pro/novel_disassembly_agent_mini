@@ -19,6 +19,53 @@ class AuthorKnowledgeService:
         self.session = session
         self.context = ContextService(session)
 
+    @staticmethod
+    def _story_bible_pack(
+        *,
+        chapter_cards: list[dict[str, Any]],
+        entity_profiles: list[dict[str, Any]],
+        relationship_index: list[dict[str, Any]],
+        rule_index: list[dict[str, Any]],
+        thread_index: list[dict[str, Any]],
+        summary_layer: dict[str, Any],
+    ) -> dict[str, object]:
+        protagonist_candidates = [item.get("label", "") for item in entity_profiles[:3] if item.get("label")]
+        backbone = []
+        for card in chapter_cards[:8]:
+            backbone.append(
+                {
+                    "chapter_index": card.get("chapter_index"),
+                    "title": card.get("title", ""),
+                    "summary": card.get("summary", ""),
+                    "key_events": list(card.get("key_events", []))[:3],
+                }
+            )
+        actives = [item.get("label", "") for item in relationship_index[:5] if item.get("label")]
+        rules = [item.get("label", "") for item in rule_index[:5] if item.get("label")]
+        threads = [item.get("label", "") for item in thread_index[:6] if item.get("label")]
+        premise = ""
+        if summary_layer.get("chapter_focus"):
+            premise = f"围绕{summary_layer['chapter_focus'][0]}所展开的长线叙事，当前聚焦于人物成长、资源获取与身份突破。"
+        return {
+            "contract_version": "story-bible-pack.v1",
+            "premise": premise,
+            "protagonist_candidates": protagonist_candidates,
+            "world_rules_digest": rules,
+            "relationship_backbone": actives,
+            "active_threads": threads,
+            "chapter_backbone": backbone,
+            "arc_questions": [
+                "主角当前最核心的长期目标是否稳定？",
+                "哪些关系会决定下一阶段资源或身份突破？",
+                "哪些未解线程必须进入卷纲级管理，而不能只留在章节记忆里？",
+            ],
+            "next_author_actions": [
+                "把 active_threads 按主线 / 支线 / 伏笔分层整理。",
+                "把 protagonist_candidates 扩成角色卡、动机与代价表。",
+                "把 world_rules_digest 转成可直接约束续写/仿写的规则表。",
+            ],
+        }
+
     def build_branch_knowledge_pack(
         self,
         branch_id: str,
@@ -134,6 +181,14 @@ class AuthorKnowledgeService:
             "top_threads": [item["label"] for item in thread_index[:5]],
             "chapter_focus": [item["title"] for item in chapter_cards[:3]],
         }
+        story_bible_pack = self._story_bible_pack(
+            chapter_cards=chapter_cards,
+            entity_profiles=entity_profiles,
+            relationship_index=relationship_index,
+            rule_index=rule_index,
+            thread_index=thread_index,
+            summary_layer=summary_layer,
+        )
 
         return {
             "contract_version": "author-knowledge.v1",
@@ -154,6 +209,7 @@ class AuthorKnowledgeService:
             "rule_index": rule_index,
             "thread_index": thread_index,
             "summary_layer": summary_layer,
+            "story_bible_pack": story_bible_pack,
             "relationship_watch": relationship_watch,
             "rule_watch": rule_watch,
             "unresolved_threads": unresolved_threads,

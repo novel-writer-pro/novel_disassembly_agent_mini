@@ -114,53 +114,56 @@
       "fts": 7,
       "similarity": 27,
       "like": 27,
-      "keyword": 12
+      "keyword": 12,
+      "vector": 30
     },
-    "avg_raw_latency_ms": 56.92,
-    "avg_rerank_latency_ms": 0.01,
-    "rerank_coverage_ratio": 0.0,
+    "avg_raw_latency_ms": 4247.76,
+    "avg_rerank_latency_ms": 151748.03,
+    "rerank_coverage_ratio": 1.0,
     "cases": [
       {
         "query": "卫图 命格",
         "fusion_applied": true,
-        "rerank_applied": false,
+        "rerank_applied": true,
         "route_counts": {
           "fts": 3,
           "similarity": 10,
           "like": 10,
-          "keyword": 10
+          "keyword": 10,
+          "vector": 10
         },
-        "raw_latency_ms": 52.990055992268026,
-        "rerank_latency_ms": 0.00686800922267139,
+        "raw_latency_ms": 4563.714044998051,
+        "rerank_latency_ms": 158324.8456329893,
         "raw_top_chapters": [
-          2,
           1,
           3,
-          5,
-          4
+          2,
+          4,
+          5
         ],
         "reranked_top_chapters": [
-          2,
+          4,
+          9,
           1,
-          3,
           5,
-          4
+          6
         ],
-        "rerank_changed_order": false,
-        "top_overlap": 5
+        "rerank_changed_order": true,
+        "top_overlap": 3
       },
       {
         "query": "二姑 资源",
         "fusion_applied": true,
-        "rerank_applied": false,
+        "rerank_applied": true,
         "route_counts": {
           "fts": 3,
           "similarity": 7,
           "like": 8,
-          "keyword": 1
+          "keyword": 1,
+          "vector": 10
         },
-        "raw_latency_ms": 44.143482009531,
-        "rerank_latency_ms": 0.007577997166663408,
+        "raw_latency_ms": 3603.1164180021733,
+        "rerank_latency_ms": 154669.76042099122,
         "raw_top_chapters": [
           1,
           2,
@@ -169,43 +172,44 @@
           8
         ],
         "reranked_top_chapters": [
-          1,
-          2,
           3,
-          4,
-          8
+          2,
+          1,
+          5,
+          7
         ],
-        "rerank_changed_order": false,
-        "top_overlap": 5
+        "rerank_changed_order": true,
+        "top_overlap": 3
       },
       {
         "query": "婚事 养生功",
         "fusion_applied": true,
-        "rerank_applied": false,
+        "rerank_applied": true,
         "route_counts": {
           "fts": 1,
           "similarity": 10,
           "like": 9,
-          "keyword": 1
+          "keyword": 1,
+          "vector": 10
         },
-        "raw_latency_ms": 73.61222799227107,
-        "rerank_latency_ms": 0.006857997504994273,
+        "raw_latency_ms": 4576.454173991806,
+        "rerank_latency_ms": 142249.485250999,
         "raw_top_chapters": [
-          10,
           9,
+          10,
           4,
-          2,
-          5
+          5,
+          3
         ],
         "reranked_top_chapters": [
-          10,
-          9,
-          4,
+          5,
+          3,
           2,
-          5
+          4,
+          10
         ],
-        "rerank_changed_order": false,
-        "top_overlap": 5
+        "rerank_changed_order": true,
+        "top_overlap": 4
       }
     ]
   },
@@ -2191,68 +2195,69 @@
   "retrieval_diagnostics": {
     "query": "卫图",
     "fusion_applied": true,
-    "rerank_applied": false,
+    "rerank_applied": true,
     "route_counts": {
       "fts": 10,
       "similarity": 10,
       "like": 10,
       "keyword": 10,
-      "entity_exact": 10
+      "entity_exact": 10,
+      "vector": 10
     },
-    "raw_latency_ms": 73.31245701061562,
-    "rerank_latency_ms": 0.0077830045484006405,
+    "raw_latency_ms": 4253.946587006794,
+    "rerank_latency_ms": 161248.89107800846,
     "raw_hits": [
       {
         "chapter_index": 2,
         "title": "二姑卫荭",
-        "score": 0.08091796563504654
+        "score": 0.09731140825799736
       },
       {
         "chapter_index": 3,
         "title": "养生功法",
-        "score": 0.07886904761904762
+        "score": 0.09449404761904762
       },
       {
         "chapter_index": 1,
         "title": "大器晚成",
-        "score": 0.07756965588468633
-      },
-      {
-        "chapter_index": 7,
-        "title": "不入祠堂（求收藏 求追读）",
-        "score": 0.07701341966083831
+        "score": 0.09295427126930171
       },
       {
         "chapter_index": 9,
         "title": "逼上绝境（求收藏，求追读）",
-        "score": 0.076395086914021
+        "score": 0.09154660206553615
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "score": 0.09150617328402672
       }
     ],
     "reranked_hits": [
       {
-        "chapter_index": 2,
-        "title": "二姑卫荭",
-        "score": 0.08091796563504654
-      },
-      {
-        "chapter_index": 3,
-        "title": "养生功法",
-        "score": 0.07886904761904762
-      },
-      {
         "chapter_index": 1,
         "title": "大器晚成",
-        "score": 0.07756965588468633
+        "score": 1.3446166515350342
       },
       {
-        "chapter_index": 7,
-        "title": "不入祠堂（求收藏 求追读）",
-        "score": 0.07701341966083831
+        "chapter_index": 4,
+        "title": "珍惜眼下",
+        "score": 1.0872350931167603
       },
       {
         "chapter_index": 9,
         "title": "逼上绝境（求收藏，求追读）",
-        "score": 0.076395086914021
+        "score": 1.023450493812561
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "score": 0.8783960342407227
+      },
+      {
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "score": 0.8157808780670166
       }
     ]
   },

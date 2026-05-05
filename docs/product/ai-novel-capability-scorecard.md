@@ -30,7 +30,7 @@
 
 ## 最值得快速补强的 4 个点
 1. retrieval 的 vector/entity-exact 召回  
-2. story bible / codex 产品层  
+2. story bible 产品层  
 3. whole-book 多轮成功样例密度  
 4. 商务白皮书与客户价值图表化  
 

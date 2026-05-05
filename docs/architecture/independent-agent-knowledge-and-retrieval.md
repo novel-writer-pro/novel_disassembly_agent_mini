@@ -34,13 +34,14 @@ flowchart TD
     Q --> R[Knowledge Index]
     Q --> S[Entity Profiles]
     Q --> T[Relationship / Rule / Thread Views]
-    Q --> U[Author Knowledge CLI]
+    Q --> U[Story Bible Pack]
+    Q --> V[Author Knowledge CLI]
 ```
 
 ## 3. 当前能力
 - retrieval 已具备：`fts` / `similarity` / `like` / `keyword` / `entity_exact` / `vector`
 - diagnostics 已具备：raw/reranked/route/latency 可见性
-- author knowledge 已具备：chapter cards、knowledge index、entity profiles、relationship/rule/thread 聚合
+- author knowledge 已具备：chapter cards、knowledge index、entity profiles、relationship/rule/thread 聚合、story bible pack
 - 真实样例已固化：
   - `docs/examples/sample-branch-search-diagnostics-20260505.sample.json`
   - `docs/examples/sample-branch-author-knowledge-20260505.sample.json`
@@ -52,5 +53,5 @@ flowchart TD
 
 ## 5. 待办
 - retrieval live route benchmark
-- author knowledge 的人物/关系/规则更强摘要层
+- story bible pack 继续前推到角色卡 / 卷纲 / 长线规划
 - whole-book / next-chapter 对 author knowledge 的更直接消费
