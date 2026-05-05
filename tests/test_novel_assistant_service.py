@@ -98,6 +98,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['automatic_prose_rewrite_pack']['contract_version'] == 'automatic-prose-rewrite-pack.v1'
         assert pack['automatic_prose_rewrite_pack']['rewritten_blocks']
         assert pack['automatic_prose_rewrite_pack']['rewrite_text']
+        assert pack['final_draft_candidate_pack']['contract_version'] == 'final-draft-candidate-pack.v1'
+        assert pack['final_draft_candidate_pack']['candidate_blocks']
+        assert pack['final_draft_candidate_pack']['candidate_text']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

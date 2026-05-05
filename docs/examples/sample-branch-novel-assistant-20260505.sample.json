@@ -61,7 +61,8 @@
     "direct_draft_skeleton",
     "direct_revision_loop",
     "automatic_rewrite_guidance",
-    "automatic_prose_rewrite"
+    "automatic_prose_rewrite",
+    "final_draft_candidate"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -121,7 +122,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 54.15,
+    "avg_raw_latency_ms": 60.91,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -135,8 +136,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 48.21717498998623,
-        "rerank_latency_ms": 0.007281996659003198,
+        "raw_latency_ms": 77.3901520005893,
+        "rerank_latency_ms": 0.005969006451778114,
         "raw_top_chapters": [
           2,
           1,
@@ -164,8 +165,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 56.96398900181521,
-        "rerank_latency_ms": 0.008342001819983125,
+        "raw_latency_ms": 48.551069005043246,
+        "rerank_latency_ms": 0.00599399209022522,
         "raw_top_chapters": [
           1,
           2,
@@ -193,8 +194,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 57.25699299364351,
-        "rerank_latency_ms": 0.006362999556586146,
+        "raw_latency_ms": 56.785852008033544,
+        "rerank_latency_ms": 0.008022994734346867,
         "raw_top_chapters": [
           10,
           9,
@@ -783,6 +784,49 @@
       "先修逻辑，再修节奏，再修文风。",
       "每轮改写后回看 must_keep 是否仍在。",
       "避免为追求流畅度而丢失 payoff / turning point。"
+    ]
+  },
+  "final_draft_candidate_pack": {
+    "contract_version": "final-draft-candidate-pack.v1",
+    "candidate_title": "完成赎身/脱籍并争取进入更高身份路径",
+    "candidate_text": "# 候选稿：完成赎身/脱籍并争取进入更高身份路径\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。",
+    "candidate_blocks": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "rewrite_prompt": "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程"
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "rewrite_prompt": "身份与身契限制；保持家庭与婚后协作稳定"
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "rewrite_prompt": "身份与身契限制"
+      }
+    ],
+    "review_gate": {
+      "needs_review_count": 1,
+      "risk_card_count": 10,
+      "ready_for_candidate_review": false
+    },
+    "candidate_checklist": [
+      "候选稿必须保留 must_keep 与 payoff / turning point。",
+      "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+      "如果 risk_card_count 较高，不要直接进入最终定稿。"
     ]
   },
   "audit_conclusion": {
@@ -2783,8 +2827,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 59.02883200906217,
-    "rerank_latency_ms": 0.008531991625204682,
+    "raw_latency_ms": 60.05260700476356,
+    "rerank_latency_ms": 0.008091010386124253,
     "raw_hits": [
       {
         "chapter_index": 2,

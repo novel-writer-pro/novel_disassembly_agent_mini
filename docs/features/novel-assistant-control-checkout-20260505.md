@@ -105,3 +105,8 @@
 - assistant pack 现已提供 `automatic_prose_rewrite_pack`。
 - 真实样例中已给出 3 个 `rewritten_blocks` 与 `rewrite_text`。
 - 这让 rewrite guidance 后面继续接上了更可执行的自动正文改写输入。
+
+## 16. Final draft candidate
+- assistant pack 现已提供 `final_draft_candidate_pack`。
+- 真实样例中已给出 `candidate_text`、`candidate_blocks` 与 `review_gate`。
+- 这让自动改写输入之后继续接上了可交付候选稿面。

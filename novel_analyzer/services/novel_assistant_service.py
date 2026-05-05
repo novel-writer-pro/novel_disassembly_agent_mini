@@ -510,6 +510,40 @@ class NovelAssistantService:
             "rewrite_checklist": list(automatic_rewrite_guidance_pack.get("rewrite_checklist", []))[:3],
         }
 
+
+    @staticmethod
+    def _final_draft_candidate_pack(
+        *,
+        automatic_prose_rewrite_pack: dict[str, object],
+        risk_summary: dict[str, object],
+        review_summary: dict[str, object],
+    ) -> dict[str, object]:
+        rewritten_blocks = list(automatic_prose_rewrite_pack.get("rewritten_blocks", []))
+        candidate_lines = [
+            f"# 候选稿：{automatic_prose_rewrite_pack.get('rewrite_title', '')}",
+            str(automatic_prose_rewrite_pack.get("rewrite_text", "")).strip(),
+        ]
+        review_gate = {
+            "needs_review_count": int(review_summary.get("needs_review_count", 0) or 0),
+            "risk_card_count": int(risk_summary.get("risk_card_count", 0) or 0),
+            "ready_for_candidate_review": not (
+                int(review_summary.get("needs_review_count", 0) or 0) > 0
+                or int(risk_summary.get("risk_card_count", 0) or 0) > 12
+            ),
+        }
+        return {
+            "contract_version": "final-draft-candidate-pack.v1",
+            "candidate_title": automatic_prose_rewrite_pack.get("rewrite_title", ""),
+            "candidate_text": "\n\n".join([item for item in candidate_lines if item]),
+            "candidate_blocks": rewritten_blocks[:3],
+            "review_gate": review_gate,
+            "candidate_checklist": [
+                "候选稿必须保留 must_keep 与 payoff / turning point。",
+                "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+                "如果 risk_card_count 较高，不要直接进入最终定稿。",
+            ],
+        }
+
     @staticmethod
     def _preparation_guidance(
         *,
@@ -684,6 +718,11 @@ class NovelAssistantService:
             direct_draft_skeleton_pack=direct_draft_skeleton_pack,
             automatic_rewrite_guidance_pack=automatic_rewrite_guidance_pack,
         )
+        final_draft_candidate_pack = self._final_draft_candidate_pack(
+            automatic_prose_rewrite_pack=automatic_prose_rewrite_pack,
+            risk_summary=risk_summary,
+            review_summary=review_summary,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -716,6 +755,7 @@ class NovelAssistantService:
                 "direct_revision_loop",
                 "automatic_rewrite_guidance",
                 "automatic_prose_rewrite",
+                "final_draft_candidate",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -738,6 +778,7 @@ class NovelAssistantService:
             "direct_revision_loop_pack": direct_revision_loop_pack,
             "automatic_rewrite_guidance_pack": automatic_rewrite_guidance_pack,
             "automatic_prose_rewrite_pack": automatic_prose_rewrite_pack,
+            "final_draft_candidate_pack": final_draft_candidate_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
