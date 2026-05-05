@@ -22,6 +22,7 @@
 ## 4. whole-book 一致性与生成主样例
 - [`./examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json`](./examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json)
 - [`./examples/whole-book-imitation-run.provider-success-20260504.sample.json`](./examples/whole-book-imitation-run.provider-success-20260504.sample.json)
+- [`./examples/whole-book-imitation-run.sandbox-live-20260505.sample.json`](./examples/whole-book-imitation-run.sandbox-live-20260505.sample.json)
 
 ## 5. 典型使用顺序
 1. 先看 `sample-branch-novel-assistant-20260505.sample.json`
@@ -29,10 +30,9 @@
 3. 对外沟通时优先发 `governance-report-brief` / `release-review-note` / `approval-decision-memo`
 4. 做治理/归档汇总时直接用 `external-report-bundle` 与本索引
 
-## 6. Archive navigation metadata
-- final archive 现已提供 archive manifest / retention / integrity / index / navigation metadata。
-- 导航时优先看 archive_key、indexed_sections、navigation_sections。
-
-## 7. Archive navigation metadata
-- final release archive now includes `archive_navigation_metadata_pack`.
-- Use `archive_key` and `navigation_sections` for quick archive lookup.
+## 6. Archive metadata quick map
+- `archive_manifest_pack`: 归档包含哪些一级内容。
+- `archive_retention_metadata_pack`: 保留策略、状态、manifest 绑定。
+- `archive_integrity_check_pack`: 归档内容是否缺项。
+- `archive_index_metadata_pack`: archive_key / indexed_sections。
+- `archive_navigation_metadata_pack`: navigation_sections / navigation_summary。
