@@ -63,7 +63,8 @@
     "automatic_rewrite_guidance",
     "automatic_prose_rewrite",
     "final_draft_candidate",
-    "publish_ready_release"
+    "publish_ready_release",
+    "sample_based_release_criteria"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -123,7 +124,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 49.55,
+    "avg_raw_latency_ms": 76.9,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -137,8 +138,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 58.70074199629016,
-        "rerank_latency_ms": 0.005149995558895171,
+        "raw_latency_ms": 59.66126901330426,
+        "rerank_latency_ms": 0.005648995283991098,
         "raw_top_chapters": [
           2,
           1,
@@ -166,8 +167,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 39.477084996178746,
-        "rerank_latency_ms": 0.006287998985499144,
+        "raw_latency_ms": 75.33660701301415,
+        "rerank_latency_ms": 0.005784997483715415,
         "raw_top_chapters": [
           1,
           2,
@@ -195,8 +196,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 50.47741600719746,
-        "rerank_latency_ms": 0.005541995051316917,
+        "raw_latency_ms": 95.69531200395431,
+        "rerank_latency_ms": 0.015672994777560234,
         "raw_top_chapters": [
           10,
           9,
@@ -844,6 +845,18 @@
       "发布前保留 review_gate / risk evidence 作为回溯依据。"
     ],
     "candidate_title": "完成赎身/脱籍并争取进入更高身份路径"
+  },
+  "sample_based_release_criteria_bundle": {
+    "contract_version": "sample-based-release-criteria-bundle.v1",
+    "criteria": {
+      "sample_count_ready": true,
+      "retrieval_benchmark_ready": true,
+      "release_gate_ready": false,
+      "ready_for_bundle_review": false
+    },
+    "sample_count": 5,
+    "retrieval_query_count": 3,
+    "bundle_summary": "样例、retrieval benchmark、release gate 已汇总，可用于 release criteria review。"
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -2843,8 +2856,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 57.157868999638595,
-    "rerank_latency_ms": 0.010232004569843411,
+    "raw_latency_ms": 57.049084003665484,
+    "rerank_latency_ms": 0.007737005944363773,
     "raw_hits": [
       {
         "chapter_index": 2,

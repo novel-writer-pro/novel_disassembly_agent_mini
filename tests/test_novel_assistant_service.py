@@ -104,6 +104,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['publish_ready_release_pack']['contract_version'] == 'publish-ready-release-pack.v1'
         assert 'release_gate' in pack['publish_ready_release_pack']
         assert pack['publish_ready_release_pack']['release_summary']
+        assert pack['sample_based_release_criteria_bundle']['contract_version'] == 'sample-based-release-criteria-bundle.v1'
+        assert 'criteria' in pack['sample_based_release_criteria_bundle']
+        assert pack['sample_based_release_criteria_bundle']['bundle_summary']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

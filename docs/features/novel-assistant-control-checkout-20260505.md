@@ -115,3 +115,8 @@
 - assistant pack 现已提供 `publish_ready_release_pack`。
 - 真实样例中已给出 `release_gate` 与 `release_summary`。
 - 这让候选稿后面继续接上了 freeze/release 判定面。
+
+## 18. Sample-based release criteria
+- assistant pack 现已提供 `sample_based_release_criteria_bundle`。
+- 真实样例中已给出 `criteria` 与 `bundle_summary`。
+- 这让 publish-ready release 之后继续接上了样例化 release criteria 评审面。
