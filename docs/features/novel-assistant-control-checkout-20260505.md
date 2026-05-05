@@ -190,3 +190,8 @@
 - assistant pack 现已提供 `whole_book_consistency_backflow_pack`。
 - 该包从 whole-book 示例诊断中反向提取修复重点与发布影响。
 - 真实样例中已给出 `requires_consistency_pass` 与 `release_impact`。
+
+## 33. External report bundle
+- assistant pack 现已提供 `external_report_bundle_pack`。
+- CLI 已支持 `export-external-report-bundle`。
+- 样例：`sample-branch-external-report-bundle-20260505.sample.json`。

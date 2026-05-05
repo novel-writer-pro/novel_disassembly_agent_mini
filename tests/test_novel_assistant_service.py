@@ -152,6 +152,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['approval_decision_memo_pack']['memo_text']
         assert 'whole_book_release_impact' in pack['approval_decision_memo_pack']['memo_text']
         assert pack['approval_decision_memo_pack']['memo_status']
+        assert pack['external_report_bundle_pack']['contract_version'] == 'external-report-bundle-pack.v1'
+        assert 'dashboard' in pack['external_report_bundle_pack']
+        assert 'approval_memo' in pack['external_report_bundle_pack']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

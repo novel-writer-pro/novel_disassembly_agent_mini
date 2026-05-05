@@ -1176,6 +1176,37 @@ def export_approval_decision_memo(
         output_path.write_text(str(memo.get("memo_text", "")), encoding='utf-8')
         echo(f"approval_decision_memo_path={output_path}")
 
+
+@app.command()
+def export_external_report_bundle(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the external report bundle to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        bundle = payload.get("external_report_bundle_pack", {})
+        output_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"external_report_bundle_path={output_path}")
+
 @app.command()
 def show_raw_output(
     branch_id: str,

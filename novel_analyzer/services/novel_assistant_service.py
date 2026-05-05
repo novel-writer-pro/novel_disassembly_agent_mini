@@ -1025,6 +1025,29 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _external_report_bundle_pack(
+        *,
+        governance_dashboard_pack: dict[str, object],
+        governance_report_brief_pack: dict[str, object],
+        release_review_note_pack: dict[str, object],
+        approval_decision_memo_pack: dict[str, object],
+        release_ops_runbook_pack: dict[str, object],
+        incident_rollback_pack: dict[str, object],
+        final_governance_summary_pack: dict[str, object],
+    ) -> dict[str, object]:
+        return {
+            "contract_version": "external-report-bundle-pack.v1",
+            "dashboard": governance_dashboard_pack,
+            "brief": governance_report_brief_pack,
+            "review_note": release_review_note_pack,
+            "approval_memo": approval_decision_memo_pack,
+            "runbook": release_ops_runbook_pack,
+            "rollback": incident_rollback_pack,
+            "governance_summary": final_governance_summary_pack,
+        }
+
+
+    @staticmethod
     def _governance_dashboard_pack(
         *,
         final_governance_summary_pack: dict[str, object],
@@ -1310,6 +1333,15 @@ class NovelAssistantService:
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
             whole_book_consistency_backflow_pack=whole_book_consistency_backflow_pack,
         )
+        external_report_bundle_pack = self._external_report_bundle_pack(
+            governance_dashboard_pack=governance_dashboard_pack,
+            governance_report_brief_pack=governance_report_brief_pack,
+            release_review_note_pack=release_review_note_pack,
+            approval_decision_memo_pack=approval_decision_memo_pack,
+            release_ops_runbook_pack=release_ops_runbook_pack,
+            incident_rollback_pack=incident_rollback_pack,
+            final_governance_summary_pack=final_governance_summary_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1359,6 +1391,7 @@ class NovelAssistantService:
                 "governance_report_brief",
                 "release_review_note",
                 "approval_decision_memo",
+                "external_report_bundle",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1398,6 +1431,7 @@ class NovelAssistantService:
             "governance_report_brief_pack": governance_report_brief_pack,
             "release_review_note_pack": release_review_note_pack,
             "approval_decision_memo_pack": approval_decision_memo_pack,
+            "external_report_bundle_pack": external_report_bundle_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
