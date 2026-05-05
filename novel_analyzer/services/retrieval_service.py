@@ -15,6 +15,7 @@ from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import (
     ChapterArtifact,
     ChunkEmbedding,
+    FactRecord,
     RetrievalChunk,
     RetrievalDocument,
 )
@@ -462,20 +463,167 @@ class RetrievalService:
         *,
         route_name: str,
         started_at: float,
-        rows: list[RowMapping],
+        rows: list[RowMapping] | None = None,
+        hits: list[RetrievalHit] | None = None,
         route_diagnostics: list[RetrievalRouteDiagnostics],
     ) -> tuple[str, list[RetrievalHit]] | None:
-        hits = [self._row_to_hit(row) for row in rows]
+        materialized_hits = hits if hits is not None else [self._row_to_hit(row) for row in rows or []]
         route_diagnostics.append(
             RetrievalRouteDiagnostics(
                 route=route_name,
-                hit_count=len(hits),
+                hit_count=len(materialized_hits),
                 latency_ms=self._elapsed_ms(started_at),
             )
         )
-        if not hits:
+        if not materialized_hits:
             return None
-        return (route_name, hits)
+        return (route_name, materialized_hits)
+
+    def _document_hits_for_chapters(
+        self,
+        branch_id: str,
+        chapter_scores: dict[int, float],
+    ) -> list[RetrievalHit]:
+        if not chapter_scores:
+            return []
+        rows = (
+            self.session.execute(
+                text(
+                    """
+                    SELECT chapter_index, title, summary_text, keyword_list
+                    FROM retrieval_documents
+                    WHERE branch_id = :branch_id
+                    """
+                ),
+                {"branch_id": branch_id},
+            )
+            .mappings()
+            .all()
+        )
+        hits: list[RetrievalHit] = []
+        for row in rows:
+            chapter_index = int(row["chapter_index"])
+            score = chapter_scores.get(chapter_index)
+            if score is None:
+                continue
+            hits.append(
+                RetrievalHit(
+                    chapter_index=chapter_index,
+                    title=str(row["title"]),
+                    summary_text=str(row["summary_text"]),
+                    score=score,
+                    keyword_list=self._coerce_keywords(row["keyword_list"]),
+                )
+            )
+        hits.sort(key=lambda item: (-item.score, item.chapter_index))
+        return hits
+
+    def _entity_exact_route(
+        self,
+        branch_id: str,
+        query: str,
+        limit: int,
+    ) -> list[RetrievalHit]:
+        query_text = query.strip()
+        if not query_text:
+            return []
+        rows = self.session.scalars(
+            select(FactRecord)
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.fact_type.in_(("entity", "event")))
+            .where(FactRecord.label.like(f"%{query_text}%"))
+            .order_by(FactRecord.chapter_index.asc(), FactRecord.label.asc())
+        ).all()
+        chapter_scores: dict[int, float] = {}
+        for row in rows:
+            label = row.label.strip()
+            if not label:
+                continue
+            score = 1.0 + float(row.confidence)
+            if label == query_text:
+                score += 2.0
+            elif query_text in label:
+                score += 1.0
+            chapter_scores[row.chapter_index] = max(chapter_scores.get(row.chapter_index, 0.0), score)
+        return self._document_hits_for_chapters(branch_id, chapter_scores)[:limit]
+
+    @staticmethod
+    def _cosine_similarity(left: list[float], right: list[float]) -> float:
+        if not left or not right or len(left) != len(right):
+            return 0.0
+        left_norm = sum(value * value for value in left) ** 0.5
+        right_norm = sum(value * value for value in right) ** 0.5
+        if left_norm <= 1e-12 or right_norm <= 1e-12:
+            return 0.0
+        dot = sum(float(a) * float(b) for a, b in zip(left, right, strict=True))
+        return float(dot / (left_norm * right_norm))
+
+    @staticmethod
+    def _coerce_vector_payload(raw: object) -> list[float]:
+        if isinstance(raw, list):
+            return [float(item) for item in raw if isinstance(item, (int, float))]
+        if isinstance(raw, str):
+            try:
+                decoded = json.loads(raw)
+            except Exception:  # noqa: BLE001
+                return []
+            if isinstance(decoded, list):
+                return [float(item) for item in decoded if isinstance(item, (int, float))]
+        return []
+
+    def _vector_route(
+        self,
+        branch_id: str,
+        query: str,
+        limit: int,
+    ) -> list[RetrievalHit]:
+        query_text = query.strip()
+        if not query_text:
+            return []
+        try:
+            query_vector = get_embedding_provider(self.settings).embed_texts([query_text])[0]
+        except Exception:
+            return []
+        rows = (
+            self.session.execute(
+                text(
+                    """
+                    SELECT
+                        d.chapter_index,
+                        d.title,
+                        d.summary_text,
+                        d.keyword_list,
+                        e.vector_payload
+                    FROM retrieval_documents d
+                    JOIN retrieval_chunks c ON c.document_id = d.id
+                    JOIN chunk_embeddings e ON e.chunk_id = c.id
+                    WHERE d.branch_id = :branch_id
+                    ORDER BY d.chapter_index ASC, c.chunk_order ASC
+                    """
+                ),
+                {"branch_id": branch_id},
+            )
+            .mappings()
+            .all()
+        )
+        best_hits: dict[int, RetrievalHit] = {}
+        for row in rows:
+            chunk_vector = self._coerce_vector_payload(row["vector_payload"])
+            score = self._cosine_similarity(query_vector, chunk_vector)
+            if score <= 0.0:
+                continue
+            chapter_index = int(row["chapter_index"])
+            current = best_hits.get(chapter_index)
+            if current is None or score > current.score:
+                best_hits[chapter_index] = RetrievalHit(
+                    chapter_index=chapter_index,
+                    title=str(row["title"]),
+                    summary_text=str(row["summary_text"]),
+                    score=score,
+                    keyword_list=self._coerce_keywords(row["keyword_list"]),
+                )
+        hits = sorted(best_hits.values(), key=lambda item: (-item.score, item.chapter_index))
+        return hits[:limit]
 
     def _search_branch_routes(
         self,
@@ -618,6 +766,28 @@ class RetrievalService:
             )
             if keyword_hits:
                 routes.append(("keyword", keyword_hits))
+
+            started_at = time.perf_counter()
+            entity_exact_hits = self._entity_exact_route(branch_id, query, fetch_limit)
+            route = self._timed_route(
+                route_name="entity_exact",
+                started_at=started_at,
+                hits=entity_exact_hits,
+                route_diagnostics=route_diagnostics,
+            )
+            if route is not None:
+                routes.append(route)
+
+            started_at = time.perf_counter()
+            vector_hits = self._vector_route(branch_id, query, fetch_limit)
+            route = self._timed_route(
+                route_name="vector",
+                started_at=started_at,
+                hits=vector_hits,
+                route_diagnostics=route_diagnostics,
+            )
+            if route is not None:
+                routes.append(route)
             return routes, route_diagnostics
 
         raise RuntimeError(

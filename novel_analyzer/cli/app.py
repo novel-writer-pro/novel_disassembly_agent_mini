@@ -351,6 +351,12 @@ def _imitation_harness_service(session: Session, settings: Settings) -> Any:
     return HarnessControllerService(session, settings)
 
 
+def _author_knowledge_service(session: Session) -> Any:
+    from novel_analyzer.services.author_knowledge_service import AuthorKnowledgeService
+
+    return AuthorKnowledgeService(session)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -990,6 +996,44 @@ def export_branch_qa_context(
         payload = _export_service(session).export_branch_qa_context(run_id, branch_id)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"branch_qa_context_path={output_path}")
+
+
+@app.command()
+def show_author_knowledge(
+    branch_id: str,
+    upto_chapter_index: int | None = None,
+    database_url: str | None = None,
+) -> None:
+    """Show the author-facing branch knowledge pack."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _author_knowledge_service(session).build_branch_knowledge_pack(
+            branch_id,
+            upto_chapter_index=upto_chapter_index,
+        )
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def export_author_knowledge(
+    branch_id: str,
+    output_path: Path,
+    upto_chapter_index: int | None = None,
+    database_url: str | None = None,
+) -> None:
+    """Export the author-facing branch knowledge pack to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _author_knowledge_service(session).build_branch_knowledge_pack(
+            branch_id,
+            upto_chapter_index=upto_chapter_index,
+        )
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"author_knowledge_path={output_path}")
 
 
 @app.command()

@@ -142,3 +142,36 @@ def test_show_cluster_history_cli_supports_filters_and_fallback(
     assert payload[0]["event_type"] == "assignment_update"
     assert payload[0]["review_owner"] == "editor-b"
     assert payload[0]["review_actor"] == "review-bot"
+
+
+def test_author_knowledge_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(
+        app,
+        ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
+    )
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    runner.invoke(app, ['commit-demo', run_lines['branch_id'], '1', '--database-url', db_url])
+    out = tmp_path / 'author-knowledge.json'
+    export_result = runner.invoke(
+        app,
+        ['export-author-knowledge', run_lines['branch_id'], str(out), '--database-url', db_url],
+    )
+    show_result = runner.invoke(
+        app,
+        ['show-author-knowledge', run_lines['branch_id'], '--database-url', db_url],
+    )
+
+    assert export_result.exit_code == 0
+    assert show_result.exit_code == 0
+    payload = json.loads(out.read_text(encoding='utf-8'))
+    assert payload['contract_version'] == 'author-knowledge.v1'
+    assert 'chapter_cards' in payload
+    assert 'recommended_questions' in payload

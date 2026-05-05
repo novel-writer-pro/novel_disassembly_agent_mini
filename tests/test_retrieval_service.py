@@ -376,3 +376,122 @@ def test_search_branch_public_contract_stays_plain_hit_list(
             "score",
             "keyword_list",
         }
+
+
+def test_entity_exact_route_returns_fact_backed_chapters(tmp_path: Path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        _, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RetrievalService(session, Settings(embedding_backend="stub"))
+        for idx, title, summary, entities in [
+            (1, "命格初现", "卫图觉醒命格", ["卫图", "命格"]),
+            (2, "资源铺垫", "二姑帮卫图筹措资源", ["二姑", "资源"]),
+        ]:
+            artifact = RunService(session).record_chapter_artifact(
+                branch.id,
+                idx,
+                {
+                    "chapter_index": idx,
+                    "normalized_title": title,
+                    "chapter_summary": summary,
+                    "key_entities": entities,
+                    "key_events": [summary],
+                    "continuity_notes": [],
+                    "writer_learning_notes": [],
+                    "unsupported_inferences": [],
+                    "ambiguous_points": [],
+                    "needs_human_review": False,
+                    "dimensions": [],
+                },
+            )
+            service.materialize_for_artifact(artifact.id)
+            from novel_analyzer.services.fact_service import FactService
+            FactService(session).materialize_for_artifact(artifact.id)
+
+        hits = service._entity_exact_route(branch.id, "卫图", limit=5)  # noqa: SLF001
+        assert hits
+        assert hits[0].chapter_index == 1
+        assert "卫图" in hits[0].summary_text or hits[0].title == "命格初现"
+
+
+def test_vector_route_uses_embedding_similarity(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _FakeProvider:
+        def embed_texts(self, texts: list[str]) -> list[list[float]]:
+            _ = texts
+            return [[1.0, 0.0]]
+
+    with _session() as session:
+        doc_1 = RetrievalDocument(
+            branch_id='branch-v',
+            chapter_index=1,
+            title='命格初现',
+            summary_text='卫图觉醒命格',
+            bm25_text='卫图觉醒命格',
+            keyword_list=[],
+            query_hints=[],
+            materialization_status='ready',
+        )
+        doc_2 = RetrievalDocument(
+            branch_id='branch-v',
+            chapter_index=2,
+            title='资源铺垫',
+            summary_text='二姑筹措资源',
+            bm25_text='二姑筹措资源',
+            keyword_list=[],
+            query_hints=[],
+            materialization_status='ready',
+        )
+        session.add_all([doc_1, doc_2])
+        session.flush()
+        chunk_1 = RetrievalChunk(
+            document_id=doc_1.id,
+            chunk_order=1,
+            text='卫图觉醒命格',
+            start_offset=0,
+            end_offset=6,
+            embedding_status='ready',
+            keyword_list=[],
+        )
+        chunk_2 = RetrievalChunk(
+            document_id=doc_2.id,
+            chunk_order=1,
+            text='二姑筹措资源',
+            start_offset=0,
+            end_offset=6,
+            embedding_status='ready',
+            keyword_list=[],
+        )
+        session.add_all([chunk_1, chunk_2])
+        session.flush()
+        session.add_all(
+            [
+                ChunkEmbedding(
+                    chunk_id=chunk_1.id,
+                    model_name='stub',
+                    vector_dim=2,
+                    vector_payload=[1.0, 0.0],
+                    l2_norm=1.0,
+                    status='ready',
+                ),
+                ChunkEmbedding(
+                    chunk_id=chunk_2.id,
+                    model_name='stub',
+                    vector_dim=2,
+                    vector_payload=[0.0, 1.0],
+                    l2_norm=1.0,
+                    status='ready',
+                ),
+            ]
+        )
+        session.commit()
+        monkeypatch.setattr(
+            'novel_analyzer.services.retrieval_service.get_embedding_provider',
+            lambda settings=None: _FakeProvider(),
+        )
+        service = RetrievalService(session, Settings(embedding_backend='stub'))
+        hits = service._vector_route('branch-v', '命格', limit=5)  # noqa: SLF001
+        assert hits
+        assert hits[0].chapter_index == 1
