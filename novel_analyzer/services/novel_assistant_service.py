@@ -355,6 +355,36 @@ class NovelAssistantService:
             "priority_threads": top_threads[:4],
         }
 
+
+    @staticmethod
+    def _feedback_revision_bridge_pack(
+        *,
+        reader_feedback_pack: dict[str, object],
+        editor_revision_pack: dict[str, object],
+    ) -> dict[str, object]:
+        feedback_summary = dict(reader_feedback_pack.get("feedback_summary", {}))
+        revision_lanes = list(editor_revision_pack.get("revision_lanes", []))
+        revision_from_feedback = list(reader_feedback_pack.get("revision_from_feedback", []))
+        signal_counts = dict(feedback_summary.get("signal_counts", {}))
+        bridge_actions = []
+        if signal_counts.get("pacing_slow"):
+            bridge_actions.append("优先走 structure_and_pacing lane，压缩拖沓段落。")
+        if signal_counts.get("logic_confusion"):
+            bridge_actions.append("优先走 logic_and_risk lane，补足因果与过渡证据。")
+        if signal_counts.get("character_ooc"):
+            bridge_actions.append("优先走 logic_and_risk lane，回看角色动机与行为一致性。")
+        if signal_counts.get("reader_hook_strong"):
+            bridge_actions.append("保留并强化 hook，不要在修稿中削弱章尾期待。")
+        if not bridge_actions:
+            bridge_actions.extend(revision_from_feedback[:2])
+        return {
+            "contract_version": "feedback-revision-bridge-pack.v1",
+            "bridge_actions": bridge_actions,
+            "revision_lanes": revision_lanes,
+            "signal_counts": signal_counts,
+            "top_feedback_signals": list(feedback_summary.get("signals", []))[:4],
+        }
+
     @staticmethod
     def _chapter_draft_preparation_pack(
         *,
@@ -493,6 +523,7 @@ class NovelAssistantService:
         *,
         direct_revision_loop_pack: dict[str, object],
         reader_feedback_pack: dict[str, object],
+        feedback_revision_bridge_pack: dict[str, object],
     ) -> dict[str, object]:
         revised_blocks = list(direct_revision_loop_pack.get("revised_blocks", []))
         feedback_hypotheses = list(reader_feedback_pack.get("pain_point_hypotheses", []))
@@ -511,6 +542,7 @@ class NovelAssistantService:
                     ],
                 }
             )
+        bridge_actions = list(feedback_revision_bridge_pack.get("bridge_actions", []))
         guidance_text = "\n".join([
             "# 自动改写指导",
             "- 先锁定 must_keep，再处理逻辑/节奏/对白问题。",
@@ -527,6 +559,7 @@ class NovelAssistantService:
                 "每轮改写后回看 must_keep 是否仍在。",
                 "避免为追求流畅度而丢失 payoff / turning point。",
             ],
+            "feedback_bridge_actions": bridge_actions[:3],
         }
 
 
@@ -1136,6 +1169,10 @@ class NovelAssistantService:
             review_summary=review_summary,
             continuation_pack=continuation_pack,
         )
+        feedback_revision_bridge_pack = self._feedback_revision_bridge_pack(
+            reader_feedback_pack=reader_feedback_pack,
+            editor_revision_pack=editor_revision_pack,
+        )
         chapter_draft_preparation_pack = self._chapter_draft_preparation_pack(
             knowledge_pack=knowledge_pack,
             continuation_pack=continuation_pack,
@@ -1153,6 +1190,7 @@ class NovelAssistantService:
         automatic_rewrite_guidance_pack = self._automatic_rewrite_guidance_pack(
             direct_revision_loop_pack=direct_revision_loop_pack,
             reader_feedback_pack=reader_feedback_pack,
+            feedback_revision_bridge_pack=feedback_revision_bridge_pack,
         )
         automatic_prose_rewrite_pack = self._automatic_prose_rewrite_pack(
             direct_draft_skeleton_pack=direct_draft_skeleton_pack,
@@ -1255,6 +1293,7 @@ class NovelAssistantService:
                 "creation_control",
                 "editor_revision",
                 "reader_feedback_loop",
+                "feedback_revision_bridge",
                 "retrieval_benchmark",
                 "chapter_draft_preparation",
                 "direct_draft_skeleton",
@@ -1294,6 +1333,7 @@ class NovelAssistantService:
             "creation_control_pack": creation_control_pack,
             "editor_revision_pack": editor_revision_pack,
             "reader_feedback_pack": reader_feedback_pack,
+            "feedback_revision_bridge_pack": feedback_revision_bridge_pack,
             "chapter_draft_preparation_pack": chapter_draft_preparation_pack,
             "direct_draft_skeleton_pack": direct_draft_skeleton_pack,
             "direct_revision_loop_pack": direct_revision_loop_pack,

@@ -86,7 +86,8 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['editor_revision_pack']['contract_version'] == 'editor-revision-pack.v1'
         assert pack['reader_feedback_pack']['contract_version'] == 'reader-feedback-pack.v1'
         assert 'feedback_summary' in pack['reader_feedback_pack']
-        assert 'feedback_summary' in pack['reader_feedback_pack']
+        assert pack['feedback_revision_bridge_pack']['contract_version'] == 'feedback-revision-bridge-pack.v1'
+        assert pack['feedback_revision_bridge_pack']['bridge_actions']
         assert pack['chapter_draft_preparation_pack']['contract_version'] == 'chapter-draft-preparation-pack.v1'
         assert pack['chapter_draft_preparation_pack']['scene_outline']
         assert pack['direct_draft_skeleton_pack']['contract_version'] == 'direct-draft-skeleton-pack.v1'
@@ -98,6 +99,7 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['automatic_rewrite_guidance_pack']['contract_version'] == 'automatic-rewrite-guidance-pack.v1'
         assert pack['automatic_rewrite_guidance_pack']['rewrite_steps']
         assert pack['automatic_rewrite_guidance_pack']['guidance_text']
+        assert pack['automatic_rewrite_guidance_pack']['feedback_bridge_actions']
         assert pack['automatic_prose_rewrite_pack']['contract_version'] == 'automatic-prose-rewrite-pack.v1'
         assert pack['automatic_prose_rewrite_pack']['rewritten_blocks']
         assert pack['automatic_prose_rewrite_pack']['rewrite_text']
