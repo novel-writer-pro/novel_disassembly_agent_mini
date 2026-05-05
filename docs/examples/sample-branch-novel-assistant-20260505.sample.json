@@ -70,7 +70,8 @@
     "operator_release_brief",
     "release_ops_runbook",
     "incident_rollback",
-    "postmortem_recovery_record"
+    "postmortem_recovery_record",
+    "recovery_closure_artifact"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -130,7 +131,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 42.01,
+    "avg_raw_latency_ms": 46.31,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -144,8 +145,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 43.01246099930722,
-        "rerank_latency_ms": 0.0054440024541690946,
+        "raw_latency_ms": 51.81818899291102,
+        "rerank_latency_ms": 0.008628005161881447,
         "raw_top_chapters": [
           2,
           1,
@@ -173,8 +174,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 43.617599993012846,
-        "rerank_latency_ms": 0.006057001883164048,
+        "raw_latency_ms": 43.78088600060437,
+        "rerank_latency_ms": 0.005095993401482701,
         "raw_top_chapters": [
           1,
           2,
@@ -202,8 +203,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 39.40447200147901,
-        "rerank_latency_ms": 0.00593099684920162,
+        "raw_latency_ms": 43.33962799864821,
+        "rerank_latency_ms": 0.005440000677481294,
         "raw_top_chapters": [
           10,
           9,
@@ -951,6 +952,21 @@
       "记录 rollback trigger 与 freeze_reason。",
       "记录恢复后的风险/评审快照。",
       "确认问题关闭后再重新进入 freeze/release review。"
+    ]
+  },
+  "recovery_closure_artifact_pack": {
+    "contract_version": "recovery-closure-artifact-pack.v1",
+    "closure_status": "recovery_pending",
+    "closure_summary": "恢复动作仍需持续跟踪。",
+    "closure_record": {
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready"
+    },
+    "closure_checklist": [
+      "确认 rollback trigger / target / freeze reason 已归档。",
+      "确认恢复后快照已重新记录。",
+      "确认是否需要重新进入 release/freeze review。"
     ]
   },
   "audit_conclusion": {
@@ -2951,8 +2967,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 56.96565000107512,
-    "rerank_latency_ms": 0.008378992788493633,
+    "raw_latency_ms": 108.45436698582489,
+    "rerank_latency_ms": 0.008193004759959877,
     "raw_hits": [
       {
         "chapter_index": 2,

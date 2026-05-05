@@ -150,3 +150,8 @@
 - assistant pack 现已提供 `postmortem_recovery_record_pack`。
 - 真实样例中已给出 `recovery_record` 与 `postmortem_summary`。
 - 这让 incident rollback 之后继续接上了事故复盘 / 恢复追踪交付面。
+
+## 25. Recovery closure artifact
+- assistant pack 现已提供 `recovery_closure_artifact_pack`。
+- 真实样例中已给出 `closure_status` 与 `closure_record`。
+- 这让 postmortem / recovery 之后继续接上了恢复完成 / closure 确认交付面。

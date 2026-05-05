@@ -766,6 +766,31 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _recovery_closure_artifact_pack(
+        *,
+        postmortem_recovery_record_pack: dict[str, object],
+        release_decision_freeze_artifact_pack: dict[str, object],
+    ) -> dict[str, object]:
+        recovery_record = dict(postmortem_recovery_record_pack.get("recovery_record", {}))
+        decision = str(release_decision_freeze_artifact_pack.get("decision", "no_go"))
+        closure_status = "recovery_pending" if decision != "go" else "recovery_closed"
+        closure_summary = "恢复动作仍需持续跟踪。"
+        if closure_status == "recovery_closed":
+            closure_summary = "恢复闭环已满足当前条件，可结束本轮 incident recovery。"
+        return {
+            "contract_version": "recovery-closure-artifact-pack.v1",
+            "closure_status": closure_status,
+            "closure_summary": closure_summary,
+            "closure_record": recovery_record,
+            "closure_checklist": [
+                "确认 rollback trigger / target / freeze reason 已归档。",
+                "确认恢复后快照已重新记录。",
+                "确认是否需要重新进入 release/freeze review。",
+            ],
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -977,6 +1002,10 @@ class NovelAssistantService:
             incident_rollback_pack=incident_rollback_pack,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
         )
+        recovery_closure_artifact_pack = self._recovery_closure_artifact_pack(
+            postmortem_recovery_record_pack=postmortem_recovery_record_pack,
+            release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1018,6 +1047,7 @@ class NovelAssistantService:
                 "release_ops_runbook",
                 "incident_rollback",
                 "postmortem_recovery_record",
+                "recovery_closure_artifact",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1049,6 +1079,7 @@ class NovelAssistantService:
             "release_ops_runbook_pack": release_ops_runbook_pack,
             "incident_rollback_pack": incident_rollback_pack,
             "postmortem_recovery_record_pack": postmortem_recovery_record_pack,
+            "recovery_closure_artifact_pack": recovery_closure_artifact_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

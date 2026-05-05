@@ -338,6 +338,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'release_ops_runbook_pack': {'contract_version': 'release-ops-runbook-pack.v1', 'runbook_steps': ['x'], 'rollback_note': 'x'},
                 'incident_rollback_pack': {'contract_version': 'incident-rollback-pack.v1', 'rollback_steps': ['x'], 'rollback_target': 'safe'},
                 'postmortem_recovery_record_pack': {'contract_version': 'postmortem-recovery-record-pack.v1', 'recovery_record': {}, 'postmortem_summary': 'x'},
+                'recovery_closure_artifact_pack': {'contract_version': 'recovery-closure-artifact-pack.v1', 'closure_status': 'recovery_pending', 'closure_record': {}},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -384,6 +385,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'release_ops_runbook_pack' in payload
     assert 'incident_rollback_pack' in payload
     assert 'postmortem_recovery_record_pack' in payload
+    assert 'recovery_closure_artifact_pack' in payload
 
 
 
