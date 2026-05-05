@@ -122,6 +122,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['incident_rollback_pack']['contract_version'] == 'incident-rollback-pack.v1'
         assert pack['incident_rollback_pack']['rollback_steps']
         assert pack['incident_rollback_pack']['rollback_target']
+        assert pack['postmortem_recovery_record_pack']['contract_version'] == 'postmortem-recovery-record-pack.v1'
+        assert pack['postmortem_recovery_record_pack']['recovery_record']
+        assert pack['postmortem_recovery_record_pack']['postmortem_summary']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

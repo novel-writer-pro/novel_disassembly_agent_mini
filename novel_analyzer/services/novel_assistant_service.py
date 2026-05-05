@@ -741,6 +741,31 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _postmortem_recovery_record_pack(
+        *,
+        incident_rollback_pack: dict[str, object],
+        release_decision_freeze_artifact_pack: dict[str, object],
+    ) -> dict[str, object]:
+        freeze_artifact = dict(release_decision_freeze_artifact_pack.get("freeze_artifact", {}))
+        rollback_trigger = str(incident_rollback_pack.get("rollback_trigger", "")).strip()
+        recovery_record = {
+            "rollback_trigger": rollback_trigger,
+            "rollback_target": incident_rollback_pack.get("rollback_target", ""),
+            "freeze_reason": freeze_artifact.get("freeze_reason", ""),
+        }
+        return {
+            "contract_version": "postmortem-recovery-record-pack.v1",
+            "recovery_record": recovery_record,
+            "postmortem_summary": "已记录 rollback trigger / target / freeze reason，可用于事故复盘与恢复追踪。",
+            "recovery_checklist": [
+                "记录 rollback trigger 与 freeze_reason。",
+                "记录恢复后的风险/评审快照。",
+                "确认问题关闭后再重新进入 freeze/release review。",
+            ],
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -948,6 +973,10 @@ class NovelAssistantService:
             release_ops_runbook_pack=release_ops_runbook_pack,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
         )
+        postmortem_recovery_record_pack = self._postmortem_recovery_record_pack(
+            incident_rollback_pack=incident_rollback_pack,
+            release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -988,6 +1017,7 @@ class NovelAssistantService:
                 "operator_release_brief",
                 "release_ops_runbook",
                 "incident_rollback",
+                "postmortem_recovery_record",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1018,6 +1048,7 @@ class NovelAssistantService:
             "operator_release_brief_pack": operator_release_brief_pack,
             "release_ops_runbook_pack": release_ops_runbook_pack,
             "incident_rollback_pack": incident_rollback_pack,
+            "postmortem_recovery_record_pack": postmortem_recovery_record_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

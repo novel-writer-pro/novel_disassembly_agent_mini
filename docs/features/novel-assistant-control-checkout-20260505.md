@@ -145,3 +145,8 @@
 - assistant pack 现已提供 `incident_rollback_pack`。
 - 真实样例中已给出 `rollback_trigger`、`rollback_target` 与 `rollback_steps`。
 - 这让 release ops runbook 之后继续接上了事故回退/故障处置交付面。
+
+## 24. Postmortem / recovery record
+- assistant pack 现已提供 `postmortem_recovery_record_pack`。
+- 真实样例中已给出 `recovery_record` 与 `postmortem_summary`。
+- 这让 incident rollback 之后继续接上了事故复盘 / 恢复追踪交付面。
