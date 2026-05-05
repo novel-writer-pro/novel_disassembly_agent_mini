@@ -599,6 +599,7 @@ class NovelAssistantService:
             "bundle_summary": "样例、retrieval benchmark、release gate 已汇总，可用于 release criteria review。",
         }
 
+
     @staticmethod
     def _preparation_guidance(
         *,
