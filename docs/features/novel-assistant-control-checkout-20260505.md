@@ -135,3 +135,8 @@
 - assistant pack 现已提供 `operator_release_brief_pack`。
 - 真实样例中已给出 `operator_status` 与 `brief_summary`。
 - 这让 handoff / approval 之后继续接上了运营/发布负责人的简明 brief 面。
+
+## 22. Release ops runbook
+- assistant pack 现已提供 `release_ops_runbook_pack`。
+- 真实样例中已给出 `runbook_steps` 与 `blockers`。
+- 这让 operator brief 之后继续接上了可执行的发布操作清单。

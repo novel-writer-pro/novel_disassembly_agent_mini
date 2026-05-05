@@ -67,7 +67,8 @@
     "sample_based_release_criteria",
     "release_decision_freeze_artifact",
     "handoff_approval_record",
-    "operator_release_brief"
+    "operator_release_brief",
+    "release_ops_runbook"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -127,7 +128,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 53.93,
+    "avg_raw_latency_ms": 49.82,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -141,8 +142,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 59.75677800597623,
-        "rerank_latency_ms": 0.006528003723360598,
+        "raw_latency_ms": 40.310136988409795,
+        "rerank_latency_ms": 0.011586002074182034,
         "raw_top_chapters": [
           2,
           1,
@@ -170,8 +171,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 57.741610988159664,
-        "rerank_latency_ms": 0.005032008630223572,
+        "raw_latency_ms": 63.11748099687975,
+        "rerank_latency_ms": 0.00790400372352451,
         "raw_top_chapters": [
           1,
           2,
@@ -199,8 +200,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 44.28224000730552,
-        "rerank_latency_ms": 0.0046800123527646065,
+        "raw_latency_ms": 46.02906700165477,
+        "rerank_latency_ms": 0.00747399462852627,
         "raw_top_chapters": [
           10,
           9,
@@ -908,6 +909,21 @@
       "再看 sample/retrieval/release criteria 是否齐备。",
       "最后确认是否进入人工 approval 或继续回修。"
     ]
+  },
+  "release_ops_runbook_pack": {
+    "contract_version": "release-ops-runbook-pack.v1",
+    "runbook_status": "blocked",
+    "runbook_steps": [
+      "检查 operator brief 与 freeze_artifact 是否一致。",
+      "确认 release gate / sample criteria / risk evidence 的最新快照。",
+      "若 decision=no_go，则生成阻断清单并停止发布动作。",
+      "若 decision=go，则进入人工 approval 与 release review。"
+    ],
+    "blockers": [
+      "release_gate_or_sample_criteria_not_ready"
+    ],
+    "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+    "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -2907,8 +2923,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 70.34896600816865,
-    "rerank_latency_ms": 0.007772003300487995,
+    "raw_latency_ms": 63.72378800006118,
+    "rerank_latency_ms": 0.008279996109195054,
     "raw_hits": [
       {
         "chapter_index": 2,

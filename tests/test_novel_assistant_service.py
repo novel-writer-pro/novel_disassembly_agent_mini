@@ -116,6 +116,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['operator_release_brief_pack']['contract_version'] == 'operator-release-brief-pack.v1'
         assert pack['operator_release_brief_pack']['brief_summary']
         assert pack['operator_release_brief_pack']['operator_status']
+        assert pack['release_ops_runbook_pack']['contract_version'] == 'release-ops-runbook-pack.v1'
+        assert pack['release_ops_runbook_pack']['runbook_steps']
+        assert 'rollback_note' in pack['release_ops_runbook_pack']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None
