@@ -7,6 +7,7 @@
 - `docs/README.md` 已同步把这份手册挂到使用者主路径，方便后续手动测试与商业化验收。
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
+- 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
 
 ## 2026-05-05
 

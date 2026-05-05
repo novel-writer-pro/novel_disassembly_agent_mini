@@ -68,6 +68,12 @@ export NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME=deepseek-v4-flash
 mkdir -p runs/manual_eval/<novel_slug>/{artifacts,notes,exports}
 ```
 
+也可以直接使用一键脚本：
+
+```bash
+python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>
+```
+
 建议至少保留：
 - `branch-report.md`
 - `novel-assistant.json`

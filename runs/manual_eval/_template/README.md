@@ -8,6 +8,12 @@
 cp -R runs/manual_eval/_template runs/manual_eval/<novel_slug>
 ```
 
+也可以直接执行：
+
+```bash
+python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>
+```
+
 或：
 
 ```bash

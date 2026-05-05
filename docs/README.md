@@ -82,6 +82,7 @@
 - 第 5 步：用人工测试记录模板沉淀结论与薄弱点
 - 第 6 步：试跑后用模板做复盘
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
+- 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 
 ---
 
