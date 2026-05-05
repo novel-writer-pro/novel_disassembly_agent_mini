@@ -390,6 +390,46 @@ class NovelAssistantService:
             "blocking_risks": list(chapter_draft_preparation_pack.get("blocking_risks", []))[:3],
         }
 
+
+    @staticmethod
+    def _direct_revision_loop_pack(
+        *,
+        direct_draft_skeleton_pack: dict[str, object],
+        editor_revision_pack: dict[str, object],
+    ) -> dict[str, object]:
+        scene_blocks = list(direct_draft_skeleton_pack.get("scene_blocks", []))
+        revision_lanes = list(editor_revision_pack.get("revision_lanes", []))
+        revised_blocks = []
+        for item in scene_blocks[:3]:
+            if not isinstance(item, dict):
+                continue
+            revised_blocks.append(
+                {
+                    "scene_index": item.get("scene_index"),
+                    "revision_goal": "先修逻辑/风险，再修节奏/对白",
+                    "must_keep": item.get("must_include", [])[:3],
+                    "revision_notes": item.get("risk_notes", [])[:2],
+                }
+            )
+        revision_text = "\n".join([
+            f"# 修稿目标：{direct_draft_skeleton_pack.get('draft_title', '')}",
+            "- 先处理逻辑与风险，再处理风格与节奏。",
+            "- 每场都检查 must_keep / revision_notes / chapter continuity。",
+            f"- 草骨架摘要：{str(direct_draft_skeleton_pack.get('draft_text', ''))[:240]}",
+        ]).strip()
+        return {
+            "contract_version": "direct-revision-loop-pack.v1",
+            "revision_text": revision_text,
+            "revision_lanes": revision_lanes,
+            "revised_blocks": revised_blocks,
+            "revision_checklist": [
+                "先修逻辑、规则、关系连续性。",
+                "再修场景功能、节奏与章尾钩子。",
+                "最后修文风、对白与细节密度。",
+            ],
+            "blocking_risks": list(direct_draft_skeleton_pack.get("blocking_risks", []))[:3],
+        }
+
     @staticmethod
     def _preparation_guidance(
         *,
@@ -552,6 +592,10 @@ class NovelAssistantService:
         direct_draft_skeleton_pack = self._direct_draft_skeleton_pack(
             chapter_draft_preparation_pack=chapter_draft_preparation_pack,
         )
+        direct_revision_loop_pack = self._direct_revision_loop_pack(
+            direct_draft_skeleton_pack=direct_draft_skeleton_pack,
+            editor_revision_pack=editor_revision_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -581,6 +625,7 @@ class NovelAssistantService:
                 "retrieval_benchmark",
                 "chapter_draft_preparation",
                 "direct_draft_skeleton",
+                "direct_revision_loop",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -600,6 +645,7 @@ class NovelAssistantService:
             "reader_feedback_pack": reader_feedback_pack,
             "chapter_draft_preparation_pack": chapter_draft_preparation_pack,
             "direct_draft_skeleton_pack": direct_draft_skeleton_pack,
+            "direct_revision_loop_pack": direct_revision_loop_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

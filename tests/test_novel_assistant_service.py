@@ -89,6 +89,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['direct_draft_skeleton_pack']['contract_version'] == 'direct-draft-skeleton-pack.v1'
         assert pack['direct_draft_skeleton_pack']['scene_blocks']
         assert pack['direct_draft_skeleton_pack']['draft_text']
+        assert pack['direct_revision_loop_pack']['contract_version'] == 'direct-revision-loop-pack.v1'
+        assert pack['direct_revision_loop_pack']['revised_blocks']
+        assert pack['direct_revision_loop_pack']['revision_text']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

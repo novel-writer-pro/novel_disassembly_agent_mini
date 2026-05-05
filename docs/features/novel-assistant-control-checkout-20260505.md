@@ -90,3 +90,8 @@
 - assistant pack 现已提供 `direct_draft_skeleton_pack`。
 - 真实样例中可直接看到 3 段 scene blocks 与 draft_text 草骨架。
 - 这让 preparation surface 向真正可执行的起草输入又推进了一层。
+
+## 13. Direct revision loop
+- assistant pack 现已提供 `direct_revision_loop_pack`。
+- 真实样例中已给出 `revision_text` 与 3 个 `revised_blocks`。
+- 这让 draft skeleton 后面直接接上了结构化修稿闭环。

@@ -58,7 +58,8 @@
     "reader_feedback_loop",
     "retrieval_benchmark",
     "chapter_draft_preparation",
-    "direct_draft_skeleton"
+    "direct_draft_skeleton",
+    "direct_revision_loop"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -118,7 +119,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 52.15,
+    "avg_raw_latency_ms": 60.0,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -132,8 +133,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 45.10128700349014,
-        "rerank_latency_ms": 0.006550006219185889,
+        "raw_latency_ms": 63.097706995904446,
+        "rerank_latency_ms": 0.00490799720864743,
         "raw_top_chapters": [
           2,
           1,
@@ -161,8 +162,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 62.06363599631004,
-        "rerank_latency_ms": 0.00591299613006413,
+        "raw_latency_ms": 43.67427599208895,
+        "rerank_latency_ms": 0.00498400186188519,
         "raw_top_chapters": [
           1,
           2,
@@ -190,8 +191,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 49.271333002252504,
-        "rerank_latency_ms": 0.007041991921141744,
+        "raw_latency_ms": 73.22222599759698,
+        "rerank_latency_ms": 0.005842986865900457,
         "raw_top_chapters": [
           10,
           9,
@@ -626,6 +627,69 @@
       "先按 chapter_goal / core_conflict 写出场景草骨架，再补对白与细节。",
       "优先兑现 payoff_target 与 turning_point，不要只推进表面事件。",
       "写完后对照 risk_notes / style_axes / rule_constraints 做一次自检。"
+    ],
+    "blocking_risks": [
+      "存在 1 个 needs_review 问题簇，草稿前应优先确认。",
+      "存在 10 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "direct_revision_loop_pack": {
+    "contract_version": "direct-revision-loop-pack.v1",
+    "revision_text": "# 修稿目标：完成赎身/脱籍并争取进入更高身份路径\n- 先处理逻辑与风险，再处理风格与节奏。\n- 每场都检查 must_keep / revision_notes / chapter continuity。\n- 草骨架摘要：目标：完成赎身/脱籍并争取进入更高身份路径\n核心冲突：身份与身契限制\n兑现点：保持家庭与婚后协作稳定\n转折点：关键关系带来机会，但同时抬高代价\n### 场景1: 承接上一章结果并明确本章目标\n- 必须包含：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 注意：不要无铺垫升级战力；不要引入未准备的大设定\n- 草写提示：先写行动推进，再补情绪与对白。\n###",
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "revised_blocks": [
+      {
+        "scene_index": 1,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "revision_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "revision_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "revision_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "revision_checklist": [
+      "先修逻辑、规则、关系连续性。",
+      "再修场景功能、节奏与章尾钩子。",
+      "最后修文风、对白与细节密度。"
     ],
     "blocking_risks": [
       "存在 1 个 needs_review 问题簇，草稿前应优先确认。",
@@ -2630,8 +2694,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 57.8851210011635,
-    "rerank_latency_ms": 0.010634990758262575,
+    "raw_latency_ms": 66.55321599100716,
+    "rerank_latency_ms": 0.008445000275969505,
     "raw_hits": [
       {
         "chapter_index": 2,
