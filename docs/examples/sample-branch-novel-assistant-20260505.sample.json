@@ -62,7 +62,8 @@
     "direct_revision_loop",
     "automatic_rewrite_guidance",
     "automatic_prose_rewrite",
-    "final_draft_candidate"
+    "final_draft_candidate",
+    "publish_ready_release"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -122,7 +123,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 60.91,
+    "avg_raw_latency_ms": 49.55,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -136,8 +137,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 77.3901520005893,
-        "rerank_latency_ms": 0.005969006451778114,
+        "raw_latency_ms": 58.70074199629016,
+        "rerank_latency_ms": 0.005149995558895171,
         "raw_top_chapters": [
           2,
           1,
@@ -165,8 +166,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 48.551069005043246,
-        "rerank_latency_ms": 0.00599399209022522,
+        "raw_latency_ms": 39.477084996178746,
+        "rerank_latency_ms": 0.006287998985499144,
         "raw_top_chapters": [
           1,
           2,
@@ -194,8 +195,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 56.785852008033544,
-        "rerank_latency_ms": 0.008022994734346867,
+        "raw_latency_ms": 50.47741600719746,
+        "rerank_latency_ms": 0.005541995051316917,
         "raw_top_chapters": [
           10,
           9,
@@ -828,6 +829,21 @@
       "候选稿输出后先过 review_gate，再进入人工/模型复核。",
       "如果 risk_card_count 较高，不要直接进入最终定稿。"
     ]
+  },
+  "publish_ready_release_pack": {
+    "contract_version": "publish-ready-release-pack.v1",
+    "release_gate": {
+      "candidate_review_ready": false,
+      "whole_book_ready": true,
+      "ready_for_release": false
+    },
+    "release_summary": "候选稿仍需复核后再发布。",
+    "release_checklist": [
+      "先确认 candidate_review_ready。",
+      "再确认 whole_book_ready 与主链样例完整。",
+      "发布前保留 review_gate / risk evidence 作为回溯依据。"
+    ],
+    "candidate_title": "完成赎身/脱籍并争取进入更高身份路径"
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -2827,8 +2843,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 60.05260700476356,
-    "rerank_latency_ms": 0.008091010386124253,
+    "raw_latency_ms": 57.157868999638595,
+    "rerank_latency_ms": 0.010232004569843411,
     "raw_hits": [
       {
         "chapter_index": 2,

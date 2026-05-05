@@ -101,6 +101,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['final_draft_candidate_pack']['contract_version'] == 'final-draft-candidate-pack.v1'
         assert pack['final_draft_candidate_pack']['candidate_blocks']
         assert pack['final_draft_candidate_pack']['candidate_text']
+        assert pack['publish_ready_release_pack']['contract_version'] == 'publish-ready-release-pack.v1'
+        assert 'release_gate' in pack['publish_ready_release_pack']
+        assert pack['publish_ready_release_pack']['release_summary']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

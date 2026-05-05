@@ -330,6 +330,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'automatic_rewrite_guidance_pack': {'contract_version': 'automatic-rewrite-guidance-pack.v1', 'rewrite_steps': [{}], 'guidance_text': 'x'},
                 'automatic_prose_rewrite_pack': {'contract_version': 'automatic-prose-rewrite-pack.v1', 'rewritten_blocks': [{}], 'rewrite_text': 'x'},
                 'final_draft_candidate_pack': {'contract_version': 'final-draft-candidate-pack.v1', 'candidate_blocks': [{}], 'candidate_text': 'x'},
+                'publish_ready_release_pack': {'contract_version': 'publish-ready-release-pack.v1', 'release_gate': {}, 'release_summary': 'x'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -368,6 +369,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'automatic_rewrite_guidance_pack' in payload
     assert 'automatic_prose_rewrite_pack' in payload
     assert 'final_draft_candidate_pack' in payload
+    assert 'publish_ready_release_pack' in payload
 
 
 

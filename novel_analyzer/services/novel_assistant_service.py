@@ -544,6 +544,36 @@ class NovelAssistantService:
             ],
         }
 
+
+    @staticmethod
+    def _publish_ready_release_pack(
+        *,
+        final_draft_candidate_pack: dict[str, object],
+        whole_book_readiness_summary: dict[str, object],
+    ) -> dict[str, object]:
+        review_gate = dict(final_draft_candidate_pack.get("review_gate", {}))
+        ready_for_candidate_review = bool(review_gate.get("ready_for_candidate_review"))
+        whole_book_ready = bool(whole_book_readiness_summary.get("ready_for_whole_book"))
+        release_gate = {
+            "candidate_review_ready": ready_for_candidate_review,
+            "whole_book_ready": whole_book_ready,
+            "ready_for_release": bool(ready_for_candidate_review and whole_book_ready),
+        }
+        release_summary = "候选稿仍需复核后再发布。"
+        if release_gate["ready_for_release"]:
+            release_summary = "候选稿已满足当前发布前置条件，可进入 release review。"
+        return {
+            "contract_version": "publish-ready-release-pack.v1",
+            "release_gate": release_gate,
+            "release_summary": release_summary,
+            "release_checklist": [
+                "先确认 candidate_review_ready。",
+                "再确认 whole_book_ready 与主链样例完整。",
+                "发布前保留 review_gate / risk evidence 作为回溯依据。",
+            ],
+            "candidate_title": final_draft_candidate_pack.get("candidate_title", ""),
+        }
+
     @staticmethod
     def _preparation_guidance(
         *,
@@ -723,6 +753,10 @@ class NovelAssistantService:
             risk_summary=risk_summary,
             review_summary=review_summary,
         )
+        publish_ready_release_pack = self._publish_ready_release_pack(
+            final_draft_candidate_pack=final_draft_candidate_pack,
+            whole_book_readiness_summary=readiness_summary,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -756,6 +790,7 @@ class NovelAssistantService:
                 "automatic_rewrite_guidance",
                 "automatic_prose_rewrite",
                 "final_draft_candidate",
+                "publish_ready_release",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -779,6 +814,7 @@ class NovelAssistantService:
             "automatic_rewrite_guidance_pack": automatic_rewrite_guidance_pack,
             "automatic_prose_rewrite_pack": automatic_prose_rewrite_pack,
             "final_draft_candidate_pack": final_draft_candidate_pack,
+            "publish_ready_release_pack": publish_ready_release_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
