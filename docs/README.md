@@ -24,6 +24,7 @@
 ### 按架构专题
 - [`./architecture/README.md`](./architecture/README.md)
 - [`./architecture/ai-novel-system-blueprint.md`](./architecture/ai-novel-system-blueprint.md)
+- [`./architecture/independent-agent-knowledge-and-retrieval.md`](./architecture/independent-agent-knowledge-and-retrieval.md)
 - [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
 - [`./architecture/risk-audit-embedding-pgvector-implementation-spec.md`](./architecture/risk-audit-embedding-pgvector-implementation-spec.md)
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
@@ -39,12 +40,14 @@
 - [`./features/risk-semantic-checkout-20260504.md`](./features/risk-semantic-checkout-20260504.md)
 - [`./features/imitation-checkout-20260504.md`](./features/imitation-checkout-20260504.md)
 - [`./features/eval-governance-checkout-20260504.md`](./features/eval-governance-checkout-20260504.md)
+- [`./features/independent-agent-capability-checkout-20260505.md`](./features/independent-agent-capability-checkout-20260505.md)
 - [`./product/ai-novel-product-strategy.md`](./product/ai-novel-product-strategy.md)
 - [`./product/ai-novel-capability-scorecard.md`](./product/ai-novel-capability-scorecard.md)
 - [`./strategy/ai-novel-system-benchmark.md`](./strategy/ai-novel-system-benchmark.md)
 - [`./strategy/docs-governance-and-handoff-checklist.md`](./strategy/docs-governance-and-handoff-checklist.md)
 - [`./strategy/docs-information-architecture-guide.md`](./strategy/docs-information-architecture-guide.md)
 - [`./strategy/docs-faq-and-consolidation-guide.md`](./strategy/docs-faq-and-consolidation-guide.md)
+- [`./strategy/capability-roadmap-and-deliverables.md`](./strategy/capability-roadmap-and-deliverables.md)
 - [`./whitepaper/ai-novel-system-whitepaper.md`](./whitepaper/ai-novel-system-whitepaper.md)
 - [`./whitepaper/ai-novel-system-whitepaper-v2.md`](./whitepaper/ai-novel-system-whitepaper-v2.md)
 

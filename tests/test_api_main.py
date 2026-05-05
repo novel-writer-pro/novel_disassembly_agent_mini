@@ -383,8 +383,10 @@ def test_docs_indexes_point_to_capability_checkouts_and_governance_guides() -> N
         "./features/risk-semantic-checkout-20260504.md",
         "./features/imitation-checkout-20260504.md",
         "./features/eval-governance-checkout-20260504.md",
+        "./features/independent-agent-capability-checkout-20260505.md",
         "./strategy/docs-governance-and-handoff-checklist.md",
         "./strategy/docs-information-architecture-guide.md",
+        "./strategy/capability-roadmap-and-deliverables.md",
     ]:
         assert needle in readme
 
@@ -393,10 +395,13 @@ def test_docs_indexes_point_to_capability_checkouts_and_governance_guides() -> N
     assert "feature-checkout-template.md" in maintainer
     assert "docs-information-architecture-guide.md" in maintainer
     assert "retrieval-checkout-20260504.md" in backend
+    assert "independent-agent-capability-checkout-20260505.md" in backend
     assert "risk-semantic-checkout-20260504.md" in backend
     assert "imitation-checkout-20260504.md" in backend
     assert "eval-governance-checkout-20260504.md" in backend
+    assert "independent-agent-knowledge-and-retrieval.md" in readme
     assert "retrieval-checkout-20260504.md" in features
+    assert "independent-agent-capability-checkout-20260505.md" in features
     assert "risk-semantic-checkout-20260504.md" in features
     assert "imitation-checkout-20260504.md" in features
     assert "eval-governance-checkout-20260504.md" in features
