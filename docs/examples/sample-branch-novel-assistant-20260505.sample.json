@@ -132,7 +132,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 49.92,
+    "avg_raw_latency_ms": 74.2,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -146,8 +146,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 40.77883399440907,
-        "rerank_latency_ms": 0.007465991075150669,
+        "raw_latency_ms": 114.7498810023535,
+        "rerank_latency_ms": 0.006157002644613385,
         "raw_top_chapters": [
           2,
           1,
@@ -175,8 +175,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 54.95824399986304,
-        "rerank_latency_ms": 0.0076160067692399025,
+        "raw_latency_ms": 64.93073899764568,
+        "rerank_latency_ms": 0.005664012860506773,
         "raw_top_chapters": [
           1,
           2,
@@ -204,8 +204,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 54.03650899825152,
-        "rerank_latency_ms": 0.006481001037172973,
+        "raw_latency_ms": 42.91187699709553,
+        "rerank_latency_ms": 0.0051879906095564365,
         "raw_top_chapters": [
           10,
           9,
@@ -2978,8 +2978,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 70.62371099891607,
-    "rerank_latency_ms": 0.008326998795382679,
+    "raw_latency_ms": 93.8679940009024,
+    "rerank_latency_ms": 0.009017996490001678,
     "raw_hits": [
       {
         "chapter_index": 2,
