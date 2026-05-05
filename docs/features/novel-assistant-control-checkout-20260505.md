@@ -205,3 +205,7 @@
 - assistant pack 现已提供 `final_release_archive_pack`。
 - CLI 已支持 `export-final-release-archive`。
 - 样例：`sample-branch-final-release-archive-20260505.sample.json`。
+
+## 36. Release delivery archive index
+- 已新增 `release-delivery-archive-index-20260505.md`。
+- 用于集中导航 candidate / governance / archive / feedback / whole-book 样例。

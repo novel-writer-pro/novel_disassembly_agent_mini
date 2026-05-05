@@ -184,6 +184,7 @@
 30. [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
 
 ### 交付与维护类文档
+0. [`./release-delivery-archive-index-20260505.md`](./release-delivery-archive-index-20260505.md)
 1. [`./final-handoff.md`](./final-handoff.md)
 2. [`./release-handoff-brief.md`](./release-handoff-brief.md)
 3. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
