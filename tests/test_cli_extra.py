@@ -340,3 +340,44 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'whole_book_readiness_summary' in payload
     assert 'sample_evidence_summary' in payload
     assert 'preparation_guidance' in payload
+
+
+
+def test_export_retrieval_benchmark_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(
+        app,
+        ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
+    )
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    class _FakeRetrievalService:
+        def search_branch_with_diagnostics(self, branch_id: str, query: str, limit: int) -> RetrievalSearchDiagnostics:
+            return RetrievalSearchDiagnostics(
+                query=query,
+                raw_hits=[RetrievalHit(chapter_index=1, title='命格初现', summary_text='卫图觉醒命格', score=1.2, keyword_list=['卫图'])],
+                reranked_hits=[RetrievalHit(chapter_index=1, title='命格初现', summary_text='卫图觉醒命格', score=0.9, keyword_list=['卫图'])],
+                rerank_applied=True,
+                fusion_applied=True,
+                route_counts={'entity_exact': 1},
+                route_diagnostics=[RetrievalRouteDiagnostics(route='entity_exact', hit_count=1, latency_ms=1.5)],
+                raw_latency_ms=3.0,
+                rerank_latency_ms=8.0,
+            )
+
+    monkeypatch.setattr('novel_analyzer.cli.app._retrieval_service', lambda session, settings: _FakeRetrievalService())
+    out = tmp_path / 'retrieval-benchmark.json'
+    result = runner.invoke(
+        app,
+        ['export-retrieval-benchmark', run_lines['branch_id'], str(out), '--query', '卫图', '--query', '命格', '--database-url', db_url],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(out.read_text(encoding='utf-8'))
+    assert payload['contract_version'] == 'retrieval-benchmark.v1'
+    assert len(payload['queries']) == 2

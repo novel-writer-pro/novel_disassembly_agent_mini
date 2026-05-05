@@ -14,6 +14,9 @@ from novel_analyzer.database.models import ChapterArtifact, FactRecord, RunBranc
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.services.author_knowledge_service import AuthorKnowledgeService
 from novel_analyzer.services.export_service import ExportService
+from novel_analyzer.domain.schemas import ChapterPlanningIntent
+from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+from novel_analyzer.services.next_chapter_planner_service import NextChapterPlannerService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.run_service import RunService
@@ -30,6 +33,8 @@ class NovelAssistantService:
         self.retrieval_service = RetrievalService(session, self.settings)
         self.qa_service = BranchQAService(session, self.settings)
         self.author_knowledge = AuthorKnowledgeService(session)
+        self.next_chapter_planner = NextChapterPlannerService(session)
+        self.chapter_imitation = ChapterImitationService(session, self.settings)
 
     def _sample_evidence_summary(self) -> dict[str, object]:
         sample_paths = [
@@ -179,6 +184,24 @@ class NovelAssistantService:
             review_needs_count=int(review_summary.get("needs_review_count", 0) or 0),
             risk_card_count=int(risk_summary.get("risk_card_count", 0) or 0),
         )
+        continuation_pack = None
+        imitation_pack = None
+        if chapter_count > 0:
+            latest_chapter = int(knowledge_pack.get("chapter_span", {}).get("max", 0) or 0)
+            if latest_chapter > 0:
+                intent = ChapterPlanningIntent(
+                    primary_goal="延续当前主线并优先处理高价值未解线程",
+                    emphasis=["连续性", "关系推进", "规则一致性"],
+                    forbidden_moves=["不要无铺垫升级战力", "不要引入未准备的大设定"],
+                    preferred_tone="克制务实",
+                    pace="steady",
+                )
+                continuation_pack = self.next_chapter_planner.build_plan(branch_id, intent=intent).model_dump()
+                imitation_pack = self.chapter_imitation.build_imitation_plan(
+                    branch_id,
+                    source_chapter_index=latest_chapter,
+                    target_goal="延续当前主线并保持人物/规则连续性",
+                ).model_dump()
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -210,6 +233,8 @@ class NovelAssistantService:
             "whole_book_readiness_summary": readiness_summary,
             "sample_evidence_summary": sample_evidence_summary,
             "preparation_guidance": preparation_guidance,
+            "continuation_pack": continuation_pack,
+            "imitation_pack": imitation_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

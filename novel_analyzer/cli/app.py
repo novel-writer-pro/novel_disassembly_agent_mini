@@ -893,6 +893,43 @@ def export_search_branch_diagnostics(
 
 
 @app.command()
+def export_retrieval_benchmark(
+    branch_id: str,
+    output_path: Path,
+    query: list[str] = typer.Option([], "--query"),
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export a multi-query retrieval benchmark bundle for one branch."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    queries = query or ["卫图 命格", "二姑 养生功", "资源 婚事"]
+    with factory() as session:
+        service = _retrieval_service(session, settings)
+        results = []
+        for item in queries:
+            payload = service.search_branch_with_diagnostics(branch_id, item, limit)
+            results.append({
+                "query": payload.query,
+                "fusion_applied": payload.fusion_applied,
+                "rerank_applied": payload.rerank_applied,
+                "route_counts": payload.route_counts or {},
+                "raw_latency_ms": payload.raw_latency_ms,
+                "rerank_latency_ms": payload.rerank_latency_ms,
+                "top_raw_chapters": [hit.chapter_index for hit in payload.raw_hits[:limit]],
+                "top_reranked_chapters": [hit.chapter_index for hit in payload.reranked_hits[:limit]],
+            })
+        output = {
+            "contract_version": "retrieval-benchmark.v1",
+            "branch_id": branch_id,
+            "queries": results,
+        }
+        output_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"retrieval_benchmark_path={output_path}")
+
+
+@app.command()
 def ask_branch(
     branch_id: str,
     question: str,

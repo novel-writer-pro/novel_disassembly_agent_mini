@@ -73,6 +73,8 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['preparation_guidance']['next_chapter_preparation']
         assert pack['preparation_guidance']['imitation_preparation']
         assert pack['preparation_guidance']['risk_gate_preflight']
+        assert pack['continuation_pack'] is not None
+        assert pack['imitation_pack'] is not None
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None
