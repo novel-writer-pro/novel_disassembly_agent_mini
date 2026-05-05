@@ -1001,7 +1001,9 @@ def export_branch_qa_context(
 @app.command()
 def show_author_knowledge(
     branch_id: str,
+    from_chapter_index: int | None = None,
     upto_chapter_index: int | None = None,
+    focus_label: str = "",
     database_url: str | None = None,
 ) -> None:
     """Show the author-facing branch knowledge pack."""
@@ -1011,7 +1013,9 @@ def show_author_knowledge(
     with factory() as session:
         payload = _author_knowledge_service(session).build_branch_knowledge_pack(
             branch_id,
+            from_chapter_index=from_chapter_index,
             upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
         )
         echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
@@ -1020,7 +1024,9 @@ def show_author_knowledge(
 def export_author_knowledge(
     branch_id: str,
     output_path: Path,
+    from_chapter_index: int | None = None,
     upto_chapter_index: int | None = None,
+    focus_label: str = "",
     database_url: str | None = None,
 ) -> None:
     """Export the author-facing branch knowledge pack to JSON."""
@@ -1030,7 +1036,9 @@ def export_author_knowledge(
     with factory() as session:
         payload = _author_knowledge_service(session).build_branch_knowledge_pack(
             branch_id,
+            from_chapter_index=from_chapter_index,
             upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
         )
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         echo(f"author_knowledge_path={output_path}")

@@ -174,4 +174,5 @@ def test_author_knowledge_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     payload = json.loads(out.read_text(encoding='utf-8'))
     assert payload['contract_version'] == 'author-knowledge.v1'
     assert 'chapter_cards' in payload
+    assert 'knowledge_index' in payload
     assert 'recommended_questions' in payload
