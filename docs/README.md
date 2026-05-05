@@ -45,6 +45,7 @@
 - [`./features/independent-agent-capability-checkout-20260505.md`](./features/independent-agent-capability-checkout-20260505.md)
 - [`./product/ai-novel-product-strategy.md`](./product/ai-novel-product-strategy.md)
 - [`./product/ai-novel-capability-scorecard.md`](./product/ai-novel-capability-scorecard.md)
+- [`./product/ai-novel-capability-map.md`](./product/ai-novel-capability-map.md)
 - [`./strategy/ai-novel-system-benchmark.md`](./strategy/ai-novel-system-benchmark.md)
 - [`./strategy/docs-governance-and-handoff-checklist.md`](./strategy/docs-governance-and-handoff-checklist.md)
 - [`./strategy/docs-information-architecture-guide.md`](./strategy/docs-information-architecture-guide.md)

@@ -355,6 +355,7 @@ def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> N
         "./features/architecture-mainline-checkout-20260504.md",
         "./product/ai-novel-product-strategy.md",
         "./product/ai-novel-capability-scorecard.md",
+        "./product/ai-novel-capability-map.md",
         "./strategy/ai-novel-system-benchmark.md",
         "./strategy/docs-faq-and-consolidation-guide.md",
         "./whitepaper/ai-novel-system-whitepaper.md",
@@ -368,6 +369,7 @@ def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> N
 
     assert "ai-novel-product-strategy.md" in product
     assert "ai-novel-capability-scorecard.md" in product
+    assert "ai-novel-capability-map.md" in product
     assert "ai-novel-system-benchmark.md" in product
     assert "ai-novel-system-whitepaper.md" in product
     assert "ai-novel-system-whitepaper-v2.md" in product
