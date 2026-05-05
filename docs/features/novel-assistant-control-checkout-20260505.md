@@ -155,3 +155,8 @@
 - assistant pack 现已提供 `recovery_closure_artifact_pack`。
 - 真实样例中已给出 `closure_status` 与 `closure_record`。
 - 这让 postmortem / recovery 之后继续接上了恢复完成 / closure 确认交付面。
+
+## 26. Final governance summary
+- assistant pack 现已提供 `final_governance_summary_pack`。
+- 真实样例中已给出 `governance_status` 与 `governance_summary`。
+- 这让整个 release / rollback / recovery 治理链最终收口成总览式治理摘要。

@@ -791,6 +791,42 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _final_governance_summary_pack(
+        *,
+        publish_ready_release_pack: dict[str, object],
+        sample_based_release_criteria_bundle: dict[str, object],
+        release_decision_freeze_artifact_pack: dict[str, object],
+        handoff_approval_record_pack: dict[str, object],
+        release_ops_runbook_pack: dict[str, object],
+        recovery_closure_artifact_pack: dict[str, object],
+    ) -> dict[str, object]:
+        release_gate = dict(publish_ready_release_pack.get("release_gate", {}))
+        criteria = dict(sample_based_release_criteria_bundle.get("criteria", {}))
+        decision = str(release_decision_freeze_artifact_pack.get("decision", "no_go"))
+        approval_status = str(handoff_approval_record_pack.get("approval_status", "pending"))
+        runbook_status = str(release_ops_runbook_pack.get("runbook_status", "blocked"))
+        closure_status = str(recovery_closure_artifact_pack.get("closure_status", "recovery_pending"))
+        summary = [
+            f"release_ready={release_gate.get('ready_for_release')}",
+            f"criteria_ready={criteria.get('ready_for_bundle_review')}",
+            f"decision={decision}",
+            f"approval_status={approval_status}",
+            f"runbook_status={runbook_status}",
+            f"closure_status={closure_status}",
+        ]
+        return {
+            "contract_version": "final-governance-summary-pack.v1",
+            "governance_summary": " | ".join(summary),
+            "governance_status": "ready" if decision == "go" and approval_status == "ready_for_approval" else "guarded",
+            "governance_checklist": [
+                "先看 release_ready 与 criteria_ready。",
+                "再看 decision / approval_status / runbook_status。",
+                "最后确认 closure_status 与 recovery 记录是否完备。",
+            ],
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -1006,6 +1042,14 @@ class NovelAssistantService:
             postmortem_recovery_record_pack=postmortem_recovery_record_pack,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
         )
+        final_governance_summary_pack = self._final_governance_summary_pack(
+            publish_ready_release_pack=publish_ready_release_pack,
+            sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
+            release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+            handoff_approval_record_pack=handoff_approval_record_pack,
+            release_ops_runbook_pack=release_ops_runbook_pack,
+            recovery_closure_artifact_pack=recovery_closure_artifact_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1048,6 +1092,7 @@ class NovelAssistantService:
                 "incident_rollback",
                 "postmortem_recovery_record",
                 "recovery_closure_artifact",
+                "final_governance_summary",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1080,6 +1125,7 @@ class NovelAssistantService:
             "incident_rollback_pack": incident_rollback_pack,
             "postmortem_recovery_record_pack": postmortem_recovery_record_pack,
             "recovery_closure_artifact_pack": recovery_closure_artifact_pack,
+            "final_governance_summary_pack": final_governance_summary_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

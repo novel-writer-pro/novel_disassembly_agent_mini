@@ -71,7 +71,8 @@
     "release_ops_runbook",
     "incident_rollback",
     "postmortem_recovery_record",
-    "recovery_closure_artifact"
+    "recovery_closure_artifact",
+    "final_governance_summary"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -131,7 +132,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 46.31,
+    "avg_raw_latency_ms": 49.92,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -145,8 +146,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 51.81818899291102,
-        "rerank_latency_ms": 0.008628005161881447,
+        "raw_latency_ms": 40.77883399440907,
+        "rerank_latency_ms": 0.007465991075150669,
         "raw_top_chapters": [
           2,
           1,
@@ -174,8 +175,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 43.78088600060437,
-        "rerank_latency_ms": 0.005095993401482701,
+        "raw_latency_ms": 54.95824399986304,
+        "rerank_latency_ms": 0.0076160067692399025,
         "raw_top_chapters": [
           1,
           2,
@@ -203,8 +204,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 43.33962799864821,
-        "rerank_latency_ms": 0.005440000677481294,
+        "raw_latency_ms": 54.03650899825152,
+        "rerank_latency_ms": 0.006481001037172973,
         "raw_top_chapters": [
           10,
           9,
@@ -967,6 +968,16 @@
       "确认 rollback trigger / target / freeze reason 已归档。",
       "确认恢复后快照已重新记录。",
       "确认是否需要重新进入 release/freeze review。"
+    ]
+  },
+  "final_governance_summary_pack": {
+    "contract_version": "final-governance-summary-pack.v1",
+    "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+    "governance_status": "guarded",
+    "governance_checklist": [
+      "先看 release_ready 与 criteria_ready。",
+      "再看 decision / approval_status / runbook_status。",
+      "最后确认 closure_status 与 recovery 记录是否完备。"
     ]
   },
   "audit_conclusion": {
@@ -2967,8 +2978,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 108.45436698582489,
-    "rerank_latency_ms": 0.008193004759959877,
+    "raw_latency_ms": 70.62371099891607,
+    "rerank_latency_ms": 0.008326998795382679,
     "raw_hits": [
       {
         "chapter_index": 2,

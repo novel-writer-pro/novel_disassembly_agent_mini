@@ -128,6 +128,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['recovery_closure_artifact_pack']['contract_version'] == 'recovery-closure-artifact-pack.v1'
         assert pack['recovery_closure_artifact_pack']['closure_status']
         assert pack['recovery_closure_artifact_pack']['closure_record']
+        assert pack['final_governance_summary_pack']['contract_version'] == 'final-governance-summary-pack.v1'
+        assert pack['final_governance_summary_pack']['governance_summary']
+        assert pack['final_governance_summary_pack']['governance_status']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None
