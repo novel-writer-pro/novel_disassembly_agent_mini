@@ -78,7 +78,8 @@
     "governance_dashboard",
     "governance_report_brief",
     "release_review_note",
-    "approval_decision_memo"
+    "approval_decision_memo",
+    "external_report_bundle"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -138,7 +139,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 62.87,
+    "avg_raw_latency_ms": 60.41,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -152,8 +153,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 74.40617200336419,
-        "rerank_latency_ms": 0.00512300175614655,
+        "raw_latency_ms": 57.39039600302931,
+        "rerank_latency_ms": 0.006311005563475192,
         "raw_top_chapters": [
           2,
           1,
@@ -181,8 +182,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 56.93298499681987,
-        "rerank_latency_ms": 0.007094989996403456,
+        "raw_latency_ms": 73.01086001098156,
+        "rerank_latency_ms": 0.005184003384783864,
         "raw_top_chapters": [
           1,
           2,
@@ -210,8 +211,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 57.28406099660788,
-        "rerank_latency_ms": 0.004662986611947417,
+        "raw_latency_ms": 50.82722300721798,
+        "rerank_latency_ms": 0.005209993105381727,
         "raw_top_chapters": [
           10,
           9,
@@ -555,15 +556,39 @@
     "contract_version": "reader-feedback-pack.v1",
     "feedback_summary": {
       "contract_version": "reader-feedback-summary.v1",
-      "degraded": true,
-      "reason": "reader_feedback_table_unavailable_for_current_runtime",
-      "comment_count": 0,
-      "signals": [],
-      "pain_point_hypotheses": [],
-      "revision_recommendations": []
+      "degraded": false,
+      "comment_count": 3,
+      "signals": [
+        "reader_hook_strong",
+        "logic_confusion",
+        "pacing_slow"
+      ],
+      "signal_counts": {
+        "reader_hook_strong": 1,
+        "logic_confusion": 1,
+        "pacing_slow": 1
+      },
+      "pain_point_hypotheses": [
+        "读者可能认为当前章节节奏偏慢。",
+        "读者可能对部分逻辑/衔接存在疑惑。",
+        "读者对后续情节仍有持续追读意愿。"
+      ],
+      "revision_recommendations": [
+        "压缩中段铺垫，增强行动推进密度。",
+        "补足前因后果和转折证据，降低理解门槛。",
+        "保留章尾钩子并加强下一章期待。"
+      ],
+      "sample_comments": [
+        "章尾钩子不错，我想看他赎身后怎么走。",
+        "主角这里的决策有点突兀，逻辑不太顺。",
+        "这几章节奏有点慢，但我还是想继续追。"
+      ]
     },
     "pain_point_hypotheses": [
-      "读者可能感到部分逻辑/衔接点仍不够顺。"
+      "读者可能感到部分逻辑/衔接点仍不够顺。",
+      "读者可能认为当前章节节奏偏慢。",
+      "读者可能对部分逻辑/衔接存在疑惑。",
+      "读者对后续情节仍有持续追读意愿。"
     ],
     "feedback_collection_prompts": [
       "哪一章开始觉得节奏变慢？原因是什么？",
@@ -572,7 +597,10 @@
     ],
     "revision_from_feedback": [
       "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
-      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。",
+      "压缩中段铺垫，增强行动推进密度。",
+      "补足前因后果和转折证据，降低理解门槛。",
+      "保留章尾钩子并加强下一章期待。"
     ],
     "priority_entities": [
       "卫图"
@@ -582,8 +610,9 @@
   "feedback_revision_bridge_pack": {
     "contract_version": "feedback-revision-bridge-pack.v1",
     "bridge_actions": [
-      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
-      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+      "优先走 structure_and_pacing lane，压缩拖沓段落。",
+      "优先走 logic_and_risk lane，补足因果与过渡证据。",
+      "保留并强化 hook，不要在修稿中削弱章尾期待。"
     ],
     "revision_lanes": [
       {
@@ -599,8 +628,16 @@
         "goal": "最后修文风、对白、细节密度。"
       }
     ],
-    "signal_counts": {},
-    "top_feedback_signals": []
+    "signal_counts": {
+      "reader_hook_strong": 1,
+      "logic_confusion": 1,
+      "pacing_slow": 1
+    },
+    "top_feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
   },
   "chapter_draft_preparation_pack": {
     "contract_version": "chapter-draft-preparation-pack.v1",
@@ -831,7 +868,7 @@
   },
   "automatic_rewrite_guidance_pack": {
     "contract_version": "automatic-rewrite-guidance-pack.v1",
-    "guidance_text": "# 自动改写指导\n- 先锁定 must_keep，再处理逻辑/节奏/对白问题。\n- 每次改写只处理一个场景块，避免整体重写导致连续性漂移。\n- 读者风险假设：读者可能感到部分逻辑/衔接点仍不够顺。",
+    "guidance_text": "# 自动改写指导\n- 先锁定 must_keep，再处理逻辑/节奏/对白问题。\n- 每次改写只处理一个场景块，避免整体重写导致连续性漂移。\n- 读者风险假设：读者可能感到部分逻辑/衔接点仍不够顺。；读者可能认为当前章节节奏偏慢。",
     "rewrite_steps": [
       {
         "scene_index": 1,
@@ -870,7 +907,9 @@
       }
     ],
     "reader_feedback_hypotheses": [
-      "读者可能感到部分逻辑/衔接点仍不够顺。"
+      "读者可能感到部分逻辑/衔接点仍不够顺。",
+      "读者可能认为当前章节节奏偏慢。",
+      "读者可能对部分逻辑/衔接存在疑惑。"
     ],
     "rewrite_checklist": [
       "先修逻辑，再修节奏，再修文风。",
@@ -878,14 +917,15 @@
       "避免为追求流畅度而丢失 payoff / turning point。"
     ],
     "feedback_bridge_actions": [
-      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
-      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+      "优先走 structure_and_pacing lane，压缩拖沓段落。",
+      "优先走 logic_and_risk lane，补足因果与过渡证据。",
+      "保留并强化 hook，不要在修稿中削弱章尾期待。"
     ]
   },
   "automatic_prose_rewrite_pack": {
     "contract_version": "automatic-prose-rewrite-pack.v1",
     "rewrite_title": "完成赎身/脱籍并争取进入更高身份路径",
-    "rewrite_text": "### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。",
+    "rewrite_text": "### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion",
     "rewritten_blocks": [
       {
         "scene_index": 1,
@@ -919,12 +959,16 @@
       "每轮改写后回看 must_keep 是否仍在。",
       "避免为追求流畅度而丢失 payoff / turning point。"
     ],
-    "feedback_signals": []
+    "feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
   },
   "final_draft_candidate_pack": {
     "contract_version": "final-draft-candidate-pack.v1",
     "candidate_title": "完成赎身/脱籍并争取进入更高身份路径",
-    "candidate_text": "# 候选稿：完成赎身/脱籍并争取进入更高身份路径\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。",
+    "candidate_text": "# 候选稿：完成赎身/脱籍并争取进入更高身份路径\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion",
     "candidate_blocks": [
       {
         "scene_index": 1,
@@ -956,7 +1000,7 @@
     "review_gate": {
       "needs_review_count": 1,
       "risk_card_count": 10,
-      "negative_feedback_signal_count": 0,
+      "negative_feedback_signal_count": 2,
       "ready_for_candidate_review": false
     },
     "candidate_checklist": [
@@ -964,7 +1008,11 @@
       "候选稿输出后先过 review_gate，再进入人工/模型复核。",
       "如果 risk_card_count 较高，不要直接进入最终定稿。"
     ],
-    "reader_feedback_signals": []
+    "reader_feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
   },
   "publish_ready_release_pack": {
     "contract_version": "publish-ready-release-pack.v1",
@@ -1158,6 +1206,94 @@
     "decision_verdict": "REJECT",
     "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
     "memo_status": "rejected"
+  },
+  "external_report_bundle_pack": {
+    "contract_version": "external-report-bundle-pack.v1",
+    "dashboard": {
+      "contract_version": "governance-dashboard-pack.v1",
+      "dashboard_status": "guarded",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "release_gate": {
+        "candidate_review_ready": false,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      },
+      "criteria": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "decision": "no_go",
+      "operator_status": "pending",
+      "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+      "whole_book_consistency": {
+        "requires_consistency_pass": true,
+        "release_impact": "whole_book_consistency_blocks_release",
+        "next_stage_focus": [
+          "优先处理能力族：relationship、rule",
+          "先回看第5章的高优先级修复链",
+          "先回看第4章的高优先级修复链"
+        ]
+      }
+    },
+    "brief": {
+      "contract_version": "governance-report-brief-pack.v1",
+      "dashboard_status": "guarded",
+      "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "review_note": {
+      "contract_version": "release-review-note-pack.v1",
+      "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+      "review_status": "blocked",
+      "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "approval_memo": {
+      "contract_version": "approval-decision-memo-pack.v1",
+      "decision_verdict": "REJECT",
+      "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "memo_status": "rejected"
+    },
+    "runbook": {
+      "contract_version": "release-ops-runbook-pack.v1",
+      "runbook_status": "blocked",
+      "runbook_steps": [
+        "检查 operator brief 与 freeze_artifact 是否一致。",
+        "确认 release gate / sample criteria / risk evidence 的最新快照。",
+        "若 decision=no_go，则生成阻断清单并停止发布动作。",
+        "若 decision=go，则进入人工 approval 与 release review。"
+      ],
+      "blockers": [
+        "release_gate_or_sample_criteria_not_ready"
+      ],
+      "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+      "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+    },
+    "rollback": {
+      "contract_version": "incident-rollback-pack.v1",
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "rollback_steps": [
+        "停止当前发布/扩散动作。",
+        "回退到上一版候选稿或安全版本。",
+        "重新收集 risk / review / release gate 快照。",
+        "完成问题修复后重新进入 freeze review。"
+      ],
+      "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+    },
+    "governance_summary": {
+      "contract_version": "final-governance-summary-pack.v1",
+      "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "governance_status": "guarded",
+      "governance_checklist": [
+        "先看 release_ready 与 criteria_ready。",
+        "再看 decision / approval_status / runbook_status。",
+        "最后确认 closure_status 与 recovery 记录是否完备。"
+      ]
+    }
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -3157,8 +3293,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 88.55345999472775,
-    "rerank_latency_ms": 0.007883994840085506,
+    "raw_latency_ms": 101.03998899285216,
+    "rerank_latency_ms": 0.0074929994298145175,
     "raw_hits": [
       {
         "chapter_index": 2,

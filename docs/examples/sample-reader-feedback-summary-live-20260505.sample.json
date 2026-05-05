@@ -1,0 +1,30 @@
+{
+  "contract_version": "reader-feedback-summary.v1",
+  "degraded": false,
+  "comment_count": 3,
+  "signals": [
+    "reader_hook_strong",
+    "logic_confusion",
+    "pacing_slow"
+  ],
+  "signal_counts": {
+    "reader_hook_strong": 1,
+    "logic_confusion": 1,
+    "pacing_slow": 1
+  },
+  "pain_point_hypotheses": [
+    "读者可能认为当前章节节奏偏慢。",
+    "读者可能对部分逻辑/衔接存在疑惑。",
+    "读者对后续情节仍有持续追读意愿。"
+  ],
+  "revision_recommendations": [
+    "压缩中段铺垫，增强行动推进密度。",
+    "补足前因后果和转折证据，降低理解门槛。",
+    "保留章尾钩子并加强下一章期待。"
+  ],
+  "sample_comments": [
+    "章尾钩子不错，我想看他赎身后怎么走。",
+    "主角这里的决策有点突兀，逻辑不太顺。",
+    "这几章节奏有点慢，但我还是想继续追。"
+  ]
+}
