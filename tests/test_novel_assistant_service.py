@@ -162,6 +162,8 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['archive_manifest_pack']['manifest_items']
         assert pack['archive_retention_metadata_pack']['contract_version'] == 'archive-retention-metadata-pack.v1'
         assert pack['archive_retention_metadata_pack']['archive_status']
+        assert pack['archive_integrity_check_pack']['contract_version'] == 'archive-integrity-check-pack.v1'
+        assert pack['archive_integrity_check_pack']['integrity_ok'] is True
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None

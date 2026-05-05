@@ -1098,6 +1098,7 @@ class NovelAssistantService:
         handoff_approval_record_pack: dict[str, object],
         external_report_bundle_pack: dict[str, object],
         archive_retention_metadata_pack: dict[str, object],
+        archive_integrity_check_pack: dict[str, object],
     ) -> dict[str, object]:
         return {
             "contract_version": "final-release-archive-pack.v1",
@@ -1106,6 +1107,7 @@ class NovelAssistantService:
             "handoff_record": handoff_approval_record_pack,
             "external_report_bundle": external_report_bundle_pack,
             "archive_retention_metadata_pack": archive_retention_metadata_pack,
+            "archive_integrity_check_pack": archive_integrity_check_pack,
             "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。",
         }
 
@@ -1125,6 +1127,22 @@ class NovelAssistantService:
             ],
             "archive_summary": final_release_archive_pack.get("archive_summary", ""),
             "archive_contract": final_release_archive_pack.get("contract_version", ""),
+        }
+
+
+    @staticmethod
+    def _archive_integrity_check_pack(
+        *,
+        final_release_archive_pack: dict[str, object],
+    ) -> dict[str, object]:
+        required_keys = ["candidate", "freeze_artifact", "handoff_record", "external_report_bundle"]
+        present_keys = [key for key in required_keys if key in final_release_archive_pack]
+        missing_keys = [key for key in required_keys if key not in final_release_archive_pack]
+        return {
+            "contract_version": "archive-integrity-check-pack.v1",
+            "present_keys": present_keys,
+            "missing_keys": missing_keys,
+            "integrity_ok": not missing_keys,
         }
 
 
@@ -1449,12 +1467,21 @@ class NovelAssistantService:
         archive_retention_metadata_pack = self._archive_retention_metadata_pack(
             archive_manifest_pack=archive_manifest_pack,
         )
+        archive_integrity_check_pack = self._archive_integrity_check_pack(
+            final_release_archive_pack={
+                "candidate": {},
+                "freeze_artifact": {},
+                "handoff_record": {},
+                "external_report_bundle": {},
+            },
+        )
         final_release_archive_pack = self._final_release_archive_pack(
             final_draft_candidate_pack=final_draft_candidate_pack,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
             handoff_approval_record_pack=handoff_approval_record_pack,
             external_report_bundle_pack=external_report_bundle_pack,
             archive_retention_metadata_pack=archive_retention_metadata_pack,
+            archive_integrity_check_pack=archive_integrity_check_pack,
         )
         return {
             "contract_version": "novel-assistant.v1",
@@ -1510,6 +1537,7 @@ class NovelAssistantService:
                 "final_release_archive",
                 "archive_manifest",
                 "archive_retention_metadata",
+                "archive_integrity_check",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1554,6 +1582,7 @@ class NovelAssistantService:
             "final_release_archive_pack": final_release_archive_pack,
             "archive_manifest_pack": archive_manifest_pack,
             "archive_retention_metadata_pack": archive_retention_metadata_pack,
+            "archive_integrity_check_pack": archive_integrity_check_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

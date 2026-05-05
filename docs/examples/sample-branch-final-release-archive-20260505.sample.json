@@ -184,5 +184,16 @@
     "manifest_contract": "archive-manifest-pack.v1",
     "manifest_item_count": 4
   },
+  "archive_integrity_check_pack": {
+    "contract_version": "archive-integrity-check-pack.v1",
+    "present_keys": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "missing_keys": [],
+    "integrity_ok": true
+  },
   "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。"
 }
