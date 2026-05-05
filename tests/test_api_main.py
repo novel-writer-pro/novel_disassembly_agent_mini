@@ -212,6 +212,68 @@ def test_docs_readme_numbered_sections_are_sequential() -> None:
             assert nums == list(range(1, len(nums) + 1))
 
 
+
+
+def test_manual_eval_docs_and_template_are_linked() -> None:
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "./novel-assistant-manual-eval-handbook-20260505.md" in readme
+    assert "./manual-eval-record-template.md" in readme
+    assert "../runs/manual_eval/_template/README.md" in readme
+    assert "bootstrap_manual_eval_workspace.py" in readme
+
+    handbook = Path("docs/novel-assistant-manual-eval-handbook-20260505.md").read_text(encoding="utf-8")
+    assert "bootstrap_manual_eval_workspace.py" in handbook
+
+    template_readme = Path("runs/manual_eval/_template/README.md").read_text(encoding="utf-8")
+    assert "bootstrap_manual_eval_workspace.py" in template_readme
+
+
+def test_manual_eval_workspace_template_and_bootstrap_script(tmp_path: Path) -> None:
+    from scripts import bootstrap_manual_eval_workspace as bootstrap
+
+    template_root = Path("runs/manual_eval/_template")
+    required = [
+        template_root / "README.md",
+        template_root / "artifacts",
+        template_root / "exports",
+        template_root / "notes",
+        template_root / "notes/manual-review-notes.md",
+        template_root / "notes/problem-trace.md",
+        template_root / "notes/next-actions.md",
+    ]
+    for item in required:
+        assert item.exists(), item
+
+    target_root = tmp_path / "manual_eval"
+    target_root.mkdir(parents=True, exist_ok=True)
+
+    original_template = bootstrap.TEMPLATE_DIR
+    original_target = bootstrap.TARGET_ROOT
+    original_parse_args = bootstrap.parse_args
+    try:
+        bootstrap.TEMPLATE_DIR = template_root.resolve()
+        bootstrap.TARGET_ROOT = target_root.resolve()
+        bootstrap.parse_args = lambda: type(
+            "Args",
+            (),
+            {"novel_slug": "demo-slug", "force": False},
+        )()
+        assert bootstrap.main() == 0
+        generated = target_root / "demo-slug"
+        for rel in [
+            "README.md",
+            "artifacts",
+            "exports",
+            "notes/manual-review-notes.md",
+            "notes/problem-trace.md",
+            "notes/next-actions.md",
+        ]:
+            assert (generated / rel).exists(), rel
+    finally:
+        bootstrap.TEMPLATE_DIR = original_template
+        bootstrap.TARGET_ROOT = original_target
+        bootstrap.parse_args = original_parse_args
+
 def test_maintainer_and_risk_audit_docs_point_to_current_api_surface_doc() -> None:
     checks = {
         "docs/roles/maintainer/README.md": "api-current-surface.md",
