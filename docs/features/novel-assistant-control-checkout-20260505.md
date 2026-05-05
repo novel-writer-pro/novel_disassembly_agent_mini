@@ -180,3 +180,8 @@
 - assistant pack 现已提供 `approval_decision_memo_pack`。
 - CLI 已支持 `export-approval-decision-memo`。
 - 真实样例中已给出 markdown memo，可直接给审批方做通过/拒绝参考。
+
+## 31. Reader feedback real comment ingestion
+- 已新增 `ReaderFeedbackService`、评论导入与反馈汇总主链。
+- CLI 已支持 `import-reader-feedback` / `export-reader-feedback-summary`。
+- 样例：`sample-reader-feedback-summary-20260505.sample.json`。
