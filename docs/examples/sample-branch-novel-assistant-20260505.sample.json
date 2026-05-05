@@ -66,7 +66,8 @@
     "publish_ready_release",
     "sample_based_release_criteria",
     "release_decision_freeze_artifact",
-    "handoff_approval_record"
+    "handoff_approval_record",
+    "operator_release_brief"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -126,7 +127,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 58.72,
+    "avg_raw_latency_ms": 50.34,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -140,8 +141,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 62.869583009160124,
-        "rerank_latency_ms": 0.007437993190251291,
+        "raw_latency_ms": 55.79078999289777,
+        "rerank_latency_ms": 0.006442991434596479,
         "raw_top_chapters": [
           2,
           1,
@@ -169,8 +170,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 46.5335100016091,
-        "rerank_latency_ms": 0.014692996046505868,
+        "raw_latency_ms": 46.01927999465261,
+        "rerank_latency_ms": 0.007406997610814869,
         "raw_top_chapters": [
           1,
           2,
@@ -198,8 +199,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 66.7706310050562,
-        "rerank_latency_ms": 0.011779993656091392,
+        "raw_latency_ms": 49.20591700647492,
+        "rerank_latency_ms": 0.0076400028774514794,
         "raw_top_chapters": [
           10,
           9,
@@ -896,6 +897,16 @@
       "确认 freeze_artifact 与 release_gate 快照可回溯。",
       "确认候选稿、release criteria、risk evidence 已一并交接。",
       "进入 approval 前记录最终 decision 与责任人。"
+    ]
+  },
+  "operator_release_brief_pack": {
+    "contract_version": "operator-release-brief-pack.v1",
+    "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+    "operator_status": "pending",
+    "brief_checklist": [
+      "先看 decision / freeze_reason。",
+      "再看 sample/retrieval/release criteria 是否齐备。",
+      "最后确认是否进入人工 approval 或继续回修。"
     ]
   },
   "audit_conclusion": {
@@ -2896,8 +2907,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 74.66184299846645,
-    "rerank_latency_ms": 0.007705995813012123,
+    "raw_latency_ms": 59.83442899014335,
+    "rerank_latency_ms": 0.009980998584069312,
     "raw_hits": [
       {
         "chapter_index": 2,

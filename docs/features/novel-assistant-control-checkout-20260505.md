@@ -130,3 +130,8 @@
 - assistant pack 现已提供 `handoff_approval_record_pack`。
 - 真实样例中已给出 `approval_status` 与 `handoff_record`。
 - 这让 freeze 决策之后继续接上了可交接、可审批、可留档的交付面。
+
+## 21. Operator release brief
+- assistant pack 现已提供 `operator_release_brief_pack`。
+- 真实样例中已给出 `operator_status` 与 `brief_summary`。
+- 这让 handoff / approval 之后继续接上了运营/发布负责人的简明 brief 面。

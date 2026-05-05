@@ -661,6 +661,33 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _operator_release_brief_pack(
+        *,
+        handoff_approval_record_pack: dict[str, object],
+        sample_based_release_criteria_bundle: dict[str, object],
+    ) -> dict[str, object]:
+        handoff_record = dict(handoff_approval_record_pack.get("handoff_record", {}))
+        criteria = dict(sample_based_release_criteria_bundle.get("criteria", {}))
+        brief_lines = [
+            f"decision={handoff_record.get('decision', '')}",
+            f"freeze_reason={handoff_record.get('freeze_reason', '')}",
+            f"sample_count_ready={criteria.get('sample_count_ready')}",
+            f"retrieval_benchmark_ready={criteria.get('retrieval_benchmark_ready')}",
+            f"release_gate_ready={criteria.get('release_gate_ready')}",
+        ]
+        return {
+            "contract_version": "operator-release-brief-pack.v1",
+            "brief_summary": " | ".join([item for item in brief_lines if item]),
+            "operator_status": handoff_approval_record_pack.get("approval_status", "pending"),
+            "brief_checklist": [
+                "先看 decision / freeze_reason。",
+                "再看 sample/retrieval/release criteria 是否齐备。",
+                "最后确认是否进入人工 approval 或继续回修。",
+            ],
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -856,6 +883,10 @@ class NovelAssistantService:
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
             publish_ready_release_pack=publish_ready_release_pack,
         )
+        operator_release_brief_pack = self._operator_release_brief_pack(
+            handoff_approval_record_pack=handoff_approval_record_pack,
+            sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -893,6 +924,7 @@ class NovelAssistantService:
                 "sample_based_release_criteria",
                 "release_decision_freeze_artifact",
                 "handoff_approval_record",
+                "operator_release_brief",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -920,6 +952,7 @@ class NovelAssistantService:
             "sample_based_release_criteria_bundle": sample_based_release_criteria_bundle,
             "release_decision_freeze_artifact_pack": release_decision_freeze_artifact_pack,
             "handoff_approval_record_pack": handoff_approval_record_pack,
+            "operator_release_brief_pack": operator_release_brief_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
