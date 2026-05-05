@@ -44,6 +44,8 @@ class ChapterIntakeOutput(BaseModel):
             value['chapter_index'] = value['chapter_no']
         if 'chapter_index' not in value and 'chapter_number' in value:
             value['chapter_index'] = value['chapter_number']
+        if 'chapter_index' not in value and 'chapter_id' in value:
+            value['chapter_index'] = value['chapter_id']
         if 'normalized_title' not in value and 'chapter_title' in value:
             value['normalized_title'] = value['chapter_title']
         if 'cleaned_text' not in value and 'paragraph_blocks' in value:
@@ -248,6 +250,32 @@ class ChapterAnalysisLayerOutput(BaseModel):
     @classmethod
     def _normalize_themes(cls, value: Any) -> Any:
         return ChapterFactExtractionOutput._normalize_notes(value)
+
+    @field_validator('continuity_notes', mode='before')
+    @classmethod
+    def _normalize_continuity_notes(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                candidate = (
+                    item.get('note')
+                    or item.get('point')
+                    or item.get('text')
+                    or item.get('content')
+                    or item.get('summary')
+                    or item.get('label')
+                )
+                text = str(candidate or '').strip()
+                if text:
+                    normalized.append(text)
+        return normalized
 
     def ensure_minimum_analysis(
         self,
@@ -575,3 +603,356 @@ class ChapterRiskCard(BaseModel):
     generated_at: str | None = None
     checker_statuses: dict[str, str] = Field(default_factory=dict)
     coverage_gaps: list[str] = Field(default_factory=list)
+
+
+class ChapterPlanningIntent(BaseModel):
+    """Caller-owned intent for planning the next chapter."""
+
+    primary_goal: str
+    emphasis: list[str] = Field(default_factory=list)
+    forbidden_moves: list[str] = Field(default_factory=list)
+    preferred_tone: str | None = None
+    pace: str | None = None
+    target_word_count: int | None = Field(default=None, ge=0)
+
+
+class ChapterPlanningScene(BaseModel):
+    """One planned scene for the next chapter."""
+
+    scene_index: int = Field(ge=1)
+    purpose: str
+    must_include: list[str] = Field(default_factory=list)
+    risk_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterPlanningContext(BaseModel):
+    """Structured context pack used by the next-chapter planner."""
+
+    branch_id: str
+    current_chapter_index: int = Field(ge=1)
+    next_chapter_index: int = Field(ge=1)
+    recent_chapter_summaries: list[str] = Field(default_factory=list)
+    active_characters: list[str] = Field(default_factory=list)
+    relationship_state_notes: list[str] = Field(default_factory=list)
+    active_conflicts: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
+    world_rules: list[str] = Field(default_factory=list)
+    recent_risk_signals: list[str] = Field(default_factory=list)
+    forbidden_moves: list[str] = Field(default_factory=list)
+    planning_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterPlanningCard(BaseModel):
+    """Planner-owned chapter blueprint output."""
+
+    branch_id: str
+    next_chapter_index: int = Field(ge=1)
+    chapter_goal: str
+    main_conflict: str
+    secondary_conflicts: list[str] = Field(default_factory=list)
+    required_progressions: list[str] = Field(default_factory=list)
+    scene_plan: list[ChapterPlanningScene] = Field(default_factory=list)
+    character_movements: list[str] = Field(default_factory=list)
+    relationship_movements: list[str] = Field(default_factory=list)
+    foreshadow_to_touch: list[str] = Field(default_factory=list)
+    rule_constraints: list[str] = Field(default_factory=list)
+    ending_hook: str | None = None
+    risk_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationPlan(BaseModel):
+    """Structured imitation plan before prose drafting."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    style_axes: list[str] = Field(default_factory=list)
+    scene_beats: list[str] = Field(default_factory=list)
+    hard_constraints: list[str] = Field(default_factory=list)
+    soft_constraints: list[str] = Field(default_factory=list)
+    risk_focus: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationDraft(BaseModel):
+    """Draft plus evaluation metadata for imitation experiments."""
+
+    source_chapter_index: int = Field(ge=1)
+    original_title: str
+    draft_title: str
+    draft_text: str
+    method_notes: list[str] = Field(default_factory=list)
+    comparison_notes: list[str] = Field(default_factory=list)
+    risk_gate_notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationComparisonReport(BaseModel):
+    """Structured comparison between source chapter and imitation draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    original_title: str
+    draft_title: str
+    source_length: int = Field(ge=0)
+    draft_length: int = Field(ge=0)
+    structure_overlap_notes: list[str] = Field(default_factory=list)
+    style_alignment_notes: list[str] = Field(default_factory=list)
+    risk_alignment_notes: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_review")
+
+
+class ChapterImitationReviewReport(BaseModel):
+    """Combined comparison + risk-aware review for one imitation draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    original_title: str
+    draft_title: str
+    needs_human_review: bool = Field(default=True)
+    quality_gate_notes: list[str] = Field(default_factory=list)
+    risk_gate_notes: list[str] = Field(default_factory=list)
+    revision_directions: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_revision")
+
+
+class ChapterImitationGateReport(BaseModel):
+    """Draft-prose gate result reused by imitation/revise loops."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    quality_gate_notes: list[str] = Field(default_factory=list)
+    needs_human_review: bool = Field(default=True)
+    hook_score: float | None = Field(default=None, ge=0.0, le=10.0)
+    risk_gate_notes: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_revision")
+
+
+class ChapterImitationRiskReport(BaseModel):
+    """In-memory risk review for imitation draft prose."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    overall_risk_level: str = Field(default="low")
+    checker_statuses: dict[str, str] = Field(default_factory=dict)
+    top_risk_types: list[str] = Field(default_factory=list)
+    top_risk_summaries: list[str] = Field(default_factory=list)
+    coverage_gaps: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationScoreReport(BaseModel):
+    """Multi-axis score summary for one imitation draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    structure_score: int = Field(ge=0, le=100)
+    style_alignment_score: int = Field(ge=0, le=100)
+    risk_score: int = Field(ge=0, le=100)
+    overall_score: int = Field(ge=0, le=100)
+    notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationSkillContract(BaseModel):
+    """Machine-readable contract for one local imitation skill."""
+
+    skill_name: str
+    purpose: str
+    required_inputs: list[str] = Field(default_factory=list)
+    produced_outputs: list[str] = Field(default_factory=list)
+    prompt_asset_path: str = Field(default="")
+    schema_asset_path: str = Field(default="")
+    prompt_preview: str = Field(default="")
+
+
+class ChapterImitationPreflightCheck(BaseModel):
+    """One deterministic preflight check before formal risk gating."""
+
+    check_name: str
+    status: str = Field(default="pass")
+    severity: str = Field(default="low")
+    priority: int = Field(default=3, ge=1, le=5)
+    notes: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationPreflightReport(BaseModel):
+    """Aggregated preflight result for one draft."""
+
+    source_chapter_index: int = Field(ge=1)
+    draft_title: str
+    overall_verdict: str = Field(default="pass")
+    checks: list[ChapterImitationPreflightCheck] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationHarnessAction(BaseModel):
+    """One harness-directed revision action."""
+
+    action_type: str
+    target: str
+    severity: str = Field(default="low")
+    priority: int = Field(default=3, ge=1, le=5)
+    instructions: list[str] = Field(default_factory=list)
+
+
+class ChapterImitationIterationRound(BaseModel):
+    """One iteration snapshot in the imitation optimization loop."""
+
+    round_index: int = Field(ge=1)
+    draft: ChapterImitationDraft
+    comparison: ChapterImitationComparisonReport
+    review: ChapterImitationReviewReport
+    gate: ChapterImitationGateReport
+    risk: ChapterImitationRiskReport
+    score: ChapterImitationScoreReport
+
+
+class ChapterImitationIterationReport(BaseModel):
+    """Multi-round imitation optimization report."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    max_rounds: int = Field(ge=1)
+    rounds: list[ChapterImitationIterationRound] = Field(default_factory=list)
+    final_draft: ChapterImitationDraft
+    stop_reason: str
+
+
+class ChapterImitationHarnessRound(BaseModel):
+    """One controlled harness round over a chapter imitation draft."""
+
+    round_index: int = Field(ge=1)
+    draft: ChapterImitationDraft
+    comparison: ChapterImitationComparisonReport
+    review: ChapterImitationReviewReport
+    gate: ChapterImitationGateReport
+    risk: ChapterImitationRiskReport
+    score: ChapterImitationScoreReport
+    preflight: ChapterImitationPreflightReport
+    actions: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    revise_payload: dict[str, object] = Field(default_factory=dict)
+    skill_prompt_previews: dict[str, str] = Field(default_factory=dict)
+    skill_outputs: dict[str, dict[str, object]] = Field(default_factory=dict)
+
+
+class ChapterImitationHarnessReport(BaseModel):
+    """Harness-controlled imitation run with preflight and revision routing."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    max_rounds: int = Field(ge=1)
+    skill_contracts: list[ChapterImitationSkillContract] = Field(default_factory=list)
+    rounds: list[ChapterImitationHarnessRound] = Field(default_factory=list)
+    final_draft: ChapterImitationDraft
+    final_preflight: ChapterImitationPreflightReport
+    action_queue: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    policy_summary: dict[str, object] = Field(default_factory=dict)
+    final_verdict: str = Field(default="needs_revision")
+    stop_reason: str
+
+
+class MultiChapterImitationStep(BaseModel):
+    """One chapter step inside a multi-chapter imitation plan/report."""
+
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    final_title: str
+    final_draft_excerpt: str
+    overall_score: int = Field(ge=0, le=100)
+    overall_risk_level: str = Field(default="low")
+    stop_reason: str
+
+
+class MultiChapterImitationConsistencyReport(BaseModel):
+    """Lightweight multi-chapter continuity summary across imitation steps."""
+
+    branch_id: str
+    start_chapter_index: int = Field(ge=1)
+    end_chapter_index: int = Field(ge=1)
+    steps: list[MultiChapterImitationStep] = Field(default_factory=list)
+    continuity_notes: list[str] = Field(default_factory=list)
+    risk_notes: list[str] = Field(default_factory=list)
+    overall_verdict: str = Field(default="needs_review")
+
+
+class StoryMappingPack(BaseModel):
+    """Whole-book adaptation mapping rules."""
+
+    project_title: str
+    source_work_name: str
+    target_work_name: str
+    world_mapping: dict[str, str] = Field(default_factory=dict)
+    character_mapping: dict[str, str] = Field(default_factory=dict)
+    faction_mapping: dict[str, str] = Field(default_factory=dict)
+    power_mapping: dict[str, str] = Field(default_factory=dict)
+    rule_overrides: list[str] = Field(default_factory=list)
+    forbidden_transformations: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationPlan(BaseModel):
+    """Top-level orchestration skeleton for multi-chapter / whole-book imitation."""
+
+    branch_id: str
+    project_title: str
+    source_chapter_range: list[int] = Field(default_factory=list)
+    mapping_pack: StoryMappingPack
+    chapter_goals: list[tuple[int, str]] = Field(default_factory=list)
+    continuity_focus: list[str] = Field(default_factory=list)
+    orchestration_notes: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationQueueStep(BaseModel):
+    """One executable queue step in a whole-book imitation run."""
+
+    order: int = Field(ge=1)
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    prerequisites: list[str] = Field(default_factory=list)
+    carry_over_inputs: dict[str, list[str]] = Field(default_factory=dict)
+    expected_outputs: list[str] = Field(default_factory=list)
+    risk_focus: list[str] = Field(default_factory=list)
+    scheduling_priority: int = Field(default=4, ge=1, le=5)
+    scheduling_reason: str = Field(default="")
+
+
+class WholeBookCarryOverState(BaseModel):
+    """Explicit generated-state payload carried across sandbox imitation steps."""
+
+    source_chapter_index: int = Field(ge=1)
+    generated_summary: str = Field(default="")
+    relationship_state: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
+    rule_state: list[str] = Field(default_factory=list)
+    next_constraints: list[str] = Field(default_factory=list)
+
+
+class WholeBookImitationExecutedStep(BaseModel):
+    """One executed sandbox step derived from a queue item."""
+
+    order: int = Field(ge=1)
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    stop_reason: str
+    overall_score: int = Field(ge=0, le=100)
+    overall_risk_level: str = Field(default="low")
+    draft_title: str
+    draft_excerpt: str
+    carry_over_state: WholeBookCarryOverState
+    action_queue: list[ChapterImitationHarnessAction] = Field(default_factory=list)
+    revise_payload: dict[str, object] = Field(default_factory=dict)
+    strategy_input: dict[str, object] = Field(default_factory=dict)
+    scheduling_priority: int = Field(default=4, ge=1, le=5)
+    scheduling_reason: str = Field(default="")
+    policy_summary: dict[str, object] = Field(default_factory=dict)
+
+
+class WholeBookImitationRunReport(BaseModel):
+    """Dry-run or sandbox-executed report for a whole-book imitation orchestration."""
+
+    contract_version: str = Field(default="whole-book-imitation.v1")
+    stable_contract_version: str = Field(default="whole-book-imitation-pre-v1")
+    branch_id: str
+    project_title: str
+    queue: list[WholeBookImitationQueueStep] = Field(default_factory=list)
+    carry_over_notes: list[str] = Field(default_factory=list)
+    execution_mode: str = Field(default="dry_run")
+    executed_steps: list[WholeBookImitationExecutedStep] = Field(default_factory=list)
+    final_carry_over_state: WholeBookCarryOverState | None = Field(default=None)
+    policy_summary: dict[str, object] = Field(default_factory=dict)
+    dashboard_summary: dict[str, object] = Field(default_factory=dict)
+    run_notes: list[str] = Field(default_factory=list)

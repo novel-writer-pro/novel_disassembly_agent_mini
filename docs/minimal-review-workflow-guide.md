@@ -74,6 +74,7 @@
 ./.venv/bin/python -m novel_analyzer.cli.app set-cluster-status <branch_id> <cluster_key> resolved \
   --review-notes "已人工确认该问题无需升级" \
   --review-owner "editor-a" \
+  --review-actor "review-bot" \
   --resolved-at "2026-04-29T02:00:00Z" \
   --review-result "confirmed-benign"
 ```
@@ -98,6 +99,16 @@
 ./.venv/bin/python -m novel_analyzer.cli.app show-cluster-history <branch_id> <cluster_key>
 ```
 
+如果只想看某类历史动作，可以继续加过滤条件：
+
+```bash
+./.venv/bin/python -m novel_analyzer.cli.app show-cluster-history <branch_id> <cluster_key> \
+  --event-type assignment_update \
+  --review-owner editor-b \
+  --review-result deferred \
+  --limit 5
+```
+
 ---
 
 ### 第四步：重新导出 branch report / bundle
@@ -110,6 +121,26 @@
 - `resolved_at`
 - `review_result`
 - `review_progress_note`
+
+此外，`branch_bundle` 顶层现在还会带一个结构化的 `review_summary`，可直接用于系统总览卡：
+
+- `current_owner_top`
+- `latest_actor_top`
+- `latest_event_type_top`
+- `pending_assignment_count`
+- `pending_escalation_count`
+- `resolved_count`
+- `needs_review_count`
+
+而 `audit_conclusion` 里也会补充更适合直接展示给人的总结句，例如：
+
+- `needs_review_note`
+- `resolved_cluster_note`
+- `pending_escalation_note`
+- `review_actor`
+- `current_owner_note`
+- `latest_event_type_note`
+- `pending_assignment_note`
 
 ---
 
@@ -163,7 +194,7 @@
 当前最小 review workflow 仍有以下限制：
 
 1. 状态写回走运行时 registry，不是数据库正式表
-2. 没有真正的 reviewer 审计链
+2. 已有最小审计链，但还没有完整 reviewer 协作体系
 3. 没有 UI 入口
 4. 没有并发协作保护
 5. 没有“reviewed / rejected / escalated”细分状态

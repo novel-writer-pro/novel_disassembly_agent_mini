@@ -65,15 +65,36 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
             progress_note = audit_conclusion.get('review_progress_note')
             if progress_note:
                 lines.append(f'- Review Progress: {progress_note}')
+            needs_review_note = audit_conclusion.get('needs_review_note')
+            if needs_review_note:
+                lines.append(f'- Needs Review: {needs_review_note}')
+            resolved_cluster_note = audit_conclusion.get('resolved_cluster_note')
+            if resolved_cluster_note:
+                lines.append(f'- Resolved Clusters: {resolved_cluster_note}')
             result_note = audit_conclusion.get('review_result_note')
             if result_note:
                 lines.append(f'- Review Result: {result_note}')
+            pending_escalation_note = audit_conclusion.get('pending_escalation_note')
+            if pending_escalation_note:
+                lines.append(f'- Pending Escalation: {pending_escalation_note}')
             storage_note = audit_conclusion.get('review_storage_note')
             if storage_note:
                 lines.append(f'- Review Storage: {storage_note}')
             owner_note = audit_conclusion.get('review_owner_note')
             if owner_note:
                 lines.append(f'- Review Owner: {owner_note}')
+            current_owner_note = audit_conclusion.get('current_owner_note')
+            if current_owner_note:
+                lines.append(f'- Current Owner: {current_owner_note}')
+            actor_note = audit_conclusion.get('review_actor_note')
+            if actor_note:
+                lines.append(f'- Review Actor: {actor_note}')
+            latest_event_type_note = audit_conclusion.get('latest_event_type_note')
+            if latest_event_type_note:
+                lines.append(f'- Latest Event Type: {latest_event_type_note}')
+            pending_assignment_note = audit_conclusion.get('pending_assignment_note')
+            if pending_assignment_note:
+                lines.append(f'- Pending Assignment: {pending_assignment_note}')
             latest_review_note = audit_conclusion.get('latest_review_note')
             if latest_review_note:
                 lines.append(f'- Latest Review: {latest_review_note}')
@@ -191,6 +212,20 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
                     lines.append(f"  - sample: {item.get('sample_summary')}")
                 if item.get('suggested_review_action'):
                     lines.append(f"  - action: {item.get('suggested_review_action')}")
+                if item.get('workflow_lane'):
+                    lines.append(f"  - workflow_lane: {item.get('workflow_lane')}")
+                if item.get('queue_priority'):
+                    lines.append(f"  - queue_priority: {item.get('queue_priority')}")
+                if 'action_required' in item:
+                    lines.append(f"  - action_required: {item.get('action_required')}")
+                if item.get('suggested_deadline_level'):
+                    lines.append(f"  - suggested_deadline_level: {item.get('suggested_deadline_level')}")
+                if item.get('batch_operation_hint'):
+                    lines.append(f"  - batch_operation_hint: {item.get('batch_operation_hint')}")
+                if item.get('auto_next_action'):
+                    lines.append(f"  - auto_next_action: {item.get('auto_next_action')}")
+                if item.get('escalation_reason'):
+                    lines.append(f"  - escalation_reason: {item.get('escalation_reason')}")
                 if item.get('review_owner'):
                     lines.append(f"  - owner: {item.get('review_owner')}")
                 if item.get('resolved_at'):
@@ -208,8 +243,92 @@ def render_branch_report(bundle: dict[str, Any]) -> str:
                     lines.append(
                         f"  - latest_event: from={latest_event.get('previous_cluster_status')}->{latest_event.get('cluster_status')} | "
                         f"result={latest_event.get('review_result')} | owner={latest_event.get('review_owner')} | "
+                        f"actor={latest_event.get('review_actor') or latest_event.get('review_owner')} | "
                         f"created_at={latest_event.get('created_at')}"
                     )
+            phase2_clusters = [
+                item for item in review_candidate_clusters
+                if isinstance(item, dict)
+                and any(
+                    risk_type in {
+                        'thread_state_conflict',
+                        'motivation_to_action_gap',
+                        'sequence_conflict_candidate',
+                        'recovery_window_insufficient',
+                        'upset_without_setup',
+                        'cost_constraint_missing',
+                    }
+                    for risk_type in item.get('risk_types', [])
+                )
+            ]
+            if phase2_clusters:
+                lines.append('')
+                lines.append('### Phase-2 Risk Highlights')
+                for item in phase2_clusters[:8]:
+                    lines.append(
+                        f"- title={item.get('cluster_title')} | types={item.get('risk_types')} | "
+                        f"chapters={item.get('chapters')} | priority={item.get('review_priority')} | "
+                        f"pattern={item.get('pattern_label')}"
+                    )
+                    if item.get('suggested_review_action'):
+                        lines.append(f"  - focus: {item.get('suggested_review_action')}")
+    review_summary = bundle.get('review_summary', {})
+    if isinstance(review_summary, dict) and review_summary:
+        lines.extend(['', '## Review Summary'])
+        for key in [
+            'cluster_count',
+            'history_event_count',
+            'current_owner_top',
+            'current_owner_top_count',
+            'latest_actor_top',
+            'latest_actor_top_count',
+            'latest_event_type_top',
+            'latest_event_type_top_count',
+            'workflow_lane_top',
+            'workflow_lane_top_count',
+            'queue_priority_top',
+            'queue_priority_top_count',
+            'deadline_level_top',
+            'deadline_level_top_count',
+            'batch_operation_hint_top',
+            'batch_operation_hint_top_count',
+            'batch_suggestions',
+            'auto_next_action_code_top',
+            'auto_next_action_code_top_count',
+            'auto_next_action_top',
+            'auto_next_action_top_count',
+            'escalation_reason_code_top',
+            'escalation_reason_code_top_count',
+            'escalation_reason_top',
+            'escalation_reason_top_count',
+            'phase2_focus_top',
+            'phase2_focus_top_count',
+            'pending_assignment_count',
+            'pending_escalation_count',
+            'resolved_count',
+            'needs_review_count',
+            'action_required_count',
+        ]:
+            if key in review_summary:
+                lines.append(f'- {key}: {review_summary.get(key)}')
+        for key in [
+            'by_status',
+            'by_result',
+            'by_owner',
+            'by_actor',
+            'by_latest_event_type',
+            'by_workflow_lane',
+            'by_queue_priority',
+            'by_deadline_level',
+            'by_batch_operation_hint',
+            'by_auto_next_action_code',
+            'by_auto_next_action',
+            'by_escalation_reason_code',
+            'by_escalation_reason',
+            'by_phase2_focus',
+        ]:
+            if key in review_summary:
+                lines.append(f'- {key}: {review_summary.get(key)}')
     windows = bundle.get('windows', [])
     lines.extend(['', '## Windows'])
     if not windows:

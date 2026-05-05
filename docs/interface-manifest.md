@@ -71,6 +71,7 @@
 
 来源：
 - `novel-analyzer export-branch-bundle <run_id> <branch_id> <output_path>`
+- `novel-analyzer export-branch-report <run_id> <branch_id> <output_path>`（Markdown 下游阅读面）
 
 顶层字段：
 - `status`
@@ -83,6 +84,7 @@
 - `chapter_output_summary`
 - `failed_summary`
 - `audit_conclusion`
+- `review_summary`
 - `risk_summary`
 
 ### 2.1 chapter_output_summary
@@ -109,13 +111,75 @@
 - `blocking_judgement`
 - `recommended_action`
 - `review_progress_note`
+- `needs_review_note`
+- `resolved_cluster_note`
 - `review_result_note`
+- `pending_escalation_note`
 - `review_owner_note`
+- `current_owner_note`
+- `review_actor_note`
+- `latest_event_type_note`
+- `pending_assignment_note`
 - `latest_review_note`
 
-### 2.4 review workflow stability note
+### 2.4 review_summary
+当前已扩展包含：
+- `cluster_count`
+- `by_status`
+- `by_result`
+- `by_owner`
+- `by_actor`
+- `by_latest_event_type`
+- `by_priority`
+- `by_pattern`
+- `history_event_count`
+- `latest_review_at`
+- `latest_review_owner`
+- `latest_review_actor`
+- `latest_review_event_type`
+- `latest_review_result`
+- `latest_review_result_label`
+- `current_owner_top`
+- `current_owner_top_count`
+- `latest_actor_top`
+- `latest_actor_top_count`
+- `latest_event_type_top`
+- `latest_event_type_top_count`
+- `pending_assignment_count`
+- `pending_escalation_count`
+- `resolved_count`
+- `needs_review_count`
+
+稳定样例：
+- `docs/examples/branch-bundle-review-summary.sample.json`
+
+### 2.6 branch report smoke artifact
+
+为了让维护者快速确认“数据库 schema + review workflow + branch 导出”这一整条链路仍然可用，
+当前文档链额外保留了一个真实 smoke 产物：
+
+- `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
+
+它对应如下最小运维链路：
+
+1. `init-db`
+2. `db-capabilities`
+3. `export-branch-report`
+
+适合用于回答：
+- cluster-review schema 升级后，真实 sample branch 是否还能导出 Markdown report
+- review 数据是否仍从数据库主路径读取
+- sample branch 当前已完成章节数 / 失败数 / 下一章指针是否正常
+
+### 2.5 review workflow stability note
 
 对于 review workflow 相关字段，当前建议：
+
+- 顶层 contract 字段：
+  - `contract_version`
+  - `stable_contract_version`
+  - `allowed_cluster_statuses`
+  - `allowed_review_results`
 
 - 稳定对外字段：
   - `cluster_key`
@@ -237,15 +301,103 @@
 
 ---
 
-## 6. Recommended Integration Order
+## 6. Review Workflow / Batch Execution Views
 
-### 前端最小接入
+来源：
+- `GET /api/review-clusters?branch_id=...`
+- `GET /api/review-cluster-history?branch_id=...&cluster_key=...`
+- `GET /api/review-summary?branch_id=...`
+- `POST /api/review-batch-execute`
+- `GET /api/review-batch-history?branch_id=...`
+
+### 6.1 `review-clusters`
+
+建议稳定消费字段：
+- `cluster_key`
+- `cluster_title`
+- `checker_names`
+- `risk_types`
+- `review_priority`
+- `cluster_status`
+- `review_result`
+- `review_result_label`
+- `chapter_span`
+- `review_owner`
+
+可增强消费字段：
+- `latest_review_event`
+- `review_history_count`
+- `review_progress_note`
+- `review_result_note`
+- `latest_review_note`
+
+### 6.2 `review-summary`
+
+当前系统已稳定提供的聚合视图包括：
+- `cluster_count`
+- `by_status`
+- `by_result`
+- `by_owner`
+- `by_priority`
+- `history_event_count`
+- `pending_assignment_count`
+- `pending_escalation_count`
+- `resolved_count`
+- `needs_review_count`
+- `batch_suggestions`
+
+phase-2 聚合增强字段：
+- `by_phase2_focus`
+- `phase2_focus_top`
+- `phase2_focus_top_count`
+- `auto_next_action_code_top`
+- `escalation_reason_code_top`
+
+### 6.3 `review-batch-execute`
+
+当前执行回执建议消费字段：
+- `execution_id`
+- `action`
+- `hint_code`
+- `target_count`
+- `success_count`
+- `failed_count`
+- `skipped_count`
+- `preview`
+- `successes`
+- `failed`
+- `skipped`
+
+### 6.4 `review-batch-history`
+
+当前批量执行历史建议消费字段：
+- `items[*].execution_id`
+- `items[*].created_at`
+- `items[*].action`
+- `items[*].hint_code`
+- `items[*].group_strategy`
+- `items[*].group_key`
+- `items[*].dry_run`
+- `items[*].target_count`
+- `items[*].success_count`
+- `items[*].failed_count`
+- `items[*].skipped_count`
+- `items[*].preview`
+
+说明：
+- 当前是 runtime file-backed 最小审计链
+- 对系统集成方来说已经足够承接回执、操作历史、批量确认弹窗
+- 更完整语义见 [`./review-batch-execution-contract.md`](./review-batch-execution-contract.md)
+
+## 7. Recommended Integration Order
+
+### 7.1 前端最小接入
 1. `chapter bundle`
 2. `branch report`
 3. `chapter QA context`
 4. `branch QA context`
 
-### 问答工具接入
+### 7.2 问答工具接入
 1. 先用 `branch QA context.recommended_questions`
 2. 再按 `thematic_contexts.*.question_sequence` 引导追问
 3. 需要图谱视图时使用：
@@ -253,7 +405,7 @@
    - `edge_refs`
    - `timeline_points`
 
-### 写作者参考接入
+### 7.3 写作者参考接入
 优先使用：
 - `artifact.chapter_summary`
 - `artifact.state_transition_notes`
@@ -264,7 +416,7 @@
 
 ---
 
-## 7. Stability Notes
+## 8. Stability Notes
 
 当前这些接口可视为“项目内稳定输出面”：
 - chapter bundle
@@ -272,10 +424,11 @@
 - chapter QA context
 - branch QA context
 - thematic contexts
+- whole-book imitation run report（CLI / service contract）
 
 未来允许新增字段，但应尽量保持已有字段名与基础层级不破坏。
 
-## 8. Example Files
+## 9. Example Files
 
 - [`./examples/chapter-bundle.sample.json`](./examples/chapter-bundle.sample.json)
 - [`./examples/branch-bundle.sample.json`](./examples/branch-bundle.sample.json)
@@ -286,3 +439,187 @@
 - [`./examples/review-cluster-summary.sample.json`](./examples/review-cluster-summary.sample.json)
 - [`./examples/review-cluster-summary.stable.sample.json`](./examples/review-cluster-summary.stable.sample.json)
 - [`./examples/review-cluster-summary.stable.v1.sample.json`](./examples/review-cluster-summary.stable.v1.sample.json)
+- [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
+- [`./examples/whole-book-imitation-run.request.sample.json`](./examples/whole-book-imitation-run.request.sample.json)
+- [`./examples/whole-book-imitation-run.error.provider-billing.sample.json`](./examples/whole-book-imitation-run.error.provider-billing.sample.json)
+- [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
+
+## 10. Whole-Book Imitation Run Report
+
+来源：
+- `novel-analyzer run-whole-book-imitation ...`
+- `novel-analyzer export-whole-book-imitation-run ... <output_path>`
+- `POST /api/whole-book-imitation-run`
+- `WholeBookImitationService.build_run_queue(...)`
+- `WholeBookImitationService.run_in_sandbox(...)`
+
+用途：
+- 供系统直接查看整本仿写/续写编排结果
+- 供 agentOS 或调度器读取“下一步先修什么 / 哪几章优先”
+- 供后续 API/export 层继续冻结为稳定 contract
+
+当前显式版本标记：
+- `contract_version = whole-book-imitation.v1`
+- `stable_contract_version = whole-book-imitation-pre-v1`
+
+### 10.1 顶层字段
+
+- `contract_version`
+- `stable_contract_version`
+- `branch_id`
+- `project_title`
+- `queue`
+- `carry_over_notes`
+- `execution_mode`
+- `executed_steps`
+- `final_carry_over_state`
+- `policy_summary`
+- `dashboard_summary`
+- `run_notes`
+
+### 10.2 dry-run 必看字段
+
+当 `execution_mode = "dry_run"` 时，建议系统优先消费：
+
+- `queue[*].order`
+- `queue[*].source_chapter_index`
+- `queue[*].target_goal`
+- `queue[*].prerequisites`
+- `queue[*].carry_over_inputs`
+- `queue[*].risk_focus`
+- `queue[*].scheduling_priority`
+- `queue[*].scheduling_reason`
+
+- `policy_summary.queue_length`
+- `policy_summary.highest_queue_priority`
+- `policy_summary.queue_priorities`
+- `policy_summary.priority_reason_histogram`
+
+- `dashboard_summary.queue_priority_preview`
+- `dashboard_summary.top_queue_priority_chapters`
+- `dashboard_summary.queue_cluster_buckets`
+- `dashboard_summary.queue_next_actions`
+
+### 10.3 sandbox execute 必看字段
+
+当 `execution_mode = "sandbox_execute"` 时，建议系统优先消费：
+
+- `executed_steps[*].source_chapter_index`
+- `executed_steps[*].overall_score`
+- `executed_steps[*].overall_risk_level`
+- `executed_steps[*].stop_reason`
+- `executed_steps[*].scheduling_priority`
+- `executed_steps[*].scheduling_reason`
+- `executed_steps[*].strategy_input`
+- `executed_steps[*].policy_summary`
+- `executed_steps[*].carry_over_state`
+- `executed_steps[*].action_queue`
+- `executed_steps[*].revise_payload`
+
+- `policy_summary.executed_step_count`
+- `policy_summary.chapter_ranking`
+- `policy_summary.book_priority_ranking`
+- `policy_summary.severity_histogram`
+- `policy_summary.risk_bucket_histogram`
+- `policy_summary.next_stage_focus`
+
+- `dashboard_summary.highest_priority_chapters`
+- `dashboard_summary.top_risk_chapters`
+- `dashboard_summary.strategy_targets`
+- `dashboard_summary.top_priority_summary`
+- `dashboard_summary.top_risk_summary`
+- `dashboard_summary.chapter_flags`
+- `dashboard_summary.book_handoff_summary`
+
+### 10.4 `book_handoff_summary`
+
+这是当前最适合系统侧直接读取的聚合层：
+
+- `top_repair_recommendations`
+  - 每项包含：
+    - `action_type`
+    - `count`
+    - `highest_priority`
+    - `highest_severity`
+    - `chapter_indexes`
+    - `targets`
+    - `issue_families`
+- `next_stage_focus`
+- `highest_priority_chapters`
+- `risk_chapters`
+- `final_verdicts`
+
+建议用法：
+- 调度器先看 `next_stage_focus`
+- 任务分派器先看 `top_repair_recommendations`
+- 章节回看列表先看 `highest_priority_chapters`
+- 风险复核列表再看 `risk_chapters`
+
+稳定样例：
+- `docs/examples/whole-book-imitation-run.sample.json`
+- `docs/examples/whole-book-imitation-run.request.sample.json`
+- `docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`
+- `docs/whole-book-imitation-api-stability-summary.md`
+- `docs/whole-book-imitation-api-versioning.md`
+- `docs/whole-book-imitation-api-freeze-readiness.md`
+
+### 10.5 whole-book run 错误返回
+
+当 `POST /api/whole-book-imitation-run` 失败时，当前建议系统至少消费：
+
+- `error`
+- `error_type`
+- `retryable`
+- `upstream_status`
+- `error_code`
+
+当前已明确样例的错误码：
+
+- `provider_billing_limited`
+  - 含义：上游 provider 配额/计费阻断
+  - 当前通常伴随：
+    - `retryable = false`
+    - `upstream_status = 403`
+
+- `provider_bad_gateway`
+  - 含义：上游网关异常
+  - 当前通常伴随：
+    - `retryable = true`
+    - `upstream_status = 502`
+
+- `provider_timeout`
+  - 含义：上游请求超时
+  - 当前通常伴随：
+    - `retryable = true`
+
+说明：
+- 当前错误合同仍按 pre-v1 管理
+- 但这几个字段已经适合作为系统侧自动分流依据
+
+## 11. Whole-Book Imitation Readiness
+
+来源：
+- `novel-analyzer show-whole-book-imitation-readiness`
+- `GET /api/whole-book-imitation-readiness`
+
+顶层字段：
+- `contract_version`
+- `stable_contract_version`
+- `whole_book_contract_version`
+- `whole_book_stable_contract_version`
+- `database`
+- `provider`
+- `branch_candidate`
+- `readiness_notes`
+
+建议系统优先消费：
+- `provider.api_key_present`
+- `provider.provider_health.last_status`
+- `provider.provider_health.last_error`
+- `branch_candidate.exists`
+- `branch_candidate.chapter_analysis_count`
+- `branch_candidate.fact_record_count`
+- `branch_candidate.branch_id`
+
+稳定样例：
+- `docs/examples/whole-book-imitation-readiness.sample.json`

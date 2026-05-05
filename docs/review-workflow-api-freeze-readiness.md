@@ -38,6 +38,11 @@
 - request / response / error 样例
 - stable sample
 - summary stable sample
+- full sample（pre-v1 / phase-2 扩展样例）
+
+补充说明：
+- 当前 full sample 已包含 `phase2_focus_top`、`by_phase2_focus`、`prioritize_phase2_human_review`、`phase2_risk_requires_human_confirmation`。
+- 当前 stable sample 仍刻意保持稳定字段子集，不强制包含这些 phase-2 扩展字段。
 
 ### D. 测试层
 
@@ -54,6 +59,7 @@
 2. review owner / 指派语义还没正式化
 3. DB-only 仍未切换完成
 4. state machine 仍可能继续收敛
+5. phase-2 扩展字段与 stable sample 之间仍保留刻意差异，尚未进入统一冻结口径
 
 这意味着：
 
@@ -84,6 +90,7 @@
 2. history / owner / result / summary 语义不再继续变化
 3. API 稳定字段清单连续 2 个迭代不变
 4. 接入方已完成一轮实际对接验证
+5. full sample 与 stable sample 的字段边界不再继续变化，或已显式冻结到版本文档
 
 ---
 

@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "style_axes": {"type": "array", "items": {"type": "string"}},
+    "style_issues": {"type": "array", "items": {"type": "string"}},
+    "prose_density_label": {"type": "string"},
+    "recommended_actions": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["style_axes", "style_issues", "prose_density_label", "recommended_actions"]
+}

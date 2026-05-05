@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RhythmAnalyzerOutput",
+  "type": "object",
+  "required": ["pace_label", "hook_strength", "tension_curve", "issues", "recommended_actions"],
+  "properties": {
+    "pace_label": {"type": "string"},
+    "hook_strength": {"type": "number"},
+    "tension_curve": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "issues": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}

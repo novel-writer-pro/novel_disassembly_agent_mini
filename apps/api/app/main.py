@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import io
 import json
 import shutil
 from dataclasses import asdict
+from email.parser import BytesParser
+from email.policy import default
 from datetime import datetime
 from pathlib import Path
 from socketserver import ThreadingMixIn
@@ -13,6 +16,7 @@ from urllib.parse import parse_qs
 from uuid import uuid4
 from wsgiref.simple_server import WSGIServer, make_server
 from wsgiref.types import StartResponse
+from sqlalchemy import func, select
 
 from novel_analyzer.application import (
     cancel_pipeline_run,
@@ -37,27 +41,36 @@ from novel_analyzer.runtime.cluster_review_state import (
     read_cluster_review_history,
     write_cluster_review_state,
 )
+from novel_analyzer.runtime.review_batch_execution import (
+    read_batch_execution_history,
+    write_batch_execution_entry,
+)
 from novel_analyzer.database.models import (
     AnalysisRun,
+    ChapterArtifact,
     ChapterManifest,
     ChapterSegment,
+    FactRecord,
     NovelSource,
     RunBranch,
 )
 from novel_analyzer.database.session import create_session_factory
-from novel_analyzer.runtime.cluster_review_state import write_cluster_review_state
 from novel_analyzer.runtime.provider_health import read_provider_health
 from novel_analyzer.runtime.storage import (
     describe_runtime_storage,
     migrate_legacy_runtime_dirs,
     runtime_cache_root,
 )
-from novel_analyzer.services.cluster_review_service import ClusterReviewService
+from novel_analyzer.services.cluster_review_service import (
+    ClusterReviewService,
+    ClusterReviewStorageUnavailable,
+)
 from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.status_service import StatusService
+from novel_analyzer.services.whole_book_imitation_service import WholeBookImitationService
 
 
 class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
@@ -67,6 +80,42 @@ class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
 
 
 _RUNTIME_MIGRATED = False
+
+_API_ENDPOINT_SPECS: list[dict[str, str]] = [
+    {"method": "GET", "path": "/health"},
+    {"method": "GET", "path": "/api/meta"},
+    {"method": "GET", "path": "/api/mock/import"},
+    {"method": "POST", "path": "/api/import"},
+    {"method": "GET", "path": "/api/run-snapshot"},
+    {"method": "GET", "path": "/api/branch-snapshot"},
+    {"method": "GET", "path": "/api/chapter-bundle"},
+    {"method": "GET", "path": "/api/chapter-qa-context"},
+    {"method": "GET", "path": "/api/chapter-source"},
+    {"method": "GET", "path": "/api/chapter-jobs"},
+    {"method": "GET", "path": "/api/chapter-job-events"},
+    {"method": "GET", "path": "/api/review-clusters"},
+    {"method": "GET", "path": "/api/review-cluster-summary"},
+    {"method": "GET", "path": "/api/review-cluster-history"},
+    {"method": "POST", "path": "/api/review-cluster-update"},
+    {"method": "POST", "path": "/api/review-batch-execute"},
+    {"method": "GET", "path": "/api/review-batch-history"},
+    {"method": "GET", "path": "/api/library"},
+    {"method": "GET", "path": "/api/job-events"},
+    {"method": "POST", "path": "/api/start"},
+    {"method": "POST", "path": "/api/recovery"},
+    {"method": "POST", "path": "/api/pipeline/start-range"},
+    {"method": "GET", "path": "/api/pipeline/status"},
+    {"method": "GET", "path": "/api/pipeline/runs"},
+    {"method": "GET", "path": "/api/runtime-health"},
+    {"method": "GET", "path": "/api/provider-health"},
+    {"method": "GET", "path": "/api/whole-book-imitation-readiness"},
+    {"method": "POST", "path": "/api/whole-book-imitation-run"},
+    {"method": "POST", "path": "/api/search-branch"},
+    {"method": "POST", "path": "/api/ask-branch"},
+    {"method": "POST", "path": "/api/ask-branch-stream"},
+    {"method": "GET", "path": "/api/branch-exports"},
+    {"method": "GET", "path": "/api/download"},
+]
 
 
 def _json_payload(value: Any) -> bytes:
@@ -132,19 +181,39 @@ def _json_body(environ: dict[str, Any]) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(raw.decode("utf-8")))
 
 
-def _multipart_form(environ: dict[str, Any]) -> dict[str, Any]:
-    import cgi
+class _UploadedMultipartFile:
+    def __init__(self, *, filename: str, file: io.BytesIO) -> None:
+        self.filename = filename
+        self.file = file
 
-    form = cgi.FieldStorage(fp=environ["wsgi.input"], environ=environ, keep_blank_values=True)
+
+def _multipart_form(environ: dict[str, Any]) -> dict[str, Any]:
+    length = int(environ.get("CONTENT_LENGTH") or "0")
+    if length <= 0:
+        return {}
+    raw = environ["wsgi.input"].read(length)
+    if not raw:
+        return {}
+
+    content_type = environ.get("CONTENT_TYPE", "")
+    headers = f"Content-Type: {content_type}\r\nMIME-Version: 1.0\r\n\r\n".encode("utf-8")
+    message = BytesParser(policy=default).parsebytes(headers + raw)
+    if not message.is_multipart():
+        return {}
+
     payload: dict[str, Any] = {}
-    for key in form.keys():
-        item = form[key]
-        if isinstance(item, list):
-            item = item[-1]
-        if getattr(item, "filename", None):
-            payload[key] = item
-        else:
-            payload[key] = item.value
+    for part in message.iter_parts():
+        key = part.get_param("name", header="content-disposition")
+        if not key:
+            continue
+        filename = part.get_filename()
+        if filename:
+            payload[key] = _UploadedMultipartFile(
+                filename=filename,
+                file=io.BytesIO(part.get_payload(decode=True) or b""),
+            )
+            continue
+        payload[key] = part.get_content()
     return payload
 
 
@@ -182,6 +251,171 @@ def _review_filters(params: dict[str, str]) -> dict[str, str]:
     }
 
 
+def _review_contract() -> dict[str, object]:
+    return {
+        "contract_version": "review-workflow.v1",
+        "stable_contract_version": "review-api-pre-v1",
+        "allowed_cluster_statuses": sorted(ALLOWED_CLUSTER_STATUSES),
+        "allowed_review_results": sorted(ALLOWED_REVIEW_RESULTS),
+    }
+
+
+def _whole_book_mapping_pack(body: dict[str, Any]) -> Any:
+    from novel_analyzer.domain.schemas import StoryMappingPack
+
+    return StoryMappingPack(
+        project_title=str(body.get("project_title") or ""),
+        source_work_name=str(body.get("source_work_name") or ""),
+        target_work_name=str(body.get("target_work_name") or ""),
+        world_mapping=cast(dict[str, str], body.get("world_mapping") or {}),
+        character_mapping=cast(dict[str, str], body.get("character_mapping") or {}),
+        faction_mapping=cast(dict[str, str], body.get("faction_mapping") or {}),
+        power_mapping=cast(dict[str, str], body.get("power_mapping") or {}),
+        rule_overrides=[str(item) for item in cast(list[Any], body.get("rule_overrides") or [])],
+        forbidden_transformations=[
+            str(item) for item in cast(list[Any], body.get("forbidden_transformations") or [])
+        ],
+    )
+
+
+def _whole_book_chapter_goals(body: dict[str, Any]) -> list[tuple[int, str]]:
+    raw_items = cast(list[dict[str, Any]], body.get("chapter_specs") or [])
+    chapter_goals: list[tuple[int, str]] = []
+    for item in raw_items:
+        chapter_index = int(item.get("source_chapter_index") or 0)
+        target_goal = str(item.get("target_goal") or "").strip()
+        if chapter_index <= 0 or not target_goal:
+            raise ValueError("chapter_specs must contain positive source_chapter_index and non-empty target_goal")
+        chapter_goals.append((chapter_index, target_goal))
+    return chapter_goals
+
+
+def _whole_book_readiness_payload(
+    branch_id: str | None,
+    database_url: str | None,
+) -> dict[str, object]:
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    with factory() as session:
+        target_branch_id = branch_id or session.scalar(
+            select(ChapterArtifact.branch_id)
+            .where(ChapterArtifact.artifact_type == "chapter_analysis")
+            .group_by(ChapterArtifact.branch_id)
+            .order_by(func.count(ChapterArtifact.id).desc())
+            .limit(1)
+        )
+
+        branch_summary: dict[str, object] = {
+            "branch_id": target_branch_id or "",
+            "exists": False,
+            "chapter_analysis_count": 0,
+            "fact_record_count": 0,
+            "chapter_span": {"min": None, "max": None},
+            "run_id": "",
+            "branch_name": "",
+            "status": "",
+            "novel_title": "",
+        }
+        if target_branch_id:
+            branch = session.get(RunBranch, target_branch_id)
+            if branch is not None:
+                analysis_count = session.scalar(
+                    select(func.count())
+                    .select_from(ChapterArtifact)
+                    .where(
+                        ChapterArtifact.branch_id == target_branch_id,
+                        ChapterArtifact.artifact_type == "chapter_analysis",
+                    )
+                ) or 0
+                fact_count = session.scalar(
+                    select(func.count())
+                    .select_from(FactRecord)
+                    .where(FactRecord.branch_id == target_branch_id)
+                ) or 0
+                chapter_min, chapter_max = session.execute(
+                    select(
+                        func.min(ChapterArtifact.chapter_index),
+                        func.max(ChapterArtifact.chapter_index),
+                    ).where(
+                        ChapterArtifact.branch_id == target_branch_id,
+                        ChapterArtifact.artifact_type == "chapter_analysis",
+                    )
+                ).one()
+                novel_title = session.scalar(
+                    select(NovelSource.title)
+                    .join(AnalysisRun, AnalysisRun.novel_id == NovelSource.id)
+                    .where(AnalysisRun.id == branch.run_id)
+                ) or ""
+                branch_summary = {
+                    "branch_id": target_branch_id,
+                    "exists": True,
+                    "chapter_analysis_count": int(analysis_count),
+                    "fact_record_count": int(fact_count),
+                    "chapter_span": {"min": chapter_min, "max": chapter_max},
+                    "run_id": branch.run_id,
+                    "branch_name": branch.name,
+                    "status": branch.status,
+                    "novel_title": novel_title,
+                }
+
+    provider_health = read_provider_health(runtime)
+    return {
+        "contract_version": "whole-book-imitation-readiness.v1",
+        "stable_contract_version": "whole-book-imitation-readiness-pre-v1",
+        "whole_book_contract_version": "whole-book-imitation.v1",
+        "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+        "database": {
+            "masked_database_url": runtime.masked_database_url,
+            "effective_db_name": runtime.effective_db_name,
+        },
+        "provider": {
+            "provider_name": runtime.llm_provider_name,
+            "base_url": runtime.resolved_llm_base_url,
+            "api_key_present": bool(runtime.resolved_llm_api_key),
+            "model_name": runtime.llm_model_name,
+            "stage_model_name": runtime.llm_stage_model_name,
+            "qa_model_name": runtime.llm_qa_model_name,
+            "provider_health": asdict(provider_health),
+        },
+        "branch_candidate": branch_summary,
+        "readiness_notes": [
+            "如果 api_key_present=false，则不能做真实 provider-backed whole-book execute。",
+            "如果 provider_health.last_status=degraded，应先确认上游 provider 是否恢复。",
+            "如果 branch_candidate.chapter_analysis_count < 2，则不适合做 whole-book imitation freeze evidence。",
+        ],
+    }
+
+
+def _whole_book_run_error_payload(exc: Exception) -> tuple[str, dict[str, object]]:
+    message = str(exc)
+    lowered = message.lower()
+    payload: dict[str, object] = {
+        "error": message,
+        "error_type": type(exc).__name__,
+        "retryable": False,
+        "upstream_status": None,
+        "error_code": "whole_book_run_failed",
+    }
+    status = "500 Internal Server Error"
+    if "daily usage limit exceeded" in lowered or "billing_error" in lowered:
+        payload["error_code"] = "provider_billing_limited"
+        payload["retryable"] = False
+        payload["upstream_status"] = 403
+        status = "503 Service Unavailable"
+    elif "bad gateway" in lowered or "502" in lowered:
+        payload["error_code"] = "provider_bad_gateway"
+        payload["retryable"] = True
+        payload["upstream_status"] = 502
+        status = "503 Service Unavailable"
+    elif "timed out" in lowered or "timeout" in lowered:
+        payload["error_code"] = "provider_timeout"
+        payload["retryable"] = True
+        status = "503 Service Unavailable"
+    return status, payload
+
+
 def _apply_review_filters(
     items: list[dict[str, object]],
     filters: dict[str, str],
@@ -201,27 +435,107 @@ def _review_summary_payload(
     review_storage_mode: object,
     filters: dict[str, str],
 ) -> dict[str, object]:
+    batch_suggestions: dict[str, list[dict[str, object]]] = {}
     by_status: dict[str, int] = {}
     by_result: dict[str, int] = {}
     by_owner: dict[str, int] = {}
+    by_actor: dict[str, int] = {}
+    by_latest_event_type: dict[str, int] = {}
+    by_workflow_lane: dict[str, int] = {}
+    by_queue_priority: dict[str, int] = {}
+    by_deadline_level: dict[str, int] = {}
+    by_batch_operation_hint: dict[str, int] = {}
+    by_escalation_tier: dict[str, int] = {}
+    by_auto_next_action_code: dict[str, int] = {}
+    by_auto_next_action: dict[str, int] = {}
+    by_escalation_reason_code: dict[str, int] = {}
+    by_escalation_reason: dict[str, int] = {}
     by_priority: dict[str, int] = {}
     by_pattern: dict[str, int] = {}
+    pending_assignment_count = 0
+    pending_escalation_count = 0
+    resolved_count = 0
+    needs_review_count = 0
+    action_required_count = 0
+    close_ready_count = 0
     for item in items:
         status_key = str(item.get("cluster_status") or "")
         result_key = str(item.get("review_result") or "")
         owner_key = str(item.get("review_owner") or "")
+        actor_key = str(item.get("latest_review_event", {}).get("review_actor") or "")
+        event_type_key = str(item.get("latest_review_event", {}).get("event_type") or "")
+        workflow_lane_key = str(item.get("workflow_lane") or "")
+        queue_priority_key = str(item.get("queue_priority") or "")
+        deadline_level_key = str(item.get("suggested_deadline_level") or "")
+        batch_operation_hint_key = str(item.get("batch_operation_hint") or "")
+        escalation_tier_key = str(item.get("escalation_tier") or "")
+        action_required_value = bool(item.get("action_required"))
+        close_ready_value = bool(item.get("close_ready_gate"))
+        auto_next_action_code_key = str(item.get("auto_next_action_code") or "")
+        auto_next_action_key = str(item.get("auto_next_action") or "")
+        escalation_reason_code_key = str(item.get("escalation_reason_code") or "")
+        escalation_reason_key = str(item.get("escalation_reason") or "")
         priority_key = str(item.get("review_priority") or "")
         pattern_key = str(item.get("pattern_label") or "")
         if status_key:
             by_status[status_key] = by_status.get(status_key, 0) + 1
+            if status_key == "resolved":
+                resolved_count += 1
+            if status_key == "needs_review":
+                needs_review_count += 1
         if result_key:
             by_result[result_key] = by_result.get(result_key, 0) + 1
+            if result_key == "needs-escalation":
+                pending_escalation_count += 1
         if owner_key:
             by_owner[owner_key] = by_owner.get(owner_key, 0) + 1
+        if actor_key:
+            by_actor[actor_key] = by_actor.get(actor_key, 0) + 1
+        if event_type_key:
+            by_latest_event_type[event_type_key] = by_latest_event_type.get(event_type_key, 0) + 1
+            if event_type_key == "assignment_update" and status_key != "resolved":
+                pending_assignment_count += 1
+        if workflow_lane_key:
+            by_workflow_lane[workflow_lane_key] = by_workflow_lane.get(workflow_lane_key, 0) + 1
+        if queue_priority_key:
+            by_queue_priority[queue_priority_key] = by_queue_priority.get(queue_priority_key, 0) + 1
+        if deadline_level_key:
+            by_deadline_level[deadline_level_key] = by_deadline_level.get(deadline_level_key, 0) + 1
+        if batch_operation_hint_key:
+            by_batch_operation_hint[batch_operation_hint_key] = (
+                by_batch_operation_hint.get(batch_operation_hint_key, 0) + 1
+            )
+        if escalation_tier_key:
+            by_escalation_tier[escalation_tier_key] = (
+                by_escalation_tier.get(escalation_tier_key, 0) + 1
+            )
+        if action_required_value:
+            action_required_count += 1
+        if close_ready_value:
+            close_ready_count += 1
+        if auto_next_action_code_key:
+            by_auto_next_action_code[auto_next_action_code_key] = (
+                by_auto_next_action_code.get(auto_next_action_code_key, 0) + 1
+            )
+        if auto_next_action_key:
+            by_auto_next_action[auto_next_action_key] = (
+                by_auto_next_action.get(auto_next_action_key, 0) + 1
+            )
+        if escalation_reason_code_key:
+            by_escalation_reason_code[escalation_reason_code_key] = (
+                by_escalation_reason_code.get(escalation_reason_code_key, 0) + 1
+            )
+        if escalation_reason_key:
+            by_escalation_reason[escalation_reason_key] = (
+                by_escalation_reason.get(escalation_reason_key, 0) + 1
+            )
         if priority_key:
             by_priority[priority_key] = by_priority.get(priority_key, 0) + 1
         if pattern_key:
             by_pattern[pattern_key] = by_pattern.get(pattern_key, 0) + 1
+        batch_hint = str(item.get("batch_operation_hint") or "")
+        if batch_hint:
+            batch_suggestions.setdefault(batch_hint, []).append(item)
     latest_review_at = max(
         [
             str(item.get("latest_review_event", {}).get("created_at") or "")
@@ -249,6 +563,275 @@ def _review_summary_payload(
         ),
         "",
     )
+    latest_review_actor = next(
+        (
+            str(item.get("latest_review_event", {}).get("review_actor") or "")
+            for item in items
+            if isinstance(item.get("latest_review_event"), dict)
+            and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+        ),
+        "",
+    )
+    latest_review_event_type = next(
+        (
+            str(item.get("latest_review_event", {}).get("event_type") or "")
+            for item in items
+            if isinstance(item.get("latest_review_event"), dict)
+            and str(item.get("latest_review_event", {}).get("created_at") or "") == latest_review_at
+        ),
+        "",
+    )
+    current_owner_top = (
+        sorted(by_owner.items(), key=lambda item: (-item[1], item[0]))[0][0] if by_owner else ""
+    )
+    current_owner_top_count = by_owner.get(current_owner_top, 0) if current_owner_top else 0
+    latest_actor_top = (
+        sorted(by_actor.items(), key=lambda item: (-item[1], item[0]))[0][0] if by_actor else ""
+    )
+    latest_actor_top_count = by_actor.get(latest_actor_top, 0) if latest_actor_top else 0
+    latest_event_type_top = (
+        sorted(by_latest_event_type.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_latest_event_type
+        else ""
+    )
+    latest_event_type_top_count = (
+        by_latest_event_type.get(latest_event_type_top, 0) if latest_event_type_top else 0
+    )
+    workflow_lane_top = (
+        sorted(by_workflow_lane.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_workflow_lane
+        else ""
+    )
+    workflow_lane_top_count = by_workflow_lane.get(workflow_lane_top, 0) if workflow_lane_top else 0
+    queue_priority_top = (
+        sorted(by_queue_priority.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_queue_priority
+        else ""
+    )
+    queue_priority_top_count = by_queue_priority.get(queue_priority_top, 0) if queue_priority_top else 0
+    deadline_level_top = (
+        sorted(by_deadline_level.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_deadline_level
+        else ""
+    )
+    deadline_level_top_count = by_deadline_level.get(deadline_level_top, 0) if deadline_level_top else 0
+    batch_operation_hint_top = (
+        sorted(by_batch_operation_hint.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_batch_operation_hint
+        else ""
+    )
+    batch_operation_hint_top_count = (
+        by_batch_operation_hint.get(batch_operation_hint_top, 0) if batch_operation_hint_top else 0
+    )
+    escalation_tier_top = (
+        sorted(by_escalation_tier.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_escalation_tier
+        else ""
+    )
+    escalation_tier_top_count = (
+        by_escalation_tier.get(escalation_tier_top, 0) if escalation_tier_top else 0
+    )
+    auto_next_action_top = (
+        sorted(by_auto_next_action.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_auto_next_action
+        else ""
+    )
+    auto_next_action_top_count = (
+        by_auto_next_action.get(auto_next_action_top, 0) if auto_next_action_top else 0
+    )
+    auto_next_action_code_top = (
+        sorted(by_auto_next_action_code.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_auto_next_action_code
+        else ""
+    )
+    auto_next_action_code_top_count = (
+        by_auto_next_action_code.get(auto_next_action_code_top, 0)
+        if auto_next_action_code_top
+        else 0
+    )
+    escalation_reason_top = (
+        sorted(by_escalation_reason.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_escalation_reason
+        else ""
+    )
+    escalation_reason_top_count = (
+        by_escalation_reason.get(escalation_reason_top, 0) if escalation_reason_top else 0
+    )
+    escalation_reason_code_top = (
+        sorted(by_escalation_reason_code.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        if by_escalation_reason_code
+        else ""
+    )
+    escalation_reason_code_top_count = (
+        by_escalation_reason_code.get(escalation_reason_code_top, 0)
+        if escalation_reason_code_top
+        else 0
+    )
+    batch_suggestion_items: list[dict[str, object]] = []
+    title_map = {
+        "batch_escalate_candidates": "可批量升级处理",
+        "batch_owner_handoff_followup": "可批量催办交接",
+        "batch_human_review_queue": "可批量人工复核",
+        "batch_archive_candidates": "可批量归档关闭",
+        "batch_monitoring_watchlist": "可批量观察跟踪",
+    }
+    for hint, grouped_items in batch_suggestions.items():
+        if not grouped_items:
+            continue
+        sample = grouped_items[0]
+        action_bucket_map = {
+            "batch_escalate_candidates": "escalate",
+            "batch_owner_handoff_followup": "followup",
+            "batch_human_review_queue": "review",
+            "batch_archive_candidates": "archive",
+            "batch_monitoring_watchlist": "monitor",
+        }
+        batch_priority_map = {
+            "batch_escalate_candidates": "urgent",
+            "batch_owner_handoff_followup": "high",
+            "batch_human_review_queue": "medium",
+            "batch_archive_candidates": "low",
+            "batch_monitoring_watchlist": "low",
+        }
+        group_strategy = (
+            "by_owner"
+            if hint in {"batch_owner_handoff_followup", "batch_archive_candidates"}
+            else "by_checker"
+        )
+        group_key = (
+            str(sample.get("review_owner") or "").strip() or "unassigned"
+            if group_strategy == "by_owner"
+            else str(sample.get("checker_names", ["unknown"])[0] if sample.get("checker_names") else "unknown")
+        )
+        batch_suggestion_items.append(
+            {
+                "hint_code": hint,
+                "hint_title": title_map.get(hint, hint),
+                "action_bucket": action_bucket_map.get(hint, "monitor"),
+                "batch_priority": batch_priority_map.get(hint, "low"),
+                "group_strategy": group_strategy,
+                "group_key": group_key,
+                "cluster_count": len(grouped_items),
+                "cluster_keys": [str(item.get("cluster_key") or "") for item in grouped_items[:5]],
+                "suggested_cluster_order": [
+                    str(item.get("cluster_key") or "") for item in grouped_items[:5]
+                ],
+                "suggested_cluster_order_titles": [
+                    str(item.get("cluster_title") or "") for item in grouped_items[:5]
+                ],
+                "suggested_cluster_order_details": [
+                    {
+                        "cluster_key": str(item.get("cluster_key") or ""),
+                        "cluster_title": str(item.get("cluster_title") or ""),
+                        "queue_priority": str(item.get("queue_priority") or ""),
+                        "review_priority": str(item.get("review_priority") or ""),
+                        "chapter_count": int(item.get("chapter_count", 0) or 0),
+                        "confidence": float(item.get("max_confidence", 0.0) or 0.0),
+                        "chapter_span_width": max(
+                            int(item.get("last_chapter", item.get("first_chapter", 0)) or 0)
+                            - int(item.get("first_chapter", 0) or 0),
+                            0,
+                        ),
+                        "batch_rank_score": (
+                            {
+                                "urgent": 500.0,
+                                "high": 400.0,
+                                "medium": 300.0,
+                                "low": 200.0,
+                                "done": 100.0,
+                            }.get(str(item.get("queue_priority") or ""), 0.0)
+                            + {
+                                "P1": 30.0,
+                                "P2": 20.0,
+                                "P3": 10.0,
+                            }.get(str(item.get("review_priority") or ""), 0.0)
+                            + min(float(int(item.get("chapter_count", 0) or 0)), 10.0) * 2.0
+                            + float(item.get("max_confidence", 0.0) or 0.0) * 10.0
+                            + min(
+                                float(
+                                    max(
+                                        int(item.get("last_chapter", item.get("first_chapter", 0)) or 0)
+                                        - int(item.get("first_chapter", 0) or 0),
+                                        0,
+                                    )
+                                ),
+                                10.0,
+                            )
+                        ),
+                        "order_reason": (
+                            f"queue={item.get('queue_priority')} | priority={item.get('review_priority')} | "
+                            f"chapter_count={item.get('chapter_count')} | confidence={item.get('max_confidence')} | "
+                            f"span_width={max(int(item.get('last_chapter', item.get('first_chapter', 0)) or 0) - int(item.get('first_chapter', 0) or 0), 0)}"
+                        ),
+                    }
+                    for item in grouped_items[:5]
+                ],
+                "ordering_strategy": "queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter",
+                "suggested_first_cluster_reason": (
+                    f"queue={sample.get('queue_priority')} | priority={sample.get('review_priority')} | "
+                    f"chapter_count={sample.get('chapter_count')} | confidence={sample.get('max_confidence')} | "
+                    f"span_width={max(int(sample.get('last_chapter', sample.get('first_chapter', 0)) or 0) - int(sample.get('first_chapter', 0) or 0), 0)}"
+                ),
+                "cluster_titles": [str(item.get("cluster_title") or "") for item in grouped_items[:3]],
+                "owners": [
+                    str(item.get("review_owner") or "")
+                    for item in grouped_items
+                    if str(item.get("review_owner") or "")
+                ][:3],
+                "suggested_owner": next(
+                    (
+                        str(item.get("review_owner") or "")
+                        for item in grouped_items
+                        if str(item.get("review_owner") or "")
+                    ),
+                    "",
+                ),
+                "primary_checker": str(
+                    sample.get("checker_names", [""])[0] if sample.get("checker_names") else ""
+                ),
+                "risk_types": [
+                    str(value)
+                    for value in dict.fromkeys(
+                        value
+                        for item in grouped_items
+                        for value in (item.get("risk_types") or [])
+                        if str(value).strip()
+                    )
+                ][:4],
+                "chapter_spans": [
+                    str(value)
+                    for value in dict.fromkeys(
+                        item.get("chapter_span")
+                        for item in grouped_items
+                        if str(item.get("chapter_span") or "").strip()
+                    )
+                ][:3],
+                "queue_priority_top": str(sample.get("queue_priority") or ""),
+                "deadline_level_top": str(sample.get("suggested_deadline_level") or ""),
+                "action_required": any(bool(item.get("action_required")) for item in grouped_items),
+                "resolved_candidate_count": sum(
+                    1 for item in grouped_items if str(item.get("cluster_status") or "") == "resolved"
+                ),
+                "escalation_candidate_count": sum(
+                    1
+                    for item in grouped_items
+                    if str(item.get("review_result") or "") == "needs-escalation"
+                ),
+                "recommended_batch_action": str(sample.get("auto_next_action") or ""),
+            }
+        )
+    batch_suggestion_items.sort(
+        key=lambda item: (
+            {
+                "batch_escalate_candidates": 0,
+                "batch_owner_handoff_followup": 1,
+                "batch_human_review_queue": 2,
+                "batch_archive_candidates": 3,
+                "batch_monitoring_watchlist": 4,
+            }.get(str(item.get("hint_code") or ""), 5),
+            -int(item.get("cluster_count", 0) or 0),
+        )
+    )
     return {
         "review_storage_mode": review_storage_mode,
         "cluster_count": len(items),
@@ -256,14 +839,126 @@ def _review_summary_payload(
         "by_status": by_status,
         "by_result": by_result,
         "by_owner": by_owner,
+        "by_actor": by_actor,
+        "by_latest_event_type": by_latest_event_type,
+        "by_workflow_lane": by_workflow_lane,
+        "by_queue_priority": by_queue_priority,
+        "by_deadline_level": by_deadline_level,
+        "by_batch_operation_hint": by_batch_operation_hint,
+        "by_escalation_tier": by_escalation_tier,
+        "by_auto_next_action_code": by_auto_next_action_code,
+        "by_auto_next_action": by_auto_next_action,
+        "by_escalation_reason_code": by_escalation_reason_code,
+        "by_escalation_reason": by_escalation_reason,
         "by_priority": by_priority,
         "by_pattern": by_pattern,
         "history_event_count": sum(int(item.get("review_history_count", 0) or 0) for item in items),
         "latest_review_at": latest_review_at,
         "latest_review_owner": latest_review_owner,
+        "latest_review_actor": latest_review_actor,
+        "latest_review_event_type": latest_review_event_type,
         "latest_review_result": latest_review_result,
         "latest_review_result_label": ExportService._review_result_label(latest_review_result),
+        "current_owner_top": current_owner_top,
+        "current_owner_top_count": current_owner_top_count,
+        "latest_actor_top": latest_actor_top,
+        "latest_actor_top_count": latest_actor_top_count,
+        "latest_event_type_top": latest_event_type_top,
+        "latest_event_type_top_count": latest_event_type_top_count,
+        "workflow_lane_top": workflow_lane_top,
+        "workflow_lane_top_count": workflow_lane_top_count,
+        "queue_priority_top": queue_priority_top,
+        "queue_priority_top_count": queue_priority_top_count,
+        "deadline_level_top": deadline_level_top,
+        "deadline_level_top_count": deadline_level_top_count,
+        "batch_operation_hint_top": batch_operation_hint_top,
+        "batch_operation_hint_top_count": batch_operation_hint_top_count,
+        "escalation_tier_top": escalation_tier_top,
+        "escalation_tier_top_count": escalation_tier_top_count,
+        "auto_next_action_code_top": auto_next_action_code_top,
+        "auto_next_action_code_top_count": auto_next_action_code_top_count,
+        "auto_next_action_top": auto_next_action_top,
+        "auto_next_action_top_count": auto_next_action_top_count,
+        "escalation_reason_code_top": escalation_reason_code_top,
+        "escalation_reason_code_top_count": escalation_reason_code_top_count,
+        "escalation_reason_top": escalation_reason_top,
+        "escalation_reason_top_count": escalation_reason_top_count,
+        "pending_assignment_count": pending_assignment_count,
+        "pending_escalation_count": pending_escalation_count,
+        "resolved_count": resolved_count,
+        "needs_review_count": needs_review_count,
+        "action_required_count": action_required_count,
+        "close_ready_count": close_ready_count,
+        "batch_suggestions": batch_suggestion_items,
     }
+
+
+def _apply_history_filters(
+    items: list[dict[str, object]],
+    *,
+    event_type_filter: str,
+    owner_filter: str,
+    result_filter: str,
+    limit: int,
+) -> list[dict[str, object]]:
+    filtered = items
+    if event_type_filter:
+        filtered = [
+            item for item in filtered if str(item.get("event_type") or "") == event_type_filter
+        ]
+    if owner_filter:
+        filtered = [
+            item for item in filtered if str(item.get("review_owner") or "") == owner_filter
+        ]
+    if result_filter:
+        filtered = [
+            item for item in filtered if str(item.get("review_result") or "") == result_filter
+        ]
+    if limit > 0:
+        filtered = filtered[-limit:]
+    return filtered
+
+
+def _find_batch_suggestion(
+    batch_suggestions: list[dict[str, object]],
+    *,
+    hint_code: str,
+    group_strategy: str,
+    group_key: str,
+) -> dict[str, object] | None:
+    for item in batch_suggestions:
+        if (
+            str(item.get("hint_code") or "") == hint_code
+            and str(item.get("group_strategy") or "") == group_strategy
+            and str(item.get("group_key") or "") == group_key
+        ):
+            return item
+    return None
+
+
+_BATCH_ACTION_CONFIG: dict[str, dict[str, object]] = {
+    "batch_review_assign": {
+        "allowed_hints": {"batch_human_review_queue", "batch_owner_handoff_followup"},
+        "cluster_status": "reviewed",
+        "default_review_result": "deferred",
+    },
+    "batch_escalate": {
+        "allowed_hints": {"batch_escalate_candidates"},
+        "cluster_status": "escalated",
+        "default_review_result": "needs-escalation",
+    },
+    "batch_close": {
+        "allowed_hints": {"batch_close_ready_candidates"},
+        "cluster_status": "resolved",
+        "default_review_result": "confirmed-benign",
+    },
+    "batch_archive": {
+        "allowed_hints": {"batch_archive_candidates"},
+        "cluster_status": "resolved",
+        "default_review_result": "",
+        "preserve_existing_state": True,
+    },
+}
 
 
 def _mock_import(profile: str) -> dict[str, Any]:
@@ -558,40 +1253,11 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             status="200 OK",
             payload={
                 "service": "novel-analyzer-api-prototype",
-                "available_endpoints": [
-                    "/health",
-                    "/api/meta",
-                    "/api/mock/import",
-                    "/api/run-snapshot",
-                    "/api/branch-snapshot",
-                    "/api/chapter-bundle",
-                    "/api/chapter-qa-context",
-                    "/api/chapter-source",
-                    "/api/chapter-jobs",
-                    "/api/chapter-job-events",
-                    "/api/review-clusters",
-                    "/api/review-cluster-summary",
-                    "/api/review-cluster-history",
-                    "/api/review-cluster-update",
-                    "/api/library",
-                    "/api/job-events",
-                    "/api/pipeline/start-range",
-                    "/api/pipeline/status",
-                    "/api/pipeline/runs",
-                    "/api/pipeline/pause",
-                    "/api/pipeline/resume",
-                    "/api/pipeline/cancel",
-                    "/api/runtime-health",
-                    "/api/provider-health",
-                    "/api/search-branch",
-                    "/api/ask-branch",
-                    "/api/ask-branch-stream",
-                    "/api/branch-exports",
-                    "/api/download",
-                ],
+                "available_endpoints": [item["path"] for item in _API_ENDPOINT_SPECS],
+                "available_endpoint_specs": _API_ENDPOINT_SPECS,
                 "notes": [
                     "Current backend is dependency-light WSGI JSON.",
-                    "Real write-side import/upload endpoints are still future work.",
+                    "The import/upload endpoint is available; broader write-side workflow surfaces remain incrementally productized.",
                 ],
             },
         )
@@ -953,7 +1619,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 )
                 items = _apply_review_filters(candidate_clusters, filters)
                 payload = {
-                    "stable_contract_version": "review-api-pre-v1",
+                    **_review_contract(),
                     "review_storage_mode": bundle.get("review_storage_mode"),
                     "filters": filters,
                     "items": items,
@@ -995,6 +1661,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     review_storage_mode=bundle.get("review_storage_mode"),
                     filters=filters,
                 )
+                payload = {**_review_contract(), **payload}
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,
@@ -1014,6 +1681,10 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         runtime = get_settings().model_copy(deep=True)
         if params.get("database_url"):
             runtime.database_url = params["database_url"]
+        event_type_filter = str(params.get("event_type") or "").strip()
+        owner_filter = str(params.get("review_owner") or "").strip()
+        result_filter = str(params.get("review_result") or "").strip()
+        limit = int(params.get("limit", "0") or "0")
         try:
             factory = create_session_factory(runtime)
             with factory() as session:
@@ -1024,34 +1695,31 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     )
                     review_storage_mode = "db"
                 except ClusterReviewStorageUnavailable:
-                    items = []
+                    items = read_cluster_review_history(
+                        params["branch_id"],
+                        params["cluster_key"],
+                        runtime,
+                    )
                     review_storage_mode = "file-fallback"
-                event_type_filter = str(params.get("event_type") or "").strip()
-                if event_type_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("event_type") or "") == event_type_filter
-                    ]
-                if owner_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("review_owner") or "") == owner_filter
-                    ]
-                if result_filter:
-                    items = [
-                        item
-                        for item in items
-                        if str(item.get("review_result") or "") == result_filter
-                    ]
-                limit = int(params.get("limit", "0") or "0")
-                if limit > 0:
-                    items = items[-limit:]
+                items = _apply_history_filters(
+                    items,
+                    event_type_filter=event_type_filter,
+                    owner_filter=owner_filter,
+                    result_filter=result_filter,
+                    limit=limit,
+                )
                 payload = {
-                    "stable_contract_version": "review-api-pre-v1",
+                    **_review_contract(),
                     "review_storage_mode": review_storage_mode,
-                    "filters": {"event_type": event_type_filter},
+                    "filters": {
+                        key: value
+                        for key, value in {
+                            "event_type": event_type_filter,
+                            "review_owner": owner_filter,
+                            "review_result": result_filter,
+                        }.items()
+                        if value
+                    },
                     "items": items,
                 }
         except Exception as exc:  # noqa: BLE001
@@ -1064,7 +1732,26 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             payload = {
                 **_review_contract(),
                 "review_storage_mode": "file-fallback",
-                "items": read_cluster_review_history(params["branch_id"], params["cluster_key"], runtime),
+                "filters": {
+                    key: value
+                    for key, value in {
+                        "event_type": event_type_filter,
+                        "review_owner": owner_filter,
+                        "review_result": result_filter,
+                    }.items()
+                    if value
+                },
+                "items": _apply_history_filters(
+                    read_cluster_review_history(
+                        params["branch_id"],
+                        params["cluster_key"],
+                        runtime,
+                    ),
+                    event_type_filter=event_type_filter,
+                    owner_filter=owner_filter,
+                    result_filter=result_filter,
+                    limit=limit,
+                ),
             }
         return _response(start_response, status="200 OK", payload=payload)
 
@@ -1085,10 +1772,11 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             runtime.database_url = database_url
         review_payload = {
             "review_notes": str(body.get("review_notes") or ""),
-            "review_owner": str(body.get("review_owner") or ""),
-            "resolved_at": str(body.get("resolved_at") or ""),
-            "review_result": str(body.get("review_result") or ""),
-        }
+        "review_owner": str(body.get("review_owner") or ""),
+        "review_actor": str(body.get("review_actor") or ""),
+        "resolved_at": str(body.get("resolved_at") or ""),
+        "review_result": str(body.get("review_result") or ""),
+    }
         try:
             factory = create_session_factory(runtime)
             review_storage_mode = "db"
@@ -1099,7 +1787,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                     cluster_status=cluster_status,
                     **review_payload,
                 )
-                payload = {**asdict(state), "review_storage_mode": "db"}
+                payload = {**_review_contract(), **asdict(state), "review_storage_mode": "db"}
         except ValueError as exc:
             return _response(
                 start_response,
@@ -1120,8 +1808,286 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 settings=runtime,
                 **review_payload,
             )
-            payload = {**asdict(state), "review_storage_mode": "file-fallback"}
+            payload = {
+                **_review_contract(),
+                **asdict(state),
+                "review_storage_mode": "file-fallback",
+            }
         return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/review-batch-execute" and method == "POST":
+        body = _body(environ)
+        run_id = str(body.get("run_id") or "")
+        branch_id = str(body.get("branch_id") or "")
+        action = str(body.get("action") or "")
+        hint_code = str(body.get("hint_code") or "")
+        group_strategy = str(body.get("group_strategy") or "")
+        group_key = str(body.get("group_key") or "")
+        cluster_keys = body.get("cluster_keys") or []
+        if (
+            not run_id
+            or not branch_id
+            or not action
+            or not hint_code
+            or not group_strategy
+            or not group_key
+        ):
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={
+                    "error": "run_id, branch_id, action, hint_code, group_strategy and group_key are required"
+                },
+            )
+        action_config = _BATCH_ACTION_CONFIG.get(action)
+        if action_config is None:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "unsupported batch action"},
+            )
+        if not isinstance(cluster_keys, list) or not all(isinstance(item, str) for item in cluster_keys):
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "cluster_keys must be a list[str]"},
+            )
+        dry_run = bool(body.get("dry_run"))
+        runtime = get_settings().model_copy(deep=True)
+        database_url = str(body.get("database_url") or "") or None
+        if database_url:
+            runtime.database_url = database_url
+        review_owner = str(body.get("review_owner") or "")
+        review_actor = str(body.get("review_actor") or "")
+        review_notes = str(body.get("review_notes") or "")
+        review_result = str(body.get("review_result") or "")
+        resolved_at = str(body.get("resolved_at") or "")
+        try:
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
+                batch_suggestions = cast(
+                    list[dict[str, object]],
+                    bundle.get("review_summary", {}).get("batch_suggestions", []),
+                )
+                suggestion = _find_batch_suggestion(
+                    batch_suggestions,
+                    hint_code=hint_code,
+                    group_strategy=group_strategy,
+                    group_key=group_key,
+                )
+                if suggestion is None:
+                    return _response(
+                        start_response,
+                        status="404 Not Found",
+                        payload={"error": "batch suggestion not found"},
+                    )
+                allowed_hints = cast(set[str], action_config["allowed_hints"])
+                if hint_code not in allowed_hints:
+                    return _response(
+                        start_response,
+                        status="400 Bad Request",
+                        payload={"error": f"hint_code {hint_code} is not valid for action {action}"},
+                    )
+                allowed_cluster_keys = {
+                    str(item) for item in cast(list[object], suggestion.get("cluster_keys", [])) if str(item)
+                }
+                target_cluster_keys = [
+                    cluster_key for cluster_key in cluster_keys if cluster_key in allowed_cluster_keys
+                ]
+                skipped_results: list[dict[str, str]] = [
+                    {"cluster_key": cluster_key, "reason": "not_in_batch_suggestion"}
+                    for cluster_key in cluster_keys
+                    if cluster_key not in allowed_cluster_keys
+                ]
+                if not target_cluster_keys:
+                    target_cluster_keys = sorted(allowed_cluster_keys)
+                target_clusters = [
+                    item
+                    for item in cast(
+                        list[dict[str, object]],
+                        bundle.get("risk_summary", {}).get("review_candidate_clusters", []),
+                    )
+                    if str(item.get("cluster_key") or "") in target_cluster_keys
+                ]
+                target_cluster_map = {
+                    str(item.get("cluster_key") or ""): item for item in target_clusters
+                }
+                preview = [
+                    {
+                        "cluster_key": str(item.get("cluster_key") or ""),
+                        "cluster_title": str(item.get("cluster_title") or ""),
+                        "workflow_lane": str(item.get("workflow_lane") or ""),
+                        "queue_priority": str(item.get("queue_priority") or ""),
+                        "close_ready_gate": bool(item.get("close_ready_gate")),
+                    }
+                    for item in target_clusters
+                ]
+                if action == "batch_close":
+                    invalid_targets = [
+                        str(item.get("cluster_key") or "")
+                        for item in target_clusters
+                        if not bool(item.get("close_ready_gate"))
+                    ]
+                    if invalid_targets:
+                        return _response(
+                            start_response,
+                            status="400 Bad Request",
+                            payload={
+                                "error": "batch_close requires close_ready_gate=true for every target",
+                                "invalid_cluster_keys": invalid_targets,
+                            },
+                        )
+                if dry_run:
+                    audit_entry = write_batch_execution_entry(
+                        branch_id=branch_id,
+                        action=action,
+                        hint_code=hint_code,
+                        group_strategy=group_strategy,
+                        group_key=group_key,
+                        dry_run=True,
+                        target_count=len(target_cluster_keys),
+                        success_count=0,
+                        failed_count=0,
+                        skipped_count=len(skipped_results),
+                        preview=preview,
+                        successes=[],
+                        failed=[],
+                        skipped=skipped_results,
+                        settings=runtime,
+                    )
+                    return _response(
+                        start_response,
+                        status="200 OK",
+                        payload={
+                            **_review_contract(),
+                            "action": action,
+                            "branch_id": branch_id,
+                            "hint_code": hint_code,
+                            "group_strategy": group_strategy,
+                            "group_key": group_key,
+                            "dry_run": True,
+                            "target_count": len(target_cluster_keys),
+                            "skipped_count": len(skipped_results),
+                            "execution_id": audit_entry["execution_id"],
+                            "preview": preview,
+                            "skipped": skipped_results,
+                        },
+                    )
+                success_results: list[dict[str, str]] = []
+                failed_results: list[dict[str, str]] = []
+                target_cluster_status = cast(str, action_config["cluster_status"])
+                preserve_existing_state = bool(action_config.get("preserve_existing_state"))
+                for cluster_key in target_cluster_keys:
+                    try:
+                        cluster_snapshot = target_cluster_map.get(cluster_key, {})
+                        effective_cluster_status = target_cluster_status
+                        effective_review_result = review_result or cast(
+                            str,
+                            action_config["default_review_result"],
+                        )
+                        if preserve_existing_state and isinstance(cluster_snapshot, dict):
+                            effective_cluster_status = str(
+                                cluster_snapshot.get("cluster_status") or target_cluster_status
+                            )
+                            effective_review_result = str(
+                                review_result
+                                or cluster_snapshot.get("review_result")
+                                or action_config["default_review_result"]
+                            )
+                        ClusterReviewService(session).write(
+                            branch_id=branch_id,
+                            cluster_key=cluster_key,
+                            cluster_status=effective_cluster_status,
+                            review_owner=review_owner,
+                            review_actor=review_actor,
+                            review_notes=review_notes,
+                            review_result=effective_review_result,
+                            resolved_at=resolved_at,
+                        )
+                        success_results.append(
+                            {
+                                "cluster_key": cluster_key,
+                                "status": "ok",
+                                "cluster_status": effective_cluster_status,
+                                "review_result": effective_review_result,
+                            }
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        session.rollback()
+                        failed_results.append(
+                            {"cluster_key": cluster_key, "status": "failed", "error": str(exc)}
+                        )
+                audit_entry = write_batch_execution_entry(
+                    branch_id=branch_id,
+                    action=action,
+                    hint_code=hint_code,
+                    group_strategy=group_strategy,
+                    group_key=group_key,
+                    dry_run=False,
+                    target_count=len(target_cluster_keys),
+                    success_count=len(success_results),
+                    failed_count=len(failed_results),
+                    skipped_count=len(skipped_results),
+                    preview=preview,
+                    successes=success_results,
+                    failed=failed_results,
+                    skipped=skipped_results,
+                    settings=runtime,
+                )
+                return _response(
+                    start_response,
+                    status="200 OK",
+                    payload={
+                        **_review_contract(),
+                        "action": action,
+                        "branch_id": branch_id,
+                        "hint_code": hint_code,
+                        "group_strategy": group_strategy,
+                        "group_key": group_key,
+                        "dry_run": False,
+                        "target_count": len(target_cluster_keys),
+                        "success_count": len(success_results),
+                        "failed_count": len(failed_results),
+                        "skipped_count": len(skipped_results),
+                        "execution_id": audit_entry["execution_id"],
+                        "preview": preview,
+                        "successes": success_results,
+                        "failed": failed_results,
+                        "skipped": skipped_results,
+                    },
+                )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+
+    if path == "/api/review-batch-history":
+        ok, missing = _require(params, "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        if params.get("database_url"):
+            runtime.database_url = params["database_url"]
+        limit = int(params.get("limit", "0") or "0")
+        items = read_batch_execution_history(params["branch_id"], runtime)
+        if limit > 0:
+            items = items[-limit:]
+        return _response(
+            start_response,
+            status="200 OK",
+            payload={
+                **_review_contract(),
+                "branch_id": params["branch_id"],
+                "items": items,
+            },
+        )
 
     if path == "/api/pipeline/start-range" and method == "POST":
         body = _body(environ)
@@ -1252,6 +2218,75 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=asdict(report))
+
+    if path == "/api/whole-book-imitation-readiness":
+        try:
+            payload = _whole_book_readiness_payload(
+                params.get("branch_id"),
+                params.get("database_url"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=payload)
+
+    if path == "/api/whole-book-imitation-run" and method == "POST":
+        body = _body(environ)
+        required = [
+            "branch_id",
+            "project_title",
+            "source_work_name",
+            "target_work_name",
+            "chapter_specs",
+        ]
+        missing_key = next((key for key in required if not body.get(key)), None)
+        if missing_key is not None:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing required field: {missing_key}"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = str(body.get("database_url") or "").strip()
+        if database_url:
+            runtime.database_url = database_url
+        try:
+            mapping_pack = _whole_book_mapping_pack(body)
+            chapter_goals = _whole_book_chapter_goals(body)
+            execute = bool(body.get("execute"))
+            max_rounds = int(body.get("max_rounds") or 1)
+            use_llm = bool(body.get("use_llm"))
+            model_name = str(body.get("model_name") or "").strip() or None
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                service = WholeBookImitationService(session)
+                report = (
+                    service.run_in_sandbox(
+                        str(body["branch_id"]),
+                        mapping_pack=mapping_pack,
+                        chapter_goals=chapter_goals,
+                        max_rounds=max_rounds,
+                        use_llm=use_llm,
+                        model_name=model_name,
+                    )
+                    if execute
+                    else service.build_run_queue(
+                        str(body["branch_id"]),
+                        mapping_pack=mapping_pack,
+                        chapter_goals=chapter_goals,
+                    )
+                )
+        except Exception as exc:  # noqa: BLE001
+            status, payload = _whole_book_run_error_payload(exc)
+            return _response(
+                start_response,
+                status=status,
+                payload=payload,
+            )
+        return _response(start_response, status="200 OK", payload=report.model_dump(mode="json"))
 
     if path == "/api/search-branch":
         ok, missing = _require(params, "branch_id", "q")

@@ -1,0 +1,95 @@
+{
+  "review_summary": {
+    "review_storage_mode": "db",
+    "cluster_count": 3,
+    "by_status": {
+      "needs_review": 1,
+      "resolved": 1,
+      "escalated": 1
+    },
+    "by_result": {
+      "confirmed-benign": 1,
+      "needs-escalation": 1,
+      "deferred": 1
+    },
+    "by_owner": {
+      "editor-a": 1,
+      "editor-b": 2
+    },
+    "by_actor": {
+      "review-bot": 2,
+      "editor-b": 1
+    },
+    "by_latest_event_type": {
+      "assignment_update": 1,
+      "status_update": 1,
+      "review_update": 1
+    },
+    "by_priority": {
+      "P1": 1,
+      "P2": 2
+    },
+    "by_pattern": {
+      "持续型问题": 1,
+      "集中爆发型问题": 1,
+      "单点问题": 1
+    },
+    "history_event_count": 5,
+    "latest_review_at": "2026-04-30T01:20:00Z",
+    "latest_review_owner": "editor-b",
+    "latest_review_actor": "review-bot",
+    "latest_review_event_type": "assignment_update",
+    "latest_review_result": "deferred",
+    "latest_review_result_label": "暂缓判断",
+    "current_owner_top": "editor-b",
+    "current_owner_top_count": 2,
+    "latest_actor_top": "review-bot",
+    "latest_actor_top_count": 2,
+    "latest_event_type_top": "assignment_update",
+    "latest_event_type_top_count": 1,
+    "pending_assignment_count": 1,
+    "pending_escalation_count": 1,
+    "resolved_count": 1,
+    "needs_review_count": 1,
+    "by_phase2_focus": {
+      "timeline-phase2": 1,
+      "plot-phase2": 1
+    },
+    "phase2_focus_top": "timeline-phase2",
+    "phase2_focus_top_count": 1,
+    "workflow_lane_top": "human_review_queue",
+    "workflow_lane_top_count": 1,
+    "queue_priority_top": "high",
+    "queue_priority_top_count": 2,
+    "deadline_level_top": "soon",
+    "deadline_level_top_count": 2,
+    "batch_operation_hint_top": "batch_human_review_queue",
+    "batch_operation_hint_top_count": 1,
+    "auto_next_action_code_top": "prioritize_phase2_human_review",
+    "auto_next_action_code_top_count": 1,
+    "auto_next_action_top": "优先安排人工复核 恢复窗口不足候选簇，重点核对时间线/恢复窗口相关证据链是否闭合。",
+    "auto_next_action_top_count": 1,
+    "escalation_reason_code_top": "phase2_risk_requires_human_confirmation",
+    "escalation_reason_code_top_count": 1,
+    "escalation_reason_top": "当前问题簇属于 phase-2 结构化风险候选，需优先补足人工确认后再决定是否升级或关闭。",
+    "escalation_reason_top_count": 1
+  },
+  "audit_conclusion": {
+    "content_judgement": "当前分支已形成可用审查结果。",
+    "risk_judgement": "当前仍存在待升级与待复核问题簇，建议继续人工处理。",
+    "blocking_judgement": "当前无执行阻塞。",
+    "recommended_action": "优先处理待升级问题簇，其次消化已交接未闭环的问题簇。",
+    "review_progress_note": "已人工处理问题簇 1 个；仍待人工复核问题簇 1 个。",
+    "needs_review_note": "当前仍有 1 个问题簇处于 needs_review，建议优先安排人工复核。",
+    "resolved_cluster_note": "当前已有 1 个问题簇被标记为 resolved。",
+    "review_result_note": "已确认无问题 1 个；需升级处理 1 个；暂缓判断 1 个。",
+    "pending_escalation_note": "当前有 1 个问题簇等待升级处理，建议尽快转入高等级复核。",
+    "review_storage_note": "当前 review 数据来自数据库主路径。",
+    "review_owner_note": "当前已记录复核人中，editor-b 处理了 2 个问题簇。",
+    "current_owner_note": "当前问题簇负责人分布中，editor-b 负责 2 个问题簇。",
+    "review_actor_note": "最近审查动作记录中，review-bot 执行了 2 次变更。",
+    "latest_event_type_note": "最近一批问题簇的最新动作类型中，assignment_update 出现了 1 次。",
+    "pending_assignment_note": "存在 1 个已交接但未闭环的问题簇；优先关注 人物连续性复核簇（owner=editor-b）。",
+    "latest_review_note": "最近一次复核记录：状态=needs_review，结果=deferred，处理人=editor-b，操作人=review-bot。"
+  }
+}

@@ -102,9 +102,114 @@
 
 ## 下一批 checker（Phase 1 已纳入系统 roster）
 
-以下三类已经纳入系统 checker roster，属于 **Phase 1 contract-first implementation**：
+以下七类已经纳入系统 checker roster，其中关系、伏笔、设定作用域与线程收束 checker 已开始第一轮落地：
 
-### C. `plot_logic_consistency`
+### C. `relationship_consistency`
+
+领域：`relationship`
+
+目标：
+
+- 检测人物关系口径突然跳变
+- 检测信任/敌意状态冲突
+- 检测敌对关系缓和过快且桥接不足
+
+当前阶段：
+
+- 已落地 checker contract
+- 支持 `relationship_issues`
+- 已开始复用现有 artifact / state_summary 信号：
+  - `state_summary.stable_relations`
+  - `state_summary.evolved_relations`
+  - `unsupported_inferences`
+  - `state_transition_notes`
+  - `evidence_backed_resolutions`
+  - `unresolved_threads`
+- 在信号不足时只会输出 `relationship_review_candidate` 或 `skipped`
+- 当前第一轮已新增更细候选：
+  - `relationship_shift_without_bridge`
+  - `trust_state_conflict`
+  - `hostility_resolution_too_fast`
+
+### D. `foreshadow_payoff_consistency`
+
+领域：`foreshadow`
+
+目标：
+
+- 检测当前兑现是否缺少前置铺垫
+- 检测已解决线索是否无解释重开
+- 检测关键伏笔/线程长期悬置
+
+当前阶段：
+
+- 已落地 checker contract
+- 支持 `foreshadow_payoff_issues`
+- 已开始复用现有 artifact / state_summary 信号：
+  - `state_summary.new_foreshadowing`
+  - `state_summary.paid_off_foreshadowing`
+  - `unsupported_inferences`
+  - `evidence_backed_resolutions`
+  - `unresolved_threads`
+- 在信号不足时只会输出 `foreshadow_review_candidate` 或 `skipped`
+- 当前第一轮已新增更细候选：
+  - `payoff_without_setup`
+  - `resolved_thread_reopened_without_reason`
+  - `important_thread_long_unmentioned`
+
+### E. `setting_scope_consistency`
+
+领域：`setting_scope`
+
+目标：
+
+- 检测设定作用域是否被异常放大/缩小
+- 检测资源/次数/额度限制是否无解释失效
+- 检测权限/组织/地理边界是否被可疑突破
+
+当前阶段：
+
+- 已落地 checker contract
+- 支持 `setting_scope_issues`
+- 已开始复用现有 artifact / state_summary 信号：
+  - `state_summary.observed_world_rules`
+  - `state_summary.constraining_world_rules`
+  - `unsupported_inferences`
+  - `state_transition_notes`
+  - `unresolved_threads`
+- 在信号不足时只会输出 `setting_scope_review_candidate` 或 `skipped`
+- 当前第一轮已新增更细候选：
+  - `constraint_scope_expansion`
+  - `resource_limit_missing`
+  - `authority_boundary_conflict`
+
+### F. `thread_closure_consistency`
+
+领域：`thread_closure`
+
+目标：
+
+- 检测升级冲突是否失去后续承接
+- 检测收束/已解决表述是否缺少解决依据
+- 检测阶段性结尾是否存在收束不稳候选
+
+当前阶段：
+
+- 已落地 checker contract
+- 支持 `thread_closure_issues`
+- 已开始复用现有 artifact / state_summary 信号：
+  - `state_summary.new_conflicts`
+  - `state_summary.escalated_conflicts`
+  - `unsupported_inferences`
+  - `evidence_backed_resolutions`
+  - `unresolved_threads`
+- 在信号不足时只会输出 `thread_closure_review_candidate` 或 `skipped`
+- 当前第一轮已新增更细候选：
+  - `thread_dropped_after_escalation`
+  - `closure_without_resolution_basis`
+  - `ending_stability_candidate`
+
+### G. `plot_logic_consistency`
 
 领域：`plot`
 
@@ -124,8 +229,11 @@
   - `evidence_backed_resolutions`
   - `unresolved_threads`
 - 在信号不足时只会输出 `logic_review_candidate` 或 `skipped`
+- phase-2 第一轮已新增更细候选：
+  - `thread_state_conflict`
+  - `motivation_to_action_gap`
 
-### D. `timeline_consistency`
+### H. `timeline_consistency`
 
 领域：`timeline`
 
@@ -146,8 +254,11 @@
   - `state_transition_notes`
   - `unresolved_threads`
 - 在信号不足时只会输出 `timeline_review_candidate` 或 `skipped`
+- phase-2 第一轮已新增更细候选：
+  - `sequence_conflict_candidate`
+  - `recovery_window_insufficient`
 
-### E. `power_scaling_consistency`
+### I. `power_scaling_consistency`
 
 领域：`power`
 
@@ -168,6 +279,9 @@
   - `state_transition_notes`
   - `unresolved_threads`
 - 在信号不足时只会输出 `power_review_candidate` 或 `skipped`
+- phase-2 第一轮已新增更细候选：
+  - `upset_without_setup`
+  - `cost_constraint_missing`
 
 ---
 
@@ -179,14 +293,15 @@
 2. 当前最成熟的是：
    - 人物 OOC
    - 规则一致性
-3. 剧情因果 / 时间线 / 战力 checker 目前处于：
+3. 关系 / 伏笔兑现 / 设定作用域 / 线程收束 / 剧情因果 / 时间线 / 战力 checker 目前处于：
    - **系统 contract 已落地**
    - **advisory 语义已稳定**
-   - **高质量信号底座仍需继续建设**
+   - **phase-2 第一轮结构化候选已落地**
+   - **高质量 cross-chapter 信号底座仍需继续建设**
 
 因此当前对外表述建议是：
 
-> 系统已经具备统一风险审查体系的第一阶段能力，当前正式覆盖人物 OOC 与规则一致性，并已将剧情因果、时间线、战力漂移纳入统一 checker 体系，后续将在相同框架下持续提质。
+> 系统已经具备统一风险审查体系的第一阶段能力，当前正式覆盖人物 OOC 与规则一致性，并已将人物关系、伏笔兑现、设定作用域、线程收束、剧情因果、时间线、战力漂移纳入统一 checker 体系，后续将在相同框架下持续提质。
 
 ---
 
@@ -251,6 +366,8 @@
    1. `plot_logic_consistency`
    2. `timeline_consistency`
    3. `power_scaling_consistency`
+   4. 下一批新增 checker 设计收口见：
+      - [`./risk-audit-next-batch-checkers.md`](./risk-audit-next-batch-checkers.md)
 
 3. **交付层优化**
    - 报告里直接写“当前最终审查结论”

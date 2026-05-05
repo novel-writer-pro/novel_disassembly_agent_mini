@@ -1,0 +1,7 @@
+{
+  "error": "Error code: 403 - {'error': {'message': 'daily usage limit exceeded', 'type': 'billing_error'}}",
+  "error_type": "RuntimeError",
+  "retryable": false,
+  "upstream_status": 403,
+  "error_code": "provider_billing_limited"
+}

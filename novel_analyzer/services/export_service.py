@@ -141,6 +141,871 @@ class ExportService:
         }.get(str(review_result or '').strip(), str(review_result or '').strip() or None)
 
     @classmethod
+    def _build_review_summary(
+        cls,
+        *,
+        review_candidate_clusters: list[dict[str, object]],
+        review_storage_mode: str,
+    ) -> dict[str, object]:
+        by_status: dict[str, int] = {}
+        by_result: dict[str, int] = {}
+        by_owner: dict[str, int] = {}
+        by_actor: dict[str, int] = {}
+        by_latest_event_type: dict[str, int] = {}
+        by_workflow_lane: dict[str, int] = {}
+        by_queue_priority: dict[str, int] = {}
+        by_deadline_level: dict[str, int] = {}
+        by_batch_operation_hint: dict[str, int] = {}
+        by_escalation_tier: dict[str, int] = {}
+        by_auto_next_action_code: dict[str, int] = {}
+        by_auto_next_action: dict[str, int] = {}
+        by_escalation_reason_code: dict[str, int] = {}
+        by_escalation_reason: dict[str, int] = {}
+        by_priority: dict[str, int] = {}
+        by_pattern: dict[str, int] = {}
+        by_phase2_focus: dict[str, int] = {}
+        pending_assignment_count = 0
+        pending_escalation_count = 0
+        resolved_count = 0
+        needs_review_count = 0
+        action_required_count = 0
+        close_ready_count = 0
+        latest_review_at = ""
+        latest_review_owner = ""
+        latest_review_actor = ""
+        latest_review_event_type = ""
+        latest_review_result = ""
+
+        for item in review_candidate_clusters:
+            status_key = str(item.get('cluster_status') or '').strip()
+            result_key = str(item.get('review_result') or '').strip()
+            owner_key = str(item.get('review_owner') or '').strip()
+            priority_key = str(item.get('review_priority') or '').strip()
+            pattern_key = str(item.get('pattern_label') or '').strip()
+            workflow_lane_key = str(item.get('workflow_lane') or '').strip()
+            queue_priority_key = str(item.get('queue_priority') or '').strip()
+            deadline_level_key = str(item.get('suggested_deadline_level') or '').strip()
+            batch_operation_hint_key = str(item.get('batch_operation_hint') or '').strip()
+            escalation_tier_key = str(item.get('escalation_tier') or '').strip()
+            action_required_value = bool(item.get('action_required'))
+            close_ready_value = bool(item.get('close_ready_gate'))
+            auto_next_action_code_key = str(item.get('auto_next_action_code') or '').strip()
+            auto_next_action_key = str(item.get('auto_next_action') or '').strip()
+            escalation_reason_code_key = str(item.get('escalation_reason_code') or '').strip()
+            escalation_reason_key = str(item.get('escalation_reason') or '').strip()
+            latest_event = item.get('latest_review_event')
+            actor_key = ''
+            event_type_key = ''
+            event_created_at = ''
+            event_result_key = ''
+            event_owner_key = ''
+            if isinstance(latest_event, dict):
+                actor_key = str(latest_event.get('review_actor') or '').strip()
+                event_type_key = str(latest_event.get('event_type') or '').strip()
+                event_created_at = str(latest_event.get('created_at') or '').strip()
+                event_result_key = str(latest_event.get('review_result') or '').strip()
+                event_owner_key = str(latest_event.get('review_owner') or '').strip()
+            if status_key:
+                by_status[status_key] = by_status.get(status_key, 0) + 1
+                if status_key == 'resolved':
+                    resolved_count += 1
+                if status_key == 'needs_review':
+                    needs_review_count += 1
+            if result_key:
+                by_result[result_key] = by_result.get(result_key, 0) + 1
+                if result_key == 'needs-escalation':
+                    pending_escalation_count += 1
+            if owner_key:
+                by_owner[owner_key] = by_owner.get(owner_key, 0) + 1
+            if actor_key:
+                by_actor[actor_key] = by_actor.get(actor_key, 0) + 1
+            if event_type_key:
+                by_latest_event_type[event_type_key] = by_latest_event_type.get(event_type_key, 0) + 1
+                if event_type_key == 'assignment_update' and status_key != 'resolved':
+                    pending_assignment_count += 1
+            if workflow_lane_key:
+                by_workflow_lane[workflow_lane_key] = by_workflow_lane.get(workflow_lane_key, 0) + 1
+            if queue_priority_key:
+                by_queue_priority[queue_priority_key] = by_queue_priority.get(queue_priority_key, 0) + 1
+            if deadline_level_key:
+                by_deadline_level[deadline_level_key] = by_deadline_level.get(deadline_level_key, 0) + 1
+            if batch_operation_hint_key:
+                by_batch_operation_hint[batch_operation_hint_key] = (
+                    by_batch_operation_hint.get(batch_operation_hint_key, 0) + 1
+                )
+            if escalation_tier_key:
+                by_escalation_tier[escalation_tier_key] = (
+                    by_escalation_tier.get(escalation_tier_key, 0) + 1
+                )
+            if action_required_value:
+                action_required_count += 1
+            if close_ready_value:
+                close_ready_count += 1
+            if auto_next_action_code_key:
+                by_auto_next_action_code[auto_next_action_code_key] = (
+                    by_auto_next_action_code.get(auto_next_action_code_key, 0) + 1
+                )
+            if auto_next_action_key:
+                by_auto_next_action[auto_next_action_key] = (
+                    by_auto_next_action.get(auto_next_action_key, 0) + 1
+                )
+            if escalation_reason_code_key:
+                by_escalation_reason_code[escalation_reason_code_key] = (
+                    by_escalation_reason_code.get(escalation_reason_code_key, 0) + 1
+                )
+            if escalation_reason_key:
+                by_escalation_reason[escalation_reason_key] = (
+                    by_escalation_reason.get(escalation_reason_key, 0) + 1
+                )
+            if priority_key:
+                by_priority[priority_key] = by_priority.get(priority_key, 0) + 1
+            if pattern_key:
+                by_pattern[pattern_key] = by_pattern.get(pattern_key, 0) + 1
+            phase2_focus_key = cls._phase2_risk_focus_bucket(
+                cast(list[str], item.get('risk_types', []))
+            )
+            if phase2_focus_key:
+                by_phase2_focus[phase2_focus_key] = by_phase2_focus.get(phase2_focus_key, 0) + 1
+            if event_created_at and event_created_at >= latest_review_at:
+                latest_review_at = event_created_at
+                latest_review_owner = event_owner_key
+                latest_review_actor = actor_key
+                latest_review_event_type = event_type_key
+                latest_review_result = event_result_key
+
+        current_owner_top = sorted(by_owner.items(), key=lambda item: (-item[1], item[0]))[0][0] if by_owner else ''
+        latest_actor_top = sorted(by_actor.items(), key=lambda item: (-item[1], item[0]))[0][0] if by_actor else ''
+        latest_event_type_top = (
+            sorted(by_latest_event_type.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_latest_event_type
+            else ''
+        )
+        workflow_lane_top = (
+            sorted(by_workflow_lane.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_workflow_lane
+            else ''
+        )
+        queue_priority_top = (
+            sorted(by_queue_priority.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_queue_priority
+            else ''
+        )
+        deadline_level_top = (
+            sorted(by_deadline_level.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_deadline_level
+            else ''
+        )
+        batch_operation_hint_top = (
+            sorted(by_batch_operation_hint.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_batch_operation_hint
+            else ''
+        )
+        escalation_tier_top = (
+            sorted(by_escalation_tier.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_escalation_tier
+            else ''
+        )
+        auto_next_action_top = (
+            sorted(by_auto_next_action.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_auto_next_action
+            else ''
+        )
+        auto_next_action_code_top = (
+            sorted(by_auto_next_action_code.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_auto_next_action_code
+            else ''
+        )
+        escalation_reason_top = (
+            sorted(by_escalation_reason.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_escalation_reason
+            else ''
+        )
+        escalation_reason_code_top = (
+            sorted(by_escalation_reason_code.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_escalation_reason_code
+            else ''
+        )
+        phase2_focus_top = (
+            sorted(by_phase2_focus.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            if by_phase2_focus
+            else ''
+        )
+        batch_suggestions = cls._build_batch_suggestions(review_candidate_clusters)
+        return {
+            'review_storage_mode': review_storage_mode,
+            'cluster_count': len(review_candidate_clusters),
+            'by_status': by_status,
+            'by_result': by_result,
+            'by_owner': by_owner,
+            'by_actor': by_actor,
+            'by_latest_event_type': by_latest_event_type,
+            'by_workflow_lane': by_workflow_lane,
+            'by_queue_priority': by_queue_priority,
+            'by_deadline_level': by_deadline_level,
+            'by_batch_operation_hint': by_batch_operation_hint,
+            'by_escalation_tier': by_escalation_tier,
+            'by_auto_next_action_code': by_auto_next_action_code,
+            'by_auto_next_action': by_auto_next_action,
+            'by_escalation_reason_code': by_escalation_reason_code,
+            'by_escalation_reason': by_escalation_reason,
+            'by_priority': by_priority,
+            'by_pattern': by_pattern,
+            'by_phase2_focus': by_phase2_focus,
+            'history_event_count': sum(
+                int(item.get('review_history_count', 0) or 0) for item in review_candidate_clusters
+            ),
+            'latest_review_at': latest_review_at,
+            'latest_review_owner': latest_review_owner,
+            'latest_review_actor': latest_review_actor,
+            'latest_review_event_type': latest_review_event_type,
+            'latest_review_result': latest_review_result,
+            'latest_review_result_label': cls._review_result_label(latest_review_result),
+            'current_owner_top': current_owner_top,
+            'current_owner_top_count': by_owner.get(current_owner_top, 0) if current_owner_top else 0,
+            'latest_actor_top': latest_actor_top,
+            'latest_actor_top_count': by_actor.get(latest_actor_top, 0) if latest_actor_top else 0,
+            'latest_event_type_top': latest_event_type_top,
+            'latest_event_type_top_count': (
+                by_latest_event_type.get(latest_event_type_top, 0) if latest_event_type_top else 0
+            ),
+            'workflow_lane_top': workflow_lane_top,
+            'workflow_lane_top_count': by_workflow_lane.get(workflow_lane_top, 0) if workflow_lane_top else 0,
+            'queue_priority_top': queue_priority_top,
+            'queue_priority_top_count': by_queue_priority.get(queue_priority_top, 0) if queue_priority_top else 0,
+            'deadline_level_top': deadline_level_top,
+            'deadline_level_top_count': by_deadline_level.get(deadline_level_top, 0) if deadline_level_top else 0,
+            'batch_operation_hint_top': batch_operation_hint_top,
+            'batch_operation_hint_top_count': (
+                by_batch_operation_hint.get(batch_operation_hint_top, 0)
+                if batch_operation_hint_top
+                else 0
+            ),
+            'escalation_tier_top': escalation_tier_top,
+            'escalation_tier_top_count': (
+                by_escalation_tier.get(escalation_tier_top, 0) if escalation_tier_top else 0
+            ),
+            'auto_next_action_code_top': auto_next_action_code_top,
+            'auto_next_action_code_top_count': (
+                by_auto_next_action_code.get(auto_next_action_code_top, 0)
+                if auto_next_action_code_top
+                else 0
+            ),
+            'auto_next_action_top': auto_next_action_top,
+            'auto_next_action_top_count': (
+                by_auto_next_action.get(auto_next_action_top, 0) if auto_next_action_top else 0
+            ),
+            'escalation_reason_code_top': escalation_reason_code_top,
+            'escalation_reason_code_top_count': (
+                by_escalation_reason_code.get(escalation_reason_code_top, 0)
+                if escalation_reason_code_top
+                else 0
+            ),
+            'escalation_reason_top': escalation_reason_top,
+            'escalation_reason_top_count': (
+                by_escalation_reason.get(escalation_reason_top, 0) if escalation_reason_top else 0
+            ),
+            'phase2_focus_top': phase2_focus_top,
+            'phase2_focus_top_count': by_phase2_focus.get(phase2_focus_top, 0) if phase2_focus_top else 0,
+            'pending_assignment_count': pending_assignment_count,
+            'pending_escalation_count': pending_escalation_count,
+            'resolved_count': resolved_count,
+            'needs_review_count': needs_review_count,
+            'action_required_count': action_required_count,
+            'close_ready_count': close_ready_count,
+            'batch_suggestions': batch_suggestions,
+        }
+
+    @staticmethod
+    def _derive_workflow_lane(cluster: dict[str, object]) -> str:
+        cluster_status = str(cluster.get('cluster_status') or '').strip()
+        review_result = str(cluster.get('review_result') or '').strip()
+        latest_event = cluster.get('latest_review_event')
+        latest_event_type = (
+            str(latest_event.get('event_type') or '').strip()
+            if isinstance(latest_event, dict)
+            else ''
+        )
+        if review_result == 'needs-escalation' or cluster_status == 'escalated':
+            return 'escalation_queue'
+        if latest_event_type == 'assignment_update' and cluster_status != 'resolved':
+            return 'assignment_queue'
+        if cluster_status == 'needs_review':
+            return 'human_review_queue'
+        if cluster_status == 'resolved' or review_result == 'confirmed-benign':
+            return 'resolved_queue'
+        return 'monitor_queue'
+
+    @staticmethod
+    def _derive_queue_priority(cluster: dict[str, object]) -> str:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        review_priority = str(cluster.get('review_priority') or '').strip()
+        if workflow_lane == 'resolved_queue':
+            return 'done'
+        if workflow_lane == 'escalation_queue':
+            return 'urgent'
+        if workflow_lane == 'assignment_queue':
+            return 'high'
+        if ExportService._has_phase2_risk(cluster) and review_priority in {'P1', 'P2'}:
+            return 'high'
+        if review_priority == 'P1':
+            return 'high'
+        if workflow_lane == 'human_review_queue' or review_priority == 'P2':
+            return 'medium'
+        return 'low'
+
+    @staticmethod
+    def _derive_auto_next_action_code(cluster: dict[str, object]) -> str:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        if workflow_lane == 'escalation_queue':
+            return 'escalate_to_senior_review'
+        if workflow_lane == 'assignment_queue':
+            return 'notify_owner_to_take_over'
+        if ExportService._has_phase2_risk(cluster) and str(cluster.get('review_priority') or '').strip() in {'P1', 'P2'}:
+            return 'prioritize_phase2_human_review'
+        if workflow_lane == 'human_review_queue':
+            return 'schedule_human_review'
+        if workflow_lane == 'resolved_queue':
+            return 'archive_and_monitor'
+        return 'observe_and_wait'
+
+    @staticmethod
+    def _derive_action_required(cluster: dict[str, object]) -> bool:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        return workflow_lane in {'escalation_queue', 'assignment_queue', 'human_review_queue'}
+
+    @staticmethod
+    def _derive_suggested_deadline_level(cluster: dict[str, object]) -> str:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        queue_priority = str(cluster.get('queue_priority') or '').strip()
+        if workflow_lane == 'escalation_queue' or queue_priority == 'urgent':
+            return 'urgent'
+        if workflow_lane == 'assignment_queue' or queue_priority == 'high':
+            return 'soon'
+        if workflow_lane == 'human_review_queue' or queue_priority == 'medium':
+            return 'normal'
+        if workflow_lane == 'resolved_queue':
+            return 'none'
+        return 'backlog'
+
+    @staticmethod
+    def _derive_close_ready_gate(cluster: dict[str, object]) -> bool:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        cluster_status = str(cluster.get('cluster_status') or '').strip()
+        review_result = str(cluster.get('review_result') or '').strip()
+        review_history_count = int(cluster.get('review_history_count', 0) or 0)
+        latest_review_event = cluster.get('latest_review_event')
+        return (
+            workflow_lane == 'resolved_queue'
+            and cluster_status == 'resolved'
+            and review_result == 'confirmed-benign'
+            and review_history_count >= 1
+            and isinstance(latest_review_event, dict)
+            and bool(latest_review_event)
+        )
+
+    @staticmethod
+    def _derive_close_ready_reason(cluster: dict[str, object]) -> str:
+        if ExportService._derive_close_ready_gate(cluster):
+            return '已满足关闭归档条件：状态 resolved、结论 confirmed-benign、存在复核历史。'
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        if workflow_lane != 'resolved_queue':
+            return ''
+        missing_parts: list[str] = []
+        if str(cluster.get('cluster_status') or '').strip() != 'resolved':
+            missing_parts.append('尚未进入 resolved 状态')
+        if str(cluster.get('review_result') or '').strip() != 'confirmed-benign':
+            missing_parts.append('尚未确认无问题')
+        if int(cluster.get('review_history_count', 0) or 0) < 1:
+            missing_parts.append('缺少复核历史')
+        if not isinstance(cluster.get('latest_review_event'), dict) or not cluster.get('latest_review_event'):
+            missing_parts.append('缺少最近复核事件')
+        if not missing_parts:
+            return ''
+        return '暂不建议一键关闭：' + '；'.join(missing_parts) + '。'
+
+    @staticmethod
+    def _derive_close_stability_score(cluster: dict[str, object]) -> float:
+        score = 0.0
+        if bool(cluster.get('close_ready_gate')):
+            score += 40.0
+        if str(cluster.get('cluster_status') or '').strip() == 'resolved':
+            score += 10.0
+        if str(cluster.get('review_result') or '').strip() == 'confirmed-benign':
+            score += 10.0
+        score += min(float(int(cluster.get('review_history_count', 0) or 0)), 5.0) * 5.0
+        score += min(float(int(cluster.get('chapter_count', 0) or 0)), 5.0) * 2.0
+        score += min(float(cluster.get('max_confidence', 0.0) or 0.0) * 10.0, 10.0)
+        return score
+
+    @staticmethod
+    def _derive_close_ready_rank_reason(cluster: dict[str, object]) -> str:
+        return (
+            f"close_ready={bool(cluster.get('close_ready_gate'))} | "
+            f"history_count={int(cluster.get('review_history_count', 0) or 0)} | "
+            f"chapter_count={int(cluster.get('chapter_count', 0) or 0)} | "
+            f"confidence={float(cluster.get('max_confidence', 0.0) or 0.0):.2f} | "
+            f"close_stability_score={ExportService._derive_close_stability_score(cluster):.2f}"
+        )
+
+    @staticmethod
+    def _derive_close_batch_rank_score(cluster: dict[str, object]) -> float:
+        if str(cluster.get('workflow_lane') or '').strip() != 'resolved_queue':
+            return 0.0
+        stability = ExportService._derive_close_stability_score(cluster)
+        gate_bonus = 20.0 if bool(cluster.get('close_ready_gate')) else 0.0
+        result_bonus = 10.0 if str(cluster.get('review_result') or '').strip() == 'confirmed-benign' else 0.0
+        history_bonus = min(float(int(cluster.get('review_history_count', 0) or 0)), 5.0) * 3.0
+        return stability + gate_bonus + result_bonus + history_bonus
+
+    @staticmethod
+    def _derive_close_batch_rank_reason(cluster: dict[str, object]) -> str:
+        if str(cluster.get('workflow_lane') or '').strip() != 'resolved_queue':
+            return ''
+        return (
+            f"close_ready={bool(cluster.get('close_ready_gate'))} | "
+            f"result={cluster.get('review_result')} | "
+            f"history_count={int(cluster.get('review_history_count', 0) or 0)} | "
+            f"close_batch_rank_score={ExportService._derive_close_batch_rank_score(cluster):.2f}"
+        )
+
+    @staticmethod
+    def _derive_human_review_batch_rank_score(cluster: dict[str, object]) -> float:
+        if str(cluster.get('workflow_lane') or '').strip() != 'human_review_queue':
+            return 0.0
+        pattern_bonus = {
+            '持续型问题': 15.0,
+            '集中爆发型问题': 10.0,
+            '单点问题': 5.0,
+        }.get(str(cluster.get('pattern_label') or '').strip(), 0.0)
+        confidence_bonus = min(float(cluster.get('max_confidence', 0.0) or 0.0) * 20.0, 20.0)
+        chapter_count_bonus = min(float(int(cluster.get('chapter_count', 0) or 0)), 8.0) * 2.0
+        span_bonus = min(float(len(cast(list[object], cluster.get('chapters', [])))), 6.0)
+        priority_bonus = {
+            'P1': 20.0,
+            'P2': 10.0,
+            'P3': 0.0,
+        }.get(str(cluster.get('review_priority') or '').strip(), 0.0)
+        return 40.0 + pattern_bonus + confidence_bonus + chapter_count_bonus + span_bonus + priority_bonus
+
+    @staticmethod
+    def _derive_human_review_batch_rank_reason(cluster: dict[str, object]) -> str:
+        if str(cluster.get('workflow_lane') or '').strip() != 'human_review_queue':
+            return ''
+        return (
+            f"priority={cluster.get('review_priority')} | "
+            f"pattern={cluster.get('pattern_label')} | "
+            f"chapter_count={int(cluster.get('chapter_count', 0) or 0)} | "
+            f"confidence={float(cluster.get('max_confidence', 0.0) or 0.0):.2f} | "
+            f"human_review_batch_rank_score={ExportService._derive_human_review_batch_rank_score(cluster):.2f}"
+        )
+
+    @staticmethod
+    def _derive_escalation_urgency_score(cluster: dict[str, object]) -> float:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        if workflow_lane != 'escalation_queue':
+            return 0.0
+        score = 50.0
+        score += {
+            'P1': 30.0,
+            'P2': 20.0,
+            'P3': 10.0,
+        }.get(str(cluster.get('review_priority') or '').strip(), 0.0)
+        score += min(float(cluster.get('max_confidence', 0.0) or 0.0) * 20.0, 20.0)
+        score += min(float(int(cluster.get('chapter_count', 0) or 0)), 10.0) * 2.0
+        score += 5.0 if str(cluster.get('review_result') or '').strip() == 'needs-escalation' else 0.0
+        score += {
+            '持续型问题': 12.0,
+            '集中爆发型问题': 6.0,
+            '单点问题': 2.0,
+        }.get(str(cluster.get('pattern_label') or '').strip(), 0.0)
+        return score
+
+    @staticmethod
+    def _derive_escalation_tier(cluster: dict[str, object]) -> str:
+        score = ExportService._derive_escalation_urgency_score(cluster)
+        if score >= 100.0:
+            return 'critical'
+        if score >= 85.0:
+            return 'high'
+        if score > 0.0:
+            return 'medium'
+        return ''
+
+    @staticmethod
+    def _derive_escalation_rank_reason(cluster: dict[str, object]) -> str:
+        if str(cluster.get('workflow_lane') or '').strip() != 'escalation_queue':
+            return ''
+        return (
+            f"priority={cluster.get('review_priority')} | "
+            f"confidence={float(cluster.get('max_confidence', 0.0) or 0.0):.2f} | "
+            f"chapter_count={int(cluster.get('chapter_count', 0) or 0)} | "
+            f"pattern={cluster.get('pattern_label')} | "
+            f"escalation_urgency_score={ExportService._derive_escalation_urgency_score(cluster):.2f}"
+        )
+
+    @staticmethod
+    def _derive_escalation_batch_rank_score(cluster: dict[str, object]) -> float:
+        if str(cluster.get('workflow_lane') or '').strip() != 'escalation_queue':
+            return 0.0
+        tier_bonus = {
+            'critical': 30.0,
+            'high': 20.0,
+            'medium': 10.0,
+        }.get(str(cluster.get('escalation_tier') or '').strip(), 0.0)
+        pattern_bonus = {
+            '持续型问题': 8.0,
+            '集中爆发型问题': 4.0,
+            '单点问题': 1.0,
+        }.get(str(cluster.get('pattern_label') or '').strip(), 0.0)
+        chapter_bonus = min(float(int(cluster.get('chapter_count', 0) or 0)), 6.0)
+        return (
+            ExportService._derive_escalation_urgency_score(cluster)
+            + tier_bonus
+            + pattern_bonus
+            + chapter_bonus
+        )
+
+    @staticmethod
+    def _derive_escalation_batch_rank_reason(cluster: dict[str, object]) -> str:
+        if str(cluster.get('workflow_lane') or '').strip() != 'escalation_queue':
+            return ''
+        return (
+            f"tier={cluster.get('escalation_tier')} | "
+            f"urgency={ExportService._derive_escalation_urgency_score(cluster):.2f} | "
+            f"pattern={cluster.get('pattern_label')} | "
+            f"chapter_count={int(cluster.get('chapter_count', 0) or 0)} | "
+            f"escalation_batch_rank_score={ExportService._derive_escalation_batch_rank_score(cluster):.2f}"
+        )
+
+    @staticmethod
+    def _derive_batch_operation_hint(cluster: dict[str, object]) -> str:
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        if workflow_lane == 'escalation_queue':
+            return 'batch_escalate_candidates'
+        if workflow_lane == 'assignment_queue':
+            return 'batch_owner_handoff_followup'
+        if workflow_lane == 'human_review_queue':
+            return 'batch_human_review_queue'
+        if workflow_lane == 'resolved_queue':
+            if bool(cluster.get('close_ready_gate')):
+                return 'batch_close_ready_candidates'
+            return 'batch_archive_candidates'
+        return 'batch_monitoring_watchlist'
+
+    @classmethod
+    def _build_batch_suggestions(
+        cls,
+        review_candidate_clusters: list[dict[str, object]],
+    ) -> list[dict[str, object]]:
+        def pattern_rank(item: dict[str, object]) -> int:
+            return {
+                '持续型问题': 2,
+                '集中爆发型问题': 1,
+                '单点问题': 0,
+            }.get(str(item.get('pattern_label') or '').strip(), -1)
+
+        def human_review_span_bucket(item: dict[str, object]) -> str:
+            label = str(item.get('pattern_label') or '').strip()
+            if label == '持续型问题':
+                return 'long_run'
+            if label == '集中爆发型问题':
+                return 'burst'
+            return 'single'
+
+        def chapter_span_width(item: dict[str, object]) -> int:
+            chapters = cast(list[int], item.get('chapters', []))
+            if chapters:
+                return max(chapters) - min(chapters)
+            first = int(item.get('first_chapter', 0) or 0)
+            last = int(item.get('last_chapter', first) or first)
+            return max(last - first, 0)
+
+        def batch_rank_score(item: dict[str, object]) -> float:
+            queue_weight = {
+                'urgent': 500.0,
+                'high': 400.0,
+                'medium': 300.0,
+                'low': 200.0,
+                'done': 100.0,
+            }.get(str(item.get('queue_priority') or ''), 0.0)
+            review_weight = {
+                'P1': 30.0,
+                'P2': 20.0,
+                'P3': 10.0,
+            }.get(str(item.get('review_priority') or ''), 0.0)
+            chapter_weight = min(float(int(item.get('chapter_count', 0) or 0)), 10.0) * 2.0
+            confidence_weight = float(item.get('max_confidence', 0.0) or 0.0) * 10.0
+            span_weight = min(float(chapter_span_width(item)), 10.0)
+            phase2_bonus = 25.0 if ExportService._has_phase2_risk(item) else 0.0
+            return queue_weight + review_weight + chapter_weight + confidence_weight + span_weight + phase2_bonus
+
+        def cluster_order_key(item: dict[str, object]) -> tuple[int, int, int, float, int, str]:
+            chapter_count = int(item.get('chapter_count', 0) or 0)
+            max_confidence = float(item.get('max_confidence', 0.0) or 0.0)
+            first_chapter = int(item.get('first_chapter', 10**9) or 10**9)
+            return (
+                {'urgent': 0, 'high': 1, 'medium': 2, 'low': 3, 'done': 4}.get(
+                    str(item.get('queue_priority') or ''), 5
+                ),
+                -ExportService._derive_escalation_batch_rank_score(item),
+                -ExportService._derive_human_review_batch_rank_score(item),
+                -ExportService._derive_escalation_urgency_score(item),
+                -ExportService._derive_close_batch_rank_score(item),
+                {'P1': 0, 'P2': 1, 'P3': 2}.get(str(item.get('review_priority') or ''), 3),
+                -pattern_rank(item),
+                -ExportService._derive_close_stability_score(item),
+                -chapter_count,
+                -max_confidence,
+                -chapter_span_width(item),
+                first_chapter,
+                str(item.get('cluster_title') or ''),
+            )
+
+        def order_reason(item: dict[str, object]) -> str:
+            return (
+                f"queue={item.get('queue_priority')} | priority={item.get('review_priority')} | "
+                f"pattern={item.get('pattern_label')} | chapter_count={item.get('chapter_count')} | "
+                f"confidence={item.get('max_confidence')} | span_width={chapter_span_width(item)} | "
+                f"batch_rank_score={batch_rank_score(item):.2f}"
+            )
+
+        action_bucket_map = {
+            'batch_escalate_candidates': 'escalate',
+            'batch_owner_handoff_followup': 'followup',
+            'batch_human_review_queue': 'review',
+            'batch_close_ready_candidates': 'close',
+            'batch_archive_candidates': 'archive',
+            'batch_monitoring_watchlist': 'monitor',
+        }
+        batch_priority_map = {
+            'batch_escalate_candidates': 'urgent',
+            'batch_owner_handoff_followup': 'high',
+            'batch_human_review_queue': 'medium',
+            'batch_close_ready_candidates': 'low',
+            'batch_archive_candidates': 'low',
+            'batch_monitoring_watchlist': 'low',
+        }
+
+        def subgroup_key(cluster: dict[str, object]) -> tuple[str, str, str]:
+            hint = str(cluster.get('batch_operation_hint') or '').strip()
+            owner = str(cluster.get('review_owner') or '').strip() or 'unassigned'
+            checker_names = cast(list[object], cluster.get('checker_names', []))
+            primary_checker = str(checker_names[0] if checker_names else 'unknown').strip() or 'unknown'
+            if hint in {'batch_owner_handoff_followup', 'batch_archive_candidates', 'batch_close_ready_candidates'}:
+                return hint, 'by_owner', owner
+            if hint in {'batch_human_review_queue', 'batch_escalate_candidates'}:
+                return hint, 'by_checker_span', f'{primary_checker}:{human_review_span_bucket(cluster)}'
+            return hint, 'by_checker', primary_checker
+
+        def suggestion_rank_score(suggestion: dict[str, object]) -> float:
+            bucket_score = {
+                'escalate': 500.0,
+                'followup': 400.0,
+                'review': 300.0,
+                'close': 200.0,
+                'archive': 100.0,
+                'monitor': 50.0,
+            }.get(str(suggestion.get('action_bucket') or ''), 0.0)
+            priority_score = {
+                'urgent': 50.0,
+                'high': 40.0,
+                'medium': 30.0,
+                'low': 20.0,
+            }.get(str(suggestion.get('batch_priority') or ''), 0.0)
+            cluster_score = min(float(int(suggestion.get('cluster_count', 0) or 0)), 10.0) * 5.0
+            action_required_bonus = 10.0 if bool(suggestion.get('action_required')) else 0.0
+            return bucket_score + priority_score + cluster_score + action_required_bonus
+
+        def suggestion_rank_reason(suggestion: dict[str, object]) -> str:
+            return (
+                f"action_bucket={suggestion.get('action_bucket')} | "
+                f"batch_priority={suggestion.get('batch_priority')} | "
+                f"cluster_count={int(suggestion.get('cluster_count', 0) or 0)} | "
+                f"action_required={bool(suggestion.get('action_required'))} | "
+                f"suggestion_rank_score={suggestion_rank_score(suggestion):.2f}"
+            )
+
+        groups: dict[tuple[str, str, str], list[dict[str, object]]] = {}
+        for cluster in review_candidate_clusters:
+            hint = str(cluster.get('batch_operation_hint') or '').strip()
+            if not hint:
+                continue
+            groups.setdefault(subgroup_key(cluster), []).append(cluster)
+
+        suggestions: list[dict[str, object]] = []
+        title_map = {
+            'batch_escalate_candidates': '可批量升级处理',
+            'batch_owner_handoff_followup': '可批量催办交接',
+            'batch_human_review_queue': '可批量人工复核',
+            'batch_close_ready_candidates': '可批量关闭归档',
+            'batch_archive_candidates': '可批量归档关闭',
+            'batch_monitoring_watchlist': '可批量观察跟踪',
+        }
+        for (hint, group_strategy, group_value), items in groups.items():
+            if not items:
+                continue
+            items_sorted = sorted(
+                items,
+                key=cluster_order_key,
+            )
+            sample = items_sorted[0]
+            suggested_owner = cls._dedupe_preview(
+                [item.get('review_owner') for item in items_sorted if item.get('review_owner')],
+                1,
+            )
+            suggestions.append(
+                {
+                    'hint_code': hint,
+                    'hint_title': title_map.get(hint, hint),
+                    'action_bucket': action_bucket_map.get(hint, 'monitor'),
+                    'batch_priority': batch_priority_map.get(hint, 'low'),
+                    'group_strategy': group_strategy,
+                    'group_key': group_value,
+                    'span_bucket': human_review_span_bucket(sample),
+                    'cluster_count': len(items),
+                    'cluster_keys': [str(item.get('cluster_key') or '') for item in items_sorted[:5]],
+                    'suggested_cluster_order': [
+                        str(item.get('cluster_key') or '') for item in items_sorted[:5]
+                    ],
+                    'suggested_cluster_order_titles': [
+                        str(item.get('cluster_title') or '') for item in items_sorted[:5]
+                    ],
+                    'suggested_cluster_order_details': [
+                        {
+                            'cluster_key': str(item.get('cluster_key') or ''),
+                            'cluster_title': str(item.get('cluster_title') or ''),
+                            'queue_priority': str(item.get('queue_priority') or ''),
+                            'review_priority': str(item.get('review_priority') or ''),
+                            'chapter_count': int(item.get('chapter_count', 0) or 0),
+                            'confidence': float(item.get('max_confidence', 0.0) or 0.0),
+                            'human_review_batch_rank_score': ExportService._derive_human_review_batch_rank_score(item),
+                            'human_review_batch_rank_reason': ExportService._derive_human_review_batch_rank_reason(item),
+                            'escalation_tier': ExportService._derive_escalation_tier(item),
+                            'escalation_urgency_score': ExportService._derive_escalation_urgency_score(item),
+                            'escalation_rank_reason': ExportService._derive_escalation_rank_reason(item),
+                            'escalation_batch_rank_score': ExportService._derive_escalation_batch_rank_score(item),
+                            'escalation_batch_rank_reason': ExportService._derive_escalation_batch_rank_reason(item),
+                            'close_stability_score': ExportService._derive_close_stability_score(item),
+                            'close_ready_rank_reason': ExportService._derive_close_ready_rank_reason(item),
+                            'close_batch_rank_score': ExportService._derive_close_batch_rank_score(item),
+                            'close_batch_rank_reason': ExportService._derive_close_batch_rank_reason(item),
+                            'chapter_span_width': chapter_span_width(item),
+                            'batch_rank_score': batch_rank_score(item),
+                            'order_reason': order_reason(item),
+                        }
+                        for item in items_sorted[:5]
+                    ],
+                    'ordering_strategy': 'queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter',
+                    'suggested_first_cluster_reason': order_reason(sample),
+                    'cluster_titles': [str(item.get('cluster_title') or '') for item in items_sorted[:3]],
+                    'owners': cls._dedupe_preview(
+                        [item.get('review_owner') for item in items_sorted if item.get('review_owner')],
+                        3,
+                    ),
+                    'suggested_owner': suggested_owner[0] if suggested_owner else '',
+                    'primary_checker': str(
+                        cast(list[object], sample.get('checker_names', []))[0]
+                        if cast(list[object], sample.get('checker_names', []))
+                        else ''
+                    ),
+                    'pattern_label_top': str(sample.get('pattern_label') or ''),
+                    'risk_types': cls._dedupe_preview(
+                        [risk for item in items_sorted for risk in cast(list[object], item.get('risk_types', []))],
+                        4,
+                    ),
+                    'phase2_focus_top': ExportService._phase2_risk_focus_bucket(
+                        cast(list[str], sample.get('risk_types', []))
+                    ),
+                    'chapter_spans': cls._dedupe_preview(
+                        [item.get('chapter_span') for item in items_sorted if item.get('chapter_span')],
+                        3,
+                    ),
+                    'queue_priority_top': str(sample.get('queue_priority') or ''),
+                    'deadline_level_top': str(sample.get('suggested_deadline_level') or ''),
+                    'escalation_tier_top': str(sample.get('escalation_tier') or ''),
+                    'action_required': any(bool(item.get('action_required')) for item in items_sorted),
+                    'resolved_candidate_count': sum(
+                        1 for item in items_sorted if str(item.get('cluster_status') or '') == 'resolved'
+                    ),
+                    'escalation_candidate_count': sum(
+                        1
+                        for item in items_sorted
+                        if str(item.get('review_result') or '') == 'needs-escalation'
+                    ),
+                    'recommended_batch_action': str(sample.get('auto_next_action') or ''),
+                }
+            )
+        for suggestion in suggestions:
+            suggestion['suggestion_rank_score'] = suggestion_rank_score(suggestion)
+            suggestion['suggestion_rank_reason'] = suggestion_rank_reason(suggestion)
+        suggestions.sort(
+            key=lambda item: (
+                -float(item.get('suggestion_rank_score', 0.0) or 0.0),
+                {'batch_escalate_candidates': 0, 'batch_owner_handoff_followup': 1, 'batch_human_review_queue': 2, 'batch_close_ready_candidates': 3, 'batch_archive_candidates': 4, 'batch_monitoring_watchlist': 5}.get(
+                    str(item.get('hint_code') or ''), 5
+                ),
+            )
+        )
+        return suggestions
+
+    @staticmethod
+    def _derive_auto_next_action(cluster: dict[str, object]) -> str:
+        action_code = str(cluster.get('auto_next_action_code') or '').strip()
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        review_owner = str(cluster.get('review_owner') or '').strip()
+        cluster_title = str(cluster.get('cluster_title') or cluster.get('cluster_key') or '该问题簇').strip()
+        phase2_focus = ExportService._phase2_risk_focus_bucket(
+            cast(list[str], cluster.get('risk_types', []))
+        )
+        if action_code == 'escalate_to_senior_review' or workflow_lane == 'escalation_queue':
+            return f'尽快把 {cluster_title} 转入更高等级复核，并补充升级依据。'
+        if action_code == 'notify_owner_to_take_over' or workflow_lane == 'assignment_queue':
+            owner_text = review_owner or '当前负责人'
+            return f'通知 {owner_text} 接手 {cluster_title}，并尽快给出复核结论。'
+        if action_code == 'prioritize_phase2_human_review':
+            focus_label = {
+                'plot-phase2': '剧情/因果链',
+                'timeline-phase2': '时间线/恢复窗口',
+                'power-phase2': '战力/代价限制',
+            }.get(phase2_focus, 'phase-2 风险')
+            return f'优先安排人工复核 {cluster_title}，重点核对{focus_label}相关证据链是否闭合。'
+        if action_code == 'schedule_human_review' or workflow_lane == 'human_review_queue':
+            return f'优先安排人工复核 {cluster_title}，确认是否需要升级或关闭。'
+        if action_code == 'archive_and_monitor' or workflow_lane == 'resolved_queue':
+            return f'保留 {cluster_title} 的审计记录，并继续关注后续章节是否复发。'
+        return f'继续观察 {cluster_title}，等待更多证据后再决定是否升级。'
+
+    @staticmethod
+    def _derive_escalation_reason_code(cluster: dict[str, object]) -> str:
+        review_result = str(cluster.get('review_result') or '').strip()
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        if review_result == 'needs-escalation':
+            return 'explicit_escalation_requested'
+        if workflow_lane == 'assignment_queue':
+            return 'awaiting_owner_followup'
+        if ExportService._has_phase2_risk(cluster) and str(cluster.get('review_priority') or '').strip() in {'P1', 'P2'}:
+            return 'phase2_risk_requires_human_confirmation'
+        if workflow_lane == 'human_review_queue':
+            return 'awaiting_human_confirmation'
+        return ''
+
+    @staticmethod
+    def _derive_escalation_reason(cluster: dict[str, object]) -> str:
+        reason_code = str(cluster.get('escalation_reason_code') or '').strip()
+        review_result = str(cluster.get('review_result') or '').strip()
+        workflow_lane = str(cluster.get('workflow_lane') or '').strip()
+        review_notes = str(cluster.get('review_notes') or '').strip()
+        if reason_code == 'explicit_escalation_requested' or review_result == 'needs-escalation':
+            return review_notes or '当前问题簇已被标记为需要升级处理。'
+        if reason_code == 'awaiting_owner_followup' or workflow_lane == 'assignment_queue':
+            return '当前问题簇已完成交接，但尚未形成最终闭环结论。'
+        if reason_code == 'phase2_risk_requires_human_confirmation':
+            return '当前问题簇属于 phase-2 结构化风险候选，需优先补足人工确认后再决定是否升级或关闭。'
+        if reason_code == 'awaiting_human_confirmation' or workflow_lane == 'human_review_queue':
+            return '当前问题簇仍缺少人工确认，暂不适合直接关闭。'
+        return ''
+
+    @classmethod
     def _chapter_continuity_preview(
         cls,
         chapter_index: int,
@@ -194,11 +1059,31 @@ class ExportService:
         cls,
         review_candidates_summary: list[dict[str, object]],
     ) -> list[dict[str, object]]:
+        phase2_title_map = {
+            ('plot_logic_consistency', 'thread_state_conflict'): '剧情线程状态冲突簇',
+            ('plot_logic_consistency', 'motivation_to_action_gap'): '动机到行动断桥簇',
+            ('timeline_consistency', 'sequence_conflict_candidate'): '时间顺序冲突候选簇',
+            ('timeline_consistency', 'recovery_window_insufficient'): '恢复窗口不足候选簇',
+            ('power_scaling_consistency', 'upset_without_setup'): '越阶铺垫不足候选簇',
+            ('power_scaling_consistency', 'cost_constraint_missing'): '代价约束缺口候选簇',
+        }
+
         def cluster_title(checkers: list[str], risk_types: list[str]) -> str:
             checker = checkers[0] if checkers else 'unknown'
             risk_type = risk_types[0] if risk_types else 'review_candidate'
+            mapped_title = phase2_title_map.get((checker, risk_type))
+            if mapped_title:
+                return mapped_title
             if checker == 'character_ooc':
                 return '人物连续性复核簇' if risk_type == 'human_review_candidate' else f'人物风险簇：{risk_type}'
+            if checker == 'relationship_consistency':
+                return '关系连续性复核簇' if 'candidate' in risk_type else f'关系风险簇：{risk_type}'
+            if checker == 'foreshadow_payoff_consistency':
+                return '伏笔兑现复核簇' if 'candidate' in risk_type else f'伏笔兑现风险簇：{risk_type}'
+            if checker == 'setting_scope_consistency':
+                return '设定作用域复核簇' if 'candidate' in risk_type else f'设定作用域风险簇：{risk_type}'
+            if checker == 'thread_closure_consistency':
+                return '线程收束复核簇' if 'candidate' in risk_type else f'线程收束风险簇：{risk_type}'
             if checker == 'plot_logic_consistency':
                 return '剧情因果复核簇' if 'candidate' in risk_type else f'剧情逻辑风险簇：{risk_type}'
             if checker == 'timeline_consistency':
@@ -214,24 +1099,85 @@ class ExportService:
             risk_type = risk_types[0] if risk_types else 'review_candidate'
             if checker == 'character_ooc':
                 return '优先核对人物动机、关系与行为是否有前文支撑，避免只依据标题或摘要推断人物变化。'
+            if checker == 'relationship_consistency':
+                if risk_type == 'relationship_shift_without_bridge':
+                    return '优先核对人物关系从亲近到疏远、从敌对到结盟等变化之间，是否缺少必要桥段与前文支撑。'
+                if risk_type == 'trust_state_conflict':
+                    return '优先核对信任/敌意关系是否同时出现“已缓和”与“仍对立”信号，确认只是阶段性变化还是关系状态冲突。'
+                if risk_type == 'hostility_resolution_too_fast':
+                    return '优先核对敌对关系缓和、和解或结盟是否推进过快，确认中间冲突化解是否已有正文桥接。'
+                return '优先核对人物关系、信任状态与敌我口径是否有前文支撑，避免把省略桥段误判为关系跳变。'
+            if checker == 'foreshadow_payoff_consistency':
+                if risk_type == 'payoff_without_setup':
+                    return '优先核对当前重要结果或揭示前，是否已有足够铺垫、暗示或伏笔埋设。'
+                if risk_type == 'resolved_thread_reopened_without_reason':
+                    return '优先核对已兑现/已解决线索为何重新回到未解状态，确认只是阶段性回收还是线程口径冲突。'
+                if risk_type == 'important_thread_long_unmentioned':
+                    return '优先核对关键伏笔或线程是否长期悬置且缺乏后续承接，确认是否只是有意延后。'
+                return '优先核对伏笔埋设、回收与未解线程之间的链路是否完整，避免把延后回收误判为问题。'
+            if checker == 'setting_scope_consistency':
+                if risk_type == 'constraint_scope_expansion':
+                    return '优先核对规则、权限或能力的适用范围是否被异常放大，确认是否只是例外通道或临时开放。'
+                if risk_type == 'resource_limit_missing':
+                    return '优先核对资源、次数、消耗或额度限制是否被正文明确交代，避免无解释扩张。'
+                if risk_type == 'authority_boundary_conflict':
+                    return '优先核对权限、组织、禁地或资格边界是否被异常突破，确认是否已有特批或身份变化铺垫。'
+                return '优先核对设定范围、资源限制与权限边界是否保持前后一致，避免把例外机制误判为主规则扩张。'
+            if checker == 'thread_closure_consistency':
+                if risk_type == 'thread_dropped_after_escalation':
+                    return '优先核对已升级冲突是否突然失去后续承接，确认只是暂时按下不表还是线程断头。'
+                if risk_type == 'closure_without_resolution_basis':
+                    return '优先核对“已解决/已收束”类表述是否真有正文依据，避免把阶段性缓和误判为真正收束。'
+                if risk_type == 'ending_stability_candidate':
+                    return '优先核对本章小结尾或阶段收束是否过快回落，确认是否缺少必要的冲突处理与回收依据。'
+                return '优先核对冲突线程、升级节点与收束表述之间是否存在断桥或支撑不足。'
             if checker == 'plot_logic_consistency':
+                if risk_type == 'thread_state_conflict':
+                    return '优先核对“已解决/已解除”与未解线程是否被同时保留，确认只是阶段性缓解还是线程状态冲突。'
+                if risk_type == 'motivation_to_action_gap':
+                    return '优先核对角色动机、决定与实际行动之间是否存在缺失的因果桥或前置铺垫。'
                 if 'resolution' in risk_type:
                     return '优先核对“已解决/已兑现”类表述是否真的有正文证据链闭合。'
                 return '优先核对关键行动、结果与中间因果链是否缺少必要过渡或支撑。'
             if checker == 'timeline_consistency':
+                if risk_type == 'sequence_conflict_candidate':
+                    return '优先核对当夜/次日等短窗口时间锚点是否互相打架，确认是否只是叙事压缩。'
+                if risk_type == 'recovery_window_insufficient':
+                    return '优先核对恢复、赶路、回城与再战之间的时长窗口是否足够，确认是否缺少中间恢复过程。'
                 return '优先核对事件先后顺序、恢复时长与同日多地切换是否存在时序冲突。'
             if checker == 'power_scaling_consistency':
+                if risk_type == 'upset_without_setup':
+                    return '优先核对越阶压制或突然反杀前是否已有铺垫、克制关系或一次性增益解释。'
+                if risk_type == 'cost_constraint_missing':
+                    return '优先核对强力表现后的代价、冷却、限制或后遗症是否被正文明确交代。'
                 return '优先核对能力跃迁、越阶压制和新招式掌握是否有明确铺垫或限制条件。'
             if checker == 'world_rule_consistency':
                 return '优先核对既有世界规则、约束条件和例外触发是否前后一致。'
             return '优先回看相关章节与证据预览，确认该候选是否仅为弱信号噪音。'
 
         def review_priority(chapter_count: int, max_confidence: float, checkers: list[str]) -> str:
+            risk_types = current_risk_types
+            if any(
+                risk_type in {
+                    'thread_state_conflict',
+                    'recovery_window_insufficient',
+                    'upset_without_setup',
+                    'cost_constraint_missing',
+                }
+                for risk_type in risk_types
+            ) and chapter_count >= 1:
+                return 'P2'
             if max_confidence >= 0.75 or chapter_count >= 5:
                 return 'P1'
             if max_confidence >= 0.5 or chapter_count >= 3:
                 return 'P2'
-            if 'character_ooc' in checkers and chapter_count >= 2:
+            if (
+                'character_ooc' in checkers
+                or 'relationship_consistency' in checkers
+                or 'foreshadow_payoff_consistency' in checkers
+                or 'setting_scope_consistency' in checkers
+                or 'thread_closure_consistency' in checkers
+            ) and chapter_count >= 2:
                 return 'P2'
             return 'P3'
 
@@ -247,6 +1193,7 @@ class ExportService:
         for item in review_candidates_summary:
             checker_names = cls._dedupe_preview(cast(list[object], item.get('checker_names', [])), 6)
             risk_types = cls._dedupe_preview(cast(list[object], item.get('risk_types', [])), 6)
+            current_risk_types = risk_types
             cluster_key = "|".join(checker_names + ["::"] + risk_types)
             cluster = clusters.setdefault(
                 cluster_key,
@@ -362,6 +1309,23 @@ class ExportService:
             )
         )
         return clustered[:20]
+
+    @staticmethod
+    def _phase2_risk_focus_bucket(risk_types: list[str]) -> str:
+        values = set(risk_types)
+        if values & {'thread_state_conflict', 'motivation_to_action_gap'}:
+            return 'plot-phase2'
+        if values & {'sequence_conflict_candidate', 'recovery_window_insufficient'}:
+            return 'timeline-phase2'
+        if values & {'upset_without_setup', 'cost_constraint_missing'}:
+            return 'power-phase2'
+        return ''
+
+    @staticmethod
+    def _has_phase2_risk(cluster: dict[str, object]) -> bool:
+        return bool(
+            ExportService._phase2_risk_focus_bucket(cast(list[str], cluster.get('risk_types', [])))
+        )
 
     @staticmethod
     def _build_audit_conclusion(
@@ -1092,6 +2056,40 @@ class ExportService:
                 cluster['review_history_count'] = len(history)
                 cluster['review_history'] = history
                 cluster['latest_review_event'] = history[-1]
+            cluster['workflow_lane'] = self._derive_workflow_lane(cluster)
+            cluster['queue_priority'] = self._derive_queue_priority(cluster)
+            cluster['action_required'] = self._derive_action_required(cluster)
+            cluster['suggested_deadline_level'] = self._derive_suggested_deadline_level(cluster)
+            cluster['auto_next_action_code'] = self._derive_auto_next_action_code(cluster)
+            cluster['auto_next_action'] = self._derive_auto_next_action(cluster)
+            cluster['escalation_reason_code'] = self._derive_escalation_reason_code(cluster)
+            escalation_reason = self._derive_escalation_reason(cluster)
+            if escalation_reason:
+                cluster['escalation_reason'] = escalation_reason
+            cluster['close_ready_gate'] = self._derive_close_ready_gate(cluster)
+            close_ready_reason = self._derive_close_ready_reason(cluster)
+            if close_ready_reason:
+                cluster['close_ready_reason'] = close_ready_reason
+            cluster['close_stability_score'] = self._derive_close_stability_score(cluster)
+            cluster['close_ready_rank_reason'] = self._derive_close_ready_rank_reason(cluster)
+            cluster['close_batch_rank_score'] = self._derive_close_batch_rank_score(cluster)
+            close_batch_rank_reason = self._derive_close_batch_rank_reason(cluster)
+            if close_batch_rank_reason:
+                cluster['close_batch_rank_reason'] = close_batch_rank_reason
+            cluster['human_review_batch_rank_score'] = self._derive_human_review_batch_rank_score(cluster)
+            human_review_batch_rank_reason = self._derive_human_review_batch_rank_reason(cluster)
+            if human_review_batch_rank_reason:
+                cluster['human_review_batch_rank_reason'] = human_review_batch_rank_reason
+            cluster['escalation_urgency_score'] = self._derive_escalation_urgency_score(cluster)
+            cluster['escalation_tier'] = self._derive_escalation_tier(cluster)
+            escalation_rank_reason = self._derive_escalation_rank_reason(cluster)
+            if escalation_rank_reason:
+                cluster['escalation_rank_reason'] = escalation_rank_reason
+            cluster['escalation_batch_rank_score'] = self._derive_escalation_batch_rank_score(cluster)
+            escalation_batch_rank_reason = self._derive_escalation_batch_rank_reason(cluster)
+            if escalation_batch_rank_reason:
+                cluster['escalation_batch_rank_reason'] = escalation_batch_rank_reason
+            cluster['batch_operation_hint'] = self._derive_batch_operation_hint(cluster)
         resolved_cluster_count = sum(
             1 for cluster in review_candidate_clusters
             if str(cluster.get('cluster_status') or '') == 'resolved'
@@ -1102,6 +2100,9 @@ class ExportService:
         )
         review_result_counts: dict[str, int] = {}
         review_owner_counts: dict[str, int] = {}
+        review_actor_counts: dict[str, int] = {}
+        latest_event_type_counts: dict[str, int] = {}
+        pending_assignment_clusters: list[dict[str, object]] = []
         latest_review_event_overall: dict[str, object] | None = None
         for cluster in review_candidate_clusters:
             result = str(cluster.get('review_result') or '').strip()
@@ -1111,6 +2112,17 @@ class ExportService:
             if owner:
                 review_owner_counts[owner] = review_owner_counts.get(owner, 0) + 1
             latest_event = cluster.get('latest_review_event')
+            if isinstance(latest_event, dict) and str(latest_event.get('review_actor') or '').strip():
+                actor = str(latest_event.get('review_actor') or '').strip()
+                review_actor_counts[actor] = review_actor_counts.get(actor, 0) + 1
+            if isinstance(latest_event, dict) and str(latest_event.get('event_type') or '').strip():
+                event_type = str(latest_event.get('event_type') or '').strip()
+                latest_event_type_counts[event_type] = latest_event_type_counts.get(event_type, 0) + 1
+                if (
+                    event_type == 'assignment_update'
+                    and str(cluster.get('cluster_status') or '') != 'resolved'
+                ):
+                    pending_assignment_clusters.append(cluster)
             if isinstance(latest_event, dict) and latest_event:
                 if latest_review_event_overall is None:
                     latest_review_event_overall = latest_event
@@ -1129,6 +2141,14 @@ class ExportService:
             if needs_review_cluster_count:
                 note_parts.append(f'仍待人工复核问题簇 {needs_review_cluster_count} 个')
             audit_conclusion['review_progress_note'] = '；'.join(note_parts) + '。'
+        if needs_review_cluster_count:
+            audit_conclusion['needs_review_note'] = (
+                f'当前仍有 {needs_review_cluster_count} 个问题簇处于 needs_review，建议优先安排人工复核。'
+            )
+        if resolved_cluster_count:
+            audit_conclusion['resolved_cluster_note'] = (
+                f'当前已有 {resolved_cluster_count} 个问题簇被标记为 resolved。'
+            )
         if review_result_counts:
             result_note_parts: list[str] = []
             labels = {
@@ -1143,6 +2163,11 @@ class ExportService:
                     result_note_parts.append(f"{labels[key]} {count} 个")
             if result_note_parts:
                 audit_conclusion['review_result_note'] = '；'.join(result_note_parts) + '。'
+        pending_escalation_count = review_result_counts.get('needs-escalation', 0)
+        if pending_escalation_count:
+            audit_conclusion['pending_escalation_note'] = (
+                f'当前有 {pending_escalation_count} 个问题簇等待升级处理，建议尽快转入高等级复核。'
+            )
         audit_conclusion['review_storage_note'] = (
             '当前 review 数据来自数据库主路径。'
             if review_storage_mode == 'db'
@@ -1151,11 +2176,31 @@ class ExportService:
         if review_owner_counts:
             owner, count = sorted(review_owner_counts.items(), key=lambda item: (-item[1], item[0]))[0]
             audit_conclusion['review_owner_note'] = f'当前已记录复核人中，{owner} 处理了 {count} 个问题簇。'
+            audit_conclusion['current_owner_note'] = f'当前问题簇负责人分布中，{owner} 负责 {count} 个问题簇。'
+        if review_actor_counts:
+            actor, count = sorted(review_actor_counts.items(), key=lambda item: (-item[1], item[0]))[0]
+            audit_conclusion['review_actor_note'] = f'最近审查动作记录中，{actor} 执行了 {count} 次变更。'
+        if latest_event_type_counts:
+            latest_event_type, count = sorted(
+                latest_event_type_counts.items(),
+                key=lambda item: (-item[1], item[0]),
+            )[0]
+            audit_conclusion['latest_event_type_note'] = (
+                f'最近一批问题簇的最新动作类型中，{latest_event_type} 出现了 {count} 次。'
+            )
+        if pending_assignment_clusters:
+            top_cluster = pending_assignment_clusters[0]
+            audit_conclusion['pending_assignment_note'] = (
+                f"存在 {len(pending_assignment_clusters)} 个已交接但未闭环的问题簇；"
+                f"优先关注 {top_cluster.get('cluster_title') or top_cluster.get('cluster_key')}"
+                f"（owner={top_cluster.get('review_owner') or 'unknown'}）。"
+            )
         if latest_review_event_overall:
             audit_conclusion['latest_review_note'] = (
                 f"最近一次复核记录：状态={latest_review_event_overall.get('cluster_status')}，"
                 f"结果={latest_review_event_overall.get('review_result')}，"
-                f"处理人={latest_review_event_overall.get('review_owner') or 'unknown'}。"
+                f"处理人={latest_review_event_overall.get('review_owner') or 'unknown'}，"
+                f"操作人={latest_review_event_overall.get('review_actor') or latest_review_event_overall.get('review_owner') or 'unknown'}。"
             )
         if (
             not failed_summary
@@ -1165,6 +2210,10 @@ class ExportService:
         ):
             audit_conclusion['risk_judgement'] = '当前候选问题簇已完成人工复核，未见需继续升级的明确风险。'
             audit_conclusion['recommended_action'] = '可保留复核记录并继续后续章节审查。'
+        review_summary = self._build_review_summary(
+            review_candidate_clusters=review_candidate_clusters,
+            review_storage_mode=review_storage_mode,
+        )
         return {
             'status': {
                 key: getattr(status, key) for key in status.__dataclass_fields__
@@ -1200,6 +2249,7 @@ class ExportService:
             'failed_summary': failed_summary,
             'audit_conclusion': audit_conclusion,
             'review_storage_mode': review_storage_mode,
+            'review_summary': review_summary,
             'risk_summary': {
                 'risk_card_count': len(risk_cards),
                 'checker_result_count': len(checker_results),

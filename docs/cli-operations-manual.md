@@ -444,3 +444,12 @@ npm run build
 本轮已验证：曾出现 `/ops` 页面缺失于 manifest，但清理 `.next` 后重新构建即可恢复。
 
 - 问答 / 检索台已上移到阅读页前部，默认先于章节详情展示。
+
+
+## Sample branch smoke
+
+```bash
+python -m scripts.check_sample_branch <run_id> <branch_id> ./branch.md
+```
+
+这条命令会顺序执行 PostgreSQL 能力检查与 branch report 导出，适合交接和真实环境 smoke。

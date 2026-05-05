@@ -25,6 +25,15 @@ REQUIRED_TABLES = (
 
 RECOMMENDED_EXTENSIONS = ("pg_trgm", "vector")
 TEXT_SEARCH_CONFIGS = ("simple", "jiebacfg", "jiebaqry")
+CLUSTER_REVIEW_REQUIRED_COLUMNS: dict[str, tuple[str, ...]] = {
+    "cluster_review_records": ("review_actor",),
+    "cluster_review_event_records": (
+        "previous_cluster_status",
+        "previous_review_result",
+        "previous_review_actor",
+        "review_actor",
+    ),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +48,7 @@ class PostgresCheckReport:
     available_text_search_configs: list[str]
     missing_tables: list[str]
     missing_extensions: list[str]
+    missing_cluster_review_columns: dict[str, list[str]]
 
     @property
     def ok(self) -> bool:
@@ -78,6 +88,7 @@ def postgres_capability_report(settings: Settings | None = None) -> PostgresChec
             available_text_search_configs=[],
             missing_tables=list(REQUIRED_TABLES),
             missing_extensions=list(RECOMMENDED_EXTENSIONS),
+            missing_cluster_review_columns={},
         )
 
     if not database_exists:
@@ -90,6 +101,7 @@ def postgres_capability_report(settings: Settings | None = None) -> PostgresChec
             available_text_search_configs=[],
             missing_tables=list(REQUIRED_TABLES),
             missing_extensions=list(RECOMMENDED_EXTENSIONS),
+            missing_cluster_review_columns={},
         )
 
     try:
@@ -128,6 +140,26 @@ def postgres_capability_report(settings: Settings | None = None) -> PostgresChec
                     {"tables": list(REQUIRED_TABLES)},
                 ).all()
             }
+            missing_cluster_review_columns: dict[str, list[str]] = {}
+            for table_name, required_columns in CLUSTER_REVIEW_REQUIRED_COLUMNS.items():
+                if table_name not in existing_tables:
+                    continue
+                existing_columns = {
+                    str(row[0])
+                    for row in connection.execute(
+                        text(
+                            """
+                            SELECT column_name
+                            FROM information_schema.columns
+                            WHERE table_schema = 'public' AND table_name = :table_name
+                            """
+                        ),
+                        {"table_name": table_name},
+                    ).all()
+                }
+                missing = [name for name in required_columns if name not in existing_columns]
+                if missing:
+                    missing_cluster_review_columns[table_name] = missing
     except SQLAlchemyError:
         return PostgresCheckReport(
             database_exists=True,
@@ -138,6 +170,7 @@ def postgres_capability_report(settings: Settings | None = None) -> PostgresChec
             available_text_search_configs=[],
             missing_tables=list(REQUIRED_TABLES),
             missing_extensions=list(RECOMMENDED_EXTENSIONS),
+            missing_cluster_review_columns={},
         )
 
     missing_tables = [name for name in REQUIRED_TABLES if name not in existing_tables]
@@ -153,6 +186,7 @@ def postgres_capability_report(settings: Settings | None = None) -> PostgresChec
         available_text_search_configs=available_text_search_configs,
         missing_tables=missing_tables,
         missing_extensions=missing_extensions,
+        missing_cluster_review_columns=missing_cluster_review_columns,
     )
 
 

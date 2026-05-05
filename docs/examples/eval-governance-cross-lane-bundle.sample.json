@@ -1,0 +1,54 @@
+{
+  "bundle_id": "eval-governance-cross-lane-20260504",
+  "generated_at": "2026-05-04T09:45:00Z",
+  "source_documents": [
+    "docs/retrieval-rrf-rerank-eval.md",
+    "docs/risk-audit-phase-1-freeze-declaration.md",
+    "docs/whole-book-imitation-sample-coverage-matrix.md",
+    "docs/eval-governance-sample-release-contract.md"
+  ],
+  "notes": [
+    "Sample values are deterministic release-contract examples, not live production metrics.",
+    "Every lane maps to one stable contract and one freeze threshold family."
+  ],
+  "samples": [
+    {
+      "lane": "retrieval",
+      "sample_id": "retrieval-hit-rate-rrf-docs-001",
+      "metric_scores": {
+        "hit_rate": 1.0,
+        "mrr": 0.9
+      },
+      "latency_ms": 420.0,
+      "notes": ["Covers branch search compatibility after diagnostics/RRF additions."]
+    },
+    {
+      "lane": "rerank",
+      "sample_id": "rerank-ordering-ndcg-docs-001",
+      "metric_scores": {
+        "ndcg": 0.82
+      },
+      "latency_ms": 780.0,
+      "notes": ["Covers rerank ordering quality without requiring UI changes."]
+    },
+    {
+      "lane": "risk",
+      "sample_id": "risk-checker-contract-docs-001",
+      "metric_scores": {
+        "checker_contract_pass_rate": 1.0
+      },
+      "latency_ms": 230.0,
+      "notes": ["Covers checker contract stability while semantic signals remain additive."]
+    },
+    {
+      "lane": "generation",
+      "sample_id": "whole-book-imitation-consistency-docs-001",
+      "metric_scores": {
+        "overall_score": 86.0,
+        "consistency_score": 82.0
+      },
+      "latency_ms": 0.0,
+      "notes": ["Covers whole-book consistency gate; provider latency is governed by provider run evidence."]
+    }
+  ]
+}

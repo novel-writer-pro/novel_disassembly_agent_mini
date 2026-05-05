@@ -3,8 +3,9 @@ from pathlib import Path
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from novel_analyzer.database.models import ChapterRiskCardRecord, GateCheckerResultRecord
+from novel_analyzer.database.models import ChapterRiskCardRecord, FactRecord, GateCheckerResultRecord, RiskSemanticSignalRecord, RiskSignalClusterRecord, RiskSignalLinkRecord
 from novel_analyzer.database.session import create_schema
+from novel_analyzer.embedding.service import DeterministicStubEmbeddingProvider
 from novel_analyzer.domain.schemas import ChapterRiskCard, CheckerResult, GateRiskItem
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
@@ -109,8 +110,21 @@ def test_generate_for_chapter_persists_checker_results_and_risk_card(tmp_path: P
                         'counter_evidence': ['可能存在未展示的新信息'],
                     }
                 ],
-                'unsupported_inferences': [],
+                'state_summary': {
+                    'stable_relations': ['卫图与族兄长期不睦'],
+                    'evolved_relations': ['卫图与族兄在无明显铺垫下突然结盟'],
+                    'new_foreshadowing': ['命格裂纹早已埋下异变伏笔'],
+                    'paid_off_foreshadowing': ['本章突然兑现命格异变结果'],
+                    'observed_world_rules': ['城防阵法通常只覆盖内城'],
+                    'constraining_world_rules': ['外城访客不得直接调动全城阵法'],
+                    'new_conflicts': ['卫图与城主府冲突升级'],
+                    'escalated_conflicts': ['卫图与城主府矛盾进一步激化'],
+                },
+                'state_transition_notes': ['两人态度突然从互相戒备转为并肩合作'],
+                'unsupported_inferences': ['“两人已经完全互信”缺少直接证据支撑', '“命格异变早有完整铺垫”缺少直接证据支撑', '“外城访客可无条件调动全城阵法”缺少直接证据支撑', '“冲突已彻底解决”缺少直接证据支撑'],
                 'ambiguous_points': [],
+                'evidence_backed_resolutions': ['众人认为风波似乎暂时平息'],
+                'unresolved_threads': ['城主府后续报复仍未真正处理'],
                 'needs_human_review': True,
                 'quality_gate_notes': [],
                 'hook_score': 4.0,
@@ -121,7 +135,7 @@ def test_generate_for_chapter_persists_checker_results_and_risk_card(tmp_path: P
         )
         card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
         assert card.overall_risk_level in {'high', 'medium'}
-        assert len(card.top_risks) == 5
+        assert len(card.top_risks) == 8
 
         records = session.scalars(
             select(GateCheckerResultRecord).where(GateCheckerResultRecord.branch_id == branch.id)
@@ -129,6 +143,10 @@ def test_generate_for_chapter_persists_checker_results_and_risk_card(tmp_path: P
         assert {record.checker_name for record in records} == {
             'character_ooc',
             'world_rule_consistency',
+            'relationship_consistency',
+            'foreshadow_payoff_consistency',
+            'setting_scope_consistency',
+            'thread_closure_consistency',
             'plot_logic_consistency',
             'timeline_consistency',
             'power_scaling_consistency',
@@ -142,9 +160,33 @@ def test_generate_for_chapter_persists_checker_results_and_risk_card(tmp_path: P
         assert risk_card_record is not None
         assert risk_card_record.payload_json['risk_counts_by_domain']['character'] == 1
         assert risk_card_record.payload_json['risk_counts_by_domain']['rules'] == 1
+        assert risk_card_record.payload_json['risk_counts_by_domain']['relationship'] == 1
+        assert risk_card_record.payload_json['risk_counts_by_domain']['foreshadow'] == 1
+        assert risk_card_record.payload_json['risk_counts_by_domain']['setting_scope'] == 1
+        assert risk_card_record.payload_json['risk_counts_by_domain']['thread_closure'] == 1
         assert risk_card_record.payload_json['risk_counts_by_domain']['plot'] == 1
         assert risk_card_record.payload_json['risk_counts_by_domain']['timeline'] == 1
         assert risk_card_record.payload_json['risk_counts_by_domain']['power'] == 1
+        semantic_rows = session.scalars(
+            select(RiskSemanticSignalRecord)
+            .where(RiskSemanticSignalRecord.branch_id == branch.id)
+            .where(RiskSemanticSignalRecord.chapter_index == 1)
+        ).all()
+        assert semantic_rows
+        assert any(row.signal_type == 'relationship' for row in semantic_rows)
+        assert any(row.signal_type.startswith('checker:') for row in semantic_rows)
+        link_rows = session.scalars(
+            select(RiskSignalLinkRecord)
+            .where(RiskSignalLinkRecord.branch_id == branch.id)
+            .where(RiskSignalLinkRecord.chapter_index == 1)
+        ).all()
+        assert link_rows
+        assert any(row.link_type in {'payoff_of', 'relationship_variant_of', 'rule_variant_of', 'thread_continuation'} for row in link_rows)
+        cluster_rows = session.scalars(
+            select(RiskSignalClusterRecord)
+            .where(RiskSignalClusterRecord.branch_id == branch.id)
+        ).all()
+        assert cluster_rows
 
 
 def test_generate_for_chapter_marks_skipped_without_signals(tmp_path: Path) -> None:
@@ -283,6 +325,71 @@ def test_plot_logic_checker_ranks_more_relevant_supporting_evidence_first(tmp_pa
         assert '因果' in plot_risks[0].supporting_evidence[0] or '前置' in plot_risks[0].supporting_evidence[0]
 
 
+def test_plot_logic_checker_detects_thread_state_conflict_candidate(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '线程状态冲突测试',
+                'chapter_summary': '本章宣称危机已解，但仍保留核心未解线程。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图宣布危机解除'],
+                'continuity_notes': ['主线推进。'],
+                'unsupported_inferences': ['“问题已经彻底解决”缺少直接证据支撑'],
+                'evidence_backed_resolutions': ['主角认为当前危机已解除'],
+                'unresolved_threads': ['真正幕后原因尚未查明'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        plot_risks = [risk for risk in card.top_risks if risk.checker_name == 'plot_logic_consistency']
+        assert plot_risks
+        assert plot_risks[0].risk_type == 'thread_state_conflict'
+        assert any('解除' in item or '解决' in item for item in plot_risks[0].supporting_evidence)
+        assert any('未查明' in item or '未解' in item for item in plot_risks[0].supporting_evidence)
+        assert card.checker_statuses['plot_logic_consistency'] == 'partial'
+
+
+def test_plot_logic_checker_detects_motivation_to_action_gap_candidate(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '动机行动桥测试',
+                'chapter_summary': '本章行动跳转较猛。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图突然决定出手'],
+                'continuity_notes': ['主线推进。'],
+                'unsupported_inferences': ['角色动机与决定之间缺少直接证据支撑'],
+                'state_transition_notes': ['局势突然转入主动出手并迅速推进结果'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        plot_risks = [risk for risk in card.top_risks if risk.checker_name == 'plot_logic_consistency']
+        assert plot_risks
+        assert plot_risks[0].risk_type == 'motivation_to_action_gap'
+        assert any('动机' in item or '决定' in item for item in plot_risks[0].supporting_evidence)
+        assert any('出手' in item or '推进' in item for item in plot_risks[0].supporting_evidence)
+        assert card.checker_statuses['plot_logic_consistency'] == 'partial'
+
+
 def test_timeline_checker_uses_artifact_signals_for_better_candidates(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
@@ -353,6 +460,112 @@ def test_timeline_checker_ranks_more_relevant_supporting_evidence_first(tmp_path
         assert '顺序' in timeline_risks[0].supporting_evidence[0] or '恢复' in timeline_risks[0].supporting_evidence[0]
 
 
+def test_timeline_checker_detects_sequence_conflict_candidate_from_structured_signals(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '时间顺序结构化测试',
+                'chapter_summary': '本章同日与次日锚点并置。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图当夜现身后又次日返城'],
+                'continuity_notes': ['主线推进。'],
+                'timeline_signals': ['当夜再度现身交手', '次日清晨已返城复命'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        timeline_risks = [risk for risk in card.top_risks if risk.checker_name == 'timeline_consistency']
+        assert timeline_risks
+        assert timeline_risks[0].risk_type == 'sequence_conflict_candidate'
+        assert any('当夜' in item for item in timeline_risks[0].supporting_evidence)
+        assert any('次日' in item for item in timeline_risks[0].supporting_evidence)
+        assert card.checker_statuses['timeline_consistency'] == 'partial'
+
+
+def test_timeline_checker_detects_recovery_window_insufficient_candidate(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '恢复窗口测试',
+                'chapter_summary': '本章恢复时长存在可疑压缩。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图三日后回城又当夜再战'],
+                'continuity_notes': ['主线推进。'],
+                'timeline_signals': ['三日后回城', '当夜再次出手'],
+                'unsupported_inferences': ['“当夜已完成全部恢复”缺少直接证据支撑'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        timeline_risks = [risk for risk in card.top_risks if risk.checker_name == 'timeline_consistency']
+        assert timeline_risks
+        assert timeline_risks[0].risk_type == 'recovery_window_insufficient'
+
+
+def test_timeline_checker_can_use_semantic_signal_retrieval_for_supporting_evidence(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RiskAuditService(session)
+        service.risk_signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        service.risk_evidence_pack.signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '前文时间锚点',
+                'chapter_summary': '前文已有当夜出手的时间线描述。',
+                'timeline_signals': ['当夜再次出手'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        service.generate_for_chapter(branch.id, 1)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '时间压缩',
+                'chapter_summary': '本章时间顺序可能存在压缩。',
+                'timeline_signals': ['当夜再次出手'],
+                'unsupported_inferences': ['时间顺序结论缺少直接证据支撑'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        card = service.generate_for_chapter(branch.id, 2)
+        timeline_risks = [risk for risk in card.top_risks if risk.checker_name == 'timeline_consistency']
+        assert timeline_risks
+        assert timeline_risks[0].risk_type == 'timeline_support_gap'
+        assert any('当夜再次出手' in item for item in timeline_risks[0].supporting_evidence)
+        assert card.checker_statuses['timeline_consistency'] == 'partial'
+
+
 def test_power_checker_uses_artifact_signals_for_better_candidates(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
@@ -421,6 +634,113 @@ def test_power_checker_ranks_more_relevant_supporting_evidence_first(tmp_path: P
         power_risks = [risk for risk in card.top_risks if risk.checker_name == 'power_scaling_consistency']
         assert power_risks
         assert '越阶' in power_risks[0].supporting_evidence[0] or '新招式' in power_risks[0].supporting_evidence[0]
+
+
+def test_power_checker_detects_upset_without_setup_candidate(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '越阶铺垫测试',
+                'chapter_summary': '本章突然越阶压制。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图越阶压制强敌'],
+                'continuity_notes': ['主线推进。'],
+                'power_signals': ['越阶压制', '突然掌握新招式'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        power_risks = [risk for risk in card.top_risks if risk.checker_name == 'power_scaling_consistency']
+        assert power_risks
+        assert power_risks[0].risk_type == 'upset_without_setup'
+        assert any('越阶' in item for item in power_risks[0].supporting_evidence)
+        assert any('新招式' in item or '掌握' in item for item in power_risks[0].supporting_evidence)
+        assert card.checker_statuses['power_scaling_consistency'] == 'partial'
+
+
+def test_power_checker_detects_cost_constraint_missing_candidate(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '代价约束测试',
+                'chapter_summary': '本章强力表现后未交代限制。',
+                'key_entities': ['卫图'],
+                'key_events': ['卫图越阶压制后仍无明显负担'],
+                'continuity_notes': ['主线推进。'],
+                'power_signals': ['越阶压制'],
+                'unsupported_inferences': ['强行爆发后的代价与冷却限制缺少直接证据支撑'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        power_risks = [risk for risk in card.top_risks if risk.checker_name == 'power_scaling_consistency']
+        assert power_risks
+        assert power_risks[0].risk_type == 'cost_constraint_missing'
+
+
+def test_power_checker_can_use_semantic_signal_retrieval_for_supporting_evidence(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RiskAuditService(session)
+        service.risk_signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        service.risk_evidence_pack.signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '前文战力信号',
+                'chapter_summary': '前文已有越阶压制的描述。',
+                'power_signals': ['越阶压制'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        service.generate_for_chapter(branch.id, 1)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '战力异常',
+                'chapter_summary': '本章战力结论存在支撑缺口。',
+                'power_signals': ['越阶压制'],
+                'unsupported_inferences': ['战力结论缺少直接证据支撑'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        card = service.generate_for_chapter(branch.id, 2)
+        power_risks = [risk for risk in card.top_risks if risk.checker_name == 'power_scaling_consistency']
+        assert power_risks
+        assert power_risks[0].risk_type == 'power_support_gap'
+        assert len(power_risks[0].supporting_evidence) >= 2
+        assert any('越阶' in item or '战力' in item for item in power_risks[0].supporting_evidence)
+        assert card.checker_statuses['power_scaling_consistency'] == 'partial'
 
 
 def test_world_rule_checker_uses_artifact_signals_for_better_candidates(tmp_path: Path) -> None:
@@ -713,6 +1033,496 @@ def test_character_ooc_checker_ranks_more_relevant_supporting_evidence_first(tmp
         assert character_risks
         assert character_risks[0].risk_type == 'motivation_shift_candidate'
         assert '动机' in character_risks[0].supporting_evidence[0] or '立场' in character_risks[0].supporting_evidence[0]
+
+
+def test_relationship_checker_uses_state_summary_signals_for_bridge_gap_candidates(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '关系桥接测试',
+                'chapter_summary': '本章人物关系变化存在可疑桥接缺口。',
+                'key_entities': ['卫图', '族兄'],
+                'key_events': ['卫图与族兄突然结盟'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'stable_relations': ['卫图与族兄长期敌对'],
+                    'evolved_relations': ['卫图与族兄在本章突然并肩结盟'],
+                },
+                'state_transition_notes': ['两人态度突然从互相戒备转为并肩合作'],
+                'unsupported_inferences': ['“两人已经完全互信”缺少直接证据支撑'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        relationship_risks = [risk for risk in card.top_risks if risk.checker_name == 'relationship_consistency']
+        assert relationship_risks
+        assert relationship_risks[0].risk_type == 'relationship_shift_without_bridge'
+        assert relationship_risks[0].risk_domain == 'relationship'
+        assert card.checker_statuses['relationship_consistency'] == 'partial'
+
+
+def test_relationship_checker_detects_trust_state_conflict_candidate(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '关系状态冲突测试',
+                'chapter_summary': '本章同时声称关系缓和又保留对立线索。',
+                'key_entities': ['卫图', '韩松'],
+                'key_events': ['卫图与韩松表面和解'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'stable_relations': ['卫图与韩松长期互不信任'],
+                    'evolved_relations': ['卫图与韩松在本章似乎已经握手言和'],
+                },
+                'unsupported_inferences': ['“二人已经彻底化敌为友”缺少直接证据支撑'],
+                'evidence_backed_resolutions': ['两人表面上暂时停手言和'],
+                'unresolved_threads': ['韩松对卫图的旧怨仍未真正解除'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        relationship_risks = [risk for risk in card.top_risks if risk.checker_name == 'relationship_consistency']
+        assert relationship_risks
+        assert relationship_risks[0].risk_type == 'trust_state_conflict'
+        assert any('未解' in item or '旧怨' in item for item in relationship_risks[0].supporting_evidence)
+
+
+def test_relationship_checker_can_use_semantic_signal_retrieval_for_supporting_evidence(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RiskAuditService(session)
+        service.risk_signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        service.risk_evidence_pack.signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        for checker in service.checkers:
+            if getattr(checker, 'name', '') == 'relationship_consistency':
+                checker.retrieval_search = service.risk_evidence_pack.build_pack  # type: ignore[attr-defined]
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '前文关系',
+                'chapter_summary': '前文已经写出卫图与族兄关系缓和迹象。',
+                'state_summary': {
+                    'evolved_relations': ['卫图与族兄关系缓和'],
+                },
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        service.generate_for_chapter(branch.id, 1)
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '突然结盟',
+                'chapter_summary': '本章突然写两人结盟。',
+                'state_summary': {
+                    'evolved_relations': ['卫图与族兄突然结盟'],
+                },
+                'unsupported_inferences': ['关系变化桥接不足'],
+                'state_transition_notes': ['二人忽然并肩合作'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        card = service.generate_for_chapter(branch.id, 2)
+        relationship_risks = [risk for risk in card.top_risks if risk.checker_name == 'relationship_consistency']
+        assert relationship_risks
+        assert relationship_risks[0].risk_type == 'relationship_shift_without_bridge'
+        assert any('关系缓和' in item for item in relationship_risks[0].supporting_evidence)
+        assert any('卫图与族兄关系缓和' in item for item in relationship_risks[0].supporting_evidence)
+
+
+def test_foreshadow_checker_detects_payoff_without_setup(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '伏笔兑现测试',
+                'chapter_summary': '本章突然兑现重大结果。',
+                'key_entities': ['命格'],
+                'key_events': ['命格异变结果突然落地'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'paid_off_foreshadowing': ['命格异变在本章直接兑现'],
+                },
+                'unsupported_inferences': ['“此前已充分铺垫命格异变”缺少直接证据支撑'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        foreshadow_risks = [risk for risk in card.top_risks if risk.checker_name == 'foreshadow_payoff_consistency']
+        assert foreshadow_risks
+        assert foreshadow_risks[0].risk_type == 'payoff_without_setup'
+        assert card.checker_statuses['foreshadow_payoff_consistency'] == 'partial'
+
+
+def test_foreshadow_checker_detects_resolved_thread_reopened_without_reason(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '伏笔重开测试',
+                'chapter_summary': '本章已回收线索又重新回到未解状态。',
+                'key_entities': ['祖器'],
+                'key_events': ['祖器真相看似揭晓又被重新拉开'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'paid_off_foreshadowing': ['祖器真相在本章看似已经揭晓'],
+                },
+                'evidence_backed_resolutions': ['众人以为祖器之谜已经解决'],
+                'unresolved_threads': ['祖器背后真正来源仍未解释'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        foreshadow_risks = [risk for risk in card.top_risks if risk.checker_name == 'foreshadow_payoff_consistency']
+        assert foreshadow_risks
+        assert foreshadow_risks[0].risk_type == 'resolved_thread_reopened_without_reason'
+
+
+def test_foreshadow_checker_can_use_semantic_signal_retrieval_for_supporting_evidence(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RiskAuditService(session)
+        service.risk_signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        service.risk_evidence_pack.signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        for checker in service.checkers:
+            if getattr(checker, 'name', '') == 'foreshadow_payoff_consistency':
+                checker.retrieval_search = service.risk_evidence_pack.build_pack  # type: ignore[attr-defined]
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '前文伏笔',
+                'chapter_summary': '前文埋下古符异动伏笔。',
+                'state_summary': {
+                    'new_foreshadowing': ['古符异动伏笔'],
+                },
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        session.add(
+            FactRecord(
+                branch_id=branch.id,
+                chapter_index=1,
+                fact_type='world_rule',
+                label='外城访客不得直接调动全城阵法',
+                evidence_list=['规则说明'],
+                confidence=0.8,
+            )
+        )
+        session.commit()
+        service.generate_for_chapter(branch.id, 1)
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '突然兑现',
+                'chapter_summary': '本章突然兑现古符异动结果。',
+                'state_summary': {
+                    'paid_off_foreshadowing': ['古符异动突然兑现'],
+                },
+                'unsupported_inferences': ['此前已充分铺垫古符异动缺少直接证据支撑'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        card = service.generate_for_chapter(branch.id, 2)
+        foreshadow_risks = [risk for risk in card.top_risks if risk.checker_name == 'foreshadow_payoff_consistency']
+        assert foreshadow_risks
+        assert foreshadow_risks[0].risk_type == 'payoff_without_setup'
+        assert len(foreshadow_risks[0].supporting_evidence) >= 2
+
+
+def test_setting_scope_checker_detects_constraint_scope_expansion(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '范围膨胀测试',
+                'chapter_summary': '本章阵法作用域疑似被异常放大。',
+                'key_entities': ['城防阵法'],
+                'key_events': ['外城访客直接调动全城阵法'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'observed_world_rules': ['城防阵法通常只覆盖内城'],
+                    'constraining_world_rules': ['外城访客不得直接调动全城阵法'],
+                },
+                'unsupported_inferences': ['“外城访客可无条件调动全城阵法”缺少直接证据支撑'],
+                'state_transition_notes': ['阵法权限似乎被全面开放到全城范围'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        scope_risks = [risk for risk in card.top_risks if risk.checker_name == 'setting_scope_consistency']
+        assert scope_risks
+        assert scope_risks[0].risk_type == 'constraint_scope_expansion'
+        assert card.checker_statuses['setting_scope_consistency'] == 'partial'
+
+
+def test_setting_scope_checker_detects_authority_boundary_conflict(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '权限边界测试',
+                'chapter_summary': '本章权限边界出现可疑突破。',
+                'key_entities': ['宗门禁地'],
+                'key_events': ['外门弟子直接进入宗门禁地'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'constraining_world_rules': ['外门弟子无资格进入宗门禁地'],
+                },
+                'unsupported_inferences': ['“外门弟子已获得长期许可”缺少直接证据支撑'],
+                'state_transition_notes': ['禁地权限似乎被临时绕过'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        scope_risks = [risk for risk in card.top_risks if risk.checker_name == 'setting_scope_consistency']
+        assert scope_risks
+        assert scope_risks[0].risk_type == 'authority_boundary_conflict'
+
+
+def test_setting_scope_checker_can_use_semantic_signal_retrieval_for_supporting_evidence(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RiskAuditService(session)
+        service.risk_signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        service.risk_evidence_pack.signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        for checker in service.checkers:
+            if getattr(checker, 'name', '') == 'setting_scope_consistency':
+                checker.retrieval_search = service.risk_evidence_pack.build_pack  # type: ignore[attr-defined]
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '前文规则',
+                'chapter_summary': '前文明确访客不能调动城防阵法。',
+                'state_summary': {
+                    'constraining_world_rules': ['外城访客不得直接调动全城阵法'],
+                },
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        service.generate_for_chapter(branch.id, 1)
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '权限开放',
+                'chapter_summary': '本章突然开放访客权限。',
+                'state_summary': {
+                    'constraining_world_rules': ['外城访客不得直接调动全城阵法'],
+                },
+                'unsupported_inferences': ['外城访客可无条件调动全城阵法缺少直接证据支撑'],
+                'state_transition_notes': ['阵法权限似乎被全面开放到全城范围'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        card = service.generate_for_chapter(branch.id, 2)
+        scope_risks = [risk for risk in card.top_risks if risk.checker_name == 'setting_scope_consistency']
+        assert scope_risks
+        assert scope_risks[0].risk_type == 'constraint_scope_expansion'
+        assert any('外城访客不得直接调动全城阵法' in item for item in scope_risks[0].supporting_evidence)
+
+
+def test_thread_closure_checker_detects_thread_dropped_after_escalation(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '线程断头测试',
+                'chapter_summary': '本章冲突升级后缺少后续承接。',
+                'key_entities': ['城主府'],
+                'key_events': ['矛盾升级后突然切走'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'escalated_conflicts': ['卫图与城主府矛盾进一步激化'],
+                },
+                'unresolved_threads': ['城主府后续报复仍未真正处理'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        closure_risks = [risk for risk in card.top_risks if risk.checker_name == 'thread_closure_consistency']
+        assert closure_risks
+        assert closure_risks[0].risk_type == 'thread_dropped_after_escalation'
+        assert card.checker_statuses['thread_closure_consistency'] == 'partial'
+
+
+def test_thread_closure_checker_detects_closure_without_resolution_basis(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '收束依据测试',
+                'chapter_summary': '本章突然宣称矛盾已经收束。',
+                'key_entities': ['城主府'],
+                'key_events': ['众人以为冲突已经解决'],
+                'continuity_notes': ['主线推进。'],
+                'state_summary': {
+                    'escalated_conflicts': ['卫图与城主府矛盾进一步激化'],
+                },
+                'evidence_backed_resolutions': ['众人认为风波似乎暂时平息'],
+                'unsupported_inferences': ['“冲突已彻底解决”缺少直接证据支撑'],
+                'needs_human_review': True,
+                'quality_gate_notes': [],
+                'dimensions': [],
+            },
+        )
+        card = RiskAuditService(session).generate_for_chapter(branch.id, 1)
+        closure_risks = [risk for risk in card.top_risks if risk.checker_name == 'thread_closure_consistency']
+        assert closure_risks
+        assert closure_risks[0].risk_type == 'closure_without_resolution_basis'
+
+
+def test_thread_closure_checker_can_use_semantic_signal_retrieval_for_supporting_evidence(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RiskAuditService(session)
+        service.risk_signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        service.risk_evidence_pack.signal_store.embedding_provider = DeterministicStubEmbeddingProvider(dim=8)
+        for checker in service.checkers:
+            if getattr(checker, 'name', '') == 'thread_closure_consistency':
+                checker.retrieval_search = service.risk_evidence_pack.build_pack  # type: ignore[attr-defined]
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '前文冲突',
+                'chapter_summary': '前文已经写出冲突升级。',
+                'state_summary': {
+                    'escalated_conflicts': ['卫图与城主府矛盾进一步激化'],
+                },
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        service.generate_for_chapter(branch.id, 1)
+
+        RunService(session).record_chapter_artifact(
+            branch.id,
+            2,
+            {
+                'chapter_index': 2,
+                'normalized_title': '突然断头',
+                'chapter_summary': '本章冲突承接不足。',
+                'state_summary': {
+                    'escalated_conflicts': ['卫图与城主府矛盾进一步激化'],
+                },
+                'unresolved_threads': ['城主府后续报复仍未真正处理'],
+                'needs_human_review': True,
+                'dimensions': [],
+                'quality_gate_notes': [],
+            },
+        )
+        card = service.generate_for_chapter(branch.id, 2)
+        closure_risks = [risk for risk in card.top_risks if risk.checker_name == 'thread_closure_consistency']
+        assert closure_risks
+        assert closure_risks[0].risk_type == 'thread_dropped_after_escalation'
+        assert any('卫图与城主府矛盾进一步激化' in item for item in closure_risks[0].supporting_evidence)
 
 
 def test_generate_for_chapter_isolates_checker_failure(tmp_path: Path) -> None:

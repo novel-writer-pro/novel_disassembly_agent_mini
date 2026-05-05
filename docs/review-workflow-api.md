@@ -31,7 +31,10 @@
 
 当前返回重点字段：
 
+- `contract_version`
 - `stable_contract_version`
+- `allowed_cluster_statuses`
+- `allowed_review_results`
 - `review_storage_mode`
 - `filters`
 - `cluster_key`
@@ -70,10 +73,16 @@
 - `cluster_key`
 - `database_url`（可选）
 - `event_type`（可选）
+- `review_owner`（可选）
+- `review_result`（可选）
+- `limit`（可选）
 
 当前返回重点字段：
 
+- `contract_version`
 - `stable_contract_version`
+- `allowed_cluster_statuses`
+- `allowed_review_results`
 - `review_storage_mode`
 - `filters`
 - `event_index`
@@ -95,6 +104,29 @@
 - `changed_fields`
 - `transition`
 
+当前 event_type 语义：
+
+- `status_update`
+- `result_update`
+- `assignment_update`
+- `owner_update`
+- `actor_update`
+- `note_update`
+- `resolution_marker_update`
+- `review_update`
+- `noop_update`
+
+当前过滤语义：
+
+- `event_type`
+  - 只返回指定事件类型
+- `review_owner`
+  - 只返回指定处理人的历史事件
+- `review_result`
+  - 只返回指定结论的历史事件
+- `limit`
+  - 只保留最后 N 条匹配事件
+
 ---
 
 ### C. `GET /api/review-cluster-summary`
@@ -111,18 +143,64 @@
 
 当前返回重点字段：
 
+- `contract_version`
 - `stable_contract_version`
+- `allowed_cluster_statuses`
+- `allowed_review_results`
 - `review_storage_mode`
 - `filters`
 - `cluster_count`
 - `history_event_count`
 - `latest_review_at`
 - `latest_review_owner`
+- `latest_review_actor`
+- `latest_review_event_type`
 - `latest_review_result`
 - `latest_review_result_label`
+- `current_owner_top`
+- `current_owner_top_count`
+- `latest_actor_top`
+- `latest_actor_top_count`
+- `latest_event_type_top`
+- `latest_event_type_top_count`
+- `workflow_lane_top`
+- `workflow_lane_top_count`
+- `queue_priority_top`
+- `queue_priority_top_count`
+- `deadline_level_top`
+- `deadline_level_top_count`
+- `batch_operation_hint_top`
+- `batch_operation_hint_top_count`
+- `auto_next_action_code_top`
+- `auto_next_action_code_top_count`
+- `auto_next_action_top`
+- `auto_next_action_top_count`
+- `escalation_reason_code_top`
+- `escalation_reason_code_top_count`
+- `escalation_reason_top`
+- `escalation_reason_top_count`
+- `phase2_focus_top`
+- `phase2_focus_top_count`
+- `pending_assignment_count`
+- `pending_escalation_count`
+- `resolved_count`
+- `needs_review_count`
+- `action_required_count`
+- `batch_suggestions`
 - `by_status`
 - `by_result`
 - `by_owner`
+- `by_actor`
+- `by_latest_event_type`
+- `by_workflow_lane`
+- `by_queue_priority`
+- `by_deadline_level`
+- `by_batch_operation_hint`
+- `by_auto_next_action_code`
+- `by_auto_next_action`
+- `by_escalation_reason_code`
+- `by_escalation_reason`
+- `by_phase2_focus`
 - `by_priority`
 - `by_pattern`
 
@@ -134,6 +212,84 @@
   - 只聚合指定处理人的问题簇
 - `review_result`
   - 只聚合指定复核结果的问题簇
+
+当前额外结构化聚合字段：
+
+- `current_owner_top`
+  - 当前问题簇负责人分布中的最高频 owner
+- `latest_actor_top`
+  - 最新动作记录中的最高频 actor
+- `latest_event_type_top`
+  - 最新动作记录中的最高频 event_type
+- `workflow_lane_top`
+  - 当前问题簇最常见的工作流队列
+- `queue_priority_top`
+  - 当前问题簇最常见的队列优先级
+- `deadline_level_top`
+  - 当前问题簇最常见的建议处理时限等级
+- `batch_operation_hint_top`
+  - 当前问题簇最常见的批量处理提示
+- `auto_next_action_code_top`
+  - 当前问题簇最常见的下一步动作代码
+  - phase-2 风险当前可出现 `prioritize_phase2_human_review`
+- `auto_next_action_top`
+  - 当前问题簇最常见的下一步动作建议
+- `escalation_reason_code_top`
+  - 当前问题簇最常见的原因代码
+  - phase-2 风险当前可出现 `phase2_risk_requires_human_confirmation`
+- `escalation_reason_top`
+  - 当前问题簇最常见的升级/继续处理原因说明
+- `phase2_focus_top`
+  - 当前最突出的 phase-2 风险焦点桶（如 `plot-phase2` / `timeline-phase2` / `power-phase2`）
+- `pending_assignment_count`
+  - 最新事件为 `assignment_update` 且尚未 `resolved` 的问题簇数量
+- `pending_escalation_count`
+  - 当前 `review_result=needs-escalation` 的问题簇数量
+- `resolved_count`
+  - 当前 `cluster_status=resolved` 的问题簇数量
+- `needs_review_count`
+  - 当前 `cluster_status=needs_review` 的问题簇数量
+- `action_required_count`
+  - 当前仍需要执行后续动作的问题簇数量
+- `batch_suggestions`
+  - 系统推荐的一组可批量处理簇摘要，适合做批量升级/交接/复核/归档入口
+  - 每条 suggestion 当前包含：
+    - `hint_code`
+    - `hint_title`
+    - `action_bucket`
+    - `batch_priority`
+    - `suggestion_rank_score`
+    - `suggestion_rank_reason`
+    - `group_strategy`
+    - `group_key`
+    - `span_bucket`
+    - `cluster_count`
+    - `cluster_keys`
+    - `suggested_cluster_order`
+    - `suggested_cluster_order_titles`
+    - `suggested_cluster_order_details`
+    - `ordering_strategy`
+    - `suggested_first_cluster_reason`
+    - `cluster_titles`
+    - `owners`
+    - `suggested_owner`
+    - `primary_checker`
+    - `pattern_label_top`
+    - `risk_types`
+    - `phase2_focus_top`
+    - `chapter_spans`
+    - `queue_priority_top`
+    - `deadline_level_top`
+    - `action_required`
+    - `resolved_candidate_count`
+    - `escalation_candidate_count`
+    - `suggested_cluster_order_details[*].close_batch_rank_score`
+    - `suggested_cluster_order_details[*].close_batch_rank_reason`
+    - `suggested_cluster_order_details[*].human_review_batch_rank_score`
+    - `suggested_cluster_order_details[*].human_review_batch_rank_reason`
+    - `suggested_cluster_order_details[*].escalation_batch_rank_score`
+    - `suggested_cluster_order_details[*].escalation_batch_rank_reason`
+    - `recommended_batch_action`
 
 ---
 
@@ -151,6 +307,7 @@
 - `review_result`
 - `review_notes`
 - `review_owner`
+- `review_actor`
 - `resolved_at`
 - `database_url`（可选）
 
@@ -158,6 +315,7 @@
 
 - 会优先更新 DB-backed review object
 - 会追加一条 review history event
+- 响应同时返回 `contract_version=review-workflow.v1`
 - 响应包含 `stable_contract_version=review-api-pre-v1`，用于下游判断当前合同仍处于 Phase 2 pre-v1
 
 ### 常见错误语义
@@ -171,8 +329,9 @@
 ### fallback / 审计链说明
 
 - DB 表已迁移时，`review_storage_mode=db` 是主路径，history 来自 `cluster_review_event_records`。
-- review 表未迁移时，读取接口会显式回落到 `review_storage_mode=file-fallback`；history 在 fallback 路径下返回空列表，避免伪装成 DB 审计链。
+- review 表未迁移时，读取接口会显式回落到 `review_storage_mode=file-fallback`；fallback history 现在也补齐统一审计字段，但来源仍应视为兼容路径而非正式 DB 审计链。
 - history 事件现在包含 `event_index`、`audit_key`、`previous_values`、`current_values`、`changed_fields` 与 `transition`，用于审计链展示；稳定消费仍应优先绑定基础状态字段。
+- `event_type` 会根据实际变更内容自动推导，不再一律固定为 `status_update`，从而区分指派交接、结果确认、备注补录等操作。
 
 ---
 
@@ -242,6 +401,13 @@
 - `docs/examples/review-cluster-summary.sample.json`
 - `docs/examples/review-cluster-summary.stable.sample.json`
 - `docs/examples/review-cluster-summary.stable.v1.sample.json`
+- `docs/examples/branch-bundle-review-summary.sample.json`（用于系统消费 `review_summary + audit_conclusion` 联合片段）
+- `docs/review-batch-execution-contract.md`（用于 batch execution 请求/响应结构与阶段落地状态说明）
+
+当前批量执行历史接口：
+
+- `GET /api/review-batch-history?branch_id=...`
+  - 用于读取 batch execute 的执行回执历史
 
 ### `review-cluster-update`
 
@@ -286,6 +452,7 @@
 - `review_result`
 - `review_notes`
 - `review_owner`
+- `review_actor`
 - `resolved_at`
 - `event_type`
 
@@ -310,6 +477,13 @@
 - `review_progress_note`
 - `review_result_note`
 - `review_owner_note`
+- `current_owner_note`
+- `review_actor_note`
+- `latest_event_type_note`
+- `pending_assignment_note`
+- `needs_review_note`
+- `resolved_cluster_note`
+- `pending_escalation_note`
 - `latest_review_note`
 
 建议：
@@ -346,3 +520,11 @@
 - `docs/examples/review-cluster-update.request.sample.json`
 - `docs/examples/review-cluster-update.response.sample.json`
 - `docs/examples/review-cluster-update.error.sample.json`
+
+
+## Stable sample note
+
+- `docs/examples/review-cluster-summary.sample.json` 表示当前较完整的 pre-v1 / phase-2 扩展合同样例。
+- `docs/examples/review-cluster-summary.stable.sample.json` 与 `docs/examples/review-cluster-summary.stable.v1.sample.json` 目前刻意保持为较小的稳定字段子集，用于演示下游只消费稳定核心字段的场景。
+- 因此 stable sample 不强制包含 `phase2_focus_top`、`by_phase2_focus`、`prioritize_phase2_human_review`、`phase2_risk_requires_human_confirmation`。
+- 当这些字段进入明确冻结合同后，再统一升级 stable sample。

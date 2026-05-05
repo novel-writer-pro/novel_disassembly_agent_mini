@@ -55,7 +55,11 @@ class Settings(BaseSettings):
     runtime_cache_dir: str = Field(default=".cache/novel-analyzer")
     embedding_max_length: int = Field(default=2048)
     embedding_stub_dim: int = Field(default=16)
-    rerank_model_name: str = Field(default="")
+    rerank_backend: str = Field(default="onnx")
+    rerank_model_name: str = Field(default="onnx-community/bge-reranker-v2-m3-ONNX")
+    rerank_model_path: str = Field(default="")
+    rerank_cache_dir: str = Field(default=".cache/rerank-models")
+    rerank_max_length: int = Field(default=512)
     gate_model_name: str = Field(default="")
 
     @property

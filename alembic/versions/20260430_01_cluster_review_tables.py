@@ -1,7 +1,7 @@
 """cluster review audit trail tables
 
 Revision ID: 20260430_01
-Revises: 20260428_02
+Revises: 20260429_01
 Create Date: 2026-04-30 08:40:00
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = '20260430_01'
-down_revision = '20260428_02'
+down_revision = '20260429_01'
 branch_labels = None
 depends_on = None
 

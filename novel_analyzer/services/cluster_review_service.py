@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,8 @@ from novel_analyzer.database.models import ClusterReviewEventRecord, ClusterRevi
 from novel_analyzer.runtime.cluster_review_state import (
     ALLOWED_CLUSTER_STATUSES,
     ALLOWED_REVIEW_RESULTS,
+    build_review_history_event,
+    infer_review_event_type,
 )
 
 
@@ -27,6 +29,7 @@ class ClusterReviewEntry:
     review_result: str = ""
     review_notes: str = ""
     review_owner: str = ""
+    review_actor: str = ""
     resolved_at: str = ""
 
 
@@ -40,6 +43,11 @@ class ClusterReviewService:
     def _is_missing_relation_error(exc: Exception) -> bool:
         message = str(exc).lower()
         return ("relation" in message and "does not exist" in message) or "no such table" in message
+
+    @staticmethod
+    def _is_missing_column_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return ("column" in message and "does not exist" in message) or "no such column" in message
 
     @staticmethod
     def _validate(cluster_status: str, review_result: str, review_notes: str) -> None:
@@ -73,6 +81,9 @@ class ClusterReviewService:
                 .order_by(ClusterReviewRecord.cluster_key)
             ).all()
         except (OperationalError, ProgrammingError) as exc:
+            if self._is_missing_column_error(exc):
+                self.session.rollback()
+                return self._read_branch_legacy(branch_id)
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
@@ -83,7 +94,36 @@ class ClusterReviewService:
                 "review_result": row.review_result,
                 "review_notes": row.review_notes,
                 "review_owner": row.review_owner,
+                "review_actor": row.review_actor,
                 "resolved_at": row.resolved_at_text,
+            }
+            for row in rows
+        }
+
+    def _read_branch_legacy(self, branch_id: str) -> dict[str, dict[str, str]]:
+        rows = (
+            self.session.execute(
+                text(
+                    """
+                    SELECT cluster_key, cluster_status, review_result, review_notes, review_owner, resolved_at_text
+                    FROM cluster_review_records
+                    WHERE branch_id = :branch_id AND visibility = 'active'
+                    ORDER BY cluster_key
+                    """
+                ),
+                {"branch_id": branch_id},
+            )
+            .mappings()
+            .all()
+        )
+        return {
+            str(row["cluster_key"]): {
+                "cluster_status": str(row["cluster_status"] or ""),
+                "review_result": str(row["review_result"] or ""),
+                "review_notes": str(row["review_notes"] or ""),
+                "review_owner": str(row["review_owner"] or ""),
+                "review_actor": str(row["review_owner"] or ""),
+                "resolved_at": str(row["resolved_at_text"] or ""),
             }
             for row in rows
         }
@@ -97,46 +137,99 @@ class ClusterReviewService:
                 .order_by(ClusterReviewEventRecord.created_at)
             ).all()
         except (OperationalError, ProgrammingError) as exc:
+            if self._is_missing_column_error(exc):
+                self.session.rollback()
+                return self._read_history_legacy(branch_id, cluster_key)
             if not self._is_missing_relation_error(exc):
                 raise
             self.session.rollback()
             raise ClusterReviewStorageUnavailable("cluster review history table is unavailable") from exc
         events: list[dict[str, object]] = []
         for index, row in enumerate(rows, start=1):
-            changed_fields = [
-                field_name
-                for field_name, previous_value, current_value in (
-                    ("cluster_status", row.previous_cluster_status, row.cluster_status),
-                    ("review_result", row.previous_review_result, row.review_result),
-                )
-                if previous_value != current_value
-            ]
+            previous = {
+                "cluster_status": row.previous_cluster_status,
+                "review_result": row.previous_review_result,
+                "review_notes": row.previous_review_notes,
+                "review_owner": row.previous_review_owner,
+                "review_actor": row.previous_review_actor,
+                "resolved_at": row.previous_resolved_at_text,
+            }
+            current = {
+                "cluster_status": row.cluster_status,
+                "review_result": row.review_result,
+                "review_notes": row.review_notes,
+                "review_owner": row.review_owner,
+                "review_actor": row.review_actor,
+                "resolved_at": row.resolved_at_text,
+            }
             events.append(
-                {
-                    "event_index": index,
-                    "audit_key": f"{branch_id}:{cluster_key}:{index}",
-                    "previous_values": {
-                        "cluster_status": row.previous_cluster_status,
-                        "review_result": row.previous_review_result,
-                    },
-                    "current_values": {
-                        "cluster_status": row.cluster_status,
-                        "review_result": row.review_result,
-                        "review_owner": row.review_owner,
-                        "resolved_at": row.resolved_at_text,
-                    },
-                    "previous_cluster_status": row.previous_cluster_status,
-                    "previous_review_result": row.previous_review_result,
-                    "cluster_status": row.cluster_status,
-                    "review_result": row.review_result,
-                    "review_notes": row.review_notes,
-                    "review_owner": row.review_owner,
-                    "resolved_at": row.resolved_at_text,
-                    "event_type": row.event_type,
-                    "changed_fields": changed_fields,
-                    "transition": f"{row.previous_cluster_status or 'new'}->{row.cluster_status}",
-                    "created_at": row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
-                }
+                build_review_history_event(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    event_index=index,
+                    previous=previous,
+                    current=current,
+                    created_at=row.created_at.isoformat() if hasattr(row.created_at, "isoformat") else "",
+                    event_type=row.event_type,
+                )
+            )
+        return events
+
+    def _read_history_legacy(self, branch_id: str, cluster_key: str) -> list[dict[str, object]]:
+        rows = (
+            self.session.execute(
+                text(
+                    """
+                    SELECT
+                        previous_review_notes,
+                        previous_review_owner,
+                        previous_resolved_at_text,
+                        cluster_status,
+                        review_result,
+                        review_notes,
+                        review_owner,
+                        resolved_at_text,
+                        event_type,
+                        created_at
+                    FROM cluster_review_event_records
+                    WHERE branch_id = :branch_id AND cluster_key = :cluster_key
+                    ORDER BY created_at
+                    """
+                ),
+                {"branch_id": branch_id, "cluster_key": cluster_key},
+            )
+            .mappings()
+            .all()
+        )
+        events: list[dict[str, object]] = []
+        for index, row in enumerate(rows, start=1):
+            previous = {
+                "cluster_status": "",
+                "review_result": "",
+                "review_notes": str(row["previous_review_notes"] or ""),
+                "review_owner": str(row["previous_review_owner"] or ""),
+                "review_actor": str(row["previous_review_owner"] or ""),
+                "resolved_at": str(row["previous_resolved_at_text"] or ""),
+            }
+            current = {
+                "cluster_status": str(row["cluster_status"] or ""),
+                "review_result": str(row["review_result"] or ""),
+                "review_notes": str(row["review_notes"] or ""),
+                "review_owner": str(row["review_owner"] or ""),
+                "review_actor": str(row["review_owner"] or ""),
+                "resolved_at": str(row["resolved_at_text"] or ""),
+            }
+            created_at = row["created_at"]
+            events.append(
+                build_review_history_event(
+                    branch_id=branch_id,
+                    cluster_key=cluster_key,
+                    event_index=index,
+                    previous=previous,
+                    current=current,
+                    created_at=created_at.isoformat() if hasattr(created_at, "isoformat") else "",
+                    event_type=str(row["event_type"] or ""),
+                )
             )
         return events
 
@@ -149,6 +242,7 @@ class ClusterReviewService:
         review_result: str = "",
         review_notes: str = "",
         review_owner: str = "",
+        review_actor: str = "",
         resolved_at: str = "",
     ) -> ClusterReviewEntry:
         self._validate(cluster_status, review_result, review_notes)
@@ -162,6 +256,7 @@ class ClusterReviewService:
         previous_review_result = row.review_result if row is not None else ""
         previous_review_notes = row.review_notes if row is not None else ""
         previous_review_owner = row.review_owner if row is not None else ""
+        previous_review_actor = row.review_actor if row is not None else ""
         previous_resolved_at = row.resolved_at_text if row is not None else ""
         if row is None:
             row = ClusterReviewRecord(
@@ -171,6 +266,7 @@ class ClusterReviewService:
                 review_result=review_result,
                 review_notes=review_notes,
                 review_owner=review_owner,
+                review_actor=review_actor or review_owner,
                 resolved_at_text=resolved_at,
             )
             self.session.add(row)
@@ -179,6 +275,7 @@ class ClusterReviewService:
             row.review_result = review_result
             row.review_notes = review_notes
             row.review_owner = review_owner
+            row.review_actor = review_actor or review_owner
             row.resolved_at_text = resolved_at
         self.session.add(
             ClusterReviewEventRecord(
@@ -188,13 +285,32 @@ class ClusterReviewService:
                 previous_review_result=previous_review_result,
                 previous_review_notes=previous_review_notes,
                 previous_review_owner=previous_review_owner,
+                previous_review_actor=previous_review_actor,
                 previous_resolved_at_text=previous_resolved_at,
                 cluster_status=cluster_status,
                 review_result=review_result,
                 review_notes=review_notes,
                 review_owner=review_owner,
+                review_actor=review_actor or review_owner,
                 resolved_at_text=resolved_at,
-                event_type="status_update",
+                event_type=infer_review_event_type(
+                    {
+                        "cluster_status": previous_cluster_status,
+                        "review_result": previous_review_result,
+                        "review_notes": previous_review_notes,
+                        "review_owner": previous_review_owner,
+                        "review_actor": previous_review_actor,
+                        "resolved_at": previous_resolved_at,
+                    },
+                    {
+                        "cluster_status": cluster_status,
+                        "review_result": review_result,
+                        "review_notes": review_notes,
+                        "review_owner": review_owner,
+                        "review_actor": review_actor or review_owner,
+                        "resolved_at": resolved_at,
+                    },
+                ),
             )
         )
         self.session.commit()
@@ -205,5 +321,6 @@ class ClusterReviewService:
             review_result=review_result,
             review_notes=review_notes,
             review_owner=review_owner,
+            review_actor=review_actor or review_owner,
             resolved_at=resolved_at,
         )

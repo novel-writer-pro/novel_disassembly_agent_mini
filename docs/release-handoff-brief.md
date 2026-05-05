@@ -63,12 +63,16 @@
 ### 3.2 接入者（前端 / 工具 / 下游 agent）
 1. [`./interface-manifest.md`](./interface-manifest.md)
 2. [`./examples/`](./examples/)
+3. [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
+4. [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
 3. [`./final-handoff.md`](./final-handoff.md)
 
 ### 3.3 开发者 / 维护者
 1. [`./final-handoff.md`](./final-handoff.md)
 2. [`./interface-manifest.md`](./interface-manifest.md)
 3. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
+4. [`./features/README.md`](./features/README.md)
+5. [`./features/architecture-mainline-checkout-20260504.md`](./features/architecture-mainline-checkout-20260504.md)
 
 ---
 
@@ -83,6 +87,39 @@
 7. `export-branch-package`
 8. `ask-branch`
 9. `export-branch-qa-context`
+
+### 4.1 当前推荐 smoke path
+
+上线前/交接前，至少跑一轮：
+
+1. `init-db`
+2. `db-capabilities`
+3. `export-branch-report`
+4. `python -m scripts.check_sample_branch <run_id> <branch_id> <output_path>`
+
+原因：
+- `init-db` 负责把真实 PostgreSQL schema 推到当前 Alembic head
+- `db-capabilities` 会把 `missing_cluster_review_columns` 等运行时兼容风险直接打出来
+- `export-branch-report` 是最短的“数据库主链 + risk/review 主链 + Markdown 交付面”联合验证
+
+当前可参考的真实样例：
+- `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
+
+### 4.2 Feature checkout 规则
+
+后续每次跨能力线推进，至少要补一份 checkout，回答：
+
+1. 当前做了什么
+2. 还需要做什么
+3. 预期要达到什么效果
+4. 解决了什么问题
+5. 当前测试 / 评估是否达到预期
+6. 还有哪些闭环与优化项
+
+入口：
+- `docs/features/README.md`
+- `docs/features/feature-checkout-template.md`
+- `docs/features/architecture-mainline-checkout-20260504.md`
 
 ---
 
@@ -209,3 +246,8 @@
 - 可在阅读页直接检索人物 / 事件 / 冲突 / 关键词
 - 可直接发起“人物背景 / 冲突前因后果 / 关系变化”等问答
 - 回答会返回引用章节、证据摘要、推理路径和图谱信号
+
+
+## 10. Eval / governance freeze gate
+
+Before a release handoff claims freeze readiness, run the cross-lane sample bundle through `EvalGovernanceService.evaluate_sample_bundle()`. The handoff must include `bundle_id`, stable contract versions, `sample_count_by_lane`, lane summaries, release blockers, and `freeze_policy.may_freeze`. If `may_freeze=false`, the release remains blocked even when individual lane docs look complete.

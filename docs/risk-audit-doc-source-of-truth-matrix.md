@@ -22,7 +22,11 @@
 | `risk-audit-runtime-architecture.md` | 运行时架构层 | **是（架构口径）** | 架构/后端 |
 | `risk-audit-runtime-boundary.md` | 运行时边界层 | **是（运行边界）** | 架构/后端 |
 | `skills-vs-risk-checkers-boundary.md` | skills/checker 边界层 | **是（职责边界）** | 架构/后端 |
+| `architecture/README.md` | 架构专题导航层 | 否 | 架构/后端/维护 |
+| `architecture/risk-audit-semantic-enhancement.md` | 语义增强架构层 | **是（语义增强边界）** | 架构/后端 |
+| `architecture/risk-audit-embedding-pgvector-implementation-spec.md` | embedding 实施规格层 | **是（生产落地规格）** | 架构/后端 |
 | `risk-audit-checker-roadmap.md` | 路线图层 | **是（后续规划）** | 研发规划 |
+| `risk-audit-next-batch-checkers.md` | 新增 checker 设计层 | **是（新增 checker 设计口径）** | 架构/后端/规划 |
 | `reader-experience-capability.md` | Reader Experience 规划层 | **是（读者向规划）** | 产品/规划 |
 | `risk-audit-doc-consistency-checklist.md` | 文档维护层 | **是（维护规则）** | 长期维护者 |
 
@@ -63,23 +67,49 @@
 
 - `skills-vs-risk-checkers-boundary.md`
 
-### E. 后续 checker 路线与阶段
+### E. 风险审查主链为什么不直接全量使用 embedding / LLM skills
+
+唯一优先事实源：
+
+- `architecture/risk-audit-semantic-enhancement.md`
+
+### F. embedding / pgvector 最终方案如何落成数据对象与服务
+
+唯一优先事实源：
+
+- `architecture/risk-audit-embedding-pgvector-implementation-spec.md`
+
+### G. 后续 checker 路线与阶段
 
 唯一优先事实源：
 
 - `risk-audit-checker-roadmap.md`
 
-### F. Reader Experience 的后续规划
+### H. 下一批新增 checker 的立项边界与设计口径
+
+唯一优先事实源：
+
+- `risk-audit-next-batch-checkers.md`
+
+### I. Reader Experience 的后续规划
 
 唯一优先事实源：
 
 - `reader-experience-capability.md`
 
-### G. 文档维护规则
+### J. 文档维护规则
 
 唯一优先事实源：
 
 - `risk-audit-doc-consistency-checklist.md`
+
+### K. 样例小说结论链
+
+唯一优先事实源按职责拆分：
+
+- 主结论：`.omx/reports/sample-novel-current-conclusion.md`
+- phase-2 离线 best-effort：`.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
+- phase-2 阻塞/恢复：`.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
 
 ---
 
@@ -121,6 +151,16 @@
 
 - 任何最终定义
 
+### `architecture/README.md`
+
+职责：
+
+- 作为架构专题文档总入口
+
+不应负责：
+
+- 单独定义某个架构主题的最终口径
+
 ---
 
 ## 5. 推荐修改顺序
@@ -143,13 +183,22 @@
 若涉及 `skills_dir`：
 3. `skills-vs-risk-checkers-boundary.md`
 
+若涉及语义增强路线：
+4. `architecture/risk-audit-semantic-enhancement.md`
+
+若涉及 embedding / pgvector 落地规格：
+5. `architecture/risk-audit-embedding-pgvector-implementation-spec.md`
+
 ### 如果改“后续计划”
 
 先改：
 1. `risk-audit-checker-roadmap.md`
 
+若涉及新增 checker 的具体设计边界：
+2. `risk-audit-next-batch-checkers.md`
+
 若涉及读者向扩展：
-2. `reader-experience-capability.md`
+3. `reader-experience-capability.md`
 
 ### 如果改“文档体系本身”
 
@@ -158,15 +207,31 @@
 2. `risk-audit-docs-index.md`
 3. `docs/README.md`
 
+### 如果改“样例小说结论链”
+
+先改：
+1. `.omx/reports/sample-novel-current-conclusion.md`
+2. `.omx/reports/sample-novel-phase2-offline-memo-20260430.md`
+3. `.omx/reports/sample-novel-phase2-db-blocker-20260430.md`
+
+再同步：
+4. `risk-audit-doc-consistency-checklist.md`
+5. `risk-audit-docs-index.md`
+6. `docs/README.md`
+
 ---
 
 ## 6. 建议长期遵守的规则
 
 1. **能力现状只认 `risk-audit-capability.md`**
 2. **运行时架构只认 `risk-audit-runtime-architecture.md`**
-3. **后续 checker 路线只认 `risk-audit-checker-roadmap.md`**
-4. **Reader Experience 规划只认 `reader-experience-capability.md`**
-5. **团队汇报用 `risk-audit-delivery-summary.md`，但不要反向覆盖定义源**
+3. **语义增强边界只认 `architecture/risk-audit-semantic-enhancement.md`**
+4. **embedding / pgvector 落地规格只认 `architecture/risk-audit-embedding-pgvector-implementation-spec.md`**
+5. **后续 checker 路线只认 `risk-audit-checker-roadmap.md`**
+6. **新增 checker 的立项边界只认 `risk-audit-next-batch-checkers.md`**
+7. **Reader Experience 规划只认 `reader-experience-capability.md`**
+8. **团队汇报用 `risk-audit-delivery-summary.md`，但不要反向覆盖定义源**
+9. **样例小说主结论 / 离线 memo / blocker memo 各自分工，不互相替代**
 
 ---
 

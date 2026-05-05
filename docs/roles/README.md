@@ -1,0 +1,11 @@
+# 按角色查看文档
+
+- [`./product/README.md`](./product/README.md)
+- [`./backend/README.md`](./backend/README.md)
+- [`./integrator/README.md`](./integrator/README.md)
+- [`./maintainer/README.md`](./maintainer/README.md)
+- [`./imitation/README.md`](./imitation/README.md)
+
+- [`../api-current-surface.md`](../api-current-surface.md)
+- [`../features/README.md`](../features/README.md)
+- [`../strategy/docs-governance-and-handoff-checklist.md`](../strategy/docs-governance-and-handoff-checklist.md)

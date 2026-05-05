@@ -1,6 +1,7 @@
 # API Contract / Web Backend 契约（Future Target）
 
 > 本文件描述未来 `apps/api` 的目标契约，不代表 Phase 1 已全部实现。
+> 当前已经实现并可调用的 API surface 请参考 `docs/api-current-surface.md`。
 
 ## 1. 总体约束
 - 首期采用 HTTP + polling
@@ -153,6 +154,22 @@
 ```
 `branch-report` 的 `content_type` 为 `text/markdown`。
 
+**Operational smoke path**
+
+对于真实 PostgreSQL 运行时，当前推荐把下面三步视为最小 smoke chain：
+
+1. `init-db`
+2. `db-capabilities`
+3. `export-branch-report`
+
+它们共同验证：
+- Alembic schema 已升级
+- cluster-review 相关缺列已被发现或修复
+- branch 级 Markdown export 仍可在真实 sample branch 上成功导出
+
+参考样例：
+- `docs/examples/sample-branch-report.post-migration-20260504.sample.md`
+
 ### 2.8 POST /branches/{branch_id}/recovery/retry-chapter
 ### 2.9 POST /branches/{branch_id}/recovery/retry-failed
 ### 2.10 POST /branches/{branch_id}/recovery/clear-running
@@ -167,6 +184,7 @@
   "pipeline_state": "auto_running",
   "message": "retry accepted"
 }
+```
 
 ### 2.12 GET /branches/{branch_id}/review-clusters
 返回当前 branch 的问题簇列表。

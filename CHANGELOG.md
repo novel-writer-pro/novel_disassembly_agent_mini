@@ -1,6 +1,412 @@
+## 2026-05-04
+- Added executable eval/governance cross-lane sample bundle coverage via `CrossLaneSampleBundle`, `EvalGovernanceService.evaluate_sample_bundle()`, and `docs/examples/eval-governance-cross-lane-bundle.sample.json`.
+- Documented the `eval-governance-freeze.v1` handoff gate across README, docs index, final handoff, release handoff, and the eval governance sample release contract.
+- Added `sample_count_by_lane` to the freeze policy so handoffs can prove every required lane is represented by the evaluated bundle.
+
+### Mainline architecture upgrade review docs
+- Added `docs/mainline-architecture-upgrade-review-20260504.md` to document the retrieval/RRF/rerank, risk semantic, whole-book imitation/generation, and eval/governance upgrade lanes.
+- Linked the review from `docs/README.md` so maintainers can find the cross-lane release criteria, freeze policy, and handoff checklist.
+
+## 2026-05-01
+
+### future target API 契约文档补 current surface 回链
+- 在 `docs/api-contract.md` 中补充显式回链，说明当前已实现并可调用的 API surface 应查看 `docs/api-current-surface.md`
+- 让读者在看到“这不是当前实现”时，能立刻知道当前实现的 source-of-truth 在哪里
+- 增加自动测试，锁定 future-target 文档必须继续指回 current-surface 文档
+- 验证：api-contract backlink / fence / current-surface boundary targeted strict 回归通过
+
+### docs/README 开发者阅读顺序补 current API surface
+- 在 `docs/README.md` 的“开发者（继续开发 / 维护 / 接手的人）”阅读顺序中加入 `api-current-surface.md`，并将其明确为第 3 步
+- 让继续开发/接手的读者更早看到当前已实现 API surface，而不是只看到高层交接说明和内部 agent 设计
+- 增加自动测试，锁定开发者阅读顺序的第 3 步必须是 current API surface
+- 验证：developer flow / integrator flow / docs index targeted strict 回归通过
+
+### docs/README 接入者阅读顺序说明与当前 API surface 对齐
+- 修正 `docs/README.md` 中“接入者”小节的步骤说明，使第 2 步明确对应 `api-current-surface.md`，不再沿用旧的“先对照样例 JSON”说明
+- 让阅读顺序说明与实际链接顺序保持一致，减少接入者被错误引导
+- 增加自动测试，锁定第 2 步必须明确指向当前已实现 API surface
+- 验证：integrator flow / docs index / current-surface targeted strict 回归通过
+
+### 非技术入口不暴露 current API surface 的边界加保护
+- 增加显式测试，要求 `docs/roles/product/README.md` 与 `docs/tracks/reader-experience/README.md` 不能引入 `api-current-surface.md` 入口
+- 让 current API surface 的导航边界不只验证“该出现的地方出现”，也验证“不该出现的地方不出现”
+- 验证：技术入口 + 非技术入口边界 targeted strict 回归通过
+
+### current API surface 维护规则同步到 endpoint specs 时代
+- 更新 `docs/api-current-surface.md` 的维护规则，明确 `_API_ENDPOINT_SPECS` 是 method+path 的 source-of-truth
+- 将 `available_endpoint_specs` 与 `available_endpoints` 的维护责任都写入文档，避免维护规则停留在旧的 path-only 时代
+- 增加自动测试，锁定 current-surface 文档必须继续提到 `_API_ENDPOINT_SPECS` / `available_endpoint_specs` / `available_endpoints`
+- 验证：current-surface maintenance rule targeted strict 回归通过
+
+### apps/api README 补 method-aware meta 契约说明
+- 在 `apps/api/README.md` 中补充 `/api/meta` 的 `available_endpoint_specs` 字段说明
+- 让后端接入者在 README 层就能知道：`available_endpoints` 是兼容字段，自动接入/契约校验应优先消费 `available_endpoint_specs`
+- 增加自动测试，锁定 README 必须继续提到该 method-aware 元信息字段
+- 验证：API README / current-surface / meta targeted strict 回归通过
+
+### /api/meta 升级为 method+path 契约清单
+- 为 `/api/meta` 新增 `available_endpoint_specs` 字段，显式返回 `{method, path}` 列表，同时保留 `available_endpoints` 作为兼容字段
+- 将 endpoint spec 提升为后端模块级 source-of-truth 常量，并让 `/api/meta` 测试直接复用该常量，减少依赖源码正则反推实现的脆弱性
+- 增加唯一性测试，要求 endpoint spec 中的 path 不得重复
+- 验证：meta + endpoint spec + current-surface targeted strict 回归通过
+
+### roles/tracks 总入口补 current API surface 链接
+- 为 `docs/roles/README.md` 与 `docs/tracks/README.md` 补充 `api-current-surface.md` 总入口
+- 让从角色总导航和能力线总导航进入的技术型读者，也能快速落到当前已实现 API surface 的 source-of-truth
+- 增加自动测试，锁定 roles/tracks 总入口必须继续暴露该文档
+- 验证：roles/tracks 总入口与下层技术入口 targeted strict 回归通过
+
+### 维护者与风险审查主线入口补 current API surface 链接
+- 为 `docs/roles/maintainer/README.md` 与 `docs/tracks/risk-audit/README.md` 补充 `api-current-surface.md` 入口
+- 明确让维护者与风险审查主线读者可以直接落到“当前已实现 API surface”的 source-of-truth
+- 同时保持 product / reader-experience 入口不过度暴露实现细节
+- 增加自动测试，锁定这两个入口必须继续暴露 current API surface 文档
+- 验证：maintainer / risk-audit targeted strict 回归通过
+
+### 角色/轨道入口补 current API surface 链接
+- 为 `docs/roles/integrator/README.md`、`docs/roles/backend/README.md`、`docs/tracks/review-workflow/README.md` 补充 `api-current-surface.md` 入口
+- 让接入者、后端维护者与 review workflow 读者都能更快看到“当前已实现 API surface”的 source-of-truth
+- 增加自动测试，锁定这三个角色/轨道入口必须继续暴露该文档
+- 验证：角色/轨道入口 targeted strict 回归通过
+
+### current API surface 文档边界说明加保护
+- 为 `docs/api-current-surface.md` 增加显式测试，要求该文档必须继续指向 `docs/api-contract.md`，并保留“未来目标契约”的边界说明
+- 避免后续维护中把 current-surface 文档误改成没有边界的实现清单，或丢失与目标契约的关系说明
+- 验证：current-surface / docs index / apps-api README targeted strict 回归通过
+
+### docs/README 增加 current API surface 入口保护
+- 为 `docs/README.md` 增加显式测试，要求文档索引必须暴露 `api-current-surface.md` 入口
+- 让 root README、docs/README、apps/api/README 三层入口都进入 current API surface 文档的自动保护范围
+- 验证：三层入口 targeted strict 回归通过
+
+### 根 README 补当前 API 实现契约入口
+- 在仓库根 `README.md` 的 newcomer path 中补充 `docs/api-current-surface.md` 直链
+- 让接入者能从项目顶层直接区分“当前已实现 API surface”和“未来目标契约”
+- 增加自动测试，要求根 README 必须暴露当前 API 实现契约文档
+- 验证：root README / current-surface targeted strict 回归通过
+
+### docs/README 编号检查升级为全节扫描
+- 修复 `docs/README.md` 第二个“推荐阅读顺序”小节的编号漂移问题
+- 将原本只覆盖“接口类文档”的编号测试升级为：扫描 `docs/README.md` 所有带编号的 `###` 小节，并要求编号连续递增
+- 让文档入口结构的自动保护从单点检查升级为全节检查
+- 验证：全节编号测试与 API README 路由清单测试 strict 模式通过
+
+### 根 README 标题层级修正并加保护
+- 修复根 `README.md` 中一行误写成一级标题的说明文本，消除文档标题层级跳级问题
+- 增加自动测试，要求根 README 的标题层级不得出现大于 1 级的跳跃
+- 验证：README heading 测试与现有契约测试 strict 模式通过
+
+### docs/api-contract Markdown 结构修复
+- 修复 `docs/api-contract.md` 中未闭合的 fenced code block，避免后续标题与内容被错误吞入代码块
+- 增加轻量测试，要求该文档的 Markdown 代码块 fence 数量必须成对平衡
+- 验证：api-contract fence 测试与 current-surface 契约测试通过
+
+### docs/README 接口文档编号修正并加保护
+- 修正 `docs/README.md` 中“接口类文档”小节因多轮增补导致的编号漂移问题
+- 增加自动测试，要求该小节的编号必须连续递增，避免后续文档入口继续失序
+- 验证：接口文档编号测试与 API README 路由清单一致性测试通过
+
+### apps/api README 路由清单增加完整一致性保护
+- 修正 `apps/api/README.md` 中把 `pause|resume|cancel` 写成伪单条 endpoint 的误导表述
+- 为 `apps/api/README.md` 增加完整路由集合一致性测试，直接把 README 暴露的 `METHOD /path` 列表与真实 WSGI 路由集合进行比对
+- 让 README、`/api/meta` 与 `docs/api-current-surface.md` 三者都进入自动一致性保护范围
+- 验证：README / current-surface / meta 三方 targeted 回归通过
+
+### 当前 API surface 文档增加自动一致性保护
+- 为 `docs/api-current-surface.md` 增加自动一致性测试，直接把当前实现路由集合与文档中的 `METHOD /path` 列表进行比对
+- 让当前实现文档、`/api/meta` 与 `apps/api/README.md` 的维护规则从“靠人工自觉”升级为“有测试锁定”
+- 验证：current surface / README / meta 三方 targeted 回归通过
+
+### 新增当前 API 实现契约文档
+- 新增 `docs/api-current-surface.md`，专门描述 `apps/api/app/main.py` 当前已经实现并可调用的 WSGI API surface
+- `apps/api/README.md` 改为把该文档作为当前实现契约入口，同时保留 `docs/api-contract.md` 作为未来目标契约参考
+- 避免未来目标契约文档被误读成当前实现清单
+- 验证：README 指向与 meta/README 一致性 targeted 回归通过
+
+### apps/api README 端点清单补齐
+- 补充 `apps/api/README.md` 中缺失的 review workflow、job events、search、ask-branch 等已实现端点
+- 增加 README 一致性测试，锁定关键端点在后端 README 中必须被暴露
+- 避免 API 实现、`/api/meta` 元信息与后端 README 三者继续漂移
+- 验证：README / meta targeted 回归通过
+
+### API meta 端点清单与真实路由对齐
+- 修正 `/api/meta` 的 `available_endpoints` 列表，使其与 WSGI 中真实实现的路由集合一致
+- 补入真实存在但之前遗漏的 `/api/start` 与 `/api/recovery`
+- 移除之前误列入但实际并不存在于该 WSGI 路由表中的 `/api/pipeline/pause`、`/api/pipeline/resume`、`/api/pipeline/cancel`
+- 为 `/api/meta` 增加自动比对测试，防止元信息与实现再次漂移
+- 验证：meta route inventory targeted 回归通过
+
+### API meta 契约与实际能力对齐
+- 修正 `/api/meta` 中关于 write-side import/upload 的过时说明，不再把已可用的 `/api/import` 描述为 future work
+- 将 `/api/import` 补入 `available_endpoints` 列表，避免接口清单与真实能力不一致
+- 为 `/api/meta` 增加更严格的测试断言，锁定端点暴露与说明文案的一致性
+- 验证：`test_meta_endpoint_lists_available_routes` + import endpoint targeted 回归通过
+
+### API multipart 解析去除 cgi 依赖
+- 将 `apps/api/app/main.py` 中的 `cgi.FieldStorage` multipart 解析替换为基于 `email.parser.BytesParser` 的标准库实现
+- 消除 Python 3.13 方向上的 `cgi` deprecation warning，同时保持 `/api/import` 现有行为不变
+- 新增正向 multipart 上传测试，覆盖 `title` / `pipeline_profile` / `file` 三类字段的实际解析与落盘
+- 验证：`tests/test_api_main.py` 全量通过
+
+### 根 README 风险审查入口补齐
+- 在仓库根 `README.md` 的 newcomer path 中补充 `risk-audit-completion-status.md` 直链
+- 让新接手者能直接看到风险审查第一阶段的完成度、测试方法与使用说明
+- 验证：关联 report / review endpoint smoke 通过
+
+### 仓库缓存文件治理
+- 将 `**/__pycache__/` 与 `*.py[cod]` 明确加入 `.gitignore`，避免 Python 字节码缓存继续污染版本库
+- 将历史上已被错误纳管的 `__pycache__` / `.pyc` 文件从 Git 索引中移除
+- 这一变更不影响业务代码行为，目标是降低噪音 diff、减少误提交，并提升仓库卫生与后续开发稳定性
+- 验证：`git ls-files | rg '(__pycache__/|\.pyc$)' | wc -l` 结果为 `0`；同时补跑导出/报告 smoke 用例通过
+
 # Changelog
 
 > 约定：后续每次开发更改，都应在本文件追加一条记录，至少说明“做了什么 / 为什么 / 如何验证”。
+
+## 2026-05-03
+
+### 仿写/续写全能力矩阵文档补齐
+- 新增 `docs/chapter-imitation-capability-matrix.md`
+- 将仿写/续写能力拆成：
+  - 风控审查
+  - 知识提炼
+  - 章节规划
+  - whole-book 编排
+  - 节奏分析
+  - 对话设计
+  - 文风修辞
+  - 多线叙事
+  - 资料研究
+  - 模拟读者评审
+- 同步标注当前覆盖度、现状、后续优先级，并接入：
+  - `docs/chapter-imitation-method.md`
+  - `docs/architecture/chapter-imitation-harness-architecture.md`
+  - `docs/README.md`
+- 目的：把“我们有没有考虑这些能力、哪些已经利用充分、哪些还没做强”收口为结构化文档，方便后续持续建设
+
+### 对话设计器与 research pack 本地 skill 资产补齐
+- 新增：
+  - `skills_dir/dialogue-designer/`
+  - `skills_dir/research-pack/`
+- 让“对话设计”“资料研究/题材与读者预期”这两类此前覆盖较弱的能力，正式进入本地 skill 资产层
+- 目标：先把能力从概念矩阵推进到真实 skill surface，后续再由 harness/controller 深度消费
+
+### 仿写 harness / preflight / local skill contracts 第一版落地
+- 新增 `novel_analyzer/services/imitation_harness_service.py`
+- 新增第一版：
+  - `HarnessControllerService`
+  - `ChapterImitationPreflightReport`
+  - `ChapterImitationHarnessReport`
+  - `ChapterImitationSkillContract`
+- CLI 新增：
+  - `show-imitation-skill-contracts`
+  - `preflight-imitation`
+  - `harness-imitation`
+- harness round 当前已开始暴露 `skill_prompt_previews`，用于证明它正在消费本地 skill prompt assets，而不只是暴露 contract 名称
+- harness round 当前也开始暴露 `skill_outputs`，用于证明 constraint-pack / self-check 结构化结果已进入 preflight 与 action routing
+- preflight / action routing 现已开始显式消费这些 `skill_outputs`，新增 constraint repair / continuity memory repair 路由
+- 本轮继续补入人物动机 / 关系变化 / 世界规则 / 章尾 hook 方向的 repair routing
+- 本轮进一步把 `chapter-intake / chapter-fact-extractor` 结构化 outputs 接入 preflight 与 routing，新增关系证据 / 规则证据 repair 路由
+- 当前进一步补入 typed `severity / priority`，并开始让 gate/risk meta 信号进入 preflight 与 routing
+- 当前 `severity / priority` 已开始影响 action 排序与 stop policy 聚合决策
+- 当前 harness report 还新增 `action_queue / policy_summary`，用于输出排序后的 action 队列与聚合控制摘要
+- 当前 ordered `action_queue` 已开始写回 revise 输入痕迹，whole-book sandbox report 也开始聚合 chapter harness 的 policy summary
+- 当前 whole-book policy summary 继续补充 min/max score、max action count、verdicts 等聚合统计
+- 当前 round 还新增 `revise_payload`，用于显式观察 ordered actions 如何进入 revise 输入
+- 当前 whole-book report 也开始显式暴露 chapter-level `revise_payload`、`chapter_ranking`、`severity_histogram`
+- 当前 whole-book 层开始尝试消费上一章 `revise_payload` 影响后续章节目标，并补充 `book_priority_ranking / risk_bucket_histogram`
+- 当前 whole-book 层进一步新增 `strategy_input / dashboard_summary`，用于结构化表达跨章节策略反馈与总览面板
+- 当前 `strategy_input` 已开始进入 chapter structured constraint 层，dashboard 也新增 `issue_family_histogram / cluster_buckets`
+- 当前还继续把 rhythm / reader 两类弱能力接入 harness structured outputs，并新增 `issue_family_ranking`
+- 当前 dialogue / research 两类弱能力也开始进入 harness preflight / routing，并补到 dashboard taxonomy
+- 当前 strategy_input 还开始携带 `prioritized_families`，并进一步注入 chapter constraint/self-check 层
+- 当前 prioritized family 也开始进一步影响 rhythm / reader / dialogue / research 四类弱能力输出的修复重点
+- 当前 whole-book dashboard 还新增 `weak_lane_priority_ranking`，用于观察弱能力族群的优先级分布
+- 当前 whole-book dashboard 还新增 `weak_lane_histogram`，用于观察四类弱能力的整体分布
+- 当前 whole-book dashboard 还新增 `weak_lane_top_actions`，用于观察弱能力最靠前的修复动作
+- 当前 whole-book dashboard 还新增 `top_priority_summary / top_risk_summary`，用于把弱能力信号并入整书级优先级与风险汇总
+- 当前 whole-book dashboard 还新增 `weak_lane_dominance / chapter_flags`，用于观察弱能力主导面与逐章旗标
+- 当前 top-priority / top-risk summary 还继续补入 `top_priority_families / high_risk_families`
+- 当前这些 family summary 也开始回流到后续章节 `strategy_input`，不再只停留在 dashboard 展示层
+- 当前这些 family 摘要还开始反向注入后续章节 `strategy_input`，参与下一章策略反馈
+- 当前 top-priority / top-risk summary 也开始直接暴露 `weak_lane_action_count / weak_lane_families`
+- 当前 whole-book executed step 还新增 `scheduling_priority / scheduling_reason`，用于明确章节调度优先级
+- 当前 whole-book queue step 也开始显式暴露 `scheduling_priority / scheduling_reason`
+- 当前 dry-run queue report 也开始输出 `queue_priority_preview / top_queue_priority_chapters / queue_cluster_buckets`
+- 当前 dry-run / sandbox whole-book report 进一步新增：
+  - `priority_reason_histogram / queue_next_actions`
+  - `next_stage_focus / book_handoff_summary.top_repair_recommendations`
+- 当前 whole-book 仿写 report 已同步固化到 `docs/interface-manifest.md` 与 `docs/examples/whole-book-imitation-run.sample.json`
+- 当前新增 `export-whole-book-imitation-run`，可把 dry-run / sandbox execute 的整本仿写 report 直接落盘给系统消费
+- 当前新增 `POST /api/whole-book-imitation-run`，系统侧可直接拿 whole-book dry-run / sandbox execute report
+- 当前补充 `docs/whole-book-imitation-api-stability-summary.md`，明确 whole-book imitation 为 pre-v1 / system-contract-ready
+- 当前 whole-book imitation report 已新增显式版本字段：
+  - `contract_version=whole-book-imitation.v1`
+  - `stable_contract_version=whole-book-imitation-pre-v1`
+- 当前补充：
+  - `docs/whole-book-imitation-api-versioning.md`
+  - `docs/whole-book-imitation-api-freeze-readiness.md`
+  用于说明 breaking-change 规则与正式 freeze 条件
+- 当前新增 `docs/whole-book-imitation-freeze-evidence-20260503.md`，记录真实 provider-backed whole-book run 已触达上游，但被 `403 billing_error / daily usage limit exceeded` 阻断
+- 当前新增 `show-whole-book-imitation-readiness`，可在重跑真实 provider 回归前一次性检查 contract/version、provider 配置、provider health 与 branch 数据准备度
+- 当前已在真实 `novel_analyzer` 数据库上执行 `show-whole-book-imitation-readiness`，确认 branch `62e636f0-c901-4167-aa1c-aff3da9c83ef` 具备 11 个 chapter_analysis / 232 条 fact_records，provider 配置存在但 health 状态仍为 `degraded`
+- 当前新增 `GET /api/whole-book-imitation-readiness`，system/agentOS 可直接读取 whole-book freeze readiness 信息而不依赖 CLI
+- 当前新增 `docs/examples/whole-book-imitation-readiness.sample.json`，用于对接方直接参考 readiness payload
+- 当前新增 `docs/examples/whole-book-imitation-run.request.sample.json`，用于对接方直接参考 whole-book run API 请求体
+- 当前新增 `docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`，用于对接方直接参考 provider 配额阻断时的结构化错误返回
+- 当前 `docs/interface-manifest.md` 已补 whole-book run 错误合同字段说明与 `provider_billing_limited / provider_bad_gateway / provider_timeout` 语义
+- 当前 `apps/api/README.md` 已直接链接 whole-book run 的 request / success / error 三类样例，方便 system 对接方快速查阅
+- 当前新增 `docs/whole-book-imitation-integration-quickstart.md`，把 readiness / run / success / error 四类接入路径收口到一页
+- 当前 `apps/api/README.md` 已直接链接 quickstart 与 readiness sample，进一步压缩 whole-book 对接的最短路径
+- 当前 `apps/api/README.md` 已补 whole-book integration quick path，明确 readiness → run → success/error 的读取顺序
+- 当前 `apps/api/README.md` 已补 readiness / run 的 curl quick examples，入口页可直接复制调用
+- 当前 `apps/api/README.md` 也已直接链接 sample coverage matrix 与 provider recovery checklist，最浅入口已覆盖“怎么接 / 覆盖到哪 / 恢复后怎么收尾”
+- 当前新增 request sample 可执行性回归，直接用 `whole-book-imitation-run.request.sample.json` 打 API 校验样例与实现不漂移
+- 当前新增 readiness sample 可执行性回归，确保 `whole-book-imitation-readiness.sample.json` 与 live readiness endpoint 不漂移
+- 当前新增 error sample 形状回归，确保 `whole-book-imitation-run.error.provider-billing.sample.json` 与 live billing-error 返回不漂移
+- 当前新增 `docs/whole-book-imitation-docs-index.md`，把 contract / samples / governance / evidence / quickstart 收口成单页索引
+- 当前新增 `docs/whole-book-imitation-provider-recovery-checklist.md`，明确 provider 恢复后如何重跑 readiness / execute / freeze evidence
+- 当前新增 `docs/whole-book-imitation-sample-coverage-matrix.md`，明确 request / readiness / error / success 样例各自的 executable regression 覆盖状态
+- 当前新增 `docs/whole-book-imitation-handoff-brief.md`，把当前完成度、唯一阻断、恢复后动作压缩成单页交接说明
+- 当前 success sample 也已补 live stable-field regression，request / readiness / error / success 四类样例现在都有更明确的自动校验覆盖
+- 当前 readiness 已反映 provider 运行态恢复为 `ok`，whole-book 线当前剩余事项已收敛为 stable 级别/治理口径判断
+- 当前 retrieval/QA 主链已新增本地 ONNX rerank 接入，默认模型为 `onnx-community/bge-reranker-v2-m3-ONNX`，会在 `search_branch` 召回后执行 rerank，并在 provider 不可用时自动回退原始召回顺序
+- 当前 weak lane 的 preflight priority 也开始进一步影响 action 排序，并新增 `top_weak_lane_chapters`
+- 本地 `skills_dir` 新增：
+  - `imitation-constraint-pack`
+  - `draft-self-check`
+- 目的：把“仿写 should use skills + harness”的规划推进为第一版真实执行框架，而不是只停留在架构文档
+- 验证：
+  - 新增 harness/service/CLI/skill-loader 相关测试
+  - 后续本轮回归会以 strict pytest + compileall 作为签收依据
+
+### 仿写能力收口为 skills + harness + risk-audit 最终推荐架构
+- 新增 `docs/architecture/chapter-imitation-harness-architecture.md`
+- 将章节仿写 / 全书仿写的推荐方向明确收口为：
+  - 约束输入层
+  - skills 分阶段生产链
+  - harness agent 控制层
+  - risk audit 最终门控层
+- 把这套规划同步接入：
+  - `docs/architecture/README.md`
+  - `docs/chapter-imitation-method.md`
+  - `docs/roles/imitation/README.md`
+  - `docs/tracks/imitation/README.md`
+  - `docs/README.md`
+- 目的：避免后续继续走“单次大模型生成 + 审查不过反复重写”的低效路线，而是转向可分工、可复用、可定向修复的受控生成系统
+- 验证：
+  - `pytest tests/test_next_chapter_planner_service.py tests/test_chapter_imitation_service.py tests/test_whole_book_imitation_service.py tests/test_cli.py tests/test_api_main.py -q`
+  - `python -m compileall novel_analyzer docs tests`
+
+### whole-book imitation 增加 sandbox execute 与显式 carry-over state
+- 为 whole-book imitation 增加：
+  - `WholeBookCarryOverState`
+  - `WholeBookImitationExecutedStep`
+  - `WholeBookImitationRunReport.execution_mode / executed_steps / final_carry_over_state`
+- `run-whole-book-imitation` 新增：
+  - `--execute`
+  - `--max-rounds`
+  - `--use-llm`
+  - `--model-name`
+- 当前可以在 sandbox 中逐章执行 imitation iteration，并显式把“上一章生成摘要 / 关系状态 / 未解线程 / 规则约束”传给下一章
+- 仍保持严格边界：不会把生成正文写入 live branch artifact
+- 验证：
+  - `pytest tests/test_whole_book_imitation_service.py tests/test_cli.py -q`
+  - `python -m compileall novel_analyzer docs tests`
+
+## 2026-05-02
+
+### 仿写评分器补入迭代闭环
+- 为 imitation loop 新增多轴评分：
+  - `structure_score`
+  - `style_alignment_score`
+  - `risk_score`
+  - `overall_score`
+- 将 `iterate-imitation` 的 stop 条件从纯布尔判断升级为“结构 + 风险 + 评分阈值”联合判定
+- 第3章 live 实验报告同步补入评分与 stop 逻辑说明
+
+### 第3章 live 仿写实验报告补齐
+- 新增 `docs/chapter-imitation-ch3-live-report-20260502.md`
+- 将《第3章 养生功法》的 live 仿写实验结果收口为正式文档
+- 记录：
+  - 原章核心骨架
+  - live 命令
+  - rounds 结果
+  - stop_reason
+  - 当前优点 / 不足 / 下一步
+
+### next_chapter_planner 数据结构与服务骨架落地
+- 新增 `novel_analyzer/services/next_chapter_planner_service.py`
+- 新增规划相关 schema：
+  - `ChapterPlanningIntent`
+  - `ChapterPlanningContext`
+  - `ChapterPlanningCard`
+  - `ChapterPlanningScene`
+- 当前 skeleton 已能从 branch 现有状态生成最小的“下一章规划卡”，包括：
+  - chapter goal
+  - main conflict
+  - scene plan
+  - ending hook
+  - risk notes
+- 新增 `tests/test_next_chapter_planner_service.py`，锁定当前最小上下文构建与规划输出
+- 文档补充：
+  - `docs/chapter-planning-capability-proposal.md` 增补当前已落地骨架说明
+
+### 章节仿写方法与实验骨架补齐
+- 新增 `novel_analyzer/services/chapter_imitation_service.py`
+- 新增仿写相关 schema：
+  - `ChapterImitationPlan`
+  - `ChapterImitationDraft`
+- 新增 `tests/test_chapter_imitation_service.py`
+- 新增 `docs/chapter-imitation-method.md`
+- 当前实现先落：
+  - 仿写方法论
+  - imitation plan
+  - skeleton draft
+  - comparison / risk gate notes
+- 暂不直接放开高自由度正文代写，优先形成“规划 → 草案 → 风险检查”闭环
+
+### fresh 真库前10章风险结论与交接文档补齐
+- 新增 `docs/risk-audit-fresh10-verification-20260502.md`
+- 新增 `docs/chapter-planning-capability-proposal.md`
+- 将样例小说前 10 章的 fresh PostgreSQL 真库结果写入正式文档，而不再只依赖离线报告或口头结论
+- 明确记录：
+  - fresh run/branch 标识
+  - 1~10 章全部跑通
+  - 低风险候选主要集中在 `character_ooc` 与 `plot_logic_consistency`
+  - small-model schema 漂移为非阻断稳定性债
+- 同步将这些文档接入 docs 索引，方便后续维护与交接
+
+### 风险语义信号表补入正式 Alembic schema
+- 新增迁移 `20260502_01_risk_signal_tables.py`
+- 将 `risk_semantic_signals`、`risk_signal_links`、`risk_signal_clusters` 正式纳入 Alembic 管理
+- 修复“空库 init-db 成功，但 fresh 风险审查在第1章因缺表中断”的真环境问题
+- 让 ONNX/pgvector/semantic middle layer 在新库中不再依赖历史手工残留表
+- 验证：后续将以真库 fresh10 rerun 作为主证据继续签收
+
+### Alembic 多 head 冲突收口为线性迁移链
+- 修复 `alembic/versions/20260430_01_cluster_review_records.py` 与 `20260430_01_cluster_review_tables.py` 共享同一 revision id 的问题
+- 将 records 迁移改为 `20260430_02`，并收口为兼容性 no-op bridge，避免空库 `init-db` 时出现 multiple heads
+- 保留 `20260429_01` / `20260430_01` 的实际建表/补列职责，不让历史已有库的语义被破坏
+- 同步修正文档中对 cluster review 迁移编号的描述
+- 验证：本地 PostgreSQL 真环境下 `scripts/check_postgres.py` / `init-db` / `db-capabilities` 可继续作为后续收尾验收路径
+
+### 风险审查正式生产收尾文档补齐
+- 新增 `docs/risk-audit-production-readiness.md`
+- 将“正式稳定生产”缺少的外部条件从口头说明收口为结构化文档，明确区分：
+  - PostgreSQL / pgvector 真环境
+  - provider 长链稳定性
+  - ONNX embedding 资源
+  - 可重复运行壳层
+- 补充推荐验收顺序，便于后续按 checklist 收尾
+- 验证：本地读取文档、docs index 编号检查、相关入口链接回归
+
+### 样例小说前10章风险核验报告补齐
+- 新增 `.omx/reports/sample-novel-first-10-risk-check-20260502.md`
+- 基于现有离线样例产物，对前 10 章风险卡与章节摘要进行一次 best-effort 复核
+- 明确记录：前 10 章当前均为 `risk=low`、`risk_count=0`，未发现明确 OOC / 规则冲突 / 关系突变 / 时间线异常 / 能力突变
+- 同时保留边界说明：当前会话下 PostgreSQL `127.0.0.1:5432` 连接拒绝，因此这不是 fresh DB 重跑 verdict
+- 验证：离线报告与 `.omx/tmp/sample-branch-report.md` / 既有 sample-novel 结论文档交叉核对一致
 
 ## 2026-04-27
 

@@ -20,6 +20,7 @@ def test_db_capabilities_cli_outputs_expected_fields(monkeypatch: MonkeyPatch) -
             available_text_search_configs=["simple"],
             missing_tables=[],
             missing_extensions=[],
+            missing_cluster_review_columns={},
         ),
     )
 
@@ -30,6 +31,7 @@ def test_db_capabilities_cli_outputs_expected_fields(monkeypatch: MonkeyPatch) -
     assert "can_connect=true" in result.stdout
     assert "initialized_schema=true" in result.stdout
     assert "installed_extensions=pg_trgm,vector" in result.stdout
+    assert "missing_cluster_review_columns=" in result.stdout
     assert "ok=true" in result.stdout
 
 
@@ -68,6 +70,7 @@ def test_db_capabilities_uses_effective_database_name_from_explicit_url(
             available_text_search_configs=["simple"],
             missing_tables=[],
             missing_extensions=[],
+            missing_cluster_review_columns={},
         )
 
     monkeypatch.setattr("novel_analyzer.cli.app.postgres_capability_report", fake_report)
@@ -84,6 +87,37 @@ def test_db_capabilities_uses_effective_database_name_from_explicit_url(
     assert result.exit_code == 0
     assert seen["db_name"] == "custom_db"
     assert seen["admin_url"] == "postgresql+psycopg://novel:secret@127.0.0.1:5433/postgres"
+
+
+def test_db_capabilities_reports_missing_cluster_review_columns(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "novel_analyzer.cli.app.postgres_capability_report",
+        lambda settings=None: PostgresCheckReport(
+            database_exists=True,
+            can_connect=True,
+            initialized_schema=True,
+            server_version="16.0",
+            installed_extensions=["pg_trgm", "vector"],
+            available_text_search_configs=["simple"],
+            missing_tables=[],
+            missing_extensions=[],
+            missing_cluster_review_columns={
+                "cluster_review_records": ["review_actor"],
+                "cluster_review_event_records": ["review_actor", "previous_review_actor"],
+            },
+        ),
+    )
+
+    result = runner.invoke(app, ["db-capabilities"])
+
+    assert result.exit_code == 0
+    assert (
+        "missing_cluster_review_columns="
+        "cluster_review_event_records:review_actor,previous_review_actor;"
+        "cluster_review_records:review_actor"
+    ) in result.stdout
 
 
 def test_db_capabilities_rejects_non_postgresql_database_url() -> None:

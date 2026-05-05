@@ -7,13 +7,21 @@ from pathlib import Path
 from typing import Any
 
 import typer
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 from typer import echo
 
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.migrations import upgrade_database
-from novel_analyzer.database.models import ChapterManifest, WindowArtifact
+from novel_analyzer.database.models import (
+    AnalysisRun,
+    ChapterArtifact,
+    FactRecord,
+    NovelSource,
+    RunBranch,
+    ChapterManifest,
+    WindowArtifact,
+)
 from novel_analyzer.database.postgres_checks import postgres_capability_report
 from novel_analyzer.database.session import (
     create_session_factory,
@@ -21,7 +29,12 @@ from novel_analyzer.database.session import (
     ensure_database_exists,
 )
 from novel_analyzer.runtime.storage import describe_runtime_storage, migrate_legacy_runtime_dirs
-from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state, write_cluster_review_state
+from novel_analyzer.runtime.provider_health import read_provider_health
+from novel_analyzer.runtime.cluster_review_state import (
+    read_cluster_review_history,
+    read_cluster_review_state,
+    write_cluster_review_state,
+)
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -65,6 +78,157 @@ def _render_branch_report(bundle: dict[str, object]) -> str:
     from novel_analyzer.reporting.branch_report import render_branch_report
 
     return render_branch_report(bundle)
+
+
+def _mapping_pairs(items: list[str]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for item in items:
+        left, _, right = item.partition("=")
+        if left and right:
+            result[left] = right
+    return result
+
+
+def _parse_chapter_goal_spec(chapter_spec: list[str]) -> list[tuple[int, str]]:
+    chapter_goals: list[tuple[int, str]] = []
+    for item in chapter_spec:
+        chapter_text, _, goal = item.partition(":")
+        if not chapter_text or not goal:
+            raise typer.Exit(code=1)
+        chapter_goals.append((int(chapter_text), goal))
+    return chapter_goals
+
+
+def _build_story_mapping_pack(
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    *,
+    world_map: list[str],
+    character_map: list[str],
+    faction_map: list[str],
+    power_map: list[str],
+    rule_override: list[str],
+    forbidden_transformation: list[str],
+) -> Any:
+    from novel_analyzer.domain.schemas import StoryMappingPack
+
+    return StoryMappingPack(
+        project_title=project_title,
+        source_work_name=source_work_name,
+        target_work_name=target_work_name,
+        world_mapping=_mapping_pairs(world_map),
+        character_mapping=_mapping_pairs(character_map),
+        faction_mapping=_mapping_pairs(faction_map),
+        power_mapping=_mapping_pairs(power_map),
+        rule_overrides=rule_override,
+        forbidden_transformations=forbidden_transformation,
+    )
+
+
+def _whole_book_readiness_payload(
+    session: Session,
+    settings: Settings,
+    *,
+    branch_id: str | None = None,
+) -> dict[str, object]:
+    target_branch_id = branch_id
+    if not target_branch_id:
+        target_branch_id = session.scalar(
+            select(ChapterArtifact.branch_id)
+            .where(ChapterArtifact.artifact_type == "chapter_analysis")
+            .group_by(ChapterArtifact.branch_id)
+            .order_by(func.count(ChapterArtifact.id).desc())
+            .limit(1)
+        )
+
+    branch_summary: dict[str, object] = {
+        "branch_id": target_branch_id or "",
+        "exists": False,
+        "chapter_analysis_count": 0,
+        "fact_record_count": 0,
+        "chapter_span": {"min": None, "max": None},
+        "run_id": "",
+        "branch_name": "",
+        "status": "",
+        "novel_title": "",
+    }
+    if target_branch_id:
+        branch = session.get(RunBranch, target_branch_id)
+        if branch is not None:
+            analysis_count = session.scalar(
+                select(func.count())
+                .select_from(ChapterArtifact)
+                .where(
+                    ChapterArtifact.branch_id == target_branch_id,
+                    ChapterArtifact.artifact_type == "chapter_analysis",
+                )
+            ) or 0
+            fact_count = session.scalar(
+                select(func.count())
+                .select_from(FactRecord)
+                .where(FactRecord.branch_id == target_branch_id)
+            ) or 0
+            chapter_min, chapter_max = session.execute(
+                select(
+                    func.min(ChapterArtifact.chapter_index),
+                    func.max(ChapterArtifact.chapter_index),
+                ).where(
+                    ChapterArtifact.branch_id == target_branch_id,
+                    ChapterArtifact.artifact_type == "chapter_analysis",
+                )
+            ).one()
+            novel_title = session.scalar(
+                select(NovelSource.title)
+                .join(AnalysisRun, AnalysisRun.novel_id == NovelSource.id)
+                .where(AnalysisRun.id == branch.run_id)
+            ) or ""
+            branch_summary = {
+                "branch_id": target_branch_id,
+                "exists": True,
+                "chapter_analysis_count": int(analysis_count),
+                "fact_record_count": int(fact_count),
+                "chapter_span": {"min": chapter_min, "max": chapter_max},
+                "run_id": branch.run_id,
+                "branch_name": branch.name,
+                "status": branch.status,
+                "novel_title": novel_title,
+            }
+
+    provider_health = read_provider_health(settings)
+    return {
+        "contract_version": "whole-book-imitation-readiness.v1",
+        "stable_contract_version": "whole-book-imitation-readiness-pre-v1",
+        "whole_book_contract_version": "whole-book-imitation.v1",
+        "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+        "database": {
+            "masked_database_url": settings.masked_database_url,
+            "effective_db_name": settings.effective_db_name,
+        },
+        "provider": {
+            "provider_name": settings.llm_provider_name,
+            "base_url": settings.resolved_llm_base_url,
+            "api_key_present": bool(settings.resolved_llm_api_key),
+            "model_name": settings.llm_model_name,
+            "stage_model_name": settings.llm_stage_model_name,
+            "qa_model_name": settings.llm_qa_model_name,
+            "provider_health": {
+                "provider_name": provider_health.provider_name,
+                "model_name": provider_health.model_name,
+                "last_status": provider_health.last_status,
+                "degraded_events": provider_health.degraded_events,
+                "success_events": provider_health.success_events,
+                "last_error": provider_health.last_error,
+                "last_updated_at": provider_health.last_updated_at,
+            },
+        },
+        "branch_candidate": branch_summary,
+        "readiness_notes": [
+            "如果 api_key_present=false，则不能做真实 provider-backed whole-book execute。",
+            "如果 provider_health.last_status=degraded，应先确认上游 provider 是否恢复。",
+            "如果 branch_candidate.chapter_analysis_count < 2，则不适合做 whole-book imitation freeze evidence。",
+        ],
+    }
 
 
 def _ingest_and_start_pipeline(**kwargs: Any) -> Any:
@@ -163,6 +327,36 @@ def _graph_service(session: Session) -> Any:
     return GraphService(session)
 
 
+def _next_chapter_planner_service(session: Session) -> Any:
+    from novel_analyzer.services.next_chapter_planner_service import NextChapterPlannerService
+
+    return NextChapterPlannerService(session)
+
+
+def _chapter_imitation_service(session: Session) -> Any:
+    from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+
+    return ChapterImitationService(session)
+
+
+def _whole_book_imitation_service(session: Session) -> Any:
+    from novel_analyzer.services.whole_book_imitation_service import WholeBookImitationService
+
+    return WholeBookImitationService(session)
+
+
+def _imitation_harness_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.imitation_harness_service import HarnessControllerService
+
+    return HarnessControllerService(session, settings)
+
+
+def _author_knowledge_service(session: Session) -> Any:
+    from novel_analyzer.services.author_knowledge_service import AuthorKnowledgeService
+
+    return AuthorKnowledgeService(session)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -201,6 +395,14 @@ def db_capabilities(database_url: str | None = None) -> None:
     echo(f"available_text_search_configs={','.join(report.available_text_search_configs)}")
     echo(f"missing_tables={','.join(report.missing_tables)}")
     echo(f"missing_extensions={','.join(report.missing_extensions)}")
+    if report.missing_cluster_review_columns:
+        items = [
+            f"{table}:{','.join(columns)}"
+            for table, columns in sorted(report.missing_cluster_review_columns.items())
+        ]
+        echo(f"missing_cluster_review_columns={';'.join(items)}")
+    else:
+        echo("missing_cluster_review_columns=")
     echo(f"ok={str(report.ok).lower()}")
     if not report.ok:
         raise typer.Exit(code=1)
@@ -600,6 +802,89 @@ def search_branch(
             )
 
 
+@app.command()
+def search_branch_diagnostics(
+    branch_id: str,
+    query: str,
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Show retrieval raw/rerank diagnostics for a branch query."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _retrieval_service(session, settings).search_branch_with_diagnostics(
+            branch_id, query, limit
+        )
+        echo(f"query={payload.query}")
+        echo(f"raw_hit_count={len(payload.raw_hits)}")
+        echo(f"reranked_hit_count={len(payload.reranked_hits)}")
+        echo(f"fusion_applied={payload.fusion_applied}")
+        echo(f"rerank_applied={payload.rerank_applied}")
+        echo(f"raw_latency_ms={payload.raw_latency_ms:.2f}")
+        echo(f"rerank_latency_ms={payload.rerank_latency_ms:.2f}")
+        echo(f"route_counts={payload.route_counts or {}}")
+        for route in payload.route_diagnostics or []:
+            echo(
+                f"route={route.route} | hit_count={route.hit_count} | latency_ms={route.latency_ms:.2f}"
+            )
+        for hit in payload.raw_hits[:limit]:
+            echo(
+                f"raw_hit=chapter_index={hit.chapter_index} | score={hit.score:.4f} | title={hit.title}"
+            )
+        for hit in payload.reranked_hits[:limit]:
+            echo(
+                f"reranked_hit=chapter_index={hit.chapter_index} | score={hit.score:.4f} | title={hit.title}"
+            )
+
+
+@app.command()
+def export_search_branch_diagnostics(
+    branch_id: str,
+    query: str,
+    output_path: Path,
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export retrieval raw/rerank diagnostics for a branch query to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _retrieval_service(session, settings).search_branch_with_diagnostics(
+            branch_id, query, limit
+        )
+        def _hit_json(hit: Any) -> dict[str, object]:
+            return {
+                "chapter_index": hit.chapter_index,
+                "title": hit.title,
+                "summary_text": hit.summary_text,
+                "score": hit.score,
+                "keyword_list": hit.keyword_list,
+            }
+        output = {
+            "query": payload.query,
+            "raw_hits": [_hit_json(hit) for hit in payload.raw_hits],
+            "reranked_hits": [_hit_json(hit) for hit in payload.reranked_hits],
+            "rerank_applied": payload.rerank_applied,
+            "fusion_applied": payload.fusion_applied,
+            "route_counts": payload.route_counts or {},
+            "route_diagnostics": [
+                {
+                    "route": route.route,
+                    "hit_count": route.hit_count,
+                    "latency_ms": route.latency_ms,
+                }
+                for route in payload.route_diagnostics or []
+            ],
+            "raw_latency_ms": payload.raw_latency_ms,
+            "rerank_latency_ms": payload.rerank_latency_ms,
+        }
+        output_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"search_branch_diagnostics_path={output_path}")
+
+
 
 @app.command()
 def ask_branch(
@@ -794,6 +1079,52 @@ def export_branch_qa_context(
         payload = _export_service(session).export_branch_qa_context(run_id, branch_id)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"branch_qa_context_path={output_path}")
+
+
+@app.command()
+def show_author_knowledge(
+    branch_id: str,
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    database_url: str | None = None,
+) -> None:
+    """Show the author-facing branch knowledge pack."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _author_knowledge_service(session).build_branch_knowledge_pack(
+            branch_id,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+        )
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def export_author_knowledge(
+    branch_id: str,
+    output_path: Path,
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    database_url: str | None = None,
+) -> None:
+    """Export the author-facing branch knowledge pack to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _author_knowledge_service(session).build_branch_knowledge_pack(
+            branch_id,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+        )
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"author_knowledge_path={output_path}")
 
 
 @app.command()
@@ -1010,6 +1341,7 @@ def set_cluster_status(
     cluster_status: str,
     review_notes: str = typer.Option('', '--review-notes'),
     review_owner: str = typer.Option('', '--review-owner'),
+    review_actor: str = typer.Option('', '--review-actor'),
     resolved_at: str = typer.Option('', '--resolved-at'),
     review_result: str = typer.Option('', '--review-result'),
     database_url: str | None = None,
@@ -1026,6 +1358,7 @@ def set_cluster_status(
                 cluster_status=cluster_status,
                 review_notes=review_notes,
                 review_owner=review_owner,
+                review_actor=review_actor,
                 resolved_at=resolved_at,
                 review_result=review_result,
             )
@@ -1036,6 +1369,7 @@ def set_cluster_status(
             cluster_status=cluster_status,
             review_notes=review_notes,
             review_owner=review_owner,
+            review_actor=review_actor,
             resolved_at=resolved_at,
             review_result=review_result,
             settings=settings,
@@ -1045,6 +1379,7 @@ def set_cluster_status(
     echo(f"cluster_status={state.cluster_status}")
     echo(f"review_notes={state.review_notes}")
     echo(f"review_owner={state.review_owner}")
+    echo(f"review_actor={state.review_actor}")
     echo(f"resolved_at={state.resolved_at}")
     echo(f"review_result={state.review_result}")
 
@@ -1067,6 +1402,10 @@ def show_cluster_status(branch_id: str, database_url: str | None = None) -> None
 def show_cluster_history(
     branch_id: str,
     cluster_key: str,
+    event_type: str = typer.Option('', '--event-type'),
+    review_owner: str = typer.Option('', '--review-owner'),
+    review_result: str = typer.Option('', '--review-result'),
+    limit: int = typer.Option(0, '--limit'),
     database_url: str | None = None,
 ) -> None:
     """Show review history for one cluster."""
@@ -1078,7 +1417,15 @@ def show_cluster_history(
             from novel_analyzer.services.cluster_review_service import ClusterReviewService
             payload = ClusterReviewService(session).read_history(branch_id, cluster_key)
     except Exception:
-        payload = []
+        payload = read_cluster_review_history(branch_id, cluster_key, settings)
+    if event_type:
+        payload = [item for item in payload if str(item.get('event_type') or '') == event_type]
+    if review_owner:
+        payload = [item for item in payload if str(item.get('review_owner') or '') == review_owner]
+    if review_result:
+        payload = [item for item in payload if str(item.get('review_result') or '') == review_result]
+    if limit > 0:
+        payload = payload[-limit:]
     echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
@@ -1153,6 +1500,498 @@ def show_reasoning_graph(
             edge_limit=80,
         )
         echo(json.dumps(snapshot, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def plan_next_chapter(
+    branch_id: str,
+    primary_goal: str,
+    emphasis: str = typer.Option("", "--emphasis"),
+    forbidden_move: list[str] = typer.Option([], "--forbidden-move"),
+    preferred_tone: str = typer.Option("", "--preferred-tone"),
+    pace: str = typer.Option("", "--pace"),
+    target_word_count: int | None = typer.Option(None, "--target-word-count"),
+    database_url: str | None = None,
+) -> None:
+    """Build a visible next-chapter planning card for one branch."""
+
+    from novel_analyzer.domain.schemas import ChapterPlanningIntent
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    emphasis_items = [item.strip() for item in emphasis.split(",") if item.strip()]
+    intent = ChapterPlanningIntent(
+        primary_goal=primary_goal,
+        emphasis=emphasis_items,
+        forbidden_moves=forbidden_move,
+        preferred_tone=preferred_tone or None,
+        pace=pace or None,
+        target_word_count=target_word_count,
+    )
+    with factory() as session:
+        payload = _next_chapter_planner_service(session).build_plan(branch_id, intent=intent)
+        echo(payload.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def imitate_chapter(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Build a visible imitation plan + skeleton draft for one source chapter."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _chapter_imitation_service(session)
+        payload = (
+            service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+        echo(payload.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def compare_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Build an imitation draft and a structured comparison report."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _chapter_imitation_service(session)
+        draft = (
+            service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+        report = service.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        echo(
+            json.dumps(
+                {
+                    "draft": draft.model_dump(mode="json"),
+                    "comparison": report.model_dump(mode="json"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+
+
+@app.command()
+def review_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Build draft + comparison + review + revised draft for one imitation experiment."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _chapter_imitation_service(session)
+        draft = (
+            service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+        comparison = service.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        review = service.review_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        gate = service.gate_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        risk = service.risk_review_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        revised = service.revise_draft(draft, review=review)
+        echo(
+            json.dumps(
+                {
+                    "draft": draft.model_dump(mode="json"),
+                    "comparison": comparison.model_dump(mode="json"),
+                    "review": review.model_dump(mode="json"),
+                    "gate": gate.model_dump(mode="json"),
+                    "risk": risk.model_dump(mode="json"),
+                    "revised_draft": revised.model_dump(mode="json"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+
+
+@app.command()
+def iterate_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run a multi-round imitation optimization loop and emit all rounds."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _chapter_imitation_service(session).iterate_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def multi_chapter_imitation_consistency(
+    branch_id: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    max_rounds: int = typer.Option(1, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run a lightweight multi-chapter consistency pass across several imitation steps."""
+
+    parsed: list[tuple[int, str]] = []
+    for item in chapter_spec:
+        chapter_text, _, goal = item.partition(":")
+        if not chapter_text or not goal:
+            raise typer.Exit(code=1)
+        parsed.append((int(chapter_text), goal))
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _chapter_imitation_service(session).build_multi_chapter_consistency(
+            branch_id,
+            chapter_goals=parsed,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def plan_whole_book_imitation(
+    branch_id: str,
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
+    database_url: str | None = None,
+) -> None:
+    """Build a whole-book imitation orchestration skeleton."""
+    chapter_goals = _parse_chapter_goal_spec(chapter_spec)
+    mapping_pack = _build_story_mapping_pack(
+        project_title,
+        source_work_name,
+        target_work_name,
+        world_map=world_map,
+        character_map=character_map,
+        faction_map=faction_map,
+        power_map=power_map,
+        rule_override=rule_override,
+        forbidden_transformation=forbidden_transformation,
+    )
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _whole_book_imitation_service(session).build_plan(
+            branch_id,
+            mapping_pack=mapping_pack,
+            chapter_goals=chapter_goals,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def run_whole_book_imitation(
+    branch_id: str,
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
+    execute: bool = typer.Option(False, "--execute", help="Run sandbox iteration instead of dry-run queue only."),
+    max_rounds: int = typer.Option(1, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Build a dry-run queue or execute a sandbox whole-book imitation run."""
+    chapter_goals = _parse_chapter_goal_spec(chapter_spec)
+    mapping_pack = _build_story_mapping_pack(
+        project_title,
+        source_work_name,
+        target_work_name,
+        world_map=world_map,
+        character_map=character_map,
+        faction_map=faction_map,
+        power_map=power_map,
+        rule_override=rule_override,
+        forbidden_transformation=forbidden_transformation,
+    )
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _whole_book_imitation_service(session)
+        report = (
+            service.run_in_sandbox(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+            )
+            if execute
+            else service.build_run_queue(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+            )
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command()
+def export_whole_book_imitation_run(
+    branch_id: str,
+    project_title: str,
+    source_work_name: str,
+    target_work_name: str,
+    output_path: Path,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
+    execute: bool = typer.Option(False, "--execute", help="Run sandbox iteration instead of dry-run queue only."),
+    max_rounds: int = typer.Option(1, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Export a whole-book imitation run report JSON for downstream systems."""
+
+    chapter_goals = _parse_chapter_goal_spec(chapter_spec)
+    mapping_pack = _build_story_mapping_pack(
+        project_title,
+        source_work_name,
+        target_work_name,
+        world_map=world_map,
+        character_map=character_map,
+        faction_map=faction_map,
+        power_map=power_map,
+        rule_override=rule_override,
+        forbidden_transformation=forbidden_transformation,
+    )
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _whole_book_imitation_service(session)
+        report = (
+            service.run_in_sandbox(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+            )
+            if execute
+            else service.build_run_queue(
+                branch_id,
+                mapping_pack=mapping_pack,
+                chapter_goals=chapter_goals,
+            )
+        )
+        output_path.write_text(report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+        echo(f"whole_book_imitation_run_path={output_path}")
+
+
+@app.command()
+def show_imitation_skill_contracts(database_url: str | None = None) -> None:
+    """Show the local imitation skill contracts expected by the harness controller."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _imitation_harness_service(session, settings).list_skill_contracts()
+        echo(json.dumps([item.model_dump(mode="json") for item in payload], ensure_ascii=False, indent=2))
+
+
+@app.command()
+def show_whole_book_imitation_readiness(
+    branch_id: str = typer.Option("", "--branch-id"),
+    database_url: str | None = None,
+) -> None:
+    """Show provider/database/branch readiness evidence for whole-book imitation freeze checks."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _whole_book_readiness_payload(
+            session,
+            settings,
+            branch_id=branch_id or None,
+        )
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def preflight_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run deterministic preflight checks before formal imitation gate/risk review."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        chapter_service = _chapter_imitation_service(session)
+        draft = (
+            chapter_service.build_llm_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                model_name=model_name or None,
+            )
+            if use_llm
+            else chapter_service.build_skeleton_draft(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+            )
+        )
+        comparison = chapter_service.compare_with_source(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+        )
+        report = _imitation_harness_service(session, settings).preflight_draft(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            draft=draft,
+            comparison=comparison,
+        )
+        echo(
+            json.dumps(
+                {
+                    "draft": draft.model_dump(mode="json"),
+                    "comparison": comparison.model_dump(mode="json"),
+                    "preflight": report.model_dump(mode="json"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+
+
+@app.command()
+def harness_imitation(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Run the first controlled imitation harness with skill contracts and preflight routing."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        echo(report.model_dump_json(indent=2, ensure_ascii=False))
 
 
 @app.command()

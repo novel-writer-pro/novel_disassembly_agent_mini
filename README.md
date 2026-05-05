@@ -22,12 +22,17 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 ## Newcomer Path
 - 想快速上手：[`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)
 - 想看接口与样例：[`./docs/interface-manifest.md`](./docs/interface-manifest.md) + [`./docs/examples/*.sample.json`](./docs/examples/)
+- 想看跨主线 eval/governance 冻结口径：[`./docs/eval-governance-sample-release-contract.md`](./docs/eval-governance-sample-release-contract.md) + [`./docs/examples/eval-governance-cross-lane-bundle.sample.json`](./docs/examples/eval-governance-cross-lane-bundle.sample.json)
+- 想看当前 API 实现契约：[`./docs/api-current-surface.md`](./docs/api-current-surface.md)
 - 想看交付全貌：[`./docs/final-handoff.md`](./docs/final-handoff.md)
 - 想看系统审查能力：[`./docs/risk-audit-capability.md`](./docs/risk-audit-capability.md)
 - 想看运行时边界：[`./docs/risk-audit-runtime-boundary.md`](./docs/risk-audit-runtime-boundary.md)
 - 想看 `skills_dir` 与门控 checker 的边界：[`./docs/skills-vs-risk-checkers-boundary.md`](./docs/skills-vs-risk-checkers-boundary.md)
 - 想看风险审查运行时架构：[`./docs/risk-audit-runtime-architecture.md`](./docs/risk-audit-runtime-architecture.md)
+- 想看风险审查架构专题总入口：[`./docs/architecture/README.md`](./docs/architecture/README.md)
+- 想看风险审查完成度 / 测试 / 使用说明：[`./docs/architecture/risk-audit-completion-status.md`](./docs/architecture/risk-audit-completion-status.md)
 - 想看 checker 路线图：[`./docs/risk-audit-checker-roadmap.md`](./docs/risk-audit-checker-roadmap.md)
+- 想看下一批 checker 技术设计：[`./docs/risk-audit-next-batch-checkers.md`](./docs/risk-audit-next-batch-checkers.md)
 - 想看风险审查系统总览：[`./docs/risk-audit-system-overview.md`](./docs/risk-audit-system-overview.md)
 - 想看风险审查最终交付摘要：[`./docs/risk-audit-delivery-summary.md`](./docs/risk-audit-delivery-summary.md)
 - 想看风险审查下一阶段执行建议：[`./docs/risk-audit-next-phase-30-60-90.md`](./docs/risk-audit-next-phase-30-60-90.md)
@@ -43,6 +48,7 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 - 想看 review API 稳定字段收口清单：[`./docs/review-api-stability-summary.md`](./docs/review-api-stability-summary.md)
 - 想看第二阶段实施优先级建议：[`./docs/review-workflow-phase2-priority-ranking.md`](./docs/review-workflow-phase2-priority-ranking.md)
 - 想看 review workflow API 冻结就绪判断：[`./docs/review-workflow-api-freeze-readiness.md`](./docs/review-workflow-api-freeze-readiness.md)
+- 想看第二阶段 team 并行实施规范：[`./docs/review-workflow-team-execution-guidelines.md`](./docs/review-workflow-team-execution-guidelines.md)
 - 想看 review workflow DB-only 切换策略：[`./docs/review-workflow-db-only-cutover.md`](./docs/review-workflow-db-only-cutover.md)
 - 想看读者体验能力规划：[`./docs/reader-experience-capability.md`](./docs/reader-experience-capability.md)
 - 想浏览全部文档：[`./docs/README.md`](./docs/README.md)
@@ -83,7 +89,7 @@ export NOVEL_ANALYZER_LLM_API_KEY='your-key'
 export NOVEL_ANALYZER_LLM_BASE_URL='https://api.vip1129.cc/v1'
 export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4-mini'
 
-# or copy .env.example -> .env.local and fill the secrets locally
+or copy `.env.example` -> `.env.local` and fill the secrets locally
 ```
 
 

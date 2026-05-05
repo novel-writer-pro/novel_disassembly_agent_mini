@@ -91,3 +91,72 @@ def build_branch_qa_prompt(*, question: str, retrieval_context: str) -> str:
    - confidence 低于 0.5
 9. 不要只说“无法判断”，除非上下文几乎完全没有相关信息。
 """.strip()
+
+
+def build_chapter_imitation_prompt(
+    *,
+    source_chapter_index: int,
+    source_title: str,
+    source_excerpt: str,
+    target_goal: str,
+    style_axes: list[str],
+    scene_beats: list[str],
+    hard_constraints: list[str],
+    soft_constraints: list[str],
+) -> str:
+    """Build a constrained imitation-draft prompt."""
+
+    style_text = "\n".join(f"- {item}" for item in style_axes) or "- 保持原章结构功能"
+    beat_text = "\n".join(f"- {item}" for item in scene_beats) or "- 维持原章推进"
+    hard_text = "\n".join(f"- {item}" for item in hard_constraints) or "- 不得违背现有世界规则"
+    soft_text = "\n".join(f"- {item}" for item in soft_constraints) or "- 保持人物与关系推进连续"
+
+    return f"""
+你是一个“章节仿写规划执行器”。
+
+任务：
+在保留原章结构功能、冲突推进与人物选择逻辑的前提下，
+基于给定目标生成一个**结构化仿写草案**。
+
+注意：
+1. 不要直接抄原文句子。
+2. 不要擅自突破世界规则。
+3. 不要让人物行为脱离既有逻辑。
+4. 输出只允许 JSON，不要 Markdown。
+
+源章节：
+- chapter_index: {source_chapter_index}
+- title: {source_title}
+
+源章节摘录：
+{source_excerpt}
+
+本次目标：
+{target_goal}
+
+风格轴：
+{style_text}
+
+场景节拍：
+{beat_text}
+
+硬约束：
+{hard_text}
+
+软约束：
+{soft_text}
+
+输出 JSON：
+{{
+  "draft_title": "{source_title}",
+  "draft_text": "...",
+  "method_notes": ["..."],
+  "comparison_notes": ["..."],
+  "risk_gate_notes": ["..."]
+}}
+
+要求：
+- draft_text 先写成“短章草案”，重在结构正确，不追求篇幅。
+- comparison_notes 必须说明与原章骨架的对应关系。
+- risk_gate_notes 必须明确指出应该重点过哪些风险检查。
+""".strip()
