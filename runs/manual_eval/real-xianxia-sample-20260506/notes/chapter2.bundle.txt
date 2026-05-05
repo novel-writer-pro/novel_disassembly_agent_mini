@@ -1,0 +1,1680 @@
+{
+  "chapter_index": 2,
+  "artifact": {
+    "chapter_index": 2,
+    "normalized_title": "厌物丽人同行",
+    "dimensions": [
+      {
+        "dimension": "chapter_summary",
+        "summary": "青旒师妹发现小六子呆呆望着自己，小六子称赞她拂弄秀发的动作像祖师洞碑林中的仙女，青旒表面嗔怪他油嘴滑舌，实则内心欢喜。两人之间流露出微妙的情愫。",
+        "evidence": [
+          "看见对方傻呆呆的望着自己发呆，青衫少女突然有些害羞",
+          "你方才那个动作好漂亮啊，就像上回在祖师洞前碑林上镌刻的那个仙女",
+          "呸，小六子，你现在怎么变得油嘴滑舌了，这些浑话也说得出口？"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "key_events",
+        "summary": "本章的关键事件：1.青旒发现小六子凝视自己而害羞；2.小六子称赞青旒动作像仙女；3.青旒嗔怪小六子油嘴滑舌。",
+        "evidence": [
+          "看见对方傻呆呆的望着自己发呆，青衫少女突然有些害羞",
+          "你方才那个动作好漂亮啊，就像上回在祖师洞前碑林上镌刻的那个仙女，我的心都快要跳出来了",
+          "呸，小六子，你现在怎么变得油嘴滑舌了"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "character_states",
+        "summary": "青旒：从害羞到甜蜜微笑再到假装嗔怪，内心波动但表面娇俏；小六子：从深沉发呆到惊醒羞涩，最后呐呐回应。",
+        "evidence": [
+          "青衫少女突然有些害羞",
+          "俏皮的翘起娇巧的小鼻子，少女脸上泛起甜蜜的微笑",
+          "青旒师妹，你方才那个动作好漂亮啊……我的心都快要跳出来了",
+          "布衣少年像是突然惊醒过来，脸上露出有些羞涩的笑容，呐呐的道"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "character_relations",
+        "summary": "青旒与小六子是师兄妹关系（师妹/师兄），关系亲密，可随意开玩笑；小六子对青旒有仰慕之情。",
+        "evidence": [
+          "青旒师妹",
+          "小六子"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "worldbuilding",
+        "summary": "世界观设定为修仙世界，存在宗门（祖师洞、碑林）、仙师（修炼者），凡人可对比仙师。",
+        "evidence": [
+          "上回在祖师洞前碑林上镌刻的那个仙女",
+          "我怎么敢和那些仙师相比"
+        ],
+        "confidence": 0.9
+      },
+      {
+        "dimension": "setting_changes",
+        "summary": "本章未发生场景变化，对话应发生在同一地点（祖师洞附近或日常相遇处），具体环境未描述。",
+        "evidence": [
+          "文本未提及场景转换"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "dimension": "conflicts",
+        "summary": "无明显冲突，仅有青旒对小六子“油嘴滑舌”的轻微不满，属于调情性质。",
+        "evidence": [
+          "呸，小六子，你现在怎么变得油嘴滑舌了，这些浑话也说得出口"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "foreshadowing",
+        "summary": "小六子眼中“深沉迷茫的目光”被青旒捕捉，可能暗示小六子隐藏了心事或特殊身份，为后续情节埋伏笔。",
+        "evidence": [
+          "对方眼中那深沉迷茫的目光看在她眼里就像是一下子钻进了她的心中",
+          "小六子什么时候眼睛会变得如此深邃有神了"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "dimension": "payoffs",
+        "summary": "本章为新章节，无前文payoff需要呼应，但为后续情节（如小六子身份揭示、两人感情发展）埋下伏笔。",
+        "evidence": [
+          "本章是第2章，未承接前文特定伏笔"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "dimension": "emotional_curve",
+        "summary": "青旒情绪：害羞→甜蜜微笑→假装生气；小六子情绪：发呆（沉浸）→惊醒→羞涩→呐呐。整体情绪温馨平稳，略有起伏。",
+        "evidence": [
+          "青衫少女突然有些害羞",
+          "少女脸上泛起甜蜜的微笑",
+          "呸，小六子，你现在怎么变得油嘴滑舌了",
+          "布衣少年像是突然惊醒过来，脸上露出有些羞涩的笑容"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "pacing",
+        "summary": "节奏缓慢，聚焦于两人的细微互动、心理活动和对话，没有快速推进情节。",
+        "evidence": [
+          "大量描写眼神、动作、神态，对话简短，时间跨度短"
+        ],
+        "confidence": 0.9
+      },
+      {
+        "dimension": "themes",
+        "summary": "主题涉及青春情愫、情窦初开、凡人与仙师的对比（身份差距）、以及纯真互动中的微妙情感。",
+        "evidence": [
+          "我怎么敢和那些仙师相比？",
+          "我的心都快要跳出来了"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "dimension": "power_system",
+        "summary": "本章未直接描述修炼体系，但提及“仙师”暗示存在修仙力量，具体规则未展开。",
+        "evidence": [
+          "仙师"
+        ],
+        "confidence": 0.3
+      },
+      {
+        "dimension": "writing_patterns",
+        "summary": "写作风格细腻，注重心理和神态描写，语言古风，使用比喻（如“像一下子钻进了她的心中”），生动展现人物互动。",
+        "evidence": [
+          "看见对方傻呆呆的望着自己发呆，青衫少女突然有些害羞",
+          "就像上回在祖师洞前碑林上镌刻的那个仙女",
+          "俏皮的翘起娇巧的小鼻子，少女脸上泛起甜蜜的微笑"
+        ],
+        "confidence": 1.0
+      },
+      {
+        "dimension": "volatility_patterns",
+        "summary": "剧情波动小，情绪起伏温和，没有激烈冲突或突变，保持稳定的温馨氛围。",
+        "evidence": [
+          "整个章节只有两人对话，情绪从害羞到嗔怪，并无剧烈变化"
+        ],
+        "confidence": 0.9
+      }
+    ],
+    "chapter_summary": "青旒师妹发现小六子呆呆望着自己，小六子称赞她拂弄秀发的动作像祖师洞碑林中的仙女，青旒表面嗔怪他油嘴滑舌，实则内心欢喜。两人之间流露出微妙的情愫。",
+    "key_entities": [
+      "青旒师妹",
+      "小六子",
+      "祖师洞",
+      "碑林",
+      "仙女"
+    ],
+    "key_events": [
+      "青旒发现小六子凝视自己而害羞",
+      "小六子称赞青旒动作像仙女",
+      "青旒嗔怪小六子油嘴滑舌"
+    ],
+    "continuity_notes": [
+      "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。",
+      "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。"
+    ],
+    "state_transition_notes": [],
+    "evidence_backed_resolutions": [],
+    "unresolved_threads": [],
+    "writer_learning_notes": [],
+    "unsupported_inferences": [],
+    "ambiguous_points": [],
+    "needs_human_review": false,
+    "quality_gate_notes": [],
+    "hook_score": 4.0,
+    "state_summary": {
+      "new_foreshadowing": [],
+      "paid_off_foreshadowing": [],
+      "new_conflicts": [],
+      "escalated_conflicts": [],
+      "stable_relations": [
+        "少年持有黑牌"
+      ],
+      "evolved_relations": [],
+      "observed_world_rules": [],
+      "constraining_world_rules": [
+        "口诀蕴含世界观理念",
+        "存在一种非金非木、触之凉意的奇异黑牌",
+        "黑牌能响应外界召唤而产生振动和热量"
+      ]
+    }
+  },
+  "facts": [
+    {
+      "fact_type": "continuity",
+      "label": "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "青旒与小六子的师兄妹关系初步建立，互动自然亲密。"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "仙女",
+      "confidence": 0.6,
+      "evidence_list": [
+        "仙女"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "小六子",
+      "confidence": 0.6,
+      "evidence_list": [
+        "小六子"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "碑林",
+      "confidence": 0.6,
+      "evidence_list": [
+        "碑林"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "祖师洞",
+      "confidence": 0.6,
+      "evidence_list": [
+        "祖师洞"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "青旒师妹",
+      "confidence": 0.6,
+      "evidence_list": [
+        "青旒师妹"
+      ]
+    },
+    {
+      "fact_type": "event",
+      "label": "小六子称赞青旒动作像仙女",
+      "confidence": 0.7,
+      "evidence_list": [
+        "小六子称赞青旒动作像仙女"
+      ]
+    },
+    {
+      "fact_type": "event",
+      "label": "青旒发现小六子凝视自己而害羞",
+      "confidence": 0.7,
+      "evidence_list": [
+        "青旒发现小六子凝视自己而害羞"
+      ]
+    },
+    {
+      "fact_type": "event",
+      "label": "青旒嗔怪小六子油嘴滑舌",
+      "confidence": 0.7,
+      "evidence_list": [
+        "青旒嗔怪小六子油嘴滑舌"
+      ]
+    }
+  ],
+  "retrieval": {
+    "title": "厌物丽人同行",
+    "summary_text": "青旒师妹发现小六子呆呆望着自己，小六子称赞她拂弄秀发的动作像祖师洞碑林中的仙女，青旒表面嗔怪他油嘴滑舌，实则内心欢喜。两人之间流露出微妙的情愫。",
+    "keyword_list": [
+      "青旒师妹",
+      "小六子",
+      "祖师洞",
+      "碑林",
+      "仙女",
+      "青旒发现小六子凝视自己而害羞",
+      "小六子称赞青旒动作像仙女",
+      "青旒嗔怪小六子油嘴滑舌"
+    ],
+    "query_hints": [
+      "第2章 厌物丽人同行 讲了什么",
+      "青旒师妹 在这一章发生了什么",
+      "小六子 在这一章发生了什么",
+      "祖师洞 在这一章发生了什么"
+    ]
+  },
+  "graph_nodes": [
+    {
+      "node_type": "continuity",
+      "label": "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "青旒与小六子的师兄妹关系初步建立，互动自然亲密。"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "仙女",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "仙女"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "小六子",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "小六子"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "碑林",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "碑林"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "祖师洞",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "祖师洞"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "青旒师妹",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "青旒师妹"
+        ]
+      }
+    },
+    {
+      "node_type": "event",
+      "label": "小六子称赞青旒动作像仙女",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "小六子称赞青旒动作像仙女"
+        ]
+      }
+    },
+    {
+      "node_type": "event",
+      "label": "青旒发现小六子凝视自己而害羞",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "青旒发现小六子凝视自己而害羞"
+        ]
+      }
+    },
+    {
+      "node_type": "event",
+      "label": "青旒嗔怪小六子油嘴滑舌",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "青旒嗔怪小六子油嘴滑舌"
+        ]
+      }
+    }
+  ],
+  "graph_edges": [
+    {
+      "edge_type": "carries_forward",
+      "source": "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。",
+      "target": "祖师洞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "target": "小六子",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "target": "青旒师妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "target": "小六子",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。",
+      "target": "fe501091-9bfd-4139-a4ca-f2580633ad8a",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。",
+      "target": "碑林",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "青旒师妹",
+      "target": "小六子",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "青旒师妹",
+      "target": "祖师洞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "青旒师妹",
+      "target": "碑林",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "青旒师妹",
+      "target": "仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "小六子",
+      "target": "祖师洞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "小六子",
+      "target": "碑林",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "小六子",
+      "target": "仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "祖师洞",
+      "target": "碑林",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "祖师洞",
+      "target": "仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "碑林",
+      "target": "仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "follows",
+      "source": "d05a3a20-fa07-43b6-b616-08b38b7ba11d",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "chapter-order"
+      }
+    },
+    {
+      "edge_type": "follows",
+      "source": "d05a3a20-fa07-43b6-b616-08b38b7ba11d",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "chapter-order"
+      }
+    },
+    {
+      "edge_type": "follows",
+      "source": "d05a3a20-fa07-43b6-b616-08b38b7ba11d",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "chapter-order"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "祖师洞",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "碑林",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "仙女",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "仙女",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "碑林",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "祖师洞",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "小六子",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "青旒师妹",
+      "target": "小六子称赞青旒动作像仙女",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "青旒师妹",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "仙女",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "碑林",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "祖师洞",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "小六子",
+      "target": "青旒发现小六子凝视自己而害羞",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "青旒师妹",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "小六子",
+      "target": "青旒嗔怪小六子油嘴滑舌",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    }
+  ],
+  "reasoning_graph": {
+    "branch_id": "86ce179e-475a-42b9-ade3-a81a8626dc5f",
+    "upto_chapter": 2,
+    "overview": {
+      "node_count": 25,
+      "edge_count": 78,
+      "node_type_counts": {
+        "continuity": 7,
+        "entity": 6,
+        "event": 7,
+        "foreshadow": 1,
+        "relation": 1,
+        "world_rule": 3
+      },
+      "edge_type_counts": {
+        "carries_forward": 29,
+        "constrains": 7,
+        "contextualizes": 4,
+        "hints_at": 5,
+        "participates_in": 19,
+        "relates_to": 1,
+        "co_occurs": 10,
+        "follows": 3
+      }
+    },
+    "central_nodes": [
+      {
+        "label": "黑牌突发振动发热",
+        "node_type": "event",
+        "degree": 10,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "node_type": "continuity",
+        "degree": 9,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "小六子",
+        "node_type": "entity",
+        "degree": 9,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "黑牌受外力召唤异常振动",
+        "node_type": "foreshadow",
+        "degree": 8,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "青旒发现小六子凝视自己而害羞",
+        "node_type": "event",
+        "degree": 8,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "小六子称赞青旒动作像仙女",
+        "node_type": "event",
+        "degree": 8,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "青旒嗔怪小六子油嘴滑舌",
+        "node_type": "event",
+        "degree": 8,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "青旒师妹",
+        "node_type": "entity",
+        "degree": 8,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "祖师洞",
+        "node_type": "entity",
+        "degree": 8,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "碑林",
+        "node_type": "entity",
+        "degree": 8,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "少年持有黑牌",
+        "node_type": "relation",
+        "degree": 7,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "node_type": "continuity",
+        "degree": 7,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "少年抛接黑牌",
+        "node_type": "event",
+        "degree": 7,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "少年将黑牌放入衣襟并扛柴下山",
+        "node_type": "event",
+        "degree": 7,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "仙女",
+        "node_type": "entity",
+        "degree": 7,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "布衣少年（主角）",
+        "node_type": "entity",
+        "degree": 6,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "黑牌能响应外界召唤而产生振动和热量",
+        "node_type": "world_rule",
+        "degree": 6,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "存在一种非金非木、触之凉意的奇异黑牌",
+        "node_type": "world_rule",
+        "degree": 6,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+        "node_type": "continuity",
+        "degree": 5,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "少年念诵口诀",
+        "node_type": "event",
+        "degree": 4,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      }
+    ],
+    "recent_timeline": [
+      "黑牌突发振动发热 -[follows]-> 青旒嗔怪小六子油嘴滑舌",
+      "黑牌突发振动发热 -[follows]-> 青旒发现小六子凝视自己而害羞",
+      "黑牌突发振动发热 -[follows]-> 小六子称赞青旒动作像仙女"
+    ],
+    "reasoning_paths": [
+      "黑牌突发振动发热 -[follows]-> 青旒嗔怪小六子油嘴滑舌",
+      "黑牌突发振动发热 -[follows]-> 青旒发现小六子凝视自己而害羞",
+      "黑牌突发振动发热 -[follows]-> 小六子称赞青旒动作像仙女"
+    ],
+    "active_conflicts": [],
+    "open_foreshadowing": [
+      "黑牌受外力召唤异常振动"
+    ],
+    "world_rules": [
+      "口诀蕴含世界观理念",
+      "存在一种非金非木、触之凉意的奇异黑牌",
+      "黑牌能响应外界召唤而产生振动和热量"
+    ],
+    "state_machine": {
+      "foreshadow": [
+        {
+          "label": "黑牌受外力召唤异常振动",
+          "status": "open",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        }
+      ],
+      "conflict": [],
+      "relation": [
+        {
+          "label": "少年持有黑牌",
+          "status": "stable",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        }
+      ],
+      "world_rule": [
+        {
+          "label": "口诀蕴含世界观理念",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "存在一种非金非木、触之凉意的奇异黑牌",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "黑牌能响应外界召唤而产生振动和热量",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        }
+      ]
+    },
+    "nodes": [
+      {
+        "node_type": "event",
+        "label": "黑牌突发振动发热",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.99,
+          "evidence": [
+            "黑牌陡然振动起来，就像是受到了某种外来力量的召唤，急剧的颤栗起来，连带着少年胸膛也都出现了一阵炽热"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "小六子",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "小六子"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "小六子称赞青旒动作像仙女",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "小六子称赞青旒动作像仙女"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "碑林",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "碑林"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "祖师洞",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "祖师洞"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "青旒发现小六子凝视自己而害羞",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "青旒发现小六子凝视自己而害羞"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "青旒嗔怪小六子油嘴滑舌",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "青旒嗔怪小六子油嘴滑舌"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "青旒师妹",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "青旒师妹"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "黑牌受外力召唤异常振动",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "黑牌陡然振动起来，就像是受到了某种外来力量的召唤",
+            "急剧的颤栗起来，连带着少年胸膛也都出现了一阵炽热"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "仙女",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "仙女"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "少年将黑牌放入衣襟并扛柴下山",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.99,
+          "evidence": [
+            "布衫少年最终还是小心的将木牌放进了自己胸前的衣襟中",
+            "随手扛起一捆松木柴枝，哼着小曲儿准备下山了"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "少年抛接黑牌",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.99,
+          "evidence": [
+            "布衫少年猛然将黑牌抛向空中。黑糊糊的牌子在空中打了一个旋又落了下来",
+            "下意识中又伸出手去捞住"
+          ]
+        }
+      },
+      {
+        "node_type": "relation",
+        "label": "少年持有黑牌",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.98,
+          "evidence": [
+            "布衫少年最终还是小心的将木牌放进了自己胸前的衣襟中"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。"
+          ]
+        }
+      },
+      {
+        "node_type": "world_rule",
+        "label": "存在一种非金非木、触之凉意的奇异黑牌",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.97,
+          "evidence": [
+            "黑乎乎的木牌看不出是什么质料做成",
+            "非金非木",
+            "手指触之凉意沁心"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "布衣少年（主角）",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.98,
+          "evidence": [
+            "布衣少年悠悠的念了几遍",
+            "布衫少年猛然将黑牌抛向空中",
+            "布衫少年最终还是小心的将木牌放进了自己胸前的衣襟中"
+          ]
+        }
+      },
+      {
+        "node_type": "world_rule",
+        "label": "黑牌能响应外界召唤而产生振动和热量",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.94,
+          "evidence": [
+            "陡然振动起来，就像是受到了某种外来力量的召唤",
+            "急剧的颤栗起来",
+            "连带着少年胸膛也都出现了一阵炽热"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "青旒与小六子的师兄妹关系初步建立，互动自然亲密。"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "黑牌受外力召唤异常振动",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "少年持有黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "少年持有黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "黑牌突发振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "少年将黑牌放入衣襟并扛柴下山",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "黑牌突发振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "少年将黑牌放入衣襟并扛柴下山",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "少年念诵口诀",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "布衣少年（主角）",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "黑牌能响应外界召唤而产生振动和热量",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "存在一种非金非木、触之凉意的奇异黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "target": "黑牌受外力召唤异常振动",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "前情状态摘要为空，无未回收伏笔或冲突升级，因此本章属于独立的新事件引入，延续性体现在后续需解释异常现象。",
+        "target": "黑牌受外力召唤异常振动",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "黑牌能响应外界召唤而产生振动和热量",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "target": "存在一种非金非木、触之凉意的奇异黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌能响应外界召唤而产生振动和热量",
+        "target": "黑牌突发振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "存在一种非金非木、触之凉意的奇异黑牌",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "存在一种非金非木、触之凉意的奇异黑牌",
+        "target": "少年将黑牌放入衣襟并扛柴下山",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "存在一种非金非木、触之凉意的奇异黑牌",
+        "target": "黑牌突发振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌能响应外界召唤而产生振动和热量",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌能响应外界召唤而产生振动和热量",
+        "target": "少年将黑牌放入衣襟并扛柴下山",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "contextualizes",
+        "source": "少年持有黑牌",
+        "target": "少年念诵口诀",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "contextualizes",
+        "source": "少年持有黑牌",
+        "target": "黑牌突发振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "contextualizes",
+        "source": "少年持有黑牌",
+        "target": "少年将黑牌放入衣襟并扛柴下山",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "contextualizes",
+        "source": "少年持有黑牌",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "hints_at",
+        "source": "黑牌受外力召唤异常振动",
+        "target": "少年将黑牌放入衣襟并扛柴下山",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "hints_at",
+        "source": "黑牌受外力召唤异常振动",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "hints_at",
+        "source": "黑牌受外力召唤异常振动",
+        "target": "黑牌能响应外界召唤而产生振动和热量",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      }
+    ]
+  },
+  "state_summary": {
+    "new_foreshadowing": [],
+    "paid_off_foreshadowing": [],
+    "new_conflicts": [],
+    "escalated_conflicts": [],
+    "stable_relations": [
+      "少年持有黑牌"
+    ],
+    "evolved_relations": [],
+    "observed_world_rules": [],
+    "constraining_world_rules": [
+      "口诀蕴含世界观理念",
+      "存在一种非金非木、触之凉意的奇异黑牌",
+      "黑牌能响应外界召唤而产生振动和热量"
+    ]
+  },
+  "risk_card": {
+    "branch_id": "86ce179e-475a-42b9-ade3-a81a8626dc5f",
+    "chapter_index": 2,
+    "overall_risk_level": "low",
+    "top_risks": [],
+    "risk_counts_by_domain": {},
+    "risk_counts_by_severity": {},
+    "review_status": "pending",
+    "generated_at": "2026-05-05T23:02:19.812976+00:00",
+    "checker_statuses": {
+      "character_ooc": "skipped",
+      "world_rule_consistency": "skipped",
+      "relationship_consistency": "skipped",
+      "foreshadow_payoff_consistency": "skipped",
+      "setting_scope_consistency": "skipped",
+      "thread_closure_consistency": "skipped",
+      "plot_logic_consistency": "skipped",
+      "timeline_consistency": "skipped",
+      "power_scaling_consistency": "skipped"
+    },
+    "coverage_gaps": [
+      "character_ooc:skipped",
+      "world_rule_consistency:skipped",
+      "relationship_consistency:skipped",
+      "foreshadow_payoff_consistency:skipped",
+      "setting_scope_consistency:skipped",
+      "thread_closure_consistency:skipped",
+      "plot_logic_consistency:skipped",
+      "timeline_consistency:skipped",
+      "power_scaling_consistency:skipped"
+    ]
+  }
+}

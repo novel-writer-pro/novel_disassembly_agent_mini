@@ -1,0 +1,1134 @@
+{
+  "contract_version": "author-knowledge.v1",
+  "branch_id": "86ce179e-475a-42b9-ade3-a81a8626dc5f",
+  "focus_label": "",
+  "chapter_span": {
+    "min": 1,
+    "max": 3,
+    "count": 3
+  },
+  "chapter_cards": [
+    {
+      "chapter_index": 1,
+      "title": "青华",
+      "summary": "少年持黑牌感受神秘振动。",
+      "key_entities": [
+        "布衣少年（主角）"
+      ],
+      "key_events": [
+        "少年念诵口诀",
+        "少年抛接黑牌",
+        "少年将黑牌放入衣襟并扛柴下山",
+        "黑牌突发振动发热"
+      ],
+      "continuity_notes": [
+        "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+        "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+        "前情状态摘要为空，无未回收伏笔或冲突升级，因此本章属于独立的新事件引入，延续性体现在后续需解释异常现象。"
+      ]
+    },
+    {
+      "chapter_index": 2,
+      "title": "厌物丽人同行",
+      "summary": "青旒师妹发现小六子呆呆望着自己，小六子称赞她拂弄秀发的动作像祖师洞碑林中的仙女，青旒表面嗔怪他油嘴滑舌，实则内心欢喜。两人之间流露出微妙的情愫。",
+      "key_entities": [
+        "青旒师妹",
+        "小六子",
+        "祖师洞",
+        "碑林",
+        "仙女"
+      ],
+      "key_events": [
+        "青旒发现小六子凝视自己而害羞",
+        "小六子称赞青旒动作像仙女",
+        "青旒嗔怪小六子油嘴滑舌"
+      ],
+      "continuity_notes": [
+        "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。",
+        "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+        "青旒与小六子的师兄妹关系初步建立，互动自然亲密。"
+      ]
+    },
+    {
+      "chapter_index": 3,
+      "title": "狡舌",
+      "summary": "本章通过赵小六与褚青旒的对话，展现小六的狡黠口才和进取心，同时透露青华门入门试炼的严苛规则，为后续修行动机埋下伏笔。",
+      "key_entities": [
+        "布衣少年（赵小六/赵井泉）",
+        "青衫少女（褚青旒）",
+        "白衣丽人",
+        "紫衣小子"
+      ],
+      "key_events": [
+        "布衣少年讽刺白衣丽人和紫衣小子",
+        "白衣丽人被逗笑",
+        "青旒斥责小六并指出其失态",
+        "小六讨好青旒并指责紫衣小子",
+        "小六立下宏愿要通过试炼出人头地"
+      ],
+      "continuity_notes": [
+        "本章明确建立了赵小六（赵井泉）与褚青旒的师兄妹关系（置信度0.85），以及小六面对入门试炼的强烈进取心。",
+        "位置信息：从对话推断二人处于青华门附近（如‘祖师洞’、‘碑林’等场景提及），但无明确移动变化。",
+        "关系变化：小六与青旒的关系在本章中未发生质变，仍维持师兄妹互动，但青旒对小六的批评可能埋下后续争执伏笔。"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "label": "布衣少年（主角）",
+      "chapter_index": 1,
+      "confidence": 0.6,
+      "evidence_list": [
+        "布衣少年（主角）"
+      ]
+    },
+    {
+      "label": "仙女",
+      "chapter_index": 2,
+      "confidence": 0.6,
+      "evidence_list": [
+        "仙女"
+      ]
+    },
+    {
+      "label": "小六子",
+      "chapter_index": 2,
+      "confidence": 0.6,
+      "evidence_list": [
+        "小六子"
+      ]
+    },
+    {
+      "label": "碑林",
+      "chapter_index": 2,
+      "confidence": 0.6,
+      "evidence_list": [
+        "碑林"
+      ]
+    },
+    {
+      "label": "祖师洞",
+      "chapter_index": 2,
+      "confidence": 0.6,
+      "evidence_list": [
+        "祖师洞"
+      ]
+    },
+    {
+      "label": "青旒师妹",
+      "chapter_index": 2,
+      "confidence": 0.6,
+      "evidence_list": [
+        "青旒师妹"
+      ]
+    },
+    {
+      "label": "布衣少年（赵小六/赵井泉）",
+      "chapter_index": 3,
+      "confidence": 0.6,
+      "evidence_list": [
+        "布衣少年（赵小六/赵井泉）"
+      ]
+    },
+    {
+      "label": "白衣丽人",
+      "chapter_index": 3,
+      "confidence": 0.6,
+      "evidence_list": [
+        "白衣丽人"
+      ]
+    },
+    {
+      "label": "紫衣小子",
+      "chapter_index": 3,
+      "confidence": 0.6,
+      "evidence_list": [
+        "紫衣小子"
+      ]
+    },
+    {
+      "label": "青衫少女（褚青旒）",
+      "chapter_index": 3,
+      "confidence": 0.6,
+      "evidence_list": [
+        "青衫少女（褚青旒）"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "label": "少年将黑牌放入衣襟并扛柴下山",
+      "chapter_index": 1,
+      "confidence": 0.7,
+      "evidence_list": [
+        "少年将黑牌放入衣襟并扛柴下山"
+      ]
+    },
+    {
+      "label": "少年念诵口诀",
+      "chapter_index": 1,
+      "confidence": 0.7,
+      "evidence_list": [
+        "少年念诵口诀"
+      ]
+    },
+    {
+      "label": "少年抛接黑牌",
+      "chapter_index": 1,
+      "confidence": 0.7,
+      "evidence_list": [
+        "少年抛接黑牌"
+      ]
+    },
+    {
+      "label": "黑牌突发振动发热",
+      "chapter_index": 1,
+      "confidence": 0.7,
+      "evidence_list": [
+        "黑牌突发振动发热"
+      ]
+    },
+    {
+      "label": "小六子称赞青旒动作像仙女",
+      "chapter_index": 2,
+      "confidence": 0.7,
+      "evidence_list": [
+        "小六子称赞青旒动作像仙女"
+      ]
+    },
+    {
+      "label": "青旒发现小六子凝视自己而害羞",
+      "chapter_index": 2,
+      "confidence": 0.7,
+      "evidence_list": [
+        "青旒发现小六子凝视自己而害羞"
+      ]
+    },
+    {
+      "label": "青旒嗔怪小六子油嘴滑舌",
+      "chapter_index": 2,
+      "confidence": 0.7,
+      "evidence_list": [
+        "青旒嗔怪小六子油嘴滑舌"
+      ]
+    },
+    {
+      "label": "小六立下宏愿要通过试炼出人头地",
+      "chapter_index": 3,
+      "confidence": 0.7,
+      "evidence_list": [
+        "小六立下宏愿要通过试炼出人头地"
+      ]
+    },
+    {
+      "label": "小六讨好青旒并指责紫衣小子",
+      "chapter_index": 3,
+      "confidence": 0.7,
+      "evidence_list": [
+        "小六讨好青旒并指责紫衣小子"
+      ]
+    },
+    {
+      "label": "布衣少年讽刺白衣丽人和紫衣小子",
+      "chapter_index": 3,
+      "confidence": 0.7,
+      "evidence_list": [
+        "布衣少年讽刺白衣丽人和紫衣小子"
+      ]
+    },
+    {
+      "label": "白衣丽人被逗笑",
+      "chapter_index": 3,
+      "confidence": 0.7,
+      "evidence_list": [
+        "白衣丽人被逗笑"
+      ]
+    },
+    {
+      "label": "青旒斥责小六并指出其失态",
+      "chapter_index": 3,
+      "confidence": 0.7,
+      "evidence_list": [
+        "青旒斥责小六并指出其失态"
+      ]
+    },
+    {
+      "label": "青旒质疑小六要先过三道入门关",
+      "chapter_index": 3,
+      "confidence": 0.7,
+      "evidence_list": [
+        "青旒质疑小六要先过三道入门关"
+      ]
+    }
+  ],
+  "continuity": [
+    {
+      "label": "前情状态摘要为空，无未回收伏笔或冲突升级，因此本章属于独立的新事件引入，延续性体现在后续需解释异常现象。",
+      "chapter_index": 1,
+      "confidence": 0.55,
+      "evidence_list": [
+        "前情状态摘要为空，无未回收伏笔或冲突升级，因此本章属于独立的新事件引入，延续性体现在后续需解释异常现象。"
+      ]
+    },
+    {
+      "label": "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。",
+      "chapter_index": 1,
+      "confidence": 0.55,
+      "evidence_list": [
+        "少年对黑牌的掌握状态从普通持有变为感知异常，信息掌握发生显著变化；但位置（仍在山中下山途中）未变，关系与力量无明确变化。"
+      ]
+    },
+    {
+      "label": "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。",
+      "chapter_index": 1,
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章结尾黑牌突发振动发热，构成一个明确的悬念钩子，强度中等偏强，驱动下一章探索振动来源与黑牌的真正作用。"
+      ]
+    },
+    {
+      "label": "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。",
+      "chapter_index": 2,
+      "confidence": 0.55,
+      "evidence_list": [
+        "世界观通过‘祖师洞’‘碑林’‘仙师’等词初步展现修仙背景。"
+      ]
+    },
+    {
+      "label": "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。",
+      "chapter_index": 2,
+      "confidence": 0.55,
+      "evidence_list": [
+        "小六子眼神变得深邃有神，可能暗示其身份或心境变化，为后续伏笔。"
+      ]
+    },
+    {
+      "label": "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。",
+      "chapter_index": 2,
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章为第2章，承接第1章（内容未知）的剧情，但未提及前文具体事件。"
+      ]
+    },
+    {
+      "label": "青旒与小六子的师兄妹关系初步建立，互动自然亲密。",
+      "chapter_index": 2,
+      "confidence": 0.55,
+      "evidence_list": [
+        "青旒与小六子的师兄妹关系初步建立，互动自然亲密。"
+      ]
+    },
+    {
+      "label": "位置信息：从对话推断二人处于青华门附近（如‘祖师洞’、‘碑林’等场景提及），但无明确移动变化。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "位置信息：从对话推断二人处于青华门附近（如‘祖师洞’、‘碑林’等场景提及），但无明确移动变化。"
+      ]
+    },
+    {
+      "label": "关系变化：小六与青旒的关系在本章中未发生质变，仍维持师兄妹互动，但青旒对小六的批评可能埋下后续争执伏笔。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "关系变化：小六与青旒的关系在本章中未发生质变，仍维持师兄妹互动，但青旒对小六的批评可能埋下后续争执伏笔。"
+      ]
+    },
+    {
+      "label": "前情状态摘要中的未回收伏笔——黑牌受外力召唤异常振动（第一章）在本章完全没有提及，属于‘暂缓’处理，悬念仍然开放，但本章未推进。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "前情状态摘要中的未回收伏笔——黑牌受外力召唤异常振动（第一章）在本章完全没有提及，属于‘暂缓’处理，悬念仍然开放，但本章未推进。"
+      ]
+    },
+    {
+      "label": "力量与信息掌握：青旒提供了关于青华门入门试炼的具体规则（每三个月一次，目测关淘汰率高），小六知晓后立下宏愿，信息掌握程度提升。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "力量与信息掌握：青旒提供了关于青华门入门试炼的具体规则（每三个月一次，目测关淘汰率高），小六知晓后立下宏愿，信息掌握程度提升。"
+      ]
+    },
+    {
+      "label": "无新冲突升级或新伏笔引入，主要延续角色性格刻画和世界观规则（青华门选拔制度）的揭示。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "无新冲突升级或新伏笔引入，主要延续角色性格刻画和世界观规则（青华门选拔制度）的揭示。"
+      ]
+    },
+    {
+      "label": "本章明确建立了赵小六（赵井泉）与褚青旒的师兄妹关系（置信度0.85），以及小六面对入门试炼的强烈进取心。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章明确建立了赵小六（赵井泉）与褚青旒的师兄妹关系（置信度0.85），以及小六面对入门试炼的强烈进取心。"
+      ]
+    },
+    {
+      "label": "本章结尾的钩子：小六立下‘出人头地’的宏愿，但青旒的质疑（先过三道入门关）形成短期悬念，驱动读者期待后续试炼情节。悬念强度中等，属于角色驱动的内部目标。",
+      "chapter_index": 3,
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章结尾的钩子：小六立下‘出人头地’的宏愿，但青旒的质疑（先过三道入门关）形成短期悬念，驱动读者期待后续试炼情节。悬念强度中等，属于角色驱动的内部目标。"
+      ]
+    }
+  ],
+  "knowledge_index": [
+    {
+      "label": "小六子称赞青旒动作像仙女",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "小六立下宏愿要通过试炼出人头地",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "小六讨好青旒并指责紫衣小子",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "少年将黑牌放入衣襟并扛柴下山",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 1,
+      "last_chapter_index": 1,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "少年念诵口诀",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 1,
+      "last_chapter_index": 1,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "少年抛接黑牌",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 1,
+      "last_chapter_index": 1,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "布衣少年讽刺白衣丽人和紫衣小子",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "白衣丽人被逗笑",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "青旒发现小六子凝视自己而害羞",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "青旒嗔怪小六子油嘴滑舌",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "青旒斥责小六并指出其失态",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "青旒质疑小六要先过三道入门关",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "黑牌突发振动发热",
+      "fact_types": [
+        "event"
+      ],
+      "first_chapter_index": 1,
+      "last_chapter_index": 1,
+      "occurrence_count": 1,
+      "top_confidence": 0.7
+    },
+    {
+      "label": "仙女",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    },
+    {
+      "label": "小六子",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    },
+    {
+      "label": "布衣少年（主角）",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 1,
+      "last_chapter_index": 1,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    },
+    {
+      "label": "布衣少年（赵小六/赵井泉）",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    },
+    {
+      "label": "白衣丽人",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    },
+    {
+      "label": "碑林",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    },
+    {
+      "label": "祖师洞",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6
+    }
+  ],
+  "entity_profiles": [
+    {
+      "label": "仙女",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    },
+    {
+      "label": "小六子",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    },
+    {
+      "label": "布衣少年（主角）",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 1,
+      "last_chapter_index": 1,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    },
+    {
+      "label": "布衣少年（赵小六/赵井泉）",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    },
+    {
+      "label": "白衣丽人",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 3,
+      "last_chapter_index": 3,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    },
+    {
+      "label": "碑林",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    },
+    {
+      "label": "祖师洞",
+      "fact_types": [
+        "entity"
+      ],
+      "first_chapter_index": 2,
+      "last_chapter_index": 2,
+      "occurrence_count": 1,
+      "top_confidence": 0.6,
+      "primary_fact_type": "entity"
+    }
+  ],
+  "relationship_index": [
+    {
+      "label": "少年持有黑牌",
+      "source": "state_summary.evolved_relations"
+    }
+  ],
+  "rule_index": [
+    {
+      "label": "口诀蕴含世界观理念",
+      "source": "state_summary.constraining_world_rules"
+    },
+    {
+      "label": "存在一种非金非木、触之凉意的奇异黑牌",
+      "source": "state_summary.constraining_world_rules"
+    },
+    {
+      "label": "黑牌能响应外界召唤而产生振动和热量",
+      "source": "state_summary.constraining_world_rules"
+    },
+    {
+      "label": "青华门入门试炼规则",
+      "source": "state_summary.constraining_world_rules"
+    },
+    {
+      "label": "青华门弟子需通过三道入门关",
+      "source": "state_summary.constraining_world_rules"
+    }
+  ],
+  "thread_index": [
+    {
+      "label": "青旒对小六嬉皮笑脸的不满",
+      "source": "state_summary.new_conflicts"
+    }
+  ],
+  "summary_layer": {
+    "top_entities": [
+      "仙女",
+      "小六子",
+      "布衣少年（主角）",
+      "布衣少年（赵小六/赵井泉）",
+      "白衣丽人"
+    ],
+    "top_rules": [
+      "口诀蕴含世界观理念",
+      "存在一种非金非木、触之凉意的奇异黑牌",
+      "黑牌能响应外界召唤而产生振动和热量",
+      "青华门入门试炼规则",
+      "青华门弟子需通过三道入门关"
+    ],
+    "top_relationships": [
+      "少年持有黑牌"
+    ],
+    "top_threads": [
+      "青旒对小六嬉皮笑脸的不满"
+    ],
+    "chapter_focus": [
+      "青华",
+      "厌物丽人同行",
+      "狡舌"
+    ]
+  },
+  "story_bible_pack": {
+    "contract_version": "story-bible-pack.v1",
+    "premise": "围绕青华所展开的长线叙事，当前聚焦于人物成长、资源获取与身份突破。",
+    "protagonist_candidates": [
+      "仙女",
+      "小六子",
+      "布衣少年（主角）"
+    ],
+    "world_rules_digest": [
+      "口诀蕴含世界观理念",
+      "存在一种非金非木、触之凉意的奇异黑牌",
+      "黑牌能响应外界召唤而产生振动和热量",
+      "青华门入门试炼规则",
+      "青华门弟子需通过三道入门关"
+    ],
+    "relationship_backbone": [
+      "少年持有黑牌"
+    ],
+    "active_threads": [
+      "青旒对小六嬉皮笑脸的不满"
+    ],
+    "chapter_backbone": [
+      {
+        "chapter_index": 1,
+        "title": "青华",
+        "summary": "少年持黑牌感受神秘振动。",
+        "key_events": [
+          "少年念诵口诀",
+          "少年抛接黑牌",
+          "少年将黑牌放入衣襟并扛柴下山"
+        ]
+      },
+      {
+        "chapter_index": 2,
+        "title": "厌物丽人同行",
+        "summary": "青旒师妹发现小六子呆呆望着自己，小六子称赞她拂弄秀发的动作像祖师洞碑林中的仙女，青旒表面嗔怪他油嘴滑舌，实则内心欢喜。两人之间流露出微妙的情愫。",
+        "key_events": [
+          "青旒发现小六子凝视自己而害羞",
+          "小六子称赞青旒动作像仙女",
+          "青旒嗔怪小六子油嘴滑舌"
+        ]
+      },
+      {
+        "chapter_index": 3,
+        "title": "狡舌",
+        "summary": "本章通过赵小六与褚青旒的对话，展现小六的狡黠口才和进取心，同时透露青华门入门试炼的严苛规则，为后续修行动机埋下伏笔。",
+        "key_events": [
+          "布衣少年讽刺白衣丽人和紫衣小子",
+          "白衣丽人被逗笑",
+          "青旒斥责小六并指出其失态"
+        ]
+      }
+    ],
+    "character_cards": [
+      {
+        "label": "仙女",
+        "role_tags": [
+          "entity",
+          "protagonist"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注仙女在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "小六子",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注小六子在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "布衣少年（主角）",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注布衣少年（主角）在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "布衣少年（赵小六/赵井泉）",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注布衣少年（赵小六/赵井泉）在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "白衣丽人",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注白衣丽人在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "碑林",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注碑林在后续章节中的目标、关系与代价是否持续一致。"
+      }
+    ],
+    "motivation_tree": {
+      "contract_version": "motivation-tree.v1",
+      "primary_goal": "推进主角的身份突破与资源积累",
+      "support_goals": [],
+      "obstacles": [
+        "长线冲突仍需更多章节显式化"
+      ],
+      "decision_pressure": [
+        "每次重要选择都要同时考虑身份、资源、关系三重约束。",
+        "不能只追求短期爽点，要检查是否破坏长期成长弧。"
+      ]
+    },
+    "growth_arc": {
+      "contract_version": "growth-arc.v1",
+      "current_stage": "从底层生存转向主动争取身份与能力提升",
+      "completed_beats": [
+        "获得关键关系入口",
+        "开始修炼/资源积累",
+        "形成婚后协作与现实筹划"
+      ],
+      "next_beats": [
+        "把资源积累转成身份跃迁机会",
+        "验证主角是否能承受更高代价与风险",
+        "让家庭、修炼、身份目标形成更强冲突与选择"
+      ],
+      "regression_risks": [
+        "无铺垫的战力或身份跃迁",
+        "关系变化缺少中间证据",
+        "只推进事件，不推进人物选择逻辑"
+      ]
+    },
+    "volume_outline": {
+      "contract_version": "volume-outline.v1",
+      "volume_goal": "推进主角的身份突破与资源积累",
+      "opening_status": "少年持黑牌感受神秘振动。",
+      "mid_volume_turns": [
+        "把关键关系入口转成持续资源通路",
+        "让主角在资源/身份/家庭之间做更难选择"
+      ],
+      "late_volume_payoffs": [
+        "让赎身/脱籍主线迎来一次实质性推进",
+        "让前期修炼与关系经营开始兑现为新位置或新风险"
+      ],
+      "gating_threads": [
+        "青旒对小六嬉皮笑脸的不满"
+      ],
+      "required_payoffs": [
+        "家庭线与身份线必须发生交叉兑现"
+      ]
+    },
+    "arc_outline": {
+      "contract_version": "arc-outline.v1",
+      "arc_name": "身份突破与能力积累弧",
+      "setup": [
+        "确认主角受限的初始位置与现实代价",
+        "建立修炼、关系、家庭三条支撑线"
+      ],
+      "progression": [
+        "获得关键关系入口",
+        "开始修炼/资源积累",
+        "形成婚后协作与现实筹划",
+        "把资源积累转成身份跃迁机会",
+        "验证主角是否能承受更高代价与风险"
+      ],
+      "turning_points": [
+        "关键关系带来机会，但同时抬高代价",
+        "资源或身份压力迫使主角提前行动"
+      ],
+      "payoff_targets": [
+        "主角获得可验证的新位置或新资格",
+        "关系线不只是陪衬，而要影响主线选择"
+      ],
+      "anti_patterns": [
+        "无铺垫的战力或身份跃迁",
+        "关系变化缺少中间证据",
+        "只推进事件，不推进人物选择逻辑"
+      ]
+    },
+    "future_chapter_outline": [
+      {
+        "chapter_index": 4,
+        "goal": "推进主角的身份突破与资源积累",
+        "core_conflict": "长线冲突仍需更多章节显式化",
+        "payoff_target": "家庭线与身份线必须发生交叉兑现",
+        "turning_point": "关键关系带来机会，但同时抬高代价"
+      },
+      {
+        "chapter_index": 5,
+        "goal": "推进主角的身份突破与资源积累",
+        "core_conflict": "长线冲突仍需更多章节显式化",
+        "payoff_target": "家庭线与身份线必须发生交叉兑现",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      },
+      {
+        "chapter_index": 6,
+        "goal": "推进主角的身份突破与资源积累",
+        "core_conflict": "长线冲突仍需更多章节显式化",
+        "payoff_target": "家庭线与身份线必须发生交叉兑现",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      }
+    ],
+    "arc_questions": [
+      "主角当前最核心的长期目标是否稳定？",
+      "哪些关系会决定下一阶段资源或身份突破？",
+      "哪些未解线程必须进入卷纲级管理，而不能只留在章节记忆里？"
+    ],
+    "next_author_actions": [
+      "把 active_threads 按主线 / 支线 / 伏笔分层整理。",
+      "把 protagonist_candidates 扩成角色卡、动机与代价表。",
+      "把 world_rules_digest 转成可直接约束续写/仿写的规则表。"
+    ]
+  },
+  "relationship_watch": [
+    "少年持有黑牌"
+  ],
+  "rule_watch": [
+    "口诀蕴含世界观理念",
+    "存在一种非金非木、触之凉意的奇异黑牌",
+    "黑牌能响应外界召唤而产生振动和热量",
+    "青华门入门试炼规则",
+    "青华门弟子需通过三道入门关"
+  ],
+  "unresolved_threads": [
+    "青旒对小六嬉皮笑脸的不满"
+  ],
+  "state_summary": {
+    "new_foreshadowing": [
+      "小六立下宏愿将在青华门出人头地"
+    ],
+    "paid_off_foreshadowing": [],
+    "new_conflicts": [
+      "青旒对小六嬉皮笑脸的不满"
+    ],
+    "escalated_conflicts": [],
+    "stable_relations": [
+      "布衣少年与青衫少女为师兄妹",
+      "青衫少女对白衣丽人羡慕并自卑"
+    ],
+    "evolved_relations": [
+      "少年持有黑牌"
+    ],
+    "observed_world_rules": [],
+    "constraining_world_rules": [
+      "口诀蕴含世界观理念",
+      "存在一种非金非木、触之凉意的奇异黑牌",
+      "黑牌能响应外界召唤而产生振动和热量",
+      "青华门入门试炼规则",
+      "青华门弟子需通过三道入门关"
+    ]
+  },
+  "graph_overview": {
+    "node_count": 48,
+    "edge_count": 256,
+    "node_type_counts": {
+      "continuity": 14,
+      "entity": 10,
+      "event": 13,
+      "foreshadow": 2,
+      "relation": 3,
+      "world_rule": 5,
+      "conflict": 1
+    },
+    "edge_type_counts": {
+      "carries_forward": 105,
+      "constrains": 11,
+      "contextualizes": 10,
+      "hints_at": 17,
+      "participates_in": 43,
+      "relates_to": 6,
+      "co_occurs": 16,
+      "follows": 9,
+      "advances_to": 15,
+      "conflict_centers_on": 7,
+      "conflict_involves": 4,
+      "evolves_to": 1,
+      "persists_into": 8,
+      "pressured_by": 4
+    }
+  },
+  "central_nodes": [
+    {
+      "label": "青旒嗔怪小六子油嘴滑舌",
+      "node_type": "event",
+      "degree": 24,
+      "chapter_first_seen": 2,
+      "chapter_last_seen": 2
+    },
+    {
+      "label": "小六子",
+      "node_type": "entity",
+      "degree": 20,
+      "chapter_first_seen": 2,
+      "chapter_last_seen": 2
+    },
+    {
+      "label": "青旒对小六嬉皮笑脸的不满",
+      "node_type": "conflict",
+      "degree": 20,
+      "chapter_first_seen": 3,
+      "chapter_last_seen": 3
+    },
+    {
+      "label": "青旒发现小六子凝视自己而害羞",
+      "node_type": "event",
+      "degree": 18,
+      "chapter_first_seen": 2,
+      "chapter_last_seen": 2
+    },
+    {
+      "label": "小六子称赞青旒动作像仙女",
+      "node_type": "event",
+      "degree": 18,
+      "chapter_first_seen": 2,
+      "chapter_last_seen": 2
+    },
+    {
+      "label": "青旒质疑小六要先过三道入门关",
+      "node_type": "event",
+      "degree": 18,
+      "chapter_first_seen": 3,
+      "chapter_last_seen": 3
+    },
+    {
+      "label": "小六立下宏愿将在青华门出人头地",
+      "node_type": "foreshadow",
+      "degree": 18,
+      "chapter_first_seen": 3,
+      "chapter_last_seen": 3
+    },
+    {
+      "label": "青旒师妹",
+      "node_type": "entity",
+      "degree": 17,
+      "chapter_first_seen": 2,
+      "chapter_last_seen": 2
+    },
+    {
+      "label": "小六立下宏愿要通过试炼出人头地",
+      "node_type": "event",
+      "degree": 17,
+      "chapter_first_seen": 3,
+      "chapter_last_seen": 3
+    },
+    {
+      "label": "布衣少年（赵小六/赵井泉）",
+      "node_type": "entity",
+      "degree": 17,
+      "chapter_first_seen": 3,
+      "chapter_last_seen": 3
+    }
+  ],
+  "recent_timeline": [
+    "青旒发现小六子凝视自己而害羞 -[advances_to]-> 小六讨好青旒并指责紫衣小子",
+    "青旒嗔怪小六子油嘴滑舌 -[advances_to]-> 青旒斥责小六并指出其失态",
+    "小六子称赞青旒动作像仙女 -[advances_to]-> 青旒斥责小六并指出其失态",
+    "少年念诵口诀 -[advances_to]-> 布衣少年讽刺白衣丽人和紫衣小子",
+    "少年抛接黑牌 -[advances_to]-> 布衣少年讽刺白衣丽人和紫衣小子",
+    "少年将黑牌放入衣襟并扛柴下山 -[advances_to]-> 布衣少年讽刺白衣丽人和紫衣小子",
+    "青旒嗔怪小六子油嘴滑舌 -[follows]-> 布衣少年讽刺白衣丽人和紫衣小子",
+    "青旒嗔怪小六子油嘴滑舌 -[follows]-> 青旒斥责小六并指出其失态",
+    "青旒嗔怪小六子油嘴滑舌 -[follows]-> 白衣丽人被逗笑",
+    "青旒嗔怪小六子油嘴滑舌 -[follows]-> 小六讨好青旒并指责紫衣小子"
+  ],
+  "recommended_questions": [
+    "主角当前最重要的推进线是什么？",
+    "当前有哪些关键关系与未解线程？",
+    "规则/世界观约束最近有哪些变化？"
+  ]
+}

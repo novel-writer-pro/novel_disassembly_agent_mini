@@ -1,0 +1,13 @@
+run_id=b0fb667b-ce1e-47a0-8346-92e3dbc6d3bc
+branch_id=86ce179e-475a-42b9-ade3-a81a8626dc5f
+branch_name=main
+branch_status=active
+manifest_chapter_count=3
+completed_chapters=3
+failed_jobs=0
+running_jobs=0
+next_chapter=None
+fact_count=37
+window_count=0
+graph_node_count=48
+graph_edge_count=256

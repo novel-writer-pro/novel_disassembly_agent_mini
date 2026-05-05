@@ -1,0 +1,7 @@
+branch_id=86ce179e-475a-42b9-ade3-a81a8626dc5f
+name=main
+status=active
+fork_after_chapter_index=0
+visible_chapters=[1, 2, 3]
+job_statuses={1: 'validated', 2: 'validated', 3: 'validated'}
+manual_excluded_chapters=[]

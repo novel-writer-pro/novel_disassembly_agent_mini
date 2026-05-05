@@ -1,0 +1,3 @@
+raw_heading_count=0
+normalized_chapter_count=0
+duplicate_heading_count=0
