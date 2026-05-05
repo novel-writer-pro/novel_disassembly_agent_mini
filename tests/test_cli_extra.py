@@ -325,6 +325,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'editor_revision_pack': {'contract_version': 'editor-revision-pack.v1'},
                 'reader_feedback_pack': {'contract_version': 'reader-feedback-pack.v1'},
                 'chapter_draft_preparation_pack': {'contract_version': 'chapter-draft-preparation-pack.v1', 'scene_outline': [{}]},
+                'direct_draft_skeleton_pack': {'contract_version': 'direct-draft-skeleton-pack.v1', 'scene_blocks': [{}], 'draft_text': 'x'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -358,6 +359,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'editor_revision_pack' in payload
     assert 'reader_feedback_pack' in payload
     assert 'chapter_draft_preparation_pack' in payload
+    assert 'direct_draft_skeleton_pack' in payload
 
 
 

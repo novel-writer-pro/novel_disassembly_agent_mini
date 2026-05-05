@@ -341,6 +341,56 @@ class NovelAssistantService:
         }
 
     @staticmethod
+    def _direct_draft_skeleton_pack(
+        *,
+        chapter_draft_preparation_pack: dict[str, object],
+    ) -> dict[str, object]:
+        scene_outline = list(chapter_draft_preparation_pack.get("scene_outline", []))
+        scene_blocks = []
+        draft_lines = []
+        for item in scene_outline[:3]:
+            if not isinstance(item, dict):
+                continue
+            scene_index = item.get("scene_index")
+            purpose = str(item.get("purpose", "")).strip()
+            must_include = [str(x).strip() for x in item.get("must_include", []) if str(x).strip()][:3]
+            risk_notes = [str(x).strip() for x in item.get("risk_notes", []) if str(x).strip()][:2]
+            scene_blocks.append(
+                {
+                    "scene_index": scene_index,
+                    "purpose": purpose,
+                    "must_include": must_include,
+                    "risk_notes": risk_notes,
+                }
+            )
+            draft_lines.append(f"### 场景{scene_index}: {purpose}")
+            if must_include:
+                draft_lines.append("- 必须包含：" + "；".join(must_include))
+            if risk_notes:
+                draft_lines.append("- 注意：" + "；".join(risk_notes))
+            draft_lines.append("- 草写提示：先写行动推进，再补情绪与对白。")
+        draft_goal = str(chapter_draft_preparation_pack.get("draft_goal", "")).strip()
+        draft_conflict = str(chapter_draft_preparation_pack.get("draft_conflict", "")).strip()
+        draft_payoff = str(chapter_draft_preparation_pack.get("draft_payoff", "")).strip()
+        draft_turning = str(chapter_draft_preparation_pack.get("draft_turning_point", "")).strip()
+        draft_title = draft_goal or "下一章草稿骨架"
+        draft_text = "\n".join([
+            f"目标：{draft_goal}" if draft_goal else "",
+            f"核心冲突：{draft_conflict}" if draft_conflict else "",
+            f"兑现点：{draft_payoff}" if draft_payoff else "",
+            f"转折点：{draft_turning}" if draft_turning else "",
+            *draft_lines,
+        ]).strip()
+        return {
+            "contract_version": "direct-draft-skeleton-pack.v1",
+            "draft_title": draft_title,
+            "draft_text": draft_text,
+            "scene_blocks": scene_blocks,
+            "checklist": list(chapter_draft_preparation_pack.get("draft_checklist", []))[:3],
+            "blocking_risks": list(chapter_draft_preparation_pack.get("blocking_risks", []))[:3],
+        }
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -499,6 +549,9 @@ class NovelAssistantService:
             risk_summary=risk_summary,
             review_summary=review_summary,
         )
+        direct_draft_skeleton_pack = self._direct_draft_skeleton_pack(
+            chapter_draft_preparation_pack=chapter_draft_preparation_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -527,6 +580,7 @@ class NovelAssistantService:
                 "reader_feedback_loop",
                 "retrieval_benchmark",
                 "chapter_draft_preparation",
+                "direct_draft_skeleton",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -545,6 +599,7 @@ class NovelAssistantService:
             "editor_revision_pack": editor_revision_pack,
             "reader_feedback_pack": reader_feedback_pack,
             "chapter_draft_preparation_pack": chapter_draft_preparation_pack,
+            "direct_draft_skeleton_pack": direct_draft_skeleton_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

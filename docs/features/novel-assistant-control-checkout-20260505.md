@@ -85,3 +85,8 @@
 - assistant pack 现已提供 `chapter_draft_preparation_pack`。
 - 真实样例中已给出 `draft_goal / draft_conflict / draft_payoff / draft_turning_point`。
 - 这让“长线规划 -> 单章规划 -> 起草前准备”形成了直接闭环。
+
+## 12. Direct draft skeleton
+- assistant pack 现已提供 `direct_draft_skeleton_pack`。
+- 真实样例中可直接看到 3 段 scene blocks 与 draft_text 草骨架。
+- 这让 preparation surface 向真正可执行的起草输入又推进了一层。

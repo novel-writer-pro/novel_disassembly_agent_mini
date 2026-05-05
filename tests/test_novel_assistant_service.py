@@ -86,6 +86,9 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['reader_feedback_pack']['contract_version'] == 'reader-feedback-pack.v1'
         assert pack['chapter_draft_preparation_pack']['contract_version'] == 'chapter-draft-preparation-pack.v1'
         assert pack['chapter_draft_preparation_pack']['scene_outline']
+        assert pack['direct_draft_skeleton_pack']['contract_version'] == 'direct-draft-skeleton-pack.v1'
+        assert pack['direct_draft_skeleton_pack']['scene_blocks']
+        assert pack['direct_draft_skeleton_pack']['draft_text']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None
