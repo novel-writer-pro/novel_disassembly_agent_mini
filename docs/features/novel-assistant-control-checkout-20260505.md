@@ -70,3 +70,8 @@
 - next chapter planner 已开始消费 `volume_outline / arc_outline`。
 - 这意味着 long-horizon planning 不再只是 knowledge surface，而是已经进入续写主链。
 - 真实样例中，`continuation_pack.chapter_goal` 已从通用目标收敛为：`完成赎身/脱籍并争取进入更高身份路径`。
+
+## 9. 未来章节骨架
+- story bible 现已提供 `future_chapter_outline`。
+- 真实样例中已给出未来 3 章的 goal / core_conflict / payoff_target / turning_point。
+- 这让长线规划开始具备“可执行 outline”形态，而不只是抽象结构。

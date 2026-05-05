@@ -71,6 +71,7 @@ def test_author_knowledge_service_builds_branch_knowledge_pack(tmp_path: Path) -
         assert pack['story_bible_pack']['growth_arc']['contract_version'] == 'growth-arc.v1'
         assert pack['story_bible_pack']['volume_outline']['contract_version'] == 'volume-outline.v1'
         assert pack['story_bible_pack']['arc_outline']['contract_version'] == 'arc-outline.v1'
+        assert len(pack['story_bible_pack']['future_chapter_outline']) == 3
         assert pack['relationship_watch'] is not None
         assert pack['rule_watch'] is not None
         assert pack['unresolved_threads'] is not None

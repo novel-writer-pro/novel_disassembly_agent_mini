@@ -1174,6 +1174,29 @@
         "只推进事件，不推进人物选择逻辑"
       ]
     },
+    "future_chapter_outline": [
+      {
+        "chapter_index": 9,
+        "goal": "完成赎身/脱籍并争取进入更高身份路径",
+        "core_conflict": "身份与身契限制",
+        "payoff_target": "保持家庭与婚后协作稳定",
+        "turning_point": "关键关系带来机会，但同时抬高代价"
+      },
+      {
+        "chapter_index": 10,
+        "goal": "保持家庭与婚后协作稳定",
+        "core_conflict": "银钱与资源不足",
+        "payoff_target": "持续通过修炼累积可转化能力",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      },
+      {
+        "chapter_index": 11,
+        "goal": "持续通过修炼累积可转化能力",
+        "core_conflict": "银钱与资源不足",
+        "payoff_target": "经营关键关系以换取资源与信息入口",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      }
+    ],
     "arc_questions": [
       "主角当前最核心的长期目标是否稳定？",
       "哪些关系会决定下一阶段资源或身份突破？",

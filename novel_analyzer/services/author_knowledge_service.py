@@ -172,6 +172,34 @@ class AuthorKnowledgeService:
             ],
             "anti_patterns": growth_arc["regression_risks"],
         }
+        latest_index = int(backbone[-1]["chapter_index"]) if backbone else 0
+        future_chapter_outline = []
+        for offset in range(1, 4):
+            next_index = latest_index + offset
+            goal = primary_goal if offset == 1 else (support_goals[min(offset - 2, len(support_goals) - 1)] if support_goals else primary_goal)
+            if not goal:
+                goal = primary_goal
+            conflict = (
+                obstacles[min(offset - 1, len(obstacles) - 1)]
+                if obstacles else "让主线推进面临新的现实代价"
+            )
+            payoff = (
+                volume_outline["required_payoffs"][min(offset - 1, len(volume_outline["required_payoffs"]) - 1)]
+                if volume_outline.get("required_payoffs") else "让主线与关系线发生交叉兑现"
+            )
+            turn = (
+                arc_outline["turning_points"][min(offset - 1, len(arc_outline["turning_points"]) - 1)]
+                if arc_outline.get("turning_points") else "让主角做出更难的选择"
+            )
+            future_chapter_outline.append(
+                {
+                    "chapter_index": next_index,
+                    "goal": goal,
+                    "core_conflict": conflict,
+                    "payoff_target": payoff,
+                    "turning_point": turn,
+                }
+            )
         return {
             "contract_version": "story-bible-pack.v1",
             "premise": premise,
@@ -185,6 +213,7 @@ class AuthorKnowledgeService:
             "growth_arc": growth_arc,
             "volume_outline": volume_outline,
             "arc_outline": arc_outline,
+            "future_chapter_outline": future_chapter_outline,
             "arc_questions": [
                 "主角当前最核心的长期目标是否稳定？",
                 "哪些关系会决定下一阶段资源或身份突破？",
