@@ -16,12 +16,14 @@
 - 场景级写作控制
 - 文风 / 节奏 / 对话控制
 - 章尾钩子与追读控制
+- assistant 控制面（planning / revision / feedback）
 
 ### C. 创作后能力
 - 风险门控
 - 连续性审查
 - 读者反馈分析
 - 改稿 / 编辑辅助
+- retrieval benchmark / route benchmark
 
 ### D. 治理与平台能力
 - 样例 / smoke / freeze gate
@@ -58,25 +60,25 @@
 - unified novel assistant pack
 
 ## 3. 还明显缺的
-### 3.1 原创前期规划不足
-- 世界观设计助手
-- 角色卡 / 动机树 / 成长弧线
-- 卷纲 / 长线规划器
+### 3.1 原创前期规划仍待深化
+- 已有 original planning pack
+- 仍缺角色卡 / 动机树 / 成长弧线的更细颗粒度输出
+- 仍缺卷纲 / 长线规划器
 
-### 3.2 创作过程控制不足
-- 场景卡
-- 爽点 / 钩子 / 节奏 KPI
-- 平台风格适配
+### 3.2 创作过程控制已起步但仍不足
+- 已有 creation control pack（scene controls / ending hook / risk notes / style axes）
+- 仍缺爽点 / 钩子 / 节奏 KPI
+- 仍缺平台风格适配
 
-### 3.3 编辑改稿能力不足
-- 草稿修文建议
-- 风格偏移检测
-- 改稿路线建议
+### 3.3 编辑改稿能力已起步但仍不足
+- 已有 editor revision pack
+- 仍缺真实 draft 对照下的风格偏移检测
+- 仍缺自动 revision 回写链
 
-### 3.4 读者反馈能力不足
-- 评论痛点提取
-- 弃读点判断
-- 反馈驱动的修文建议
+### 3.4 读者反馈能力已起步但仍不足
+- 已有 reader feedback pack
+- 仍缺真实评论痛点提取
+- 仍缺反馈驱动的修文建议自动回流
 
 ## 4. 最值得快速补的
 ### P1（短期高价值）

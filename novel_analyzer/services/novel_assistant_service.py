@@ -25,6 +25,12 @@ from novel_analyzer.services.run_service import RunService
 class NovelAssistantService:
     """Build a unified assistant capability pack for one branch."""
 
+    DEFAULT_BENCHMARK_QUERIES = [
+        "卫图 命格",
+        "二姑 资源",
+        "婚事 养生功",
+    ]
+
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
         self.settings = settings or get_settings()
@@ -75,6 +81,223 @@ class NovelAssistantService:
             "ready_for_whole_book": bool(chapter_analysis_count >= 2 and fact_count > 0),
         }
 
+    def _retrieval_benchmark_summary(
+        self,
+        branch_id: str,
+        *,
+        limit: int,
+        queries: list[str] | None = None,
+    ) -> dict[str, object]:
+        benchmark_queries = [item.strip() for item in (queries or self.DEFAULT_BENCHMARK_QUERIES) if item.strip()]
+        if not benchmark_queries:
+            benchmark_queries = list(self.DEFAULT_BENCHMARK_QUERIES)
+        cases: list[dict[str, object]] = []
+        route_totals: dict[str, int] = {}
+        raw_latency_total = 0.0
+        rerank_latency_total = 0.0
+        rerank_applied_count = 0
+        for item in benchmark_queries:
+            try:
+                payload = self.retrieval_service.search_branch_with_diagnostics(branch_id, item, limit)
+            except RuntimeError:
+                return {
+                    "contract_version": "retrieval-benchmark-summary.v1",
+                    "degraded": True,
+                    "reason": "retrieval_benchmark_unavailable_for_current_runtime",
+                    "benchmark_queries": benchmark_queries,
+                }
+            route_counts = payload.route_counts or {}
+            for route, count in route_counts.items():
+                route_totals[str(route)] = route_totals.get(str(route), 0) + int(count)
+            raw_latency_total += float(payload.raw_latency_ms or 0.0)
+            rerank_latency_total += float(payload.rerank_latency_ms or 0.0)
+            rerank_applied_count += 1 if payload.rerank_applied else 0
+            raw_top = payload.raw_hits[:limit]
+            reranked_top = payload.reranked_hits[:limit]
+            raw_top_chapters = [hit.chapter_index for hit in raw_top]
+            reranked_top_chapters = [hit.chapter_index for hit in reranked_top]
+            overlap = len(set(raw_top_chapters) & set(reranked_top_chapters))
+            cases.append(
+                {
+                    "query": payload.query,
+                    "fusion_applied": payload.fusion_applied,
+                    "rerank_applied": payload.rerank_applied,
+                    "route_counts": route_counts,
+                    "raw_latency_ms": payload.raw_latency_ms,
+                    "rerank_latency_ms": payload.rerank_latency_ms,
+                    "raw_top_chapters": raw_top_chapters,
+                    "reranked_top_chapters": reranked_top_chapters,
+                    "rerank_changed_order": raw_top_chapters != reranked_top_chapters,
+                    "top_overlap": overlap,
+                }
+            )
+        query_count = len(cases) or 1
+        return {
+            "contract_version": "retrieval-benchmark-summary.v1",
+            "degraded": False,
+            "benchmark_queries": benchmark_queries,
+            "query_count": len(cases),
+            "route_totals": route_totals,
+            "avg_raw_latency_ms": round(raw_latency_total / query_count, 2),
+            "avg_rerank_latency_ms": round(rerank_latency_total / query_count, 2),
+            "rerank_coverage_ratio": round(rerank_applied_count / query_count, 3),
+            "cases": cases,
+        }
+
+    @staticmethod
+    def _original_planning_pack(
+        *,
+        knowledge_pack: dict[str, object],
+        continuation_pack: dict[str, object] | None,
+    ) -> dict[str, object]:
+        summary_layer = knowledge_pack.get("summary_layer", {}) if isinstance(knowledge_pack, dict) else {}
+        top_entities = list(summary_layer.get("top_entities", [])) if isinstance(summary_layer, dict) else []
+        top_rules = list(summary_layer.get("top_rules", [])) if isinstance(summary_layer, dict) else []
+        top_threads = list(summary_layer.get("top_threads", [])) if isinstance(summary_layer, dict) else []
+        chapter_span = knowledge_pack.get("chapter_span", {}) if isinstance(knowledge_pack, dict) else {}
+        planning_gaps = []
+        if len(top_entities) < 3:
+            planning_gaps.append("主要人物密度不足，建议先补角色卡与动机链。")
+        if not top_rules:
+            planning_gaps.append("世界规则摘要不足，长书创作前应补规则/代价说明。")
+        if not top_threads:
+            planning_gaps.append("未解线程显式化不足，建议先补卷纲级伏笔表。")
+        return {
+            "contract_version": "original-planning-pack.v1",
+            "planning_scope": {
+                "chapter_count": int(chapter_span.get("count", 0) or 0),
+                "top_entities": top_entities[:5],
+                "top_rules": top_rules[:5],
+                "top_threads": top_threads[:5],
+            },
+            "world_and_rule_focus": top_rules[:3],
+            "character_arc_candidates": top_entities[:4],
+            "thread_backlog": top_threads[:5],
+            "planning_gaps": planning_gaps,
+            "next_planning_actions": [
+                "先固化世界规则、人物目标、长线线程三张底表。",
+                "把未解线程映射到卷纲/章纲，避免续写时只靠局部记忆。",
+                "将 continuation pack 作为单章执行面，而不是替代长期规划。",
+            ],
+            "continuation_goal_hint": (continuation_pack or {}).get("chapter_goal", ""),
+        }
+
+    @staticmethod
+    def _creation_control_pack(
+        *,
+        continuation_pack: dict[str, object] | None,
+        imitation_pack: dict[str, object] | None,
+    ) -> dict[str, object]:
+        continuation_pack = continuation_pack or {}
+        imitation_pack = imitation_pack or {}
+        scene_plan = continuation_pack.get("scene_plan", [])
+        scene_controls = []
+        if isinstance(scene_plan, list):
+            for item in scene_plan[:3]:
+                if isinstance(item, dict):
+                    scene_controls.append(
+                        {
+                            "scene_index": item.get("scene_index"),
+                            "purpose": item.get("purpose"),
+                            "must_include": item.get("must_include", []),
+                            "risk_notes": item.get("risk_notes", []),
+                        }
+                    )
+        return {
+            "contract_version": "creation-control-pack.v1",
+            "chapter_goal": continuation_pack.get("chapter_goal", ""),
+            "scene_controls": scene_controls,
+            "ending_hook": continuation_pack.get("ending_hook", ""),
+            "risk_notes": continuation_pack.get("risk_notes", []),
+            "style_axes": imitation_pack.get("style_axes", []),
+            "scene_beats": imitation_pack.get("scene_beats", []),
+            "control_checklist": [
+                "每章必须有明确目标、阻力、回应、章尾钩子。",
+                "风格控制优先看 style_axes，剧情控制优先看 scene_controls。",
+                "如 risk_notes 中出现规则/关系风险，生成前必须先修正。",
+            ],
+        }
+
+    @staticmethod
+    def _editor_revision_pack(
+        *,
+        review_summary: dict[str, object],
+        risk_summary: dict[str, object],
+        continuation_pack: dict[str, object] | None,
+        imitation_pack: dict[str, object] | None,
+    ) -> dict[str, object]:
+        needs_review_count = int(review_summary.get("needs_review_count", 0) or 0)
+        risk_card_count = int(risk_summary.get("risk_card_count", 0) or 0)
+        revision_priorities = []
+        if needs_review_count > 0:
+            revision_priorities.append(f"先处理 {needs_review_count} 个 needs_review 问题簇，再推进正文定稿。")
+        if risk_card_count > 0:
+            revision_priorities.append(f"当前有 {risk_card_count} 张 risk card，改稿时优先消化高风险卡片。")
+        if continuation_pack:
+            revision_priorities.append("检查 scene_plan 是否每场都承担推进功能，避免空转段落。")
+        if imitation_pack:
+            revision_priorities.append("检查 style_axes 与实际文本是否一致，避免只学句式不学结构。")
+        if not revision_priorities:
+            revision_priorities.append("当前缺少显式风险/复核阻塞，可转入语言润色与节奏微调。")
+        return {
+            "contract_version": "editor-revision-pack.v1",
+            "revision_priorities": revision_priorities,
+            "revision_lanes": [
+                {
+                    "lane": "logic_and_risk",
+                    "goal": "先修逻辑、规则、关系连续性。",
+                },
+                {
+                    "lane": "structure_and_pacing",
+                    "goal": "再修场景功能、章尾钩子、节奏切分。",
+                },
+                {
+                    "lane": "style_and_dialogue",
+                    "goal": "最后修文风、对白、细节密度。",
+                },
+            ],
+            "done_definition": [
+                "review / risk 不再阻塞生成。",
+                "scene plan 与正文推进一致。",
+                "仿写约束和人物/规则状态无明显冲突。",
+            ],
+        }
+
+    @staticmethod
+    def _reader_feedback_pack(
+        *,
+        knowledge_pack: dict[str, object],
+        review_summary: dict[str, object],
+        continuation_pack: dict[str, object] | None,
+    ) -> dict[str, object]:
+        summary_layer = knowledge_pack.get("summary_layer", {}) if isinstance(knowledge_pack, dict) else {}
+        top_threads = list(summary_layer.get("top_threads", [])) if isinstance(summary_layer, dict) else []
+        top_entities = list(summary_layer.get("top_entities", [])) if isinstance(summary_layer, dict) else []
+        pain_point_hypotheses = []
+        if int(review_summary.get("needs_review_count", 0) or 0) > 0:
+            pain_point_hypotheses.append("读者可能感到部分逻辑/衔接点仍不够顺。")
+        if len(top_threads) > 4:
+            pain_point_hypotheses.append("未解线程较多，可能带来信息负担或追读疲劳。")
+        if continuation_pack and not continuation_pack.get("ending_hook"):
+            pain_point_hypotheses.append("章尾钩子较弱，可能影响追读转化。")
+        if not pain_point_hypotheses:
+            pain_point_hypotheses.append("当前主风险更偏执行质量，而非明显的读者体验断点。")
+        return {
+            "contract_version": "reader-feedback-pack.v1",
+            "pain_point_hypotheses": pain_point_hypotheses,
+            "feedback_collection_prompts": [
+                "哪一章开始觉得节奏变慢？原因是什么？",
+                "你最想继续追的角色/线程是什么？",
+                "哪些设定、关系或战力变化让你觉得突兀？",
+            ],
+            "revision_from_feedback": [
+                "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+                "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。",
+            ],
+            "priority_entities": top_entities[:4],
+            "priority_threads": top_threads[:4],
+        }
+
     @staticmethod
     def _preparation_guidance(
         *,
@@ -116,6 +339,7 @@ class NovelAssistantService:
         upto_chapter_index: int | None = None,
         focus_label: str = "",
         limit: int = 5,
+        benchmark_queries: list[str] | None = None,
     ) -> dict[str, object]:
         branch = self.session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
         if branch is None:
@@ -184,6 +408,11 @@ class NovelAssistantService:
             review_needs_count=int(review_summary.get("needs_review_count", 0) or 0),
             risk_card_count=int(risk_summary.get("risk_card_count", 0) or 0),
         )
+        retrieval_benchmark_summary = self._retrieval_benchmark_summary(
+            branch_id,
+            limit=limit,
+            queries=benchmark_queries,
+        )
         continuation_pack = None
         imitation_pack = None
         if chapter_count > 0:
@@ -202,6 +431,25 @@ class NovelAssistantService:
                     source_chapter_index=latest_chapter,
                     target_goal="延续当前主线并保持人物/规则连续性",
                 ).model_dump()
+        original_planning_pack = self._original_planning_pack(
+            knowledge_pack=knowledge_pack,
+            continuation_pack=continuation_pack,
+        )
+        creation_control_pack = self._creation_control_pack(
+            continuation_pack=continuation_pack,
+            imitation_pack=imitation_pack,
+        )
+        editor_revision_pack = self._editor_revision_pack(
+            review_summary=review_summary,
+            risk_summary=risk_summary,
+            continuation_pack=continuation_pack,
+            imitation_pack=imitation_pack,
+        )
+        reader_feedback_pack = self._reader_feedback_pack(
+            knowledge_pack=knowledge_pack,
+            review_summary=review_summary,
+            continuation_pack=continuation_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -224,17 +472,28 @@ class NovelAssistantService:
                 "continue_writing_preparation",
                 "imitation_preparation",
                 "whole_book_preparation",
+                "original_planning",
+                "creation_control",
+                "editor_revision",
+                "reader_feedback_loop",
+                "retrieval_benchmark",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
-                "需要问答或检索时，优先使用 retrieval diagnostics 确认召回质量。",
+                "需要问答或检索时，优先使用 retrieval diagnostics 与 benchmark summary 确认召回质量。",
                 "进入 whole-book 之前先看 review_summary 与 risk_summary，避免带病生成。",
+                "生成完成后按 editor revision 与 reader feedback pack 进入修文闭环。",
             ],
             "whole_book_readiness_summary": readiness_summary,
             "sample_evidence_summary": sample_evidence_summary,
             "preparation_guidance": preparation_guidance,
+            "retrieval_benchmark_summary": retrieval_benchmark_summary,
             "continuation_pack": continuation_pack,
             "imitation_pack": imitation_pack,
+            "original_planning_pack": original_planning_pack,
+            "creation_control_pack": creation_control_pack,
+            "editor_revision_pack": editor_revision_pack,
+            "reader_feedback_pack": reader_feedback_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

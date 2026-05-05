@@ -1,0 +1,87 @@
+{
+  "contract_version": "retrieval-benchmark.v1",
+  "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+  "queries": [
+    {
+      "query": "卫图 命格",
+      "fusion_applied": true,
+      "rerank_applied": false,
+      "route_counts": {
+        "fts": 3,
+        "similarity": 10,
+        "like": 10,
+        "keyword": 10
+      },
+      "raw_latency_ms": 198.45433499722276,
+      "rerank_latency_ms": 0.009395007509738207,
+      "top_raw_chapters": [
+        2,
+        1,
+        3,
+        5,
+        4
+      ],
+      "top_reranked_chapters": [
+        2,
+        1,
+        3,
+        5,
+        4
+      ]
+    },
+    {
+      "query": "二姑 资源",
+      "fusion_applied": true,
+      "rerank_applied": false,
+      "route_counts": {
+        "fts": 3,
+        "similarity": 7,
+        "like": 8,
+        "keyword": 1
+      },
+      "raw_latency_ms": 63.767083993298,
+      "rerank_latency_ms": 0.007027992978692055,
+      "top_raw_chapters": [
+        1,
+        2,
+        3,
+        4,
+        8
+      ],
+      "top_reranked_chapters": [
+        1,
+        2,
+        3,
+        4,
+        8
+      ]
+    },
+    {
+      "query": "婚事 养生功",
+      "fusion_applied": true,
+      "rerank_applied": false,
+      "route_counts": {
+        "fts": 1,
+        "similarity": 10,
+        "like": 9,
+        "keyword": 1
+      },
+      "raw_latency_ms": 76.75802199810278,
+      "rerank_latency_ms": 0.00708398874849081,
+      "top_raw_chapters": [
+        10,
+        9,
+        4,
+        2,
+        5
+      ],
+      "top_reranked_chapters": [
+        10,
+        9,
+        4,
+        2,
+        5
+      ]
+    }
+  ]
+}

@@ -49,6 +49,11 @@ flowchart TD
     I --> O
     J --> O
     N --> O
+    O --> O1[Original Planning Pack]
+    O --> O2[Creation Control Pack]
+    O --> O3[Editor Revision Pack]
+    O --> O4[Reader Feedback Pack]
+    O --> O5[Retrieval Benchmark Summary]
     O --> P[CLI / API / Future Independent Agent Runtime]
 
     O --> Q[Eval / Freeze Gate / Sample Artifacts]
@@ -84,7 +89,7 @@ flowchart LR
 4. **样例/交付可追踪**：任何关键能力都要有 sample、checkout、handoff、smoke path。
 
 ## 5. 当前最重要的未闭环项
-- retrieval 真实 benchmark 与 route 效果比较
-- author knowledge 的更强摘要和角色卡
+- original planning pack 继续前推到卷纲 / 人物成长弧 / story bible
+- editor revision / reader feedback pack 接入真实 draft 与真实评论
 - whole-book 多 provider 成功样例密度
 - 风险语义层的长窗口质量评估

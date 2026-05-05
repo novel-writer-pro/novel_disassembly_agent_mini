@@ -51,12 +51,18 @@
     "risk_gate_review",
     "continue_writing_preparation",
     "imitation_preparation",
-    "whole_book_preparation"
+    "whole_book_preparation",
+    "original_planning",
+    "creation_control",
+    "editor_revision",
+    "reader_feedback_loop",
+    "retrieval_benchmark"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
-    "需要问答或检索时，优先使用 retrieval diagnostics 确认召回质量。",
-    "进入 whole-book 之前先看 review_summary 与 risk_summary，避免带病生成。"
+    "需要问答或检索时，优先使用 retrieval diagnostics 与 benchmark summary 确认召回质量。",
+    "进入 whole-book 之前先看 review_summary 与 risk_summary，避免带病生成。",
+    "生成完成后按 editor revision 与 reader feedback pack 进入修文闭环。"
   ],
   "whole_book_readiness_summary": {
     "whole_book_contract_version": "whole-book-imitation.v1",
@@ -94,6 +100,348 @@
       "进入生成前先看 risk summary 与 review summary，避免带病生成。",
       "当前仍有 1 个 needs_review 问题簇，建议先复核。"
     ]
+  },
+  "retrieval_benchmark_summary": {
+    "contract_version": "retrieval-benchmark-summary.v1",
+    "degraded": false,
+    "benchmark_queries": [
+      "卫图 命格",
+      "二姑 资源",
+      "婚事 养生功"
+    ],
+    "query_count": 3,
+    "route_totals": {
+      "fts": 7,
+      "similarity": 27,
+      "like": 27,
+      "keyword": 12
+    },
+    "avg_raw_latency_ms": 56.92,
+    "avg_rerank_latency_ms": 0.01,
+    "rerank_coverage_ratio": 0.0,
+    "cases": [
+      {
+        "query": "卫图 命格",
+        "fusion_applied": true,
+        "rerank_applied": false,
+        "route_counts": {
+          "fts": 3,
+          "similarity": 10,
+          "like": 10,
+          "keyword": 10
+        },
+        "raw_latency_ms": 52.990055992268026,
+        "rerank_latency_ms": 0.00686800922267139,
+        "raw_top_chapters": [
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        "reranked_top_chapters": [
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        "rerank_changed_order": false,
+        "top_overlap": 5
+      },
+      {
+        "query": "二姑 资源",
+        "fusion_applied": true,
+        "rerank_applied": false,
+        "route_counts": {
+          "fts": 3,
+          "similarity": 7,
+          "like": 8,
+          "keyword": 1
+        },
+        "raw_latency_ms": 44.143482009531,
+        "rerank_latency_ms": 0.007577997166663408,
+        "raw_top_chapters": [
+          1,
+          2,
+          3,
+          4,
+          8
+        ],
+        "reranked_top_chapters": [
+          1,
+          2,
+          3,
+          4,
+          8
+        ],
+        "rerank_changed_order": false,
+        "top_overlap": 5
+      },
+      {
+        "query": "婚事 养生功",
+        "fusion_applied": true,
+        "rerank_applied": false,
+        "route_counts": {
+          "fts": 1,
+          "similarity": 10,
+          "like": 9,
+          "keyword": 1
+        },
+        "raw_latency_ms": 73.61222799227107,
+        "rerank_latency_ms": 0.006857997504994273,
+        "raw_top_chapters": [
+          10,
+          9,
+          4,
+          2,
+          5
+        ],
+        "reranked_top_chapters": [
+          10,
+          9,
+          4,
+          2,
+          5
+        ],
+        "rerank_changed_order": false,
+        "top_overlap": 5
+      }
+    ]
+  },
+  "continuation_pack": {
+    "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+    "next_chapter_index": 11,
+    "chapter_goal": "延续当前主线并优先处理高价值未解线程",
+    "main_conflict": "围绕当前章节目标制造可验证推进，而不破坏既有规则",
+    "secondary_conflicts": [],
+    "required_progressions": [
+      "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+      "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+    ],
+    "scene_plan": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "围绕当前章节目标制造可验证推进，而不破坏既有规则"
+        ],
+        "risk_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "character_movements": [
+      "养生功",
+      "李荭",
+      "杏",
+      "身契"
+    ],
+    "relationship_movements": [],
+    "foreshadow_to_touch": [],
+    "rule_constraints": [],
+    "ending_hook": "围绕“延续当前主线并优先处理高价值未解线程”留下下一章必须回应的新信息。",
+    "risk_notes": [
+      "不要直接违背既有世界规则与人物当前状态。",
+      "如要推进关系变化，必须提供中间证据与触发事件。",
+      "禁止：不要无铺垫升级战力",
+      "禁止：不要引入未准备的大设定",
+      "风险信号：本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+      "风险信号：本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。",
+      "风险信号：本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。"
+    ]
+  },
+  "imitation_pack": {
+    "source_chapter_index": 10,
+    "target_goal": "延续当前主线并保持人物/规则连续性",
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "hard_constraints": [
+      "不要无铺垫升级战力",
+      "不要引入未准备的大设定"
+    ],
+    "soft_constraints": [],
+    "risk_focus": [
+      "本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。",
+      "本章整体属于前情的延续与局部兑现：此前关于武举、脱籍、上升路径的想法，在这一章被明确说出口，并进入“算钱、算地、算收成”的执行阶段。",
+      "承接前文关于李耀祖可能借收成施压的铺垫，本章将“迟则生变”的担忧转化为具体行动。"
+    ]
+  },
+  "original_planning_pack": {
+    "contract_version": "original-planning-pack.v1",
+    "planning_scope": {
+      "chapter_count": 10,
+      "top_entities": [
+        "卫图"
+      ],
+      "top_rules": [
+        "命格以金紫之色呈现，且可在脑海中显化为玺印",
+        "本章确认存在“命格”设定",
+        "李宅主仆在饮食上存在明显等级差异",
+        "李宅仆役有佃奴与马倌的分化，待遇不同",
+        "李宅的马需要三更天加喂夜草"
+      ],
+      "top_threads": []
+    },
+    "world_and_rule_focus": [
+      "命格以金紫之色呈现，且可在脑海中显化为玺印",
+      "本章确认存在“命格”设定",
+      "李宅主仆在饮食上存在明显等级差异"
+    ],
+    "character_arc_candidates": [
+      "卫图"
+    ],
+    "thread_backlog": [],
+    "planning_gaps": [
+      "主要人物密度不足，建议先补角色卡与动机链。",
+      "未解线程显式化不足，建议先补卷纲级伏笔表。"
+    ],
+    "next_planning_actions": [
+      "先固化世界规则、人物目标、长线线程三张底表。",
+      "把未解线程映射到卷纲/章纲，避免续写时只靠局部记忆。",
+      "将 continuation pack 作为单章执行面，而不是替代长期规划。"
+    ],
+    "continuation_goal_hint": "延续当前主线并优先处理高价值未解线程"
+  },
+  "creation_control_pack": {
+    "contract_version": "creation-control-pack.v1",
+    "chapter_goal": "延续当前主线并优先处理高价值未解线程",
+    "scene_controls": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "围绕当前章节目标制造可验证推进，而不破坏既有规则"
+        ],
+        "risk_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "ending_hook": "围绕“延续当前主线并优先处理高价值未解线程”留下下一章必须回应的新信息。",
+    "risk_notes": [
+      "不要直接违背既有世界规则与人物当前状态。",
+      "如要推进关系变化，必须提供中间证据与触发事件。",
+      "禁止：不要无铺垫升级战力",
+      "禁止：不要引入未准备的大设定",
+      "风险信号：本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+      "风险信号：本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。",
+      "风险信号：本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。"
+    ],
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "control_checklist": [
+      "每章必须有明确目标、阻力、回应、章尾钩子。",
+      "风格控制优先看 style_axes，剧情控制优先看 scene_controls。",
+      "如 risk_notes 中出现规则/关系风险，生成前必须先修正。"
+    ]
+  },
+  "editor_revision_pack": {
+    "contract_version": "editor-revision-pack.v1",
+    "revision_priorities": [
+      "先处理 1 个 needs_review 问题簇，再推进正文定稿。",
+      "当前有 10 张 risk card，改稿时优先消化高风险卡片。",
+      "检查 scene_plan 是否每场都承担推进功能，避免空转段落。",
+      "检查 style_axes 与实际文本是否一致，避免只学句式不学结构。"
+    ],
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "done_definition": [
+      "review / risk 不再阻塞生成。",
+      "scene plan 与正文推进一致。",
+      "仿写约束和人物/规则状态无明显冲突。"
+    ]
+  },
+  "reader_feedback_pack": {
+    "contract_version": "reader-feedback-pack.v1",
+    "pain_point_hypotheses": [
+      "读者可能感到部分逻辑/衔接点仍不够顺。"
+    ],
+    "feedback_collection_prompts": [
+      "哪一章开始觉得节奏变慢？原因是什么？",
+      "你最想继续追的角色/线程是什么？",
+      "哪些设定、关系或战力变化让你觉得突兀？"
+    ],
+    "revision_from_feedback": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+    ],
+    "priority_entities": [
+      "卫图"
+    ],
+    "priority_threads": []
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -1841,70 +2189,70 @@
     ]
   },
   "retrieval_diagnostics": {
-    "query": "卫图 命格",
+    "query": "卫图",
     "fusion_applied": true,
-    "rerank_applied": true,
+    "rerank_applied": false,
     "route_counts": {
-      "fts": 3,
+      "fts": 10,
       "similarity": 10,
       "like": 10,
       "keyword": 10,
-      "vector": 10
+      "entity_exact": 10
     },
-    "raw_latency_ms": 3597.1538860030705,
-    "rerank_latency_ms": 146350.24376899673,
+    "raw_latency_ms": 73.31245701061562,
+    "rerank_latency_ms": 0.0077830045484006405,
     "raw_hits": [
       {
-        "chapter_index": 1,
-        "title": "大器晚成",
-        "score": 0.08092635961488422
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "score": 0.08091796563504654
       },
       {
         "chapter_index": 3,
         "title": "养生功法",
-        "score": 0.08013312852022529
-      },
-      {
-        "chapter_index": 2,
-        "title": "二姑卫荭",
-        "score": 0.07953770338521908
-      },
-      {
-        "chapter_index": 4,
-        "title": "珍惜眼下",
-        "score": 0.06161576949620428
-      },
-      {
-        "chapter_index": 5,
-        "title": "婚事敲定（求收藏，求追读）",
-        "score": 0.061072261072261075
-      }
-    ],
-    "reranked_hits": [
-      {
-        "chapter_index": 4,
-        "title": "珍惜眼下",
-        "score": 1.7918654680252075
-      },
-      {
-        "chapter_index": 9,
-        "title": "逼上绝境（求收藏，求追读）",
-        "score": 0.6496930122375488
+        "score": 0.07886904761904762
       },
       {
         "chapter_index": 1,
         "title": "大器晚成",
-        "score": 0.18695291876792908
+        "score": 0.07756965588468633
       },
       {
-        "chapter_index": 5,
-        "title": "婚事敲定（求收藏，求追读）",
-        "score": 0.08153911679983139
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "score": 0.07701341966083831
       },
       {
-        "chapter_index": 6,
-        "title": "郑国官兵（求收藏，求追读）",
-        "score": -0.18521422147750854
+        "chapter_index": 9,
+        "title": "逼上绝境（求收藏，求追读）",
+        "score": 0.076395086914021
+      }
+    ],
+    "reranked_hits": [
+      {
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "score": 0.08091796563504654
+      },
+      {
+        "chapter_index": 3,
+        "title": "养生功法",
+        "score": 0.07886904761904762
+      },
+      {
+        "chapter_index": 1,
+        "title": "大器晚成",
+        "score": 0.07756965588468633
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "score": 0.07701341966083831
+      },
+      {
+        "chapter_index": 9,
+        "title": "逼上绝境（求收藏，求追读）",
+        "score": 0.076395086914021
       }
     ]
   },

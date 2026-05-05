@@ -17,6 +17,7 @@
 5. [`./imitation-checkout-20260504.md`](./imitation-checkout-20260504.md)
 6. [`./eval-governance-checkout-20260504.md`](./eval-governance-checkout-20260504.md)
 7. [`./independent-agent-capability-checkout-20260505.md`](./independent-agent-capability-checkout-20260505.md)
+8. [`./novel-assistant-control-checkout-20260505.md`](./novel-assistant-control-checkout-20260505.md)
 
 维护规则：
 - 每次跨能力线推进（retrieval / risk / imitation / eval / docs IA）都应该补一份 checkout。

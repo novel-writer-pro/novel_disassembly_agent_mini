@@ -14,10 +14,10 @@
 | --- | ---: | --- | --- | --- | --- |
 | 拆书 / chapter analysis | 4 | 主链稳定、可复跑、可导出 | 高 | 中 | 更系统的多书样例与速度评估 |
 | 信息抽取 / facts | 4 | facts 已进入 branch/chapter/report 主链 | 高 | 中 | 更统一的作者/编辑消费面 |
-| retrieval / QA / search | 3.5 | RRF + rerank + diagnostics 已成形 | 高 | 高 | vector/entity-exact + live latency evidence |
+| retrieval / QA / search | 4 | RRF + diagnostics + benchmark 已成形，vector/entity-exact 已接入 | 高 | 高 | rerank 真正改序证据、更多 query bank |
 | risk semantic | 3.5 | signal/link/cluster/review 已成链 | 高 | 高 | 长窗口 linking / quality benchmark |
 | 风险门控 / checker | 4 | 可解释、可维护、真库已验证 | 很高 | 中 | 更多真库样例、批量复核优化 |
-| chapter imitation | 3.5 | harness + repair lanes 已成形 | 高 | 高 | 更强作者工作流 / story bible 接面 |
+| chapter imitation | 4 | harness + repair lanes + assistant control surface 已成形 | 高 | 高 | 更深 story bible / provider-backed 实例密度 |
 | whole-book imitation | 3 | provider-backed rerun 成功，仍偏 sandbox | 很高 | 高 | 更多 success evidence、多轮稳定性 |
 | eval / governance | 4 | sample bundle / freeze gate / handoff 已落地 | 很高 | 中 | 更产品化的运营 dashboard |
 | docs / handoff / ops | 4 | canonical 入口、smoke path、checkout 已落地 | 高 | 中 | FAQ 化、图表化、继续去重 |

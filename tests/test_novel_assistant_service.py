@@ -70,11 +70,20 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['author_knowledge']['focus_label'] == '卫图'
         assert pack['whole_book_readiness_summary']
         assert pack['sample_evidence_summary']
+        assert pack['retrieval_benchmark_summary']['contract_version'] == 'retrieval-benchmark-summary.v1'
+        if pack['retrieval_benchmark_summary'].get('degraded'):
+            assert pack['retrieval_benchmark_summary']['reason']
+        else:
+            assert pack['retrieval_benchmark_summary']['query_count'] >= 1
         assert pack['preparation_guidance']['next_chapter_preparation']
         assert pack['preparation_guidance']['imitation_preparation']
         assert pack['preparation_guidance']['risk_gate_preflight']
         assert pack['continuation_pack'] is not None
         assert pack['imitation_pack'] is not None
+        assert pack['original_planning_pack']['contract_version'] == 'original-planning-pack.v1'
+        assert pack['creation_control_pack']['contract_version'] == 'creation-control-pack.v1'
+        assert pack['editor_revision_pack']['contract_version'] == 'editor-revision-pack.v1'
+        assert pack['reader_feedback_pack']['contract_version'] == 'reader-feedback-pack.v1'
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None
         assert pack['risk_summary'] is not None
