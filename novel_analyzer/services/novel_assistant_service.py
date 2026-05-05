@@ -1048,6 +1048,49 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _external_report_markdown_pack(
+        *,
+        external_report_bundle_pack: dict[str, object],
+    ) -> dict[str, object]:
+        dashboard = dict(external_report_bundle_pack.get("dashboard", {}))
+        brief = dict(external_report_bundle_pack.get("brief", {}))
+        review_note = dict(external_report_bundle_pack.get("review_note", {}))
+        approval_memo = dict(external_report_bundle_pack.get("approval_memo", {}))
+        runbook = dict(external_report_bundle_pack.get("runbook", {}))
+        rollback = dict(external_report_bundle_pack.get("rollback", {}))
+        governance_summary = dict(external_report_bundle_pack.get("governance_summary", {}))
+        markdown = "\n".join([
+            "# External Report Bundle",
+            "",
+            "## Dashboard",
+            str(dashboard.get("summary_card", "")),
+            "",
+            "## Governance Brief",
+            str(brief.get("brief_text", "")).strip(),
+            "",
+            "## Release Review Note",
+            str(review_note.get("note_text", "")).strip(),
+            "",
+            "## Approval Memo",
+            str(approval_memo.get("memo_text", "")).strip(),
+            "",
+            "## Runbook",
+            "\n".join(f"- {item}" for item in runbook.get("runbook_steps", [])),
+            "",
+            "## Rollback",
+            "\n".join(f"- {item}" for item in rollback.get("rollback_steps", [])),
+            "",
+            "## Governance Summary",
+            str(governance_summary.get("governance_summary", "")),
+        ]).strip() + "\n"
+        return {
+            "contract_version": "external-report-markdown-pack.v1",
+            "markdown_text": markdown,
+            "dashboard_status": dashboard.get("dashboard_status", "guarded"),
+        }
+
+
+    @staticmethod
     def _governance_dashboard_pack(
         *,
         final_governance_summary_pack: dict[str, object],
@@ -1342,6 +1385,9 @@ class NovelAssistantService:
             incident_rollback_pack=incident_rollback_pack,
             final_governance_summary_pack=final_governance_summary_pack,
         )
+        external_report_markdown_pack = self._external_report_markdown_pack(
+            external_report_bundle_pack=external_report_bundle_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1392,6 +1438,7 @@ class NovelAssistantService:
                 "release_review_note",
                 "approval_decision_memo",
                 "external_report_bundle",
+                "external_report_markdown",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1432,6 +1479,7 @@ class NovelAssistantService:
             "release_review_note_pack": release_review_note_pack,
             "approval_decision_memo_pack": approval_decision_memo_pack,
             "external_report_bundle_pack": external_report_bundle_pack,
+            "external_report_markdown_pack": external_report_markdown_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

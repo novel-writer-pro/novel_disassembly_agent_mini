@@ -347,6 +347,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'release_review_note_pack': {'contract_version': 'release-review-note-pack.v1', 'note_text': '# x\n- whole_book_consistency_release_impact: x', 'review_status': 'blocked'},
                 'approval_decision_memo_pack': {'contract_version': 'approval-decision-memo-pack.v1', 'memo_text': '# x\n- whole_book_release_impact: x', 'memo_status': 'rejected'},
                 'external_report_bundle_pack': {'contract_version': 'external-report-bundle-pack.v1', 'dashboard': {}, 'approval_memo': {}},
+                'external_report_markdown_pack': {'contract_version': 'external-report-markdown-pack.v1', 'markdown_text': '# External Report Bundle\n', 'dashboard_status': 'guarded'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -402,6 +403,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'release_review_note_pack' in payload
     assert 'approval_decision_memo_pack' in payload
     assert 'external_report_bundle_pack' in payload
+    assert 'external_report_markdown_pack' in payload
 
 
 
@@ -585,3 +587,25 @@ def test_export_external_report_bundle_cli(monkeypatch: MonkeyPatch, tmp_path: P
     assert result.exit_code == 0
     payload = json.loads(out.read_text(encoding='utf-8'))
     assert payload['contract_version'] == 'external-report-bundle-pack.v1'
+
+
+def test_export_external_report_markdown_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(app, ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url])
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    class _FakeAssistantService:
+        def build_branch_assistant_pack(self, branch_id: str, **kwargs):
+            return {'external_report_markdown_pack': {'contract_version': 'external-report-markdown-pack.v1', 'markdown_text': '# External Report Bundle\n', 'dashboard_status': 'guarded'}}
+
+    monkeypatch.setattr('novel_analyzer.cli.app._novel_assistant_service', lambda session, settings: _FakeAssistantService())
+    out = tmp_path / 'external-report-bundle.md'
+    result = runner.invoke(app, ['export-external-report-markdown', run_lines['branch_id'], str(out), '--database-url', db_url])
+    assert result.exit_code == 0
+    assert out.read_text(encoding='utf-8').startswith('# External Report Bundle')

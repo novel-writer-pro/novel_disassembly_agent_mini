@@ -195,3 +195,8 @@
 - assistant pack 现已提供 `external_report_bundle_pack`。
 - CLI 已支持 `export-external-report-bundle`。
 - 样例：`sample-branch-external-report-bundle-20260505.sample.json`。
+
+## 34. External report markdown
+- assistant pack 现已提供 `external_report_markdown_pack`。
+- CLI 已支持 `export-external-report-markdown`。
+- 样例：`sample-branch-external-report-bundle-20260505.sample.md`。
