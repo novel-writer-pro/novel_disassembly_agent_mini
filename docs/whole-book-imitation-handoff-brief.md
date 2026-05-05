@@ -20,7 +20,7 @@ whole-book imitation 线当前已经完成：
 
 ## 2. 当前关键剩余事项
 
-真实 provider-backed whole-book execute 已经成功补到一轮样本。
+真实 provider-backed whole-book execute 已经成功补到多轮样本。
 
 当前已不再是“缺少成功 provider 样本”，而是：
 - provider 当前运行态已恢复为 `ok`
@@ -65,3 +65,5 @@ Whole-book sandbox execution now emits `long_book_consistency_diagnostics` in bo
 `policy_summary` and `dashboard_summary`. The bundle records weak-lane counts, carry-over
 gaps, and whether the handoff requires an additional consistency pass across style/rhythm,
 dialogue, reader-simulation, and research repair lanes.
+
+- `docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json`
