@@ -100,12 +100,15 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['automatic_rewrite_guidance_pack']['rewrite_steps']
         assert pack['automatic_rewrite_guidance_pack']['guidance_text']
         assert pack['automatic_rewrite_guidance_pack']['feedback_bridge_actions']
+        assert 'feedback_signals' in pack['automatic_prose_rewrite_pack']
         assert pack['automatic_prose_rewrite_pack']['contract_version'] == 'automatic-prose-rewrite-pack.v1'
         assert pack['automatic_prose_rewrite_pack']['rewritten_blocks']
         assert pack['automatic_prose_rewrite_pack']['rewrite_text']
         assert pack['final_draft_candidate_pack']['contract_version'] == 'final-draft-candidate-pack.v1'
         assert pack['final_draft_candidate_pack']['candidate_blocks']
         assert pack['final_draft_candidate_pack']['candidate_text']
+        assert 'negative_feedback_signal_count' in pack['final_draft_candidate_pack']['review_gate']
+        assert 'reader_feedback_signals' in pack['final_draft_candidate_pack']
         assert pack['publish_ready_release_pack']['contract_version'] == 'publish-ready-release-pack.v1'
         assert 'release_gate' in pack['publish_ready_release_pack']
         assert pack['publish_ready_release_pack']['release_summary']

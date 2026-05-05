@@ -568,9 +568,11 @@ class NovelAssistantService:
         *,
         direct_draft_skeleton_pack: dict[str, object],
         automatic_rewrite_guidance_pack: dict[str, object],
+        reader_feedback_pack: dict[str, object],
     ) -> dict[str, object]:
         scene_blocks = list(direct_draft_skeleton_pack.get("scene_blocks", []))
         rewrite_steps = list(automatic_rewrite_guidance_pack.get("rewrite_steps", []))
+        feedback_signals = list(reader_feedback_pack.get("feedback_summary", {}).get("signals", []))
         rewritten_blocks = []
         prose_lines = []
         for index, item in enumerate(scene_blocks[:3], start=1):
@@ -591,6 +593,8 @@ class NovelAssistantService:
             if must_keep:
                 prose_lines.append("- 必须保留：" + "；".join(str(x) for x in must_keep))
             prose_lines.append("- 改写提示：把问题改成更明确的行动、对白、冲突承接。")
+            if feedback_signals:
+                prose_lines.append("- 读者反馈优先：" + "；".join(feedback_signals[:2]))
         prose_text = "\n".join(prose_lines).strip()
         return {
             "contract_version": "automatic-prose-rewrite-pack.v1",
@@ -598,6 +602,7 @@ class NovelAssistantService:
             "rewrite_text": prose_text,
             "rewritten_blocks": rewritten_blocks,
             "rewrite_checklist": list(automatic_rewrite_guidance_pack.get("rewrite_checklist", []))[:3],
+            "feedback_signals": feedback_signals[:4],
         }
 
 
@@ -607,18 +612,26 @@ class NovelAssistantService:
         automatic_prose_rewrite_pack: dict[str, object],
         risk_summary: dict[str, object],
         review_summary: dict[str, object],
+        reader_feedback_pack: dict[str, object],
     ) -> dict[str, object]:
         rewritten_blocks = list(automatic_prose_rewrite_pack.get("rewritten_blocks", []))
         candidate_lines = [
             f"# 候选稿：{automatic_prose_rewrite_pack.get('rewrite_title', '')}",
             str(automatic_prose_rewrite_pack.get("rewrite_text", "")).strip(),
         ]
+        feedback_summary = dict(reader_feedback_pack.get("feedback_summary", {}))
+        negative_signal_count = sum(
+            int(feedback_summary.get("signal_counts", {}).get(key, 0) or 0)
+            for key in ["pacing_slow", "logic_confusion", "character_ooc"]
+        )
         review_gate = {
             "needs_review_count": int(review_summary.get("needs_review_count", 0) or 0),
             "risk_card_count": int(risk_summary.get("risk_card_count", 0) or 0),
+            "negative_feedback_signal_count": negative_signal_count,
             "ready_for_candidate_review": not (
                 int(review_summary.get("needs_review_count", 0) or 0) > 0
                 or int(risk_summary.get("risk_card_count", 0) or 0) > 12
+                or negative_signal_count > 2
             ),
         }
         return {
@@ -632,6 +645,7 @@ class NovelAssistantService:
                 "候选稿输出后先过 review_gate，再进入人工/模型复核。",
                 "如果 risk_card_count 较高，不要直接进入最终定稿。",
             ],
+            "reader_feedback_signals": list(feedback_summary.get("signals", []))[:4],
         }
 
 
@@ -1195,11 +1209,13 @@ class NovelAssistantService:
         automatic_prose_rewrite_pack = self._automatic_prose_rewrite_pack(
             direct_draft_skeleton_pack=direct_draft_skeleton_pack,
             automatic_rewrite_guidance_pack=automatic_rewrite_guidance_pack,
+            reader_feedback_pack=reader_feedback_pack,
         )
         final_draft_candidate_pack = self._final_draft_candidate_pack(
             automatic_prose_rewrite_pack=automatic_prose_rewrite_pack,
             risk_summary=risk_summary,
             review_summary=review_summary,
+            reader_feedback_pack=reader_feedback_pack,
         )
         publish_ready_release_pack = self._publish_ready_release_pack(
             final_draft_candidate_pack=final_draft_candidate_pack,
