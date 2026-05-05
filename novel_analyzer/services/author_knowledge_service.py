@@ -127,6 +127,13 @@ class AuthorKnowledgeService:
             {"label": str(item), "source": "state_summary.new_conflicts"}
             for item in unresolved_threads
         ][:limit_per_section]
+        summary_layer = {
+            "top_entities": [item["label"] for item in entity_profiles[:5]],
+            "top_rules": [item["label"] for item in rule_index[:5]],
+            "top_relationships": [item["label"] for item in relationship_index[:5]],
+            "top_threads": [item["label"] for item in thread_index[:5]],
+            "chapter_focus": [item["title"] for item in chapter_cards[:3]],
+        }
 
         return {
             "contract_version": "author-knowledge.v1",
@@ -146,6 +153,7 @@ class AuthorKnowledgeService:
             "relationship_index": relationship_index,
             "rule_index": rule_index,
             "thread_index": thread_index,
+            "summary_layer": summary_layer,
             "relationship_watch": relationship_watch,
             "rule_watch": rule_watch,
             "unresolved_threads": unresolved_threads,

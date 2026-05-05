@@ -63,6 +63,7 @@ def test_author_knowledge_service_builds_branch_knowledge_pack(tmp_path: Path) -
         assert pack['relationship_index'] is not None
         assert pack['rule_index'] is not None
         assert pack['thread_index'] is not None
+        assert pack['summary_layer']
         assert pack['relationship_watch'] is not None
         assert pack['rule_watch'] is not None
         assert pack['unresolved_threads'] is not None
@@ -117,3 +118,4 @@ def test_author_knowledge_service_supports_focus_label_and_chapter_range(tmp_pat
         assert pack['chapter_span']['max'] == 3
         assert all('卫图' in item['label'] for item in pack['entities'])
         assert all('卫图' in item['label'] for item in pack['entity_profiles'])
+        assert pack['summary_layer']['top_entities']
