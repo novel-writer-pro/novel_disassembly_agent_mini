@@ -839,6 +839,52 @@ def search_branch_diagnostics(
             )
 
 
+@app.command()
+def export_search_branch_diagnostics(
+    branch_id: str,
+    query: str,
+    output_path: Path,
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export retrieval raw/rerank diagnostics for a branch query to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _retrieval_service(session, settings).search_branch_with_diagnostics(
+            branch_id, query, limit
+        )
+        def _hit_json(hit: Any) -> dict[str, object]:
+            return {
+                "chapter_index": hit.chapter_index,
+                "title": hit.title,
+                "summary_text": hit.summary_text,
+                "score": hit.score,
+                "keyword_list": hit.keyword_list,
+            }
+        output = {
+            "query": payload.query,
+            "raw_hits": [_hit_json(hit) for hit in payload.raw_hits],
+            "reranked_hits": [_hit_json(hit) for hit in payload.reranked_hits],
+            "rerank_applied": payload.rerank_applied,
+            "fusion_applied": payload.fusion_applied,
+            "route_counts": payload.route_counts or {},
+            "route_diagnostics": [
+                {
+                    "route": route.route,
+                    "hit_count": route.hit_count,
+                    "latency_ms": route.latency_ms,
+                }
+                for route in payload.route_diagnostics or []
+            ],
+            "raw_latency_ms": payload.raw_latency_ms,
+            "rerank_latency_ms": payload.rerank_latency_ms,
+        }
+        output_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"search_branch_diagnostics_path={output_path}")
+
+
 
 @app.command()
 def ask_branch(
