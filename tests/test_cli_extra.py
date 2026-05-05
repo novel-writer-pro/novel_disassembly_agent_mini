@@ -341,6 +341,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'recovery_closure_artifact_pack': {'contract_version': 'recovery-closure-artifact-pack.v1', 'closure_status': 'recovery_pending', 'closure_record': {}},
                 'final_governance_summary_pack': {'contract_version': 'final-governance-summary-pack.v1', 'governance_summary': 'x', 'governance_status': 'guarded'},
                 'governance_dashboard_pack': {'contract_version': 'governance-dashboard-pack.v1', 'dashboard_status': 'guarded', 'summary_card': 'x'},
+                'governance_report_brief_pack': {'contract_version': 'governance-report-brief-pack.v1', 'brief_text': '# x', 'summary_card': 'x'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -390,6 +391,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'recovery_closure_artifact_pack' in payload
     assert 'final_governance_summary_pack' in payload
     assert 'governance_dashboard_pack' in payload
+    assert 'governance_report_brief_pack' in payload
 
 
 
@@ -457,3 +459,25 @@ def test_governance_dashboard_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> N
     payload = json.loads(out.read_text(encoding='utf-8'))
     assert payload['contract_version'] == 'governance-dashboard-pack.v1'
     assert payload['dashboard_status'] == 'guarded'
+
+
+def test_export_governance_report_brief_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(app, ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url])
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    class _FakeAssistantService:
+        def build_branch_assistant_pack(self, branch_id: str, **kwargs):
+            return {'governance_report_brief_pack': {'contract_version': 'governance-report-brief-pack.v1', 'brief_text': '# Governance Report Brief\n', 'summary_card': 'x'}}
+
+    monkeypatch.setattr('novel_analyzer.cli.app._novel_assistant_service', lambda session, settings: _FakeAssistantService())
+    out = tmp_path / 'governance-report.md'
+    result = runner.invoke(app, ['export-governance-report-brief', run_lines['branch_id'], str(out), '--database-url', db_url])
+    assert result.exit_code == 0
+    assert out.read_text(encoding='utf-8').startswith('# Governance Report Brief')

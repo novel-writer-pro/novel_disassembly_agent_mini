@@ -165,3 +165,8 @@
 - assistant pack 现已提供 `governance_dashboard_pack`。
 - CLI 已支持 `show-governance-dashboard` / `export-governance-dashboard`。
 - 真实样例中已给出 dashboard_status / summary_card / operator_brief。
+
+## 28. Governance report brief
+- assistant pack 现已提供 `governance_report_brief_pack`。
+- CLI 已支持 `export-governance-report-brief`。
+- 真实样例中已给出 markdown brief，可直接给管理/运营侧消费。

@@ -827,6 +827,31 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _governance_report_brief_pack(
+        *,
+        governance_dashboard_pack: dict[str, object],
+        final_governance_summary_pack: dict[str, object],
+    ) -> dict[str, object]:
+        summary_card = str(governance_dashboard_pack.get("summary_card", "")).strip()
+        dashboard_status = str(governance_dashboard_pack.get("dashboard_status", "guarded"))
+        operator_brief = str(governance_dashboard_pack.get("operator_brief", "")).strip()
+        markdown = "\n".join([
+            "# Governance Report Brief",
+            "",
+            f"- dashboard_status: {dashboard_status}",
+            f"- governance_status: {final_governance_summary_pack.get('governance_status', 'guarded')}",
+            f"- summary_card: {summary_card}",
+            f"- operator_brief: {operator_brief}",
+        ]).strip() + "\n"
+        return {
+            "contract_version": "governance-report-brief-pack.v1",
+            "dashboard_status": dashboard_status,
+            "brief_text": markdown,
+            "summary_card": summary_card,
+        }
+
+
+    @staticmethod
     def _governance_dashboard_pack(
         *,
         final_governance_summary_pack: dict[str, object],
@@ -1078,6 +1103,10 @@ class NovelAssistantService:
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
             operator_release_brief_pack=operator_release_brief_pack,
         )
+        governance_report_brief_pack = self._governance_report_brief_pack(
+            governance_dashboard_pack=governance_dashboard_pack,
+            final_governance_summary_pack=final_governance_summary_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1122,6 +1151,7 @@ class NovelAssistantService:
                 "recovery_closure_artifact",
                 "final_governance_summary",
                 "governance_dashboard",
+                "governance_report_brief",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1156,6 +1186,7 @@ class NovelAssistantService:
             "recovery_closure_artifact_pack": recovery_closure_artifact_pack,
             "final_governance_summary_pack": final_governance_summary_pack,
             "governance_dashboard_pack": governance_dashboard_pack,
+            "governance_report_brief_pack": governance_report_brief_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
