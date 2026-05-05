@@ -1100,6 +1100,7 @@ class NovelAssistantService:
         external_report_bundle_pack: dict[str, object],
         archive_retention_metadata_pack: dict[str, object],
         archive_index_metadata_pack: dict[str, object],
+        archive_navigation_metadata_pack: dict[str, object],
         archive_integrity_check_pack: dict[str, object],
     ) -> dict[str, object]:
         return {
@@ -1110,6 +1111,7 @@ class NovelAssistantService:
             "external_report_bundle": external_report_bundle_pack,
             "archive_retention_metadata_pack": archive_retention_metadata_pack,
             "archive_index_metadata_pack": archive_index_metadata_pack,
+            "archive_navigation_metadata_pack": archive_navigation_metadata_pack,
             "archive_integrity_check_pack": archive_integrity_check_pack,
             "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。",
         }
@@ -1176,6 +1178,19 @@ class NovelAssistantService:
             "retention_policy": archive_retention_metadata_pack.get("retention_policy", ""),
             "archive_status": archive_retention_metadata_pack.get("archive_status", "active"),
             "indexed_sections": list(archive_manifest_pack.get("manifest_items", [])),
+        }
+
+
+    @staticmethod
+    def _archive_navigation_metadata_pack(
+        *,
+        archive_index_metadata_pack: dict[str, object],
+    ) -> dict[str, object]:
+        return {
+            "contract_version": "archive-navigation-metadata-pack.v1",
+            "archive_key": archive_index_metadata_pack.get("archive_key", ""),
+            "navigation_sections": archive_index_metadata_pack.get("indexed_sections", []),
+            "navigation_summary": "使用 archive_key 与 navigation_sections 进行归档导航与检索。",
         }
 
 
@@ -1490,6 +1505,9 @@ class NovelAssistantService:
             archive_manifest_pack=archive_manifest_pack,
             archive_retention_metadata_pack=archive_retention_metadata_pack,
         )
+        archive_navigation_metadata_pack = self._archive_navigation_metadata_pack(
+            archive_index_metadata_pack=archive_index_metadata_pack,
+        )
         archive_integrity_check_pack = self._archive_integrity_check_pack(
             final_release_archive_pack={
                 "candidate": {},
@@ -1505,6 +1523,7 @@ class NovelAssistantService:
             external_report_bundle_pack=external_report_bundle_pack,
             archive_retention_metadata_pack=archive_retention_metadata_pack,
             archive_index_metadata_pack=archive_index_metadata_pack,
+            archive_navigation_metadata_pack=archive_navigation_metadata_pack,
             archive_integrity_check_pack=archive_integrity_check_pack,
         )
         return {
@@ -1562,6 +1581,7 @@ class NovelAssistantService:
                 "archive_manifest",
                 "archive_retention_metadata",
                 "archive_index_metadata",
+                "archive_navigation_metadata",
                 "archive_integrity_check",
             ],
             "recommended_next_actions": [
@@ -1608,6 +1628,7 @@ class NovelAssistantService:
             "archive_manifest_pack": archive_manifest_pack,
             "archive_retention_metadata_pack": archive_retention_metadata_pack,
             "archive_index_metadata_pack": archive_index_metadata_pack,
+            "archive_navigation_metadata_pack": archive_navigation_metadata_pack,
             "archive_integrity_check_pack": archive_integrity_check_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,

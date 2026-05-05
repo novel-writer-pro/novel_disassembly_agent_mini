@@ -197,6 +197,17 @@
       "external_report_bundle"
     ]
   },
+  "archive_navigation_metadata_pack": {
+    "contract_version": "archive-navigation-metadata-pack.v1",
+    "archive_key": "sample-branch-final-release-archive-20260505",
+    "navigation_sections": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "navigation_summary": "使用 archive_key 与 navigation_sections 进行归档导航与检索。"
+  },
   "archive_integrity_check_pack": {
     "contract_version": "archive-integrity-check-pack.v1",
     "present_keys": [

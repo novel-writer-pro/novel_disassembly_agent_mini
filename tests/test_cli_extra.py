@@ -352,6 +352,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'archive_manifest_pack': {'contract_version': 'archive-manifest-pack.v1', 'manifest_items': ['candidate']},
                 'archive_retention_metadata_pack': {'contract_version': 'archive-retention-metadata-pack.v1', 'archive_status': 'active'},
                 'archive_index_metadata_pack': {'contract_version': 'archive-index-metadata-pack.v1', 'archive_key': 'x'},
+                'archive_navigation_metadata_pack': {'contract_version': 'archive-navigation-metadata-pack.v1', 'navigation_sections': ['candidate']},
                 'archive_integrity_check_pack': {'contract_version': 'archive-integrity-check-pack.v1', 'integrity_ok': True},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
@@ -413,6 +414,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'archive_manifest_pack' in payload
     assert 'archive_retention_metadata_pack' in payload
     assert 'archive_index_metadata_pack' in payload
+    assert 'archive_navigation_metadata_pack' in payload
     assert 'archive_integrity_check_pack' in payload
 
 
