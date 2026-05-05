@@ -128,6 +128,9 @@ def test_next_chapter_planner_builds_context_and_plan() -> None:
         plan = service.build_plan(branch_id, intent=intent)
         assert plan.branch_id == branch_id
         assert plan.next_chapter_index == 3
-        assert plan.chapter_goal == "推进卫图获取养生功的机会"
+        assert any(key in plan.chapter_goal for key in ["身份", "赎身", "养生功", "资源积累"])
         assert len(plan.scene_plan) == 3
         assert any("禁止：" in item for item in plan.risk_notes)
+        assert any("长线兑现：" in item for item in plan.risk_notes)
+        assert plan.foreshadow_to_touch
+        assert any("volume_goal=" in item for item in context.planning_notes)

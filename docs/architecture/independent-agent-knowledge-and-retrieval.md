@@ -53,5 +53,5 @@ flowchart TD
 
 ## 5. 待办
 - retrieval live route benchmark
-- story bible pack 继续前推到角色卡 / 卷纲 / 长线规划
+- story bible pack 已进入角色卡 / 动机树 / 成长弧 / 卷级规划，并开始被 next chapter planner 消费
 - whole-book / next-chapter 对 author knowledge 的更直接消费

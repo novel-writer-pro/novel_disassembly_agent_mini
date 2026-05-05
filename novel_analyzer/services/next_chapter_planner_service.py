@@ -14,6 +14,7 @@ from novel_analyzer.domain.schemas import (
     ChapterPlanningIntent,
     ChapterPlanningScene,
 )
+from novel_analyzer.services.author_knowledge_service import AuthorKnowledgeService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.run_service import RunService
 
@@ -32,6 +33,7 @@ class NextChapterPlannerService:
         self.session = session
         self.run_service = RunService(session)
         self.graph_service = GraphService(session)
+        self.author_knowledge_service = AuthorKnowledgeService(session)
 
     def build_context(
         self,
@@ -74,6 +76,14 @@ class NextChapterPlannerService:
         world_rules = list(self._string_list(state_summary.get("world_rules", [])))
 
         active_characters = self._active_characters(branch_id, current_chapter_index)
+        knowledge_pack = self.author_knowledge_service.build_branch_knowledge_pack(
+            branch_id,
+            upto_chapter_index=current_chapter_index,
+            limit_per_section=12,
+        )
+        story_bible_pack = knowledge_pack.get("story_bible_pack", {}) if isinstance(knowledge_pack, dict) else {}
+        volume_outline = story_bible_pack.get("volume_outline", {}) if isinstance(story_bible_pack, dict) else {}
+        arc_outline = story_bible_pack.get("arc_outline", {}) if isinstance(story_bible_pack, dict) else {}
 
         planning_notes = [
             f"current_chapter={current_chapter_index}",
@@ -84,6 +94,16 @@ class NextChapterPlannerService:
             planning_notes.append(f"preferred_tone={intent.preferred_tone}")
         if intent.pace:
             planning_notes.append(f"pace={intent.pace}")
+        volume_goal = str(volume_outline.get("volume_goal", "")).strip()
+        if volume_goal:
+            planning_notes.append(f"volume_goal={volume_goal}")
+        for item in list(volume_outline.get("required_payoffs", []))[:2]:
+            planning_notes.append(f"volume_payoff={item}")
+        for item in list(arc_outline.get("payoff_targets", []))[:2]:
+            planning_notes.append(f"arc_payoff={item}")
+        for item in list(story_bible_pack.get("active_threads", []))[:2]:
+            if str(item).strip() and str(item) not in unresolved_threads:
+                unresolved_threads.append(str(item).strip())
 
         return ChapterPlanningContext(
             branch_id=branch_id,
@@ -108,14 +128,19 @@ class NextChapterPlannerService:
         window: PlannerContextWindow | None = None,
     ) -> ChapterPlanningCard:
         context = self.build_context(branch_id, intent=intent, window=window)
-        chapter_goal = intent.primary_goal.strip() or "延续当前剧情主线"
+        story_signals = self._story_bible_signals(context)
+        chapter_goal = story_signals.get("chapter_goal") or intent.primary_goal.strip() or "延续当前剧情主线"
         main_conflict = (
             context.active_conflicts[0]
             if context.active_conflicts
-            else "围绕当前章节目标制造可验证推进，而不破坏既有规则"
+            else story_signals.get("main_conflict")
+            or "围绕当前章节目标制造可验证推进，而不破坏既有规则"
         )
         secondary_conflicts = context.active_conflicts[1:3]
         required_progressions = context.unresolved_threads[:3] or context.recent_risk_signals[:2]
+        for item in story_signals.get("required_progressions", []):
+            if item not in required_progressions:
+                required_progressions.append(item)
         scene_plan = self._default_scene_plan(context=context, intent=intent, main_conflict=main_conflict)
 
         return ChapterPlanningCard(
@@ -128,11 +153,28 @@ class NextChapterPlannerService:
             scene_plan=scene_plan,
             character_movements=context.active_characters[:4],
             relationship_movements=context.relationship_state_notes[:3],
-            foreshadow_to_touch=context.unresolved_threads[:3],
+            foreshadow_to_touch=required_progressions[:3],
             rule_constraints=context.world_rules[:5],
-            ending_hook=self._default_ending_hook(context, intent),
-            risk_notes=self._default_risk_notes(context, intent),
+            ending_hook=self._default_ending_hook(context, intent, story_signals=story_signals),
+            risk_notes=self._default_risk_notes(context, intent, story_signals=story_signals),
         )
+
+    @staticmethod
+    def _story_bible_signals(context: ChapterPlanningContext) -> dict[str, object]:
+        notes = list(context.planning_notes)
+        volume_goal = next((item.split("=", 1)[1] for item in notes if item.startswith("volume_goal=")), "")
+        volume_payoffs = [item.split("=", 1)[1] for item in notes if item.startswith("volume_payoff=")]
+        arc_payoffs = [item.split("=", 1)[1] for item in notes if item.startswith("arc_payoff=")]
+        required_progressions = [item for item in volume_payoffs + arc_payoffs if item]
+        main_conflict = ""
+        if volume_goal:
+            main_conflict = f"围绕“{volume_goal}”推进，并确保本章为后续兑现创造条件"
+        chapter_goal = volume_goal or ""
+        return {
+            "chapter_goal": chapter_goal,
+            "main_conflict": main_conflict,
+            "required_progressions": required_progressions[:4],
+        }
 
     def _latest_completed_chapter(self, branch_id: str) -> int:
         row = self.session.execute(
@@ -212,7 +254,16 @@ class NextChapterPlannerService:
         return [scene_1, scene_2, scene_3]
 
     @staticmethod
-    def _default_ending_hook(context: ChapterPlanningContext, intent: ChapterPlanningIntent) -> str:
+    def _default_ending_hook(
+        context: ChapterPlanningContext,
+        intent: ChapterPlanningIntent,
+        *,
+        story_signals: dict[str, object] | None = None,
+    ) -> str:
+        story_signals = story_signals or {}
+        if story_signals.get("required_progressions"):
+            first = list(story_signals.get("required_progressions", []))[0]
+            return f"围绕长线兑现点“{first}”制造下一章推进钩子。"
         if context.unresolved_threads:
             return f"以未解线程“{context.unresolved_threads[0]}”制造下一章推进钩子。"
         if context.active_conflicts:
@@ -220,11 +271,18 @@ class NextChapterPlannerService:
         return f"围绕“{intent.primary_goal}”留下下一章必须回应的新信息。"
 
     @staticmethod
-    def _default_risk_notes(context: ChapterPlanningContext, intent: ChapterPlanningIntent) -> list[str]:
+    def _default_risk_notes(
+        context: ChapterPlanningContext,
+        intent: ChapterPlanningIntent,
+        *,
+        story_signals: dict[str, object] | None = None,
+    ) -> list[str]:
+        story_signals = story_signals or {}
         notes = [
             "不要直接违背既有世界规则与人物当前状态。",
             "如要推进关系变化，必须提供中间证据与触发事件。",
         ]
         notes.extend(f"禁止：{item}" for item in intent.forbidden_moves[:3])
+        notes.extend(f"长线兑现：{item}" for item in list(story_signals.get("required_progressions", []))[:2])
         notes.extend(f"风险信号：{item}" for item in context.recent_risk_signals[:3])
         return notes

@@ -65,3 +65,8 @@
 2. 把 editor revision pack 接到 draft / harness / revise 实际链路。
 3. 把 reader feedback pack 接到真实评论样本而不是当前启发式摘要。
 4. 把 original planning pack 继续前推到卷纲 / 人物成长弧 / story bible 层。
+
+## 8. 新的主链接入
+- next chapter planner 已开始消费 `volume_outline / arc_outline`。
+- 这意味着 long-horizon planning 不再只是 knowledge surface，而是已经进入续写主链。
+- 真实样例中，`continuation_pack.chapter_goal` 已从通用目标收敛为：`完成赎身/脱籍并争取进入更高身份路径`。
