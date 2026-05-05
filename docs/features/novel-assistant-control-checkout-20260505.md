@@ -100,3 +100,8 @@
 - assistant pack 现已提供 `automatic_rewrite_guidance_pack`。
 - 真实样例中已给出 `guidance_text` 与 3 个 `rewrite_steps`。
 - 这让 revision loop 后面继续接上结构化改写指导，而不是只停在复查。
+
+## 15. Automatic prose rewrite
+- assistant pack 现已提供 `automatic_prose_rewrite_pack`。
+- 真实样例中已给出 3 个 `rewritten_blocks` 与 `rewrite_text`。
+- 这让 rewrite guidance 后面继续接上了更可执行的自动正文改写输入。

@@ -472,6 +472,44 @@ class NovelAssistantService:
             ],
         }
 
+
+    @staticmethod
+    def _automatic_prose_rewrite_pack(
+        *,
+        direct_draft_skeleton_pack: dict[str, object],
+        automatic_rewrite_guidance_pack: dict[str, object],
+    ) -> dict[str, object]:
+        scene_blocks = list(direct_draft_skeleton_pack.get("scene_blocks", []))
+        rewrite_steps = list(automatic_rewrite_guidance_pack.get("rewrite_steps", []))
+        rewritten_blocks = []
+        prose_lines = []
+        for index, item in enumerate(scene_blocks[:3], start=1):
+            if not isinstance(item, dict):
+                continue
+            step = rewrite_steps[index - 1] if index - 1 < len(rewrite_steps) and isinstance(rewrite_steps[index - 1], dict) else {}
+            must_keep = item.get("must_include", [])[:2]
+            rewritten_blocks.append(
+                {
+                    "scene_index": item.get("scene_index"),
+                    "rewrite_goal": step.get("rewrite_goal", "优化当前场景"),
+                    "must_keep": must_keep,
+                    "rewrite_prompt": "；".join([str(x) for x in must_keep if str(x).strip()]) or "保持主线推进与连续性",
+                }
+            )
+            prose_lines.append(f"### 改写场景{item.get('scene_index')}")
+            prose_lines.append(f"- 改写目标：{step.get('rewrite_goal', '优化当前场景')}")
+            if must_keep:
+                prose_lines.append("- 必须保留：" + "；".join(str(x) for x in must_keep))
+            prose_lines.append("- 改写提示：把问题改成更明确的行动、对白、冲突承接。")
+        prose_text = "\n".join(prose_lines).strip()
+        return {
+            "contract_version": "automatic-prose-rewrite-pack.v1",
+            "rewrite_title": direct_draft_skeleton_pack.get("draft_title", ""),
+            "rewrite_text": prose_text,
+            "rewritten_blocks": rewritten_blocks,
+            "rewrite_checklist": list(automatic_rewrite_guidance_pack.get("rewrite_checklist", []))[:3],
+        }
+
     @staticmethod
     def _preparation_guidance(
         *,
@@ -642,6 +680,10 @@ class NovelAssistantService:
             direct_revision_loop_pack=direct_revision_loop_pack,
             reader_feedback_pack=reader_feedback_pack,
         )
+        automatic_prose_rewrite_pack = self._automatic_prose_rewrite_pack(
+            direct_draft_skeleton_pack=direct_draft_skeleton_pack,
+            automatic_rewrite_guidance_pack=automatic_rewrite_guidance_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -673,6 +715,7 @@ class NovelAssistantService:
                 "direct_draft_skeleton",
                 "direct_revision_loop",
                 "automatic_rewrite_guidance",
+                "automatic_prose_rewrite",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -694,6 +737,7 @@ class NovelAssistantService:
             "direct_draft_skeleton_pack": direct_draft_skeleton_pack,
             "direct_revision_loop_pack": direct_revision_loop_pack,
             "automatic_rewrite_guidance_pack": automatic_rewrite_guidance_pack,
+            "automatic_prose_rewrite_pack": automatic_prose_rewrite_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
