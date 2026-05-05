@@ -66,6 +66,9 @@ def test_author_knowledge_service_builds_branch_knowledge_pack(tmp_path: Path) -
         assert pack['summary_layer']
         assert pack['story_bible_pack']['contract_version'] == 'story-bible-pack.v1'
         assert pack['story_bible_pack']['chapter_backbone']
+        assert pack['story_bible_pack']['character_cards']
+        assert pack['story_bible_pack']['motivation_tree']['contract_version'] == 'motivation-tree.v1'
+        assert pack['story_bible_pack']['growth_arc']['contract_version'] == 'growth-arc.v1'
         assert pack['relationship_watch'] is not None
         assert pack['rule_watch'] is not None
         assert pack['unresolved_threads'] is not None
@@ -122,3 +125,4 @@ def test_author_knowledge_service_supports_focus_label_and_chapter_range(tmp_pat
         assert all('卫图' in item['label'] for item in pack['entity_profiles'])
         assert pack['summary_layer']['top_entities']
         assert pack['story_bible_pack']['active_threads'] is not None
+        assert pack['story_bible_pack']['character_cards'][0]['continuity_focus']

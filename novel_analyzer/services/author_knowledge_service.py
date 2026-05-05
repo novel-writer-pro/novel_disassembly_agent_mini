@@ -46,6 +46,99 @@ class AuthorKnowledgeService:
         premise = ""
         if summary_layer.get("chapter_focus"):
             premise = f"围绕{summary_layer['chapter_focus'][0]}所展开的长线叙事，当前聚焦于人物成长、资源获取与身份突破。"
+
+        chapter_text = "\n".join(str(card.get("summary", "")) for card in chapter_cards)
+        relationship_text = "\n".join(actives)
+        thread_text = "\n".join(threads)
+        character_cards = []
+        for item in entity_profiles[:6]:
+            label = str(item.get("label", "")).strip()
+            if not label:
+                continue
+            role_tags = ["entity"]
+            if protagonist_candidates and label == protagonist_candidates[0]:
+                role_tags.append("protagonist")
+            if label in relationship_text:
+                role_tags.append("relationship-core")
+            if label in thread_text:
+                role_tags.append("thread-linked")
+            motivations = []
+            if label in chapter_text:
+                if any(key in chapter_text for key in ["赎身", "脱籍", "武举", "身份"]):
+                    motivations.append("追求身份突破与长期上升")
+                if any(key in chapter_text for key in ["资源", "养生功", "功法", "修炼"]):
+                    motivations.append("获取资源与能力积累")
+                if any(key in chapter_text for key in ["婚事", "家", "夫妇", "亲属"]):
+                    motivations.append("维持家庭与关系稳定")
+            if not motivations:
+                motivations.append("在当前叙事里承担持续推进作用")
+            tensions = []
+            if any(key in chapter_text for key in ["阶级", "家奴", "身契"]):
+                tensions.append("受身份/阶层约束")
+            if label in relationship_text:
+                tensions.append("关键关系将影响后续选择空间")
+            if not tensions:
+                tensions.append("仍需更多章节证据来确认长期冲突")
+            character_cards.append(
+                {
+                    "label": label,
+                    "role_tags": role_tags,
+                    "first_chapter_index": item.get("first_chapter_index"),
+                    "last_chapter_index": item.get("last_chapter_index"),
+                    "motivation_candidates": motivations[:3],
+                    "tension_points": tensions[:3],
+                    "continuity_focus": f"关注{label}在后续章节中的目标、关系与代价是否持续一致。",
+                }
+            )
+
+        primary_goal = "推进主角的身份突破与资源积累"
+        if any(key in chapter_text for key in ["武举", "脱籍", "赎身"]):
+            primary_goal = "完成赎身/脱籍并争取进入更高身份路径"
+        support_goals = []
+        if any(key in chapter_text for key in ["婚事", "夫妇", "杏"]):
+            support_goals.append("保持家庭与婚后协作稳定")
+        if any(key in chapter_text for key in ["养生功", "功法", "修炼"]):
+            support_goals.append("持续通过修炼累积可转化能力")
+        if any(key in relationship_text for key in ["二姑", "卫荭", "李宅"]):
+            support_goals.append("经营关键关系以换取资源与信息入口")
+        obstacles = []
+        if any(key in chapter_text for key in ["家奴", "身契", "阶级"]):
+            obstacles.append("身份与身契限制")
+        if any(key in chapter_text for key in ["银子", "钱", "收成"]):
+            obstacles.append("银钱与资源不足")
+        if any(key in thread_text for key in ["冲突", "风险"]):
+            obstacles.append("未解线程与潜在风险压力")
+        if not obstacles:
+            obstacles.append("长线冲突仍需更多章节显式化")
+        motivation_tree = {
+            "contract_version": "motivation-tree.v1",
+            "primary_goal": primary_goal,
+            "support_goals": support_goals[:4],
+            "obstacles": obstacles[:4],
+            "decision_pressure": [
+                "每次重要选择都要同时考虑身份、资源、关系三重约束。",
+                "不能只追求短期爽点，要检查是否破坏长期成长弧。",
+            ],
+        }
+        growth_arc = {
+            "contract_version": "growth-arc.v1",
+            "current_stage": "从底层生存转向主动争取身份与能力提升",
+            "completed_beats": [
+                "获得关键关系入口",
+                "开始修炼/资源积累",
+                "形成婚后协作与现实筹划",
+            ],
+            "next_beats": [
+                "把资源积累转成身份跃迁机会",
+                "验证主角是否能承受更高代价与风险",
+                "让家庭、修炼、身份目标形成更强冲突与选择",
+            ],
+            "regression_risks": [
+                "无铺垫的战力或身份跃迁",
+                "关系变化缺少中间证据",
+                "只推进事件，不推进人物选择逻辑",
+            ],
+        }
         return {
             "contract_version": "story-bible-pack.v1",
             "premise": premise,
@@ -54,6 +147,9 @@ class AuthorKnowledgeService:
             "relationship_backbone": actives,
             "active_threads": threads,
             "chapter_backbone": backbone,
+            "character_cards": character_cards,
+            "motivation_tree": motivation_tree,
+            "growth_arc": growth_arc,
             "arc_questions": [
                 "主角当前最核心的长期目标是否稳定？",
                 "哪些关系会决定下一阶段资源或身份突破？",

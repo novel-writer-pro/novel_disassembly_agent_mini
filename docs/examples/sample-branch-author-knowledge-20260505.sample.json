@@ -1069,6 +1069,64 @@
         ]
       }
     ],
+    "character_cards": [
+      {
+        "label": "卫图",
+        "role_tags": [
+          "entity",
+          "protagonist",
+          "relationship-core"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 10,
+        "motivation_candidates": [
+          "追求身份突破与长期上升",
+          "获取资源与能力积累",
+          "维持家庭与关系稳定"
+        ],
+        "tension_points": [
+          "受身份/阶层约束",
+          "关键关系将影响后续选择空间"
+        ],
+        "continuity_focus": "关注卫图在后续章节中的目标、关系与代价是否持续一致。"
+      }
+    ],
+    "motivation_tree": {
+      "contract_version": "motivation-tree.v1",
+      "primary_goal": "完成赎身/脱籍并争取进入更高身份路径",
+      "support_goals": [
+        "保持家庭与婚后协作稳定",
+        "持续通过修炼累积可转化能力",
+        "经营关键关系以换取资源与信息入口"
+      ],
+      "obstacles": [
+        "身份与身契限制",
+        "银钱与资源不足"
+      ],
+      "decision_pressure": [
+        "每次重要选择都要同时考虑身份、资源、关系三重约束。",
+        "不能只追求短期爽点，要检查是否破坏长期成长弧。"
+      ]
+    },
+    "growth_arc": {
+      "contract_version": "growth-arc.v1",
+      "current_stage": "从底层生存转向主动争取身份与能力提升",
+      "completed_beats": [
+        "获得关键关系入口",
+        "开始修炼/资源积累",
+        "形成婚后协作与现实筹划"
+      ],
+      "next_beats": [
+        "把资源积累转成身份跃迁机会",
+        "验证主角是否能承受更高代价与风险",
+        "让家庭、修炼、身份目标形成更强冲突与选择"
+      ],
+      "regression_risks": [
+        "无铺垫的战力或身份跃迁",
+        "关系变化缺少中间证据",
+        "只推进事件，不推进人物选择逻辑"
+      ]
+    },
     "arc_questions": [
       "主角当前最核心的长期目标是否稳定？",
       "哪些关系会决定下一阶段资源或身份突破？",
