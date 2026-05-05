@@ -57,6 +57,7 @@
     "creation_control",
     "editor_revision",
     "reader_feedback_loop",
+    "feedback_revision_bridge",
     "retrieval_benchmark",
     "chapter_draft_preparation",
     "direct_draft_skeleton",
@@ -137,7 +138,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 54.78,
+    "avg_raw_latency_ms": 68.29,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -151,8 +152,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 60.949887993047014,
-        "rerank_latency_ms": 0.0053440016927197576,
+        "raw_latency_ms": 71.06880098581314,
+        "rerank_latency_ms": 0.0064820051193237305,
         "raw_top_chapters": [
           2,
           1,
@@ -180,8 +181,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 44.93069599266164,
-        "rerank_latency_ms": 0.005460009560920298,
+        "raw_latency_ms": 67.6214120030636,
+        "rerank_latency_ms": 0.0055679993238300085,
         "raw_top_chapters": [
           1,
           2,
@@ -209,8 +210,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 58.46770800417289,
-        "rerank_latency_ms": 0.00484500196762383,
+        "raw_latency_ms": 66.1653310089605,
+        "rerank_latency_ms": 0.0051009992603212595,
         "raw_top_chapters": [
           10,
           9,
@@ -578,6 +579,29 @@
     ],
     "priority_threads": []
   },
+  "feedback_revision_bridge_pack": {
+    "contract_version": "feedback-revision-bridge-pack.v1",
+    "bridge_actions": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+    ],
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "signal_counts": {},
+    "top_feedback_signals": []
+  },
   "chapter_draft_preparation_pack": {
     "contract_version": "chapter-draft-preparation-pack.v1",
     "draft_goal": "完成赎身/脱籍并争取进入更高身份路径",
@@ -852,6 +876,10 @@
       "先修逻辑，再修节奏，再修文风。",
       "每轮改写后回看 must_keep 是否仍在。",
       "避免为追求流畅度而丢失 payoff / turning point。"
+    ],
+    "feedback_bridge_actions": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
     ]
   },
   "automatic_prose_rewrite_pack": {
@@ -890,7 +918,8 @@
       "先修逻辑，再修节奏，再修文风。",
       "每轮改写后回看 must_keep 是否仍在。",
       "避免为追求流畅度而丢失 payoff / turning point。"
-    ]
+    ],
+    "feedback_signals": []
   },
   "final_draft_candidate_pack": {
     "contract_version": "final-draft-candidate-pack.v1",
@@ -927,13 +956,15 @@
     "review_gate": {
       "needs_review_count": 1,
       "risk_card_count": 10,
+      "negative_feedback_signal_count": 0,
       "ready_for_candidate_review": false
     },
     "candidate_checklist": [
       "候选稿必须保留 must_keep 与 payoff / turning point。",
       "候选稿输出后先过 review_gate，再进入人工/模型复核。",
       "如果 risk_card_count 较高，不要直接进入最终定稿。"
-    ]
+    ],
+    "reader_feedback_signals": []
   },
   "publish_ready_release_pack": {
     "contract_version": "publish-ready-release-pack.v1",
@@ -3111,8 +3142,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 55.271315010031685,
-    "rerank_latency_ms": 0.007987007847987115,
+    "raw_latency_ms": 91.18244399724063,
+    "rerank_latency_ms": 0.008195987902581692,
     "raw_hits": [
       {
         "chapter_index": 2,
