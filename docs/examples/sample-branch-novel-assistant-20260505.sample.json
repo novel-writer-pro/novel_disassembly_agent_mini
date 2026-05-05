@@ -64,7 +64,8 @@
     "automatic_prose_rewrite",
     "final_draft_candidate",
     "publish_ready_release",
-    "sample_based_release_criteria"
+    "sample_based_release_criteria",
+    "release_decision_freeze_artifact"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -124,7 +125,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 44.02,
+    "avg_raw_latency_ms": 56.81,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -138,8 +139,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 40.40230199461803,
-        "rerank_latency_ms": 0.006204994861036539,
+        "raw_latency_ms": 55.91865099268034,
+        "rerank_latency_ms": 0.0060349993873387575,
         "raw_top_chapters": [
           2,
           1,
@@ -167,8 +168,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 49.20573798881378,
-        "rerank_latency_ms": 0.00583699147682637,
+        "raw_latency_ms": 40.10312500759028,
+        "rerank_latency_ms": 0.005453999619930983,
         "raw_top_chapters": [
           1,
           2,
@@ -196,8 +197,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 42.442776990355924,
-        "rerank_latency_ms": 0.005884998245164752,
+        "raw_latency_ms": 74.41869399917778,
+        "rerank_latency_ms": 0.00683200778439641,
         "raw_top_chapters": [
           10,
           9,
@@ -857,6 +858,30 @@
     "sample_count": 5,
     "retrieval_query_count": 3,
     "bundle_summary": "样例、retrieval benchmark、release gate 已汇总，可用于 release criteria review。"
+  },
+  "release_decision_freeze_artifact_pack": {
+    "contract_version": "release-decision-freeze-artifact-pack.v1",
+    "decision": "no_go",
+    "freeze_artifact": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "criteria_snapshot": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "release_gate_snapshot": {
+        "candidate_review_ready": false,
+        "whole_book_ready": true,
+        "ready_for_release": false
+      }
+    },
+    "decision_summary": "当前仍处于 no-go / freeze 保守状态。",
+    "next_actions": [
+      "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+      "若 go，则保留 freeze_artifact 并进入 release review。"
+    ]
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -2856,8 +2881,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 56.39779299963266,
-    "rerank_latency_ms": 0.009033989044837654,
+    "raw_latency_ms": 63.57619799382519,
+    "rerank_latency_ms": 0.009866998880170286,
     "raw_hits": [
       {
         "chapter_index": 2,

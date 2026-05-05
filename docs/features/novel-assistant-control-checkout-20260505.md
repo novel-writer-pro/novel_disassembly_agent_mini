@@ -120,3 +120,8 @@
 - assistant pack 现已提供 `sample_based_release_criteria_bundle`。
 - 真实样例中已给出 `criteria` 与 `bundle_summary`。
 - 这让 publish-ready release 之后继续接上了样例化 release criteria 评审面。
+
+## 19. Release decision / freeze artifact
+- assistant pack 现已提供 `release_decision_freeze_artifact_pack`。
+- 真实样例中已给出 `decision`、`freeze_artifact` 与 `decision_summary`。
+- 这让 sample-based release criteria 之后继续接上了显式的 go/no-go/freeze 决策面。

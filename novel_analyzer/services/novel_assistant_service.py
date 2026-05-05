@@ -601,6 +601,37 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _release_decision_freeze_artifact_pack(
+        *,
+        sample_based_release_criteria_bundle: dict[str, object],
+        publish_ready_release_pack: dict[str, object],
+    ) -> dict[str, object]:
+        criteria = dict(sample_based_release_criteria_bundle.get("criteria", {}))
+        release_gate = dict(publish_ready_release_pack.get("release_gate", {}))
+        go_for_release = bool(criteria.get("ready_for_bundle_review") and release_gate.get("ready_for_release"))
+        decision = "go" if go_for_release else "no_go"
+        freeze_reason = "release_gate_or_sample_criteria_not_ready"
+        if go_for_release:
+            freeze_reason = "ready_for_release_review"
+        freeze_artifact = {
+            "decision": decision,
+            "freeze_reason": freeze_reason,
+            "criteria_snapshot": criteria,
+            "release_gate_snapshot": release_gate,
+        }
+        return {
+            "contract_version": "release-decision-freeze-artifact-pack.v1",
+            "decision": decision,
+            "freeze_artifact": freeze_artifact,
+            "decision_summary": "满足条件后进入 release freeze review。" if go_for_release else "当前仍处于 no-go / freeze 保守状态。",
+            "next_actions": [
+                "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+                "若 go，则保留 freeze_artifact 并进入 release review。",
+            ],
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -788,6 +819,10 @@ class NovelAssistantService:
             sample_evidence_summary=sample_evidence_summary,
             retrieval_benchmark_summary=retrieval_benchmark_summary,
         )
+        release_decision_freeze_artifact_pack = self._release_decision_freeze_artifact_pack(
+            sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
+            publish_ready_release_pack=publish_ready_release_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -823,6 +858,7 @@ class NovelAssistantService:
                 "final_draft_candidate",
                 "publish_ready_release",
                 "sample_based_release_criteria",
+                "release_decision_freeze_artifact",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -848,6 +884,7 @@ class NovelAssistantService:
             "final_draft_candidate_pack": final_draft_candidate_pack,
             "publish_ready_release_pack": publish_ready_release_pack,
             "sample_based_release_criteria_bundle": sample_based_release_criteria_bundle,
+            "release_decision_freeze_artifact_pack": release_decision_freeze_artifact_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

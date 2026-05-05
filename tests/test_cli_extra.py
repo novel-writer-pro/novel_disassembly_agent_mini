@@ -332,6 +332,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'final_draft_candidate_pack': {'contract_version': 'final-draft-candidate-pack.v1', 'candidate_blocks': [{}], 'candidate_text': 'x'},
                 'publish_ready_release_pack': {'contract_version': 'publish-ready-release-pack.v1', 'release_gate': {}, 'release_summary': 'x'},
                 'sample_based_release_criteria_bundle': {'contract_version': 'sample-based-release-criteria-bundle.v1', 'criteria': {}, 'bundle_summary': 'x'},
+                'release_decision_freeze_artifact_pack': {'contract_version': 'release-decision-freeze-artifact-pack.v1', 'decision': 'no_go', 'freeze_artifact': {}},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -372,6 +373,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'final_draft_candidate_pack' in payload
     assert 'publish_ready_release_pack' in payload
     assert 'sample_based_release_criteria_bundle' in payload
+    assert 'release_decision_freeze_artifact_pack' in payload
 
 
 
