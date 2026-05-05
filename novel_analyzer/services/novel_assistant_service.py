@@ -654,14 +654,17 @@ class NovelAssistantService:
         *,
         final_draft_candidate_pack: dict[str, object],
         whole_book_readiness_summary: dict[str, object],
+        whole_book_consistency_backflow_pack: dict[str, object],
     ) -> dict[str, object]:
         review_gate = dict(final_draft_candidate_pack.get("review_gate", {}))
         ready_for_candidate_review = bool(review_gate.get("ready_for_candidate_review"))
         whole_book_ready = bool(whole_book_readiness_summary.get("ready_for_whole_book"))
+        requires_consistency_pass = bool(whole_book_consistency_backflow_pack.get("requires_consistency_pass"))
         release_gate = {
             "candidate_review_ready": ready_for_candidate_review,
             "whole_book_ready": whole_book_ready,
-            "ready_for_release": bool(ready_for_candidate_review and whole_book_ready),
+            "whole_book_consistency_ready": not requires_consistency_pass,
+            "ready_for_release": bool(ready_for_candidate_review and whole_book_ready and not requires_consistency_pass),
         }
         release_summary = "候选稿仍需复核后再发布。"
         if release_gate["ready_for_release"]:
@@ -685,13 +688,20 @@ class NovelAssistantService:
         publish_ready_release_pack: dict[str, object],
         sample_evidence_summary: dict[str, object],
         retrieval_benchmark_summary: dict[str, object],
+        reader_feedback_pack: dict[str, object],
     ) -> dict[str, object]:
         release_gate = dict(publish_ready_release_pack.get("release_gate", {}))
         sample_count = int(sample_evidence_summary.get("sample_count", 0) or 0)
         query_count = int(retrieval_benchmark_summary.get("query_count", 0) or 0)
+        feedback_summary = dict(reader_feedback_pack.get("feedback_summary", {}))
+        negative_signal_count = sum(
+            int(feedback_summary.get("signal_counts", {}).get(key, 0) or 0)
+            for key in ["pacing_slow", "logic_confusion", "character_ooc"]
+        )
         criteria = {
             "sample_count_ready": sample_count >= 3,
             "retrieval_benchmark_ready": query_count >= 3,
+            "reader_feedback_ready": negative_signal_count <= 2,
             "release_gate_ready": bool(release_gate.get("ready_for_release")),
         }
         criteria["ready_for_bundle_review"] = all(criteria.values())
@@ -1232,11 +1242,13 @@ class NovelAssistantService:
         publish_ready_release_pack = self._publish_ready_release_pack(
             final_draft_candidate_pack=final_draft_candidate_pack,
             whole_book_readiness_summary=readiness_summary,
+            whole_book_consistency_backflow_pack=whole_book_consistency_backflow_pack,
         )
         sample_based_release_criteria_bundle = self._sample_based_release_criteria_bundle(
             publish_ready_release_pack=publish_ready_release_pack,
             sample_evidence_summary=sample_evidence_summary,
             retrieval_benchmark_summary=retrieval_benchmark_summary,
+            reader_feedback_pack=reader_feedback_pack,
         )
         release_decision_freeze_artifact_pack = self._release_decision_freeze_artifact_pack(
             sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,

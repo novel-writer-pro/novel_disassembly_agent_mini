@@ -112,9 +112,11 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert 'reader_feedback_signals' in pack['final_draft_candidate_pack']
         assert pack['publish_ready_release_pack']['contract_version'] == 'publish-ready-release-pack.v1'
         assert 'release_gate' in pack['publish_ready_release_pack']
+        assert 'whole_book_consistency_ready' in pack['publish_ready_release_pack']['release_gate']
         assert pack['publish_ready_release_pack']['release_summary']
         assert pack['sample_based_release_criteria_bundle']['contract_version'] == 'sample-based-release-criteria-bundle.v1'
         assert 'criteria' in pack['sample_based_release_criteria_bundle']
+        assert 'reader_feedback_ready' in pack['sample_based_release_criteria_bundle']['criteria']
         assert pack['sample_based_release_criteria_bundle']['bundle_summary']
         assert pack['release_decision_freeze_artifact_pack']['contract_version'] == 'release-decision-freeze-artifact-pack.v1'
         assert pack['release_decision_freeze_artifact_pack']['decision'] in {'go', 'no_go'}

@@ -138,7 +138,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 39.66,
+    "avg_raw_latency_ms": 56.37,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -152,8 +152,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 43.68559899739921,
-        "rerank_latency_ms": 0.007839000318199396,
+        "raw_latency_ms": 59.15646599896718,
+        "rerank_latency_ms": 0.005641006282530725,
         "raw_top_chapters": [
           2,
           1,
@@ -181,8 +181,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 39.10007400554605,
-        "rerank_latency_ms": 0.005131994839757681,
+        "raw_latency_ms": 60.111888000392355,
+        "rerank_latency_ms": 0.006367001333273947,
         "raw_top_chapters": [
           1,
           2,
@@ -210,8 +210,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 36.19338700082153,
-        "rerank_latency_ms": 0.004889006959274411,
+        "raw_latency_ms": 49.83096600335557,
+        "rerank_latency_ms": 0.005128997145220637,
         "raw_top_chapters": [
           10,
           9,
@@ -971,6 +971,7 @@
     "release_gate": {
       "candidate_review_ready": false,
       "whole_book_ready": true,
+      "whole_book_consistency_ready": false,
       "ready_for_release": false
     },
     "release_summary": "候选稿仍需复核后再发布。",
@@ -986,6 +987,7 @@
     "criteria": {
       "sample_count_ready": true,
       "retrieval_benchmark_ready": true,
+      "reader_feedback_ready": true,
       "release_gate_ready": false,
       "ready_for_bundle_review": false
     },
@@ -1002,12 +1004,14 @@
       "criteria_snapshot": {
         "sample_count_ready": true,
         "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
         "release_gate_ready": false,
         "ready_for_bundle_review": false
       },
       "release_gate_snapshot": {
         "candidate_review_ready": false,
         "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
         "ready_for_release": false
       }
     },
@@ -1114,11 +1118,13 @@
     "release_gate": {
       "candidate_review_ready": false,
       "whole_book_ready": true,
+      "whole_book_consistency_ready": false,
       "ready_for_release": false
     },
     "criteria": {
       "sample_count_ready": true,
       "retrieval_benchmark_ready": true,
+      "reader_feedback_ready": true,
       "release_gate_ready": false,
       "ready_for_bundle_review": false
     },
@@ -3151,8 +3157,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 57.22584899922367,
-    "rerank_latency_ms": 0.010288000339642167,
+    "raw_latency_ms": 85.24646300065797,
+    "rerank_latency_ms": 0.007939001079648733,
     "raw_hits": [
       {
         "chapter_index": 2,
