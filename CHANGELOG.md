@@ -1,5 +1,12 @@
 ## 2026-05-05
 
+### 真实中文修仙样例首轮 manual eval
+- 新增 `docs/real-xianxia-manual-eval-20260506.md`，记录首个真实中文修仙样例的 manual eval 结果与问题清单。
+- 真实原文使用 `第一节/第二节/第三节` 标题时，`inspect/ingest` 显示 `chapter_count=0`，确认当前切章器对节级标题兼容不足。
+- 对标题做最小归一化后，3 章主链成功完成；但第 2 章暴露 `small_model_pipeline` 的 `dialogue_candidates` schema 不兼容，依赖 `monolithic_fallback` 收口。
+- 同时记录 operator-facing 导出链在该真实分支上的超时现象，作为下一轮 retrieval / governance 稳定性排查入口。
+
+
 ### 小说助手多能力人工测试与评估手册
 - 新增 `docs/novel-assistant-manual-eval-handbook-20260505.md`，把导入新小说后的人工测试流程收口成一份可直接执行的操作手册。
 - 手册覆盖拆书、检索/RRF/rerank、风险检测、续写/仿写、whole-book、reader feedback、governance/archive 的人工验收路径。
