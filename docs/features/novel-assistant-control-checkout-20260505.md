@@ -175,3 +175,8 @@
 - assistant pack 现已提供 `release_review_note_pack`。
 - CLI 已支持 `export-release-review-note`。
 - 真实样例中已给出 markdown release review note，可直接进入 release review 讨论。
+
+## 30. Approval decision memo
+- assistant pack 现已提供 `approval_decision_memo_pack`。
+- CLI 已支持 `export-approval-decision-memo`。
+- 真实样例中已给出 markdown memo，可直接给审批方做通过/拒绝参考。

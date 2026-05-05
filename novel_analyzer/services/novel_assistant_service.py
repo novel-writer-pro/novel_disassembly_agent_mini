@@ -879,6 +879,32 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _approval_decision_memo_pack(
+        *,
+        release_review_note_pack: dict[str, object],
+        release_decision_freeze_artifact_pack: dict[str, object],
+    ) -> dict[str, object]:
+        decision = str(release_decision_freeze_artifact_pack.get("decision", "no_go"))
+        freeze_artifact = dict(release_decision_freeze_artifact_pack.get("freeze_artifact", {}))
+        verdict = "APPROVE" if decision == "go" else "REJECT"
+        memo_lines = [
+            "# Approval Decision Memo",
+            "",
+            f"- verdict: {verdict}",
+            f"- decision: {decision}",
+            f"- freeze_reason: {freeze_artifact.get('freeze_reason', '')}",
+            f"- review_note: {release_review_note_pack.get('note_summary', '')}",
+        ]
+        memo_text = "\n".join(memo_lines).strip() + "\n"
+        return {
+            "contract_version": "approval-decision-memo-pack.v1",
+            "decision_verdict": verdict,
+            "memo_text": memo_text,
+            "memo_status": "approved" if verdict == "APPROVE" else "rejected",
+        }
+
+
+    @staticmethod
     def _governance_dashboard_pack(
         *,
         final_governance_summary_pack: dict[str, object],
@@ -1139,6 +1165,10 @@ class NovelAssistantService:
             publish_ready_release_pack=publish_ready_release_pack,
             sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
         )
+        approval_decision_memo_pack = self._approval_decision_memo_pack(
+            release_review_note_pack=release_review_note_pack,
+            release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1185,6 +1215,7 @@ class NovelAssistantService:
                 "governance_dashboard",
                 "governance_report_brief",
                 "release_review_note",
+                "approval_decision_memo",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1221,6 +1252,7 @@ class NovelAssistantService:
             "governance_dashboard_pack": governance_dashboard_pack,
             "governance_report_brief_pack": governance_report_brief_pack,
             "release_review_note_pack": release_review_note_pack,
+            "approval_decision_memo_pack": approval_decision_memo_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
