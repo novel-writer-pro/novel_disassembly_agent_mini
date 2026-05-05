@@ -176,6 +176,10 @@ def test_author_knowledge_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert payload['contract_version'] == 'author-knowledge.v1'
     assert 'chapter_cards' in payload
     assert 'knowledge_index' in payload
+    assert 'entity_profiles' in payload
+    assert 'relationship_index' in payload
+    assert 'rule_index' in payload
+    assert 'thread_index' in payload
     assert 'recommended_questions' in payload
 
 

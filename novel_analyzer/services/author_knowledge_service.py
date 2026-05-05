@@ -105,6 +105,28 @@ class AuthorKnowledgeService:
         relationship_watch = list(state_summary.get("evolved_relations", []))[:limit_per_section]
         rule_watch = list(state_summary.get("constraining_world_rules", []))[:limit_per_section]
         unresolved_threads = list(state_summary.get("new_conflicts", []))[:limit_per_section]
+        entity_profiles = [
+            {
+                **item,
+                "primary_fact_type": (
+                    "entity" if "entity" in item["fact_types"] else item["fact_types"][0]
+                ),
+            }
+            for item in knowledge_index
+            if "entity" in item["fact_types"]
+        ][:limit_per_section]
+        relationship_index = [
+            {"label": str(item), "source": "state_summary.evolved_relations"}
+            for item in relationship_watch
+        ][:limit_per_section]
+        rule_index = [
+            {"label": str(item), "source": "state_summary.constraining_world_rules"}
+            for item in rule_watch
+        ][:limit_per_section]
+        thread_index = [
+            {"label": str(item), "source": "state_summary.new_conflicts"}
+            for item in unresolved_threads
+        ][:limit_per_section]
 
         return {
             "contract_version": "author-knowledge.v1",
@@ -120,6 +142,10 @@ class AuthorKnowledgeService:
             "events": grouped.get("event", [])[:limit_per_section],
             "continuity": grouped.get("continuity", [])[:limit_per_section],
             "knowledge_index": knowledge_index,
+            "entity_profiles": entity_profiles,
+            "relationship_index": relationship_index,
+            "rule_index": rule_index,
+            "thread_index": thread_index,
             "relationship_watch": relationship_watch,
             "rule_watch": rule_watch,
             "unresolved_threads": unresolved_threads,
