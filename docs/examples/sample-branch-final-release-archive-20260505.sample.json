@@ -116,8 +116,8 @@
         "release_impact": "whole_book_consistency_blocks_release",
         "next_stage_focus": [
           "优先处理能力族：relationship、rule",
-          "先回看第5章的高优先级修复链",
-          "先回看第4章的高优先级修复链"
+          "先回看第10章的高优先级修复链",
+          "先回看第9章的高优先级修复链"
         ]
       }
     },
@@ -183,6 +183,19 @@
     "archive_status": "active",
     "manifest_contract": "archive-manifest-pack.v1",
     "manifest_item_count": 4
+  },
+  "archive_index_metadata_pack": {
+    "contract_version": "archive-index-metadata-pack.v1",
+    "archive_key": "sample-branch-final-release-archive-20260505",
+    "manifest_contract": "archive-manifest-pack.v1",
+    "retention_policy": "keep_release_archive_until_next_major_revision",
+    "archive_status": "active",
+    "indexed_sections": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ]
   },
   "archive_integrity_check_pack": {
     "contract_version": "archive-integrity-check-pack.v1",
