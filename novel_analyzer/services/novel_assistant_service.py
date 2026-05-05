@@ -1109,6 +1109,24 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _archive_manifest_pack(
+        *,
+        final_release_archive_pack: dict[str, object],
+    ) -> dict[str, object]:
+        return {
+            "contract_version": "archive-manifest-pack.v1",
+            "manifest_items": [
+                "candidate",
+                "freeze_artifact",
+                "handoff_record",
+                "external_report_bundle",
+            ],
+            "archive_summary": final_release_archive_pack.get("archive_summary", ""),
+            "archive_contract": final_release_archive_pack.get("contract_version", ""),
+        }
+
+
+    @staticmethod
     def _governance_dashboard_pack(
         *,
         final_governance_summary_pack: dict[str, object],
@@ -1412,6 +1430,9 @@ class NovelAssistantService:
             handoff_approval_record_pack=handoff_approval_record_pack,
             external_report_bundle_pack=external_report_bundle_pack,
         )
+        archive_manifest_pack = self._archive_manifest_pack(
+            final_release_archive_pack=final_release_archive_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -1464,6 +1485,7 @@ class NovelAssistantService:
                 "external_report_bundle",
                 "external_report_markdown",
                 "final_release_archive",
+                "archive_manifest",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -1506,6 +1528,7 @@ class NovelAssistantService:
             "external_report_bundle_pack": external_report_bundle_pack,
             "external_report_markdown_pack": external_report_markdown_pack,
             "final_release_archive_pack": final_release_archive_pack,
+            "archive_manifest_pack": archive_manifest_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,
