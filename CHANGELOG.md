@@ -1,5 +1,13 @@
 ## 2026-05-05
 
+### 小说助手多能力人工测试与评估手册
+- 新增 `docs/novel-assistant-manual-eval-handbook-20260505.md`，把导入新小说后的人工测试流程收口成一份可直接执行的操作手册。
+- 手册覆盖拆书、检索/RRF/rerank、风险检测、续写/仿写、whole-book、reader feedback、governance/archive 的人工验收路径。
+- 同时补入“薄弱点溯源”方法，要求问题按源文本层 / 知识层 / 检索层 / 控制生成层 / 治理层定位，而不是只给模糊结论。
+- `docs/README.md` 已同步把这份手册挂到使用者主路径，方便后续手动测试与商业化验收。
+
+## 2026-05-05
+
 ### AI 小说助手主链与治理导出升级
 - 新增并持续扩展了 novel assistant 主链：planning / control / revision / rewrite / candidate / governance / archive。
 - 关键能力包括：story bible、future chapter outline、draft preparation、direct skeleton、revision loop、automatic rewrite、final candidate、publish-ready release、sample-based release criteria、freeze artifact、handoff approval、operator brief、runbook、rollback、postmortem、closure、governance summary、external report bundle、final release archive。
