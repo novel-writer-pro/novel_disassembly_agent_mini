@@ -6,11 +6,11 @@
 - 评估工作区：`runs/manual_eval/real-xianxia-sample-20260506/`
 
 ## 核心结论
-1. **真实原文直导入失败**
+1. **真实原文节级标题兼容已补齐**
    - 原文使用 `第一节/第二节/第三节` 标题。
-   - `inspect-novel` 结果：`raw_heading_count=0`、`normalized_chapter_count=0`。
-   - `ingest` 结果：`chapter_count=0`。
-   - 这说明当前切章器对真实中文网文常见“节级标题”兼容不足。
+   - 本轮修复后，`inspect-novel` 结果：`raw_heading_count=5`、`normalized_chapter_count=5`。
+   - `ingest` 结果：`chapter_count=5`。
+   - 说明当前切章器已能直接识别真实中文网文常见的“节级标题”。
 
 2. **最小归一化后主链跑通**
    - 只做标题最小归一化：`第一节 -> 第1章`。
@@ -73,10 +73,19 @@
 ## 当前判断
 - **可证明主链能处理真实中文修仙文本内容本身**，前提是标题格式被识别。
 - **离产品化还差两类补强**：
-  1. ingest 对真实网文章节格式的兼容；
-  2. 小模型结构化输出与 operator-facing 导出稳定性。
+  1. 小模型结构化输出与 operator-facing 导出稳定性。
+  2. chapter list / file import 两条导入路径的长期产品化维护。
 
 ## 推荐下一步
 1. 先修 `第X节` 标题兼容，再复跑同一原文，验证“无需归一化副本”也能直跑。
 2. 修 chapter intake 的 `dialogue_candidates` schema 兼容，再对第 2 章复测，确认不再依赖 fallback。
 3. 单独排查 `export-novel-assistant` / governance / diagnostics 的超时问题，补一轮 retrieval 与 QA 的可落盘证据。
+
+## 补充验证（当日修复后）
+- 使用原始未归一化真实文本重新执行：
+  - `inspect-novel .cache/novel-analyzer/uploads/c495a0a263b947058a19dad743dab8a1-novel.txt`
+  - fresh evidence：`raw_heading_count=5`、`normalized_chapter_count=5`
+- 再执行：
+  - `ingest ... --title 真实中文修仙样例-青华-原文直跑复测`
+  - fresh evidence：`chapter_count=5`
+- 说明本轮切章修复已经覆盖真实原文，不再需要手动把 `第一节` 改成 `第1章` 才能导入。

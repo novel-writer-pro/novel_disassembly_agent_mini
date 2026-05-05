@@ -74,6 +74,26 @@ def test_chapter_intake_output_accepts_chapter_id_alias() -> None:
     assert output.normalized_title == "测试章"
 
 
+def test_chapter_intake_output_accepts_dialogue_candidate_objects() -> None:
+    output = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_number": 2,
+            "chapter_title": "厌物丽人同行",
+            "cleaned_text": "正文",
+            "dialogue_candidates": [
+                {"speaker": "青衫少女", "text": "你怎么了？小六子！"},
+                {"speaker": "布衣少年", "text": "没，没什么。"},
+                {"text": "没有说话人也要兼容。"},
+            ],
+        }
+    )
+    assert output.dialogue_candidates == [
+        "青衫少女: 你怎么了？小六子！",
+        "布衣少年: 没，没什么。",
+        "没有说话人也要兼容。",
+    ]
+
+
 def test_stage_chapter_content_trims_large_input() -> None:
     text = "A" * 5000
     trimmed = AnalysisService._stage_chapter_content(text, max_chars=1000)

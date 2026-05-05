@@ -12,6 +12,7 @@
 - 真实原文使用 `第一节/第二节/第三节` 标题时，`inspect/ingest` 显示 `chapter_count=0`，确认当前切章器对节级标题兼容不足。
 - 对标题做最小归一化后，3 章主链成功完成；但第 2 章暴露 `small_model_pipeline` 的 `dialogue_candidates` schema 不兼容，依赖 `monolithic_fallback` 收口。
 - 同时记录 operator-facing 导出链在该真实分支上的超时现象，作为下一轮 retrieval / governance 稳定性排查入口。
+- 后续补修后已用同一份原始未归一化修仙样例复测，`inspect/ingest` 直接得到 `normalized_chapter_count=5` / `chapter_count=5`，说明 `第X节` 标题兼容已打通。
 
 
 ### 小说助手多能力人工测试与评估手册

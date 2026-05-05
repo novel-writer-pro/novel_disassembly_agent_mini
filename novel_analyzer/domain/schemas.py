@@ -81,6 +81,33 @@ class ChapterIntakeOutput(BaseModel):
     def _normalize_scene_candidates(cls, value: Any) -> Any:
         return cls._coerce_blocks(value)
 
+    @field_validator('dialogue_candidates', mode='before')
+    @classmethod
+    def _normalize_dialogue_candidates(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                speaker = str(item.get('speaker') or '').strip()
+                text = str(
+                    item.get('text')
+                    or item.get('line')
+                    or item.get('content')
+                    or item.get('dialogue')
+                    or ''
+                ).strip()
+                if speaker and text:
+                    normalized.append(f"{speaker}: {text}")
+                elif text:
+                    normalized.append(text)
+        return normalized
+
 
 class ChapterFactExtractionOutput(BaseModel):
     """Skill output for chapter-fact-extractor."""
