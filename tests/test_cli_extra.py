@@ -529,3 +529,30 @@ def test_export_approval_decision_memo_cli(monkeypatch: MonkeyPatch, tmp_path: P
     result = runner.invoke(app, ['export-approval-decision-memo', run_lines['branch_id'], str(out), '--database-url', db_url])
     assert result.exit_code == 0
     assert out.read_text(encoding='utf-8').startswith('# Approval Decision Memo')
+
+
+def test_reader_feedback_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(app, ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url])
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    input_path = tmp_path / 'comments.json'
+    input_path.write_text(json.dumps([
+        {'chapter_index': 1, 'comment_text': '节奏有点慢'},
+        {'chapter_index': 1, 'comment_text': '角色有点突兀'}
+    ], ensure_ascii=False), encoding='utf-8')
+
+    import_result = runner.invoke(app, ['import-reader-feedback', run_lines['branch_id'], str(input_path), '--database-url', db_url])
+    out = tmp_path / 'feedback-summary.json'
+    export_result = runner.invoke(app, ['export-reader-feedback-summary', run_lines['branch_id'], str(out), '--database-url', db_url])
+    assert import_result.exit_code == 0
+    assert export_result.exit_code == 0
+    payload = json.loads(out.read_text(encoding='utf-8'))
+    assert payload['contract_version'] == 'reader-feedback-summary.v1'
+    assert payload['comment_count'] == 2

@@ -19,6 +19,7 @@ from novel_analyzer.services.chapter_imitation_service import ChapterImitationSe
 from novel_analyzer.services.next_chapter_planner_service import NextChapterPlannerService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
+from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
 from novel_analyzer.services.run_service import RunService
 
 
@@ -41,6 +42,7 @@ class NovelAssistantService:
         self.author_knowledge = AuthorKnowledgeService(session)
         self.next_chapter_planner = NextChapterPlannerService(session)
         self.chapter_imitation = ChapterImitationService(session, self.settings)
+        self.reader_feedback_service = ReaderFeedbackService(session)
 
     def _sample_evidence_summary(self) -> dict[str, object]:
         sample_paths = [
@@ -263,8 +265,9 @@ class NovelAssistantService:
             ],
         }
 
-    @staticmethod
     def _reader_feedback_pack(
+        self,
+        branch_id: str,
         *,
         knowledge_pack: dict[str, object],
         review_summary: dict[str, object],
@@ -280,20 +283,30 @@ class NovelAssistantService:
             pain_point_hypotheses.append("未解线程较多，可能带来信息负担或追读疲劳。")
         if continuation_pack and not continuation_pack.get("ending_hook"):
             pain_point_hypotheses.append("章尾钩子较弱，可能影响追读转化。")
+        feedback_summary = self.reader_feedback_service.summarize_branch_feedback(branch_id)
+        if feedback_summary.get("pain_point_hypotheses"):
+            for item in feedback_summary.get("pain_point_hypotheses", []):
+                if item not in pain_point_hypotheses:
+                    pain_point_hypotheses.append(item)
         if not pain_point_hypotheses:
             pain_point_hypotheses.append("当前主风险更偏执行质量，而非明显的读者体验断点。")
+        revision_from_feedback = [
+            "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+            "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。",
+        ]
+        for item in feedback_summary.get("revision_recommendations", []):
+            if item not in revision_from_feedback:
+                revision_from_feedback.append(item)
         return {
             "contract_version": "reader-feedback-pack.v1",
+            "feedback_summary": feedback_summary,
             "pain_point_hypotheses": pain_point_hypotheses,
             "feedback_collection_prompts": [
                 "哪一章开始觉得节奏变慢？原因是什么？",
                 "你最想继续追的角色/线程是什么？",
                 "哪些设定、关系或战力变化让你觉得突兀？",
             ],
-            "revision_from_feedback": [
-                "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
-                "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。",
-            ],
+            "revision_from_feedback": revision_from_feedback,
             "priority_entities": top_entities[:4],
             "priority_threads": top_threads[:4],
         }
@@ -1073,6 +1086,7 @@ class NovelAssistantService:
             imitation_pack=imitation_pack,
         )
         reader_feedback_pack = self._reader_feedback_pack(
+            branch_id,
             knowledge_pack=knowledge_pack,
             review_summary=review_summary,
             continuation_pack=continuation_pack,

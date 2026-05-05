@@ -424,6 +424,17 @@ class ClusterReviewEventRecord(TimestampSoftDeleteMixin, Base):
     event_type: Mapped[str] = mapped_column(String(64), default="status_update")
 
 
+class ReaderFeedbackCommentRecord(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "reader_feedback_comments"
+
+    branch_id: Mapped[str] = mapped_column(ForeignKey("run_branches.id"), index=True)
+    chapter_index: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    source: Mapped[str] = mapped_column(String(64), default="manual")
+    comment_text: Mapped[str] = mapped_column(Text())
+    sentiment: Mapped[str] = mapped_column(String(32), default="mixed")
+    metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+
+
 class RiskSemanticSignalRecord(TimestampSoftDeleteMixin, Base):
     __tablename__ = "risk_semantic_signals"
 

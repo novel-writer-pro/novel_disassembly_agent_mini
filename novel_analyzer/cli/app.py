@@ -363,6 +363,12 @@ def _novel_assistant_service(session: Session, settings: Settings) -> Any:
     return NovelAssistantService(session, settings)
 
 
+def _reader_feedback_service(session: Session) -> Any:
+    from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
+
+    return ReaderFeedbackService(session)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -1333,6 +1339,38 @@ def export_branch_qa_context(
         payload = _export_service(session).export_branch_qa_context(run_id, branch_id)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"branch_qa_context_path={output_path}")
+
+
+@app.command()
+def import_reader_feedback(
+    branch_id: str,
+    input_path: Path,
+    database_url: str | None = None,
+) -> None:
+    """Import reader comments from JSON list."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    comments = json.loads(input_path.read_text(encoding='utf-8'))
+    with factory() as session:
+        payload = _reader_feedback_service(session).import_comments(branch_id, comments)
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def export_reader_feedback_summary(
+    branch_id: str,
+    output_path: Path,
+    database_url: str | None = None,
+) -> None:
+    """Export reader feedback summary to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _reader_feedback_service(session).summarize_branch_feedback(branch_id)
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"reader_feedback_summary_path={output_path}")
 
 
 @app.command()
