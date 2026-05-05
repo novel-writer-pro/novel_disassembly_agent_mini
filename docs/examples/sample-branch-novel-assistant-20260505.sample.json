@@ -68,7 +68,8 @@
     "release_decision_freeze_artifact",
     "handoff_approval_record",
     "operator_release_brief",
-    "release_ops_runbook"
+    "release_ops_runbook",
+    "incident_rollback"
   ],
   "recommended_next_actions": [
     "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -128,7 +129,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 67.92,
+    "avg_raw_latency_ms": 58.66,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -142,8 +143,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 92.86479599541053,
-        "rerank_latency_ms": 0.005232999683357775,
+        "raw_latency_ms": 71.77186699118465,
+        "rerank_latency_ms": 0.006811009370721877,
         "raw_top_chapters": [
           2,
           1,
@@ -171,8 +172,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 67.64530000509694,
-        "rerank_latency_ms": 0.007073002052493393,
+        "raw_latency_ms": 44.34552100428846,
+        "rerank_latency_ms": 0.007344002369791269,
         "raw_top_chapters": [
           1,
           2,
@@ -200,8 +201,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 43.239110003924,
-        "rerank_latency_ms": 0.00533800630364567,
+        "raw_latency_ms": 59.86024999583606,
+        "rerank_latency_ms": 0.026922993129119277,
         "raw_top_chapters": [
           10,
           9,
@@ -924,6 +925,18 @@
     ],
     "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
     "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+  },
+  "incident_rollback_pack": {
+    "contract_version": "incident-rollback-pack.v1",
+    "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+    "rollback_target": "previous_candidate_or_safe_release",
+    "rollback_steps": [
+      "停止当前发布/扩散动作。",
+      "回退到上一版候选稿或安全版本。",
+      "重新收集 risk / review / release gate 快照。",
+      "完成问题修复后重新进入 freeze review。"
+    ],
+    "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
   },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
@@ -2923,8 +2936,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 96.22963798756246,
-    "rerank_latency_ms": 0.010187010047957301,
+    "raw_latency_ms": 57.80879298981745,
+    "rerank_latency_ms": 0.008695002179592848,
     "raw_hits": [
       {
         "chapter_index": 2,

@@ -336,6 +336,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'handoff_approval_record_pack': {'contract_version': 'handoff-approval-record-pack.v1', 'approval_status': 'pending', 'handoff_record': {}},
                 'operator_release_brief_pack': {'contract_version': 'operator-release-brief-pack.v1', 'brief_summary': 'x', 'operator_status': 'pending'},
                 'release_ops_runbook_pack': {'contract_version': 'release-ops-runbook-pack.v1', 'runbook_steps': ['x'], 'rollback_note': 'x'},
+                'incident_rollback_pack': {'contract_version': 'incident-rollback-pack.v1', 'rollback_steps': ['x'], 'rollback_target': 'safe'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -380,6 +381,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'handoff_approval_record_pack' in payload
     assert 'operator_release_brief_pack' in payload
     assert 'release_ops_runbook_pack' in payload
+    assert 'incident_rollback_pack' in payload
 
 
 

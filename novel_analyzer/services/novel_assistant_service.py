@@ -717,6 +717,30 @@ class NovelAssistantService:
 
 
     @staticmethod
+    def _incident_rollback_pack(
+        *,
+        release_ops_runbook_pack: dict[str, object],
+        release_decision_freeze_artifact_pack: dict[str, object],
+    ) -> dict[str, object]:
+        freeze_artifact = dict(release_decision_freeze_artifact_pack.get("freeze_artifact", {}))
+        blockers = list(release_ops_runbook_pack.get("blockers", []))
+        rollback_trigger = blockers[0] if blockers else str(freeze_artifact.get("freeze_reason", "post_release_regression"))
+        rollback_steps = [
+            "停止当前发布/扩散动作。",
+            "回退到上一版候选稿或安全版本。",
+            "重新收集 risk / review / release gate 快照。",
+            "完成问题修复后重新进入 freeze review。",
+        ]
+        return {
+            "contract_version": "incident-rollback-pack.v1",
+            "rollback_trigger": rollback_trigger,
+            "rollback_target": "previous_candidate_or_safe_release",
+            "rollback_steps": rollback_steps,
+            "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。",
+        }
+
+
+    @staticmethod
     def _preparation_guidance(
         *,
         top_entities: list[str],
@@ -920,6 +944,10 @@ class NovelAssistantService:
             operator_release_brief_pack=operator_release_brief_pack,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
         )
+        incident_rollback_pack = self._incident_rollback_pack(
+            release_ops_runbook_pack=release_ops_runbook_pack,
+            release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+        )
         return {
             "contract_version": "novel-assistant.v1",
             "branch_id": branch_id,
@@ -959,6 +987,7 @@ class NovelAssistantService:
                 "handoff_approval_record",
                 "operator_release_brief",
                 "release_ops_runbook",
+                "incident_rollback",
             ],
             "recommended_next_actions": [
                 "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
@@ -988,6 +1017,7 @@ class NovelAssistantService:
             "handoff_approval_record_pack": handoff_approval_record_pack,
             "operator_release_brief_pack": operator_release_brief_pack,
             "release_ops_runbook_pack": release_ops_runbook_pack,
+            "incident_rollback_pack": incident_rollback_pack,
             "audit_conclusion": branch_bundle.get("audit_conclusion", {}),
             "review_summary": review_summary,
             "risk_summary": risk_summary,

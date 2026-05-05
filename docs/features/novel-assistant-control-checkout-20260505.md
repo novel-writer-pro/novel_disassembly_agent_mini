@@ -140,3 +140,8 @@
 - assistant pack 现已提供 `release_ops_runbook_pack`。
 - 真实样例中已给出 `runbook_steps` 与 `blockers`。
 - 这让 operator brief 之后继续接上了可执行的发布操作清单。
+
+## 23. Incident rollback
+- assistant pack 现已提供 `incident_rollback_pack`。
+- 真实样例中已给出 `rollback_trigger`、`rollback_target` 与 `rollback_steps`。
+- 这让 release ops runbook 之后继续接上了事故回退/故障处置交付面。
