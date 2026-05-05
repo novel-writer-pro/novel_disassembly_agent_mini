@@ -310,6 +310,9 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'assistant_summary': {'chapter_count': 2},
                 'supported_actions': ['retrieve_evidence', 'answer_question'],
                 'recommended_next_actions': ['先看 author knowledge'],
+                'whole_book_readiness_summary': {'ready_for_whole_book': True},
+                'sample_evidence_summary': {'sample_count': 2},
+                'preparation_guidance': {'next_chapter_preparation': ['a'], 'imitation_preparation': ['b'], 'risk_gate_preflight': ['c']},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -334,3 +337,6 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert payload['contract_version'] == 'novel-assistant.v1'
     assert 'supported_actions' in payload
     assert 'assistant_summary' in payload
+    assert 'whole_book_readiness_summary' in payload
+    assert 'sample_evidence_summary' in payload
+    assert 'preparation_guidance' in payload

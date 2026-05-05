@@ -49,6 +49,8 @@
     "answer_question",
     "author_knowledge",
     "risk_gate_review",
+    "continue_writing_preparation",
+    "imitation_preparation",
     "whole_book_preparation"
   ],
   "recommended_next_actions": [
@@ -56,6 +58,43 @@
     "需要问答或检索时，优先使用 retrieval diagnostics 确认召回质量。",
     "进入 whole-book 之前先看 review_summary 与 risk_summary，避免带病生成。"
   ],
+  "whole_book_readiness_summary": {
+    "whole_book_contract_version": "whole-book-imitation.v1",
+    "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+    "provider_name": "vip1129",
+    "base_url": "https://api.vip1129.cc/v1",
+    "model_name": "gpt-5.4-mini",
+    "provider_last_status": "degraded",
+    "chapter_analysis_count": 11,
+    "fact_record_count": 232,
+    "ready_for_whole_book": true
+  },
+  "sample_evidence_summary": {
+    "available_samples": [
+      "docs/examples/sample-branch-search-diagnostics-20260505.sample.json",
+      "docs/examples/sample-branch-author-knowledge-20260505.sample.json",
+      "docs/examples/sample-branch-novel-assistant-20260505.sample.json",
+      "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json",
+      "docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json"
+    ],
+    "sample_count": 5
+  },
+  "preparation_guidance": {
+    "next_chapter_preparation": [
+      "先确认主角当前目标、关系推进与未解线程，再进行续写规划。",
+      "如果存在待复核问题簇，优先阅读 review summary 后再定续写方向。",
+      "当前最重要的人物/实体：卫图"
+    ],
+    "imitation_preparation": [
+      "先使用 author knowledge 确认人物/规则/线程现状，再进入仿写。",
+      "whole-book 前先确认 retrieval diagnostics 是否能稳定召回关键章节。",
+      "仿写时优先保留这些实体线：卫图"
+    ],
+    "risk_gate_preflight": [
+      "进入生成前先看 risk summary 与 review summary，避免带病生成。",
+      "当前仍有 1 个 needs_review 问题簇，建议先复核。"
+    ]
+  },
   "audit_conclusion": {
     "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
     "risk_judgement": "当前未发现明确高风险，但人工复核候选较多，需谨慎使用整体稳定结论。",
@@ -1812,8 +1851,8 @@
       "keyword": 10,
       "vector": 10
     },
-    "raw_latency_ms": 3357.8531490056776,
-    "rerank_latency_ms": 148223.01884699846,
+    "raw_latency_ms": 3597.1538860030705,
+    "rerank_latency_ms": 146350.24376899673,
     "raw_hits": [
       {
         "chapter_index": 1,

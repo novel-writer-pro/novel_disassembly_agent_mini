@@ -360,6 +360,9 @@ def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> N
         "./whitepaper/ai-novel-system-whitepaper.md",
         "./whitepaper/ai-novel-system-whitepaper-v2.md",
         "./architecture/ai-novel-system-blueprint.md",
+        "./architecture/novel-assistant-system-architecture.md",
+        "./architecture/novel-assistant-business-architecture.md",
+        "./process/README.md",
     ]:
         assert needle in readme
 

@@ -11,6 +11,7 @@
 - retrieval 主链已纳入 `entity_exact` 与 `vector` 召回。
 - `AuthorKnowledgeService` 已支持 chapter range / focus label / entity/rule/relation/thread 聚合。
 - CLI 已支持 `show-author-knowledge` / `export-author-knowledge`。
+- 已新增 `NovelAssistantService`，统一输出 branch snapshot / risk/review / retrieval diagnostics / author knowledge / whole-book readiness / preparation guidance。
 
 ## 3. 解决的问题
 - 之前：能力存在于 service 内，但不够独立、也不够可用。
@@ -19,6 +20,7 @@
 ## 4. 当前测试 / 评估
 - targeted retrieval + author knowledge + CLI regression 通过。
 - second provider-backed success-density 样例尝试被外部 `403 SUBSCRIPTION_NOT_FOUND` 阻塞，不属于本地能力缺陷。
+- DeepSeek provider-backed success-density 样例已成功补到第二轮 whole-book 真实样例。
 
 ## 5. 交付物
 - `novel_analyzer/services/retrieval_service.py`
@@ -32,5 +34,5 @@
 
 ## 6. 下一步闭环
 1. retrieval 真实 branch benchmark
-2. author knowledge 更强角色/规则摘要
-3. whole-book / planner 更直接消费 author knowledge
+2. whole-book / planner 更直接消费 author knowledge
+3. assistant pack 的续写/仿写控制入口继续增强

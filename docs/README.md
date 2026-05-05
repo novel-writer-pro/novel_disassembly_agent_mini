@@ -25,6 +25,8 @@
 - [`./architecture/README.md`](./architecture/README.md)
 - [`./architecture/ai-novel-system-blueprint.md`](./architecture/ai-novel-system-blueprint.md)
 - [`./architecture/independent-agent-knowledge-and-retrieval.md`](./architecture/independent-agent-knowledge-and-retrieval.md)
+- [`./architecture/novel-assistant-system-architecture.md`](./architecture/novel-assistant-system-architecture.md)
+- [`./architecture/novel-assistant-business-architecture.md`](./architecture/novel-assistant-business-architecture.md)
 - [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
 - [`./architecture/risk-audit-embedding-pgvector-implementation-spec.md`](./architecture/risk-audit-embedding-pgvector-implementation-spec.md)
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
@@ -48,6 +50,7 @@
 - [`./strategy/docs-information-architecture-guide.md`](./strategy/docs-information-architecture-guide.md)
 - [`./strategy/docs-faq-and-consolidation-guide.md`](./strategy/docs-faq-and-consolidation-guide.md)
 - [`./strategy/capability-roadmap-and-deliverables.md`](./strategy/capability-roadmap-and-deliverables.md)
+- [`./process/README.md`](./process/README.md)
 - [`./whitepaper/ai-novel-system-whitepaper.md`](./whitepaper/ai-novel-system-whitepaper.md)
 - [`./whitepaper/ai-novel-system-whitepaper-v2.md`](./whitepaper/ai-novel-system-whitepaper-v2.md)
 
