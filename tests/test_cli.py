@@ -41,6 +41,36 @@ def test_cli_ingest_and_start_run(monkeypatch: MonkeyPatch, tmp_path: Path) -> N
     assert "branch_id=" in start.stdout
 
 
+def test_cli_ingest_chapter_list(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    chapter_list_path = tmp_path / "chapters.json"
+    chapter_list_path.write_text(
+        json.dumps(
+            {
+                "chapters": [
+                    {"title": "青华", "content": "布衣少年捡到黑牌。"},
+                    {"title": "厌物丽人同行", "content": "青旒与小六子互动。"},
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    init = runner.invoke(app, ["init-db", "--database-url", db_url])
+    assert init.exit_code == 0
+
+    ingest = runner.invoke(
+        app,
+        ["ingest-chapter-list", str(chapter_list_path), "--title", "章节列表示例", "--database-url", db_url],
+    )
+    assert ingest.exit_code == 0
+    assert "novel_id=" in ingest.stdout
+    assert "manifest_id=" in ingest.stdout
+    assert "chapter_count=2" in ingest.stdout
+    assert "source_path=" in ingest.stdout
+
+
 def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     from novel_analyzer.database.models import (
         AnalysisRun,

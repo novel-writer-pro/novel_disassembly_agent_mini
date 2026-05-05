@@ -491,6 +491,35 @@ def ingest(
 
 
 @app.command()
+def ingest_chapter_list(
+    input_path: Path,
+    title: str | None = None,
+    source_name: str = typer.Option("chapter-list-import", "--source-name"),
+    database_url: str | None = None,
+) -> None:
+    """Persist a novel from a JSON chapter list and derive a chapter manifest."""
+
+    payload = json.loads(input_path.read_text(encoding="utf-8"))
+    chapters = payload.get("chapters", []) if isinstance(payload, dict) else payload
+    if not isinstance(chapters, list):
+        echo("chapter list payload must be a JSON list or an object with `chapters`")
+        raise typer.Exit(code=1)
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        novel, manifest = _ingest_service(session, settings).ingest_chapter_list(
+            [item for item in chapters if isinstance(item, dict)],
+            title=title,
+            source_name=source_name,
+        )
+        echo(f"novel_id={novel.id}")
+        echo(f"manifest_id={manifest.id}")
+        echo(f"chapter_count={manifest.chapter_count}")
+        echo(f"source_path={novel.source_path}")
+
+
+@app.command()
 def start_run(
     novel_id: str,
     manifest_id: str,

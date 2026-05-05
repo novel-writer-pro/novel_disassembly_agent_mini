@@ -1,5 +1,12 @@
 ## 2026-05-05
 
+### 小说导入、切章与保存规范补强
+- 自动切章现在支持真实中文网文常见的 `第X节` 标题，不再只识别 `第X章`。
+- CLI 新增 `ingest-chapter-list`，支持按 JSON chapter list 做逐章 / 多章导入。
+- `POST /api/import` 现在也支持 JSON `chapters` list 导入，便于外部系统先分章再送入主链。
+- 新增 `docs/novel-ingest-chapter-standard.md`，集中说明切章标准、原文保存位置、续跑/续传原则，以及 chapter list 接口规范。
+
+
 ### 真实中文修仙样例首轮 manual eval
 - 新增 `docs/real-xianxia-manual-eval-20260506.md`，记录首个真实中文修仙样例的 manual eval 结果与问题清单。
 - 真实原文使用 `第一节/第二节/第三节` 标题时，`inspect/ingest` 显示 `chapter_count=0`，确认当前切章器对节级标题兼容不足。

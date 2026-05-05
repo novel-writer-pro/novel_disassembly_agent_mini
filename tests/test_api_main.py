@@ -125,6 +125,76 @@ def test_mock_import_endpoint_uses_profile_query() -> None:
     assert b'"pipeline_profile": "manual"' in body
 
 
+def test_import_endpoint_accepts_json_chapter_list(monkeypatch, tmp_path: Path) -> None:
+    from apps.api.app import main as api_main
+
+    captured: dict[str, object] = {}
+
+    class _DummyIngestService:
+        def __init__(self, session, runtime) -> None:  # noqa: ANN001
+            _ = session
+            _ = runtime
+
+        def persist_chapter_list_file(self, chapters, *, source_name="chapter-list-import"):  # noqa: ANN001
+            captured["chapter_count"] = len(chapters)
+            path = tmp_path / f"{source_name}.txt"
+            path.write_text("第1章 青华\n正文\n", encoding="utf-8")
+            return str(path)
+
+    monkeypatch.setattr(api_main, "IngestService", _DummyIngestService)
+    class _DummySessionContext:
+        def __enter__(self):  # noqa: ANN204
+            return None
+
+        def __exit__(self, exc_type, exc, tb):  # noqa: ANN001, ANN204
+            _ = exc_type
+            _ = exc
+            _ = tb
+            return False
+
+    monkeypatch.setattr(
+        api_main,
+        "create_session_factory",
+        lambda settings=None: (lambda: _DummySessionContext()),
+    )
+
+    def _fake_ingest_and_start_pipeline(**kwargs):  # noqa: ANN003
+        captured["path"] = kwargs["path"]
+        return AutoRunResult(
+            novel_id="novel-1",
+            manifest_id="manifest-1",
+            chapter_count=2,
+            run_id="run-1",
+            branch_id="branch-1",
+            processed_chapters=0,
+            next_chapter=1,
+            pipeline_profile="auto-lite",
+            pipeline_state="idle",
+            setup_status="ready",
+            existing=False,
+        )
+
+    monkeypatch.setattr(api_main, "ingest_and_start_pipeline", _fake_ingest_and_start_pipeline)
+    monkeypatch.setattr(api_main, "get_run_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(api_main, "get_branch_snapshot", lambda **kwargs: None)
+
+    status, body = _call_post_json(
+        "/api/import",
+        {
+            "title": "章节导入样例",
+            "chapters": [
+                {"title": "青华", "content": "布衣少年捡到黑牌。"},
+                {"title": "厌物丽人同行", "content": "青旒与小六子互动。"},
+            ],
+        },
+    )
+    assert status == "200 OK"
+    payload = json.loads(body)
+    assert payload["import_result"]["chapter_count"] == 2
+    assert captured["chapter_count"] == 2
+    assert str(captured["path"]).endswith("api-chapter-list-import.txt")
+
+
 def test_run_snapshot_requires_query_params() -> None:
     status, body = _call("/api/run-snapshot")
     assert status == "400 Bad Request"

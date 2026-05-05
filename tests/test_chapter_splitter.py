@@ -8,6 +8,12 @@ SAMPLE = """第1章 大器晚成
 正文B
 """
 
+SECTION_SAMPLE = """第一节 青华
+正文甲
+第二节 厌物丽人同行
+正文乙
+"""
+
 
 def test_inspect_preview_counts_duplicate_titles() -> None:
     preview = inspect_text(SAMPLE)
@@ -26,3 +32,15 @@ def test_split_text_collapses_duplicate_headings_to_latest_boundary() -> None:
     assert chapters[1].normalized_chapter_no == 65
     assert chapters[1].normalized_title == '临终安排'
     assert chapters[1].content.startswith('第65章 临终安排\n正文B')
+
+
+def test_split_text_supports_section_style_headings() -> None:
+    preview = inspect_text(SECTION_SAMPLE)
+    assert preview.raw_heading_count == 2
+    assert preview.normalized_chapter_count == 2
+
+    chapters = split_text_into_chapters(SECTION_SAMPLE)
+    assert [chapter.normalized_chapter_no for chapter in chapters] == [1, 2]
+    assert chapters[0].raw_heading == '第一节 青华'
+    assert chapters[0].normalized_title == '青华'
+    assert chapters[1].raw_heading == '第二节 厌物丽人同行'

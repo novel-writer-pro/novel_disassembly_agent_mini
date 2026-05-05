@@ -68,19 +68,21 @@
 ### 推荐阅读顺序
 1. [`./cli-operations-manual.md`](./cli-operations-manual.md)
 2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
-3. [`./real-run-checklist.md`](./real-run-checklist.md)
-4. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
-5. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
-6. [`./review-template.md`](./review-template.md)
-7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+3. [`./novel-ingest-chapter-standard.md`](./novel-ingest-chapter-standard.md)
+4. [`./real-run-checklist.md`](./real-run-checklist.md)
+5. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
+6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
+7. [`./review-template.md`](./review-template.md)
+8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
 - 第 2 步：再看日常使用细节
-- 第 3 步：真实小说试跑前看清单
-- 第 4 步：按全能力手册做拆书 / 检索 / 风险 / 仿写 / 治理人工测试
-- 第 5 步：用人工测试记录模板沉淀结论与薄弱点
-- 第 6 步：试跑后用模板做复盘
+- 第 3 步：先确认导入、切章、保存与续传规范
+- 第 4 步：真实小说试跑前看清单
+- 第 5 步：按全能力手册做拆书 / 检索 / 风险 / 仿写 / 治理人工测试
+- 第 6 步：用人工测试记录模板沉淀结论与薄弱点
+- 第 7 步：试跑后用模板做复盘
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 
@@ -142,13 +144,14 @@
 ### 使用类文档
 1. [`./cli-operations-manual.md`](./cli-operations-manual.md)
 2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
-3. [`./real-run-checklist.md`](./real-run-checklist.md)
-4. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
-5. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
-6. [`./review-template.md`](./review-template.md)
-7. [`./session-handoff-manual.md`](./session-handoff-manual.md)
-8. [`../apps/web/README.md`](../apps/web/README.md)
-9. [`../apps/api/README.md`](../apps/api/README.md)
+3. [`./novel-ingest-chapter-standard.md`](./novel-ingest-chapter-standard.md)
+4. [`./real-run-checklist.md`](./real-run-checklist.md)
+5. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
+6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
+7. [`./review-template.md`](./review-template.md)
+8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+9. [`../apps/web/README.md`](../apps/web/README.md)
+10. [`../apps/api/README.md`](../apps/api/README.md)
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)

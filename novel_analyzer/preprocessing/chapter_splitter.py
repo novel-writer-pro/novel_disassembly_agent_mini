@@ -7,10 +7,28 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from hashlib import sha256
 
-TITLE_PATTERN = re.compile(r"^第\s*(?P<number>\d+)\s*章(?P<rest>[^\n]*)", re.MULTILINE)
-DOUBLE_PREFIX_PATTERN = re.compile(
-    r"^(?P<prefix>第\s*(?P<number>\d+)\s*章)\s+\d+\.第\s*\d+\s*章\s*(?P<title>.*)$"
+TITLE_PATTERN = re.compile(
+    r"^第\s*(?P<number>\d+|[零一二三四五六七八九十百千两]+)\s*(?P<unit>章|节)(?P<rest>[^\n]*)",
+    re.MULTILINE,
 )
+DOUBLE_PREFIX_PATTERN = re.compile(
+    r"^(?P<prefix>第\s*(?P<number>\d+|[零一二三四五六七八九十百千两]+)\s*(?P<unit>章|节))\s+\d+\.(第\s*(\d+|[零一二三四五六七八九十百千两]+)\s*(章|节))\s*(?P<title>.*)$"
+)
+
+_CHINESE_DIGITS = {
+    "零": 0,
+    "一": 1,
+    "二": 2,
+    "两": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+}
+_CHINESE_UNITS = {"十": 10, "百": 100, "千": 1000}
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,10 +66,33 @@ class _HeadingMatch:
     end: int
     cluster_start: int
 
+def _parse_chapter_number(raw: str) -> int | None:
+    text = raw.strip()
+    if not text:
+        return None
+    if text.isdigit():
+        return int(text)
+
+    total = 0
+    current = 0
+    for char in text:
+        if char in _CHINESE_DIGITS:
+            current = _CHINESE_DIGITS[char]
+            continue
+        if char in _CHINESE_UNITS:
+            unit = _CHINESE_UNITS[char]
+            if current == 0:
+                current = 1
+            total += current * unit
+            current = 0
+            continue
+        return None
+    return total + current if total + current > 0 else None
+
 
 def _normalize_heading(raw_heading: str) -> tuple[int | None, str]:
     match = TITLE_PATTERN.match(raw_heading.strip())
-    number = int(match.group("number")) if match else None
+    number = _parse_chapter_number(match.group("number")) if match else None
 
     deduped = DOUBLE_PREFIX_PATTERN.sub(
         lambda m: f"{m.group('prefix')} {m.group('title').strip()}".strip(),
@@ -59,7 +100,7 @@ def _normalize_heading(raw_heading: str) -> tuple[int | None, str]:
     )
     rest = deduped
     if number is not None:
-        rest = re.sub(r"^第\s*\d+\s*章", "", deduped).strip()
+        rest = re.sub(r"^第\s*(\d+|[零一二三四五六七八九十百千两]+)\s*(章|节)", "", deduped).strip()
     normalized_title = rest or (raw_heading.strip() if number is None else f"第{number}章")
     return number, normalized_title
 
