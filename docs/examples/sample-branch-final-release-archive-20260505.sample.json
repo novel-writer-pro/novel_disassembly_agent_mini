@@ -177,5 +177,12 @@
       ]
     }
   },
+  "archive_retention_metadata_pack": {
+    "contract_version": "archive-retention-metadata-pack.v1",
+    "retention_policy": "keep_release_archive_until_next_major_revision",
+    "archive_status": "active",
+    "manifest_contract": "archive-manifest-pack.v1",
+    "manifest_item_count": 4
+  },
   "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。"
 }

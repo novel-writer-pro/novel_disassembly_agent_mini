@@ -350,6 +350,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'external_report_markdown_pack': {'contract_version': 'external-report-markdown-pack.v1', 'markdown_text': '# External Report Bundle\n', 'dashboard_status': 'guarded'},
                 'final_release_archive_pack': {'contract_version': 'final-release-archive-pack.v1', 'candidate': {}, 'external_report_bundle': {}},
                 'archive_manifest_pack': {'contract_version': 'archive-manifest-pack.v1', 'manifest_items': ['candidate']},
+                'archive_retention_metadata_pack': {'contract_version': 'archive-retention-metadata-pack.v1', 'archive_status': 'active'},
                 'author_knowledge': {'contract_version': 'author-knowledge.v1'},
                 'audit_conclusion': {'content_judgement': 'ok'},
                 'review_summary': {},
@@ -408,6 +409,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'external_report_markdown_pack' in payload
     assert 'final_release_archive_pack' in payload
     assert 'archive_manifest_pack' in payload
+    assert 'archive_retention_metadata_pack' in payload
 
 
 
