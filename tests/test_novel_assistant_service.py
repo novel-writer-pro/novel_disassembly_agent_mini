@@ -71,6 +71,7 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['whole_book_readiness_summary']
         assert pack['sample_evidence_summary']
         assert pack['whole_book_consistency_backflow_pack']['contract_version'] == 'whole-book-consistency-backflow-pack.v1'
+        assert pack['whole_book_consistency_backflow_pack']['release_impact']
         assert pack['retrieval_benchmark_summary']['contract_version'] == 'retrieval-benchmark-summary.v1'
         if pack['retrieval_benchmark_summary'].get('degraded'):
             assert pack['retrieval_benchmark_summary']['reason']
@@ -144,8 +145,10 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['governance_dashboard_pack']['summary_card']
         assert pack['release_review_note_pack']['contract_version'] == 'release-review-note-pack.v1'
         assert pack['release_review_note_pack']['note_text']
+        assert 'whole_book_consistency_release_impact' in pack['release_review_note_pack']['note_text']
         assert pack['approval_decision_memo_pack']['contract_version'] == 'approval-decision-memo-pack.v1'
         assert pack['approval_decision_memo_pack']['memo_text']
+        assert 'whole_book_release_impact' in pack['approval_decision_memo_pack']['memo_text']
         assert pack['approval_decision_memo_pack']['memo_status']
         assert pack['audit_conclusion']
         assert pack['review_summary'] is not None

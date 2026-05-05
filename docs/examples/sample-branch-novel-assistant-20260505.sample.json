@@ -138,7 +138,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 68.29,
+    "avg_raw_latency_ms": 39.66,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -152,8 +152,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 71.06880098581314,
-        "rerank_latency_ms": 0.0064820051193237305,
+        "raw_latency_ms": 43.68559899739921,
+        "rerank_latency_ms": 0.007839000318199396,
         "raw_top_chapters": [
           2,
           1,
@@ -181,8 +181,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 67.6214120030636,
-        "rerank_latency_ms": 0.0055679993238300085,
+        "raw_latency_ms": 39.10007400554605,
+        "rerank_latency_ms": 0.005131994839757681,
         "raw_top_chapters": [
           1,
           2,
@@ -210,8 +210,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 66.1653310089605,
-        "rerank_latency_ms": 0.0051009992603212595,
+        "raw_latency_ms": 36.19338700082153,
+        "rerank_latency_ms": 0.004889006959274411,
         "raw_top_chapters": [
           10,
           9,
@@ -1124,24 +1124,33 @@
     },
     "decision": "no_go",
     "operator_status": "pending",
-    "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+    "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+    "whole_book_consistency": {
+      "requires_consistency_pass": true,
+      "release_impact": "whole_book_consistency_blocks_release",
+      "next_stage_focus": [
+        "优先处理能力族：relationship、rule",
+        "先回看第5章的高优先级修复链",
+        "先回看第4章的高优先级修复链"
+      ]
+    }
   },
   "governance_report_brief_pack": {
     "contract_version": "governance-report-brief-pack.v1",
     "dashboard_status": "guarded",
-    "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n",
+    "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
     "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
   },
   "release_review_note_pack": {
     "contract_version": "release-review-note-pack.v1",
-    "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n",
+    "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
     "review_status": "blocked",
     "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
   },
   "approval_decision_memo_pack": {
     "contract_version": "approval-decision-memo-pack.v1",
     "decision_verdict": "REJECT",
-    "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n",
+    "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
     "memo_status": "rejected"
   },
   "audit_conclusion": {
@@ -3142,8 +3151,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 91.18244399724063,
-    "rerank_latency_ms": 0.008195987902581692,
+    "raw_latency_ms": 57.22584899922367,
+    "rerank_latency_ms": 0.010288000339642167,
     "raw_hits": [
       {
         "chapter_index": 2,

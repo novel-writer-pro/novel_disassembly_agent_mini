@@ -935,6 +935,7 @@ class NovelAssistantService:
         *,
         governance_dashboard_pack: dict[str, object],
         final_governance_summary_pack: dict[str, object],
+        whole_book_consistency_backflow_pack: dict[str, object],
     ) -> dict[str, object]:
         summary_card = str(governance_dashboard_pack.get("summary_card", "")).strip()
         dashboard_status = str(governance_dashboard_pack.get("dashboard_status", "guarded"))
@@ -946,6 +947,7 @@ class NovelAssistantService:
             f"- governance_status: {final_governance_summary_pack.get('governance_status', 'guarded')}",
             f"- summary_card: {summary_card}",
             f"- operator_brief: {operator_brief}",
+            f"- whole_book_release_impact: {whole_book_consistency_backflow_pack.get('release_impact', '')}",
         ]).strip() + "\n"
         return {
             "contract_version": "governance-report-brief-pack.v1",
@@ -961,6 +963,7 @@ class NovelAssistantService:
         governance_report_brief_pack: dict[str, object],
         publish_ready_release_pack: dict[str, object],
         sample_based_release_criteria_bundle: dict[str, object],
+        whole_book_consistency_backflow_pack: dict[str, object],
     ) -> dict[str, object]:
         release_gate = dict(publish_ready_release_pack.get("release_gate", {}))
         criteria = dict(sample_based_release_criteria_bundle.get("criteria", {}))
@@ -972,6 +975,7 @@ class NovelAssistantService:
             f"- ready_for_release: {release_gate.get('ready_for_release')}",
             f"- criteria_ready: {criteria.get('ready_for_bundle_review')}",
             f"- governance_brief: {governance_report_brief_pack.get('summary_card', '')}",
+            f"- whole_book_consistency_release_impact: {whole_book_consistency_backflow_pack.get('release_impact', '')}",
         ]
         note_text = "\n".join(note_lines).strip() + "\n"
         return {
@@ -987,6 +991,7 @@ class NovelAssistantService:
         *,
         release_review_note_pack: dict[str, object],
         release_decision_freeze_artifact_pack: dict[str, object],
+        whole_book_consistency_backflow_pack: dict[str, object],
     ) -> dict[str, object]:
         decision = str(release_decision_freeze_artifact_pack.get("decision", "no_go"))
         freeze_artifact = dict(release_decision_freeze_artifact_pack.get("freeze_artifact", {}))
@@ -998,6 +1003,7 @@ class NovelAssistantService:
             f"- decision: {decision}",
             f"- freeze_reason: {freeze_artifact.get('freeze_reason', '')}",
             f"- review_note: {release_review_note_pack.get('note_summary', '')}",
+            f"- whole_book_release_impact: {whole_book_consistency_backflow_pack.get('release_impact', '')}",
         ]
         memo_text = "\n".join(memo_lines).strip() + "\n"
         return {
@@ -1016,6 +1022,7 @@ class NovelAssistantService:
         sample_based_release_criteria_bundle: dict[str, object],
         release_decision_freeze_artifact_pack: dict[str, object],
         operator_release_brief_pack: dict[str, object],
+        whole_book_consistency_backflow_pack: dict[str, object],
     ) -> dict[str, object]:
         return {
             "contract_version": "governance-dashboard-pack.v1",
@@ -1026,6 +1033,11 @@ class NovelAssistantService:
             "decision": release_decision_freeze_artifact_pack.get("decision", "no_go"),
             "operator_status": operator_release_brief_pack.get("operator_status", "pending"),
             "operator_brief": operator_release_brief_pack.get("brief_summary", ""),
+            "whole_book_consistency": {
+                "requires_consistency_pass": whole_book_consistency_backflow_pack.get("requires_consistency_pass"),
+                "release_impact": whole_book_consistency_backflow_pack.get("release_impact", ""),
+                "next_stage_focus": whole_book_consistency_backflow_pack.get("next_stage_focus", []),
+            },
         }
 
 
@@ -1268,19 +1280,23 @@ class NovelAssistantService:
             sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
             operator_release_brief_pack=operator_release_brief_pack,
+            whole_book_consistency_backflow_pack=whole_book_consistency_backflow_pack,
         )
         governance_report_brief_pack = self._governance_report_brief_pack(
             governance_dashboard_pack=governance_dashboard_pack,
             final_governance_summary_pack=final_governance_summary_pack,
+            whole_book_consistency_backflow_pack=whole_book_consistency_backflow_pack,
         )
         release_review_note_pack = self._release_review_note_pack(
             governance_report_brief_pack=governance_report_brief_pack,
             publish_ready_release_pack=publish_ready_release_pack,
             sample_based_release_criteria_bundle=sample_based_release_criteria_bundle,
+            whole_book_consistency_backflow_pack=whole_book_consistency_backflow_pack,
         )
         approval_decision_memo_pack = self._approval_decision_memo_pack(
             release_review_note_pack=release_review_note_pack,
             release_decision_freeze_artifact_pack=release_decision_freeze_artifact_pack,
+            whole_book_consistency_backflow_pack=whole_book_consistency_backflow_pack,
         )
         return {
             "contract_version": "novel-assistant.v1",
