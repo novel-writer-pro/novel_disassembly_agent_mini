@@ -83,6 +83,50 @@ class NovelAssistantService:
             "ready_for_whole_book": bool(chapter_analysis_count >= 2 and fact_count > 0),
         }
 
+    @staticmethod
+    def _whole_book_consistency_backflow_pack() -> dict[str, object]:
+        sample_paths = [
+            "docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json",
+            "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json",
+        ]
+        for sample_path in sample_paths:
+            path = Path(sample_path)
+            if not path.exists():
+                continue
+            import json
+            payload = json.loads(path.read_text(encoding='utf-8'))
+            dashboard = payload.get("dashboard_summary", {}) if isinstance(payload, dict) else {}
+            diagnostics = dashboard.get("long_book_consistency_diagnostics", {}) if isinstance(dashboard, dict) else {}
+            handoff = dashboard.get("book_handoff_summary", {}) if isinstance(dashboard, dict) else {}
+            next_focus = list(handoff.get("next_stage_focus", []))[:4] if isinstance(handoff, dict) else []
+            top_repairs = list(handoff.get("top_repair_recommendations", []))[:4] if isinstance(handoff, dict) else []
+            requires_consistency_pass = bool(diagnostics.get("requires_consistency_pass"))
+            candidate_backflow_actions = [
+                "将 top_repair_recommendations 回灌到 candidate/revision/rewrite 主链。",
+                "若 requires_consistency_pass=true，则禁止直接进入 release。",
+            ]
+            release_impact = "whole_book_consistency_blocks_release" if requires_consistency_pass else "whole_book_consistency_clear"
+            return {
+                "contract_version": "whole-book-consistency-backflow-pack.v1",
+                "sample_path": sample_path,
+                "diagnostic_version": diagnostics.get("diagnostic_version") or diagnostics.get("contract") or "",
+                "requires_consistency_pass": requires_consistency_pass,
+                "next_stage_focus": next_focus,
+                "top_repair_recommendations": top_repairs,
+                "candidate_backflow_actions": candidate_backflow_actions,
+                "release_impact": release_impact,
+            }
+        return {
+            "contract_version": "whole-book-consistency-backflow-pack.v1",
+            "degraded": True,
+            "reason": "whole_book_consistency_sample_unavailable",
+            "requires_consistency_pass": False,
+            "next_stage_focus": [],
+            "top_repair_recommendations": [],
+            "candidate_backflow_actions": [],
+            "release_impact": "unknown",
+        }
+
     def _retrieval_benchmark_summary(
         self,
         branch_id: str,
@@ -1053,6 +1097,7 @@ class NovelAssistantService:
             limit=limit,
             queries=benchmark_queries,
         )
+        whole_book_consistency_backflow_pack = self._whole_book_consistency_backflow_pack()
         continuation_pack = None
         imitation_pack = None
         if chapter_count > 0:
@@ -1205,6 +1250,7 @@ class NovelAssistantService:
                 "continue_writing_preparation",
                 "imitation_preparation",
                 "whole_book_preparation",
+                "whole_book_consistency_backflow",
                 "original_planning",
                 "creation_control",
                 "editor_revision",
@@ -1241,6 +1287,7 @@ class NovelAssistantService:
             "sample_evidence_summary": sample_evidence_summary,
             "preparation_guidance": preparation_guidance,
             "retrieval_benchmark_summary": retrieval_benchmark_summary,
+            "whole_book_consistency_backflow_pack": whole_book_consistency_backflow_pack,
             "continuation_pack": continuation_pack,
             "imitation_pack": imitation_pack,
             "original_planning_pack": original_planning_pack,

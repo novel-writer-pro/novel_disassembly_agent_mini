@@ -185,3 +185,8 @@
 - 已新增 `ReaderFeedbackService`、评论导入与反馈汇总主链。
 - CLI 已支持 `import-reader-feedback` / `export-reader-feedback-summary`。
 - 样例：`sample-reader-feedback-summary-20260505.sample.json`。
+
+## 32. Whole-book consistency backflow
+- assistant pack 现已提供 `whole_book_consistency_backflow_pack`。
+- 该包从 whole-book 示例诊断中反向提取修复重点与发布影响。
+- 真实样例中已给出 `requires_consistency_pass` 与 `release_impact`。

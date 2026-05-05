@@ -318,6 +318,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                 'recommended_next_actions': ['先看 author knowledge'],
                 'whole_book_readiness_summary': {'ready_for_whole_book': True},
                 'sample_evidence_summary': {'sample_count': 2},
+                'whole_book_consistency_backflow_pack': {'contract_version': 'whole-book-consistency-backflow-pack.v1'},
                 'retrieval_benchmark_summary': {'contract_version': 'retrieval-benchmark-summary.v1', 'query_count': 2},
                 'preparation_guidance': {'next_chapter_preparation': ['a'], 'imitation_preparation': ['b'], 'risk_gate_preflight': ['c']},
                 'original_planning_pack': {'contract_version': 'original-planning-pack.v1'},
@@ -370,6 +371,7 @@ def test_novel_assistant_cli(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert 'assistant_summary' in payload
     assert 'whole_book_readiness_summary' in payload
     assert 'sample_evidence_summary' in payload
+    assert 'whole_book_consistency_backflow_pack' in payload
     assert 'retrieval_benchmark_summary' in payload
     assert 'preparation_guidance' in payload
     assert 'original_planning_pack' in payload

@@ -70,6 +70,7 @@ def test_novel_assistant_service_builds_branch_assistant_pack(tmp_path: Path) ->
         assert pack['author_knowledge']['focus_label'] == '卫图'
         assert pack['whole_book_readiness_summary']
         assert pack['sample_evidence_summary']
+        assert pack['whole_book_consistency_backflow_pack']['contract_version'] == 'whole-book-consistency-backflow-pack.v1'
         assert pack['retrieval_benchmark_summary']['contract_version'] == 'retrieval-benchmark-summary.v1'
         if pack['retrieval_benchmark_summary'].get('degraded'):
             assert pack['retrieval_benchmark_summary']['reason']

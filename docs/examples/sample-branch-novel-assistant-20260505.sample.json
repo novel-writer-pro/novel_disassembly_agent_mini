@@ -52,6 +52,7 @@
     "continue_writing_preparation",
     "imitation_preparation",
     "whole_book_preparation",
+    "whole_book_consistency_backflow",
     "original_planning",
     "creation_control",
     "editor_revision",
@@ -136,7 +137,7 @@
       "like": 27,
       "keyword": 12
     },
-    "avg_raw_latency_ms": 48.51,
+    "avg_raw_latency_ms": 54.78,
     "avg_rerank_latency_ms": 0.01,
     "rerank_coverage_ratio": 0.0,
     "cases": [
@@ -150,8 +151,8 @@
           "like": 10,
           "keyword": 10
         },
-        "raw_latency_ms": 54.004167002858594,
-        "rerank_latency_ms": 0.004231987986713648,
+        "raw_latency_ms": 60.949887993047014,
+        "rerank_latency_ms": 0.0053440016927197576,
         "raw_top_chapters": [
           2,
           1,
@@ -179,8 +180,8 @@
           "like": 8,
           "keyword": 1
         },
-        "raw_latency_ms": 37.77151300164405,
-        "rerank_latency_ms": 0.004437999450601637,
+        "raw_latency_ms": 44.93069599266164,
+        "rerank_latency_ms": 0.005460009560920298,
         "raw_top_chapters": [
           1,
           2,
@@ -208,8 +209,8 @@
           "like": 9,
           "keyword": 1
         },
-        "raw_latency_ms": 53.764512995257974,
-        "rerank_latency_ms": 0.0070590031100437045,
+        "raw_latency_ms": 58.46770800417289,
+        "rerank_latency_ms": 0.00484500196762383,
         "raw_top_chapters": [
           10,
           9,
@@ -228,6 +229,88 @@
         "top_overlap": 5
       }
     ]
+  },
+  "whole_book_consistency_backflow_pack": {
+    "contract_version": "whole-book-consistency-backflow-pack.v1",
+    "sample_path": "docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json",
+    "diagnostic_version": "long-book-consistency-diagnostics.v1",
+    "requires_consistency_pass": true,
+    "next_stage_focus": [
+      "优先处理能力族：relationship、rule",
+      "先回看第5章的高优先级修复链",
+      "先回看第4章的高优先级修复链"
+    ],
+    "top_repair_recommendations": [
+      {
+        "action_type": "repair_rhythm",
+        "count": 2,
+        "highest_priority": 1,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          4,
+          5
+        ],
+        "targets": [
+          "rhythm"
+        ],
+        "issue_families": [
+          "rhythm"
+        ]
+      },
+      {
+        "action_type": "reinforce_ending_hook",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          4,
+          5
+        ],
+        "targets": [
+          "ending_hook"
+        ],
+        "issue_families": [
+          "hook"
+        ]
+      },
+      {
+        "action_type": "repair_character_motivation",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          4,
+          5
+        ],
+        "targets": [
+          "character_motivation"
+        ],
+        "issue_families": [
+          "motivation"
+        ]
+      },
+      {
+        "action_type": "repair_reader_engagement",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          4,
+          5
+        ],
+        "targets": [
+          "reader_engagement"
+        ],
+        "issue_families": [
+          "reader_sim"
+        ]
+      }
+    ],
+    "candidate_backflow_actions": [
+      "将 top_repair_recommendations 回灌到 candidate/revision/rewrite 主链。",
+      "若 requires_consistency_pass=true，则禁止直接进入 release。"
+    ],
+    "release_impact": "whole_book_consistency_blocks_release"
   },
   "continuation_pack": {
     "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
@@ -3028,8 +3111,8 @@
       "keyword": 10,
       "entity_exact": 10
     },
-    "raw_latency_ms": 57.64906700642314,
-    "rerank_latency_ms": 0.007134003681130707,
+    "raw_latency_ms": 55.271315010031685,
+    "rerank_latency_ms": 0.007987007847987115,
     "raw_hits": [
       {
         "chapter_index": 2,
