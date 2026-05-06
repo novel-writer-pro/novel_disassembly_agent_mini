@@ -1,0 +1,2767 @@
+{
+  "chapter_index": 4,
+  "artifact": {
+    "chapter_index": 4,
+    "normalized_title": "仙道无凭",
+    "dimensions": [
+      {
+        "dimension": "worldbuilding",
+        "summary": "存在仙道修炼和入门体系",
+        "evidence": [
+          "“好好静心修炼啊，争取早一点入门”",
+          "“入了门中仙师座下”"
+        ],
+        "confidence": 0.97
+      },
+      {
+        "dimension": "worldbuilding",
+        "summary": "存在五谷堂这一场所或组织",
+        "evidence": [
+          "“五谷堂里还有我赵小六”"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "dimension": "foreshadowing",
+        "summary": "青衫少女未来可能入门成为仙师座下弟子",
+        "evidence": [
+          "“你要是等上两年，同样入了门中仙师座下”"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "dimension": "themes",
+        "summary": "同门情谊与试探",
+        "evidence": [
+          "布衣少年称呼‘青旒师妹’且双方承认同门关系",
+          "少女因少年看其他女子而生气，少年立即讨好安慰"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "dimension": "themes",
+        "summary": "自尊与讨好",
+        "evidence": [
+          "少女因少年赞美而喜悦，脸色好转",
+          "少年主动认错并用‘不会比那女子差’来哄劝"
+        ],
+        "confidence": 0.88
+      },
+      {
+        "dimension": "themes",
+        "summary": "仙道门槛与凡俗期待",
+        "evidence": [
+          "少年提到‘入门中仙师座下’，暗示修仙路径",
+          "少女有未来成为仙师座下弟子的可能（置信度0.6）"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "dimension": "pacing",
+        "summary": "overall: 前紧后缓; details: 开头以少女的指责制造紧张感，随后通过少年认错和赞美快速缓和，中间穿插讽刺白衣丽人增添了幽默和冲突层次，整体节奏先快后慢，结尾归于平稳对话。",
+        "evidence": [],
+        "confidence": 0.7
+      },
+      {
+        "dimension": "emotional_curve",
+        "summary": "start: 愤怒; middle: 尴尬转喜悦; end: 平静中带期待",
+        "evidence": [],
+        "confidence": 0.7
+      }
+    ],
+    "chapter_summary": "青衫少女指责布衣少年看其他女子，少年认错并赞美少女，提及她未来可入门仙师座下，少女转怒为喜，关系缓和但暗藏冲突。",
+    "key_entities": [
+      "青衫少女（褚青旒）",
+      "布衣少年（赵小六/赵井泉）"
+    ],
+    "key_events": [
+      "青衫少女指责布衣少年盯着其他女子看",
+      "布衣少年讨好青衫少女并提及修炼入门",
+      "青衫少女因布衣少年的赞美而喜悦"
+    ],
+    "continuity_notes": [
+      "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。"
+    ],
+    "state_transition_notes": [
+      "本章状态推进集中体现在：青衫少女指责布衣少年盯着其他女子看、布衣少年讨好青衫少女并提及修炼入门、青衫少女因布衣少年的赞美而喜悦。",
+      "本章关系面出现可见变化：布衣少年与青衫少女是同门师兄妹。",
+      "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。"
+    ],
+    "evidence_backed_resolutions": [
+      "关系线“小六子和青旒是同门师兄妹”已出现阶段性变化证据。"
+    ],
+    "unresolved_threads": [
+      "新埋下的线程：青衫少女未来可能入门成为仙师座下弟子",
+      "持续施加约束的规则：黑牌材质非金非木且触感凉意",
+      "持续施加约束的规则：黑牌能响应外来召唤"
+    ],
+    "writer_learning_notes": [
+      "用物理异常信号作为神秘道具的钩子，强化悬念驱动后续章节",
+      "通过‘指桑骂槐’的间接对话塑造人物机智、狡黠的性格，同时激活新冲突",
+      "先建立温馨互动再插入外部冲突，制造情绪转折，提升章节张力",
+      "每一章都保留至少一个开放线程，形成多线并进的阅读驱动力"
+    ],
+    "unsupported_inferences": [
+      "analysis-layer 的 summary.detailed 中描述‘少年通过指桑骂槐（蛤蟆精）的方式讽刺了路过的白衣丽人’，该事件在 fact-layer 中无直接证据支持（fact-layer events 仅包含少女指责、少年讨好、少女喜悦三项），属于过度推断。",
+      "analysis-layer 的 continuity_notes 中称‘新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态’，但 fact-layer 中未收录此冲突，缺乏事实依据。",
+      "analysis-layer 的 continuity_notes 中称‘伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现’，实际此前情状态摘要显示该伏笔在本章才首次建立（new_foreshadowing），并非兑现，属于剧情状态误判。",
+      "前情升级冲突被宣称解决/终止，但本章未提供新的冲突事实支撑。"
+    ],
+    "ambiguous_points": [],
+    "needs_human_review": true,
+    "quality_gate_notes": [],
+    "hook_score": 4.0,
+    "state_summary": {
+      "new_foreshadowing": [
+        "青衫少女未来可能入门成为仙师座下弟子"
+      ],
+      "paid_off_foreshadowing": [
+        "布衣少年擅伪装和讲笑话的表演能力"
+      ],
+      "new_conflicts": [],
+      "escalated_conflicts": [],
+      "stable_relations": [
+        "布衣少年与青衫少女是同门师兄妹"
+      ],
+      "evolved_relations": [
+        "小六子和青旒是同门师兄妹"
+      ],
+      "observed_world_rules": [
+        "存在仙道口诀",
+        "存在五谷堂这一场所或组织"
+      ],
+      "constraining_world_rules": [
+        "黑牌材质非金非木且触感凉意",
+        "黑牌能响应外来召唤",
+        "存在仙道修炼和入门体系"
+      ]
+    }
+  },
+  "facts": [
+    {
+      "fact_type": "continuity",
+      "label": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。"
+      ]
+    },
+    {
+      "fact_type": "continuity",
+      "label": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "confidence": 0.55,
+      "evidence_list": [
+        "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "布衣少年（赵小六/赵井泉）",
+      "confidence": 0.6,
+      "evidence_list": [
+        "布衣少年（赵小六/赵井泉）"
+      ]
+    },
+    {
+      "fact_type": "entity",
+      "label": "青衫少女（褚青旒）",
+      "confidence": 0.6,
+      "evidence_list": [
+        "青衫少女（褚青旒）"
+      ]
+    },
+    {
+      "fact_type": "event",
+      "label": "布衣少年讨好青衫少女并提及修炼入门",
+      "confidence": 0.7,
+      "evidence_list": [
+        "布衣少年讨好青衫少女并提及修炼入门"
+      ]
+    },
+    {
+      "fact_type": "event",
+      "label": "青衫少女因布衣少年的赞美而喜悦",
+      "confidence": 0.7,
+      "evidence_list": [
+        "青衫少女因布衣少年的赞美而喜悦"
+      ]
+    },
+    {
+      "fact_type": "event",
+      "label": "青衫少女指责布衣少年盯着其他女子看",
+      "confidence": 0.7,
+      "evidence_list": [
+        "青衫少女指责布衣少年盯着其他女子看"
+      ]
+    }
+  ],
+  "retrieval": {
+    "title": "仙道无凭",
+    "summary_text": "青衫少女指责布衣少年看其他女子，少年认错并赞美少女，提及她未来可入门仙师座下，少女转怒为喜，关系缓和但暗藏冲突。",
+    "keyword_list": [
+      "青衫少女（褚青旒）",
+      "布衣少年（赵小六/赵井泉）",
+      "青衫少女指责布衣少年盯着其他女子看",
+      "布衣少年讨好青衫少女并提及修炼入门",
+      "青衫少女因布衣少年的赞美而喜悦"
+    ],
+    "query_hints": [
+      "第4章 仙道无凭 讲了什么",
+      "青衫少女（褚青旒） 在这一章发生了什么",
+      "布衣少年（赵小六/赵井泉） 在这一章发生了什么"
+    ]
+  },
+  "graph_nodes": [
+    {
+      "node_type": "continuity",
+      "label": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。"
+        ]
+      }
+    },
+    {
+      "node_type": "continuity",
+      "label": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.5,
+        "evidence": [
+          "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "布衣少年（赵小六/赵井泉）",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.98,
+        "evidence": [
+          "“青旒师妹，我错了，行不行”",
+          "布衣少年的脸皮在原来时代便已经练成了铜墙铁壁",
+          "赵小六其他本事没有，但看人的目光绝不会差"
+        ]
+      }
+    },
+    {
+      "node_type": "entity",
+      "label": "青衫少女（褚青旒）",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.98,
+        "evidence": [
+          "“哼，小六子，赵小六，赵井泉，我褚青旒算是看清楚一个人了”",
+          "青衫少女恨恨的盯着低垂头不敢搭话的布衣少年",
+          "禇青旒明眸中闪过的喜悦却躲不过赵小六敏锐的目光"
+        ]
+      }
+    },
+    {
+      "node_type": "event",
+      "label": "布衣少年讨好青衫少女并提及修炼入门",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.93,
+        "evidence": [
+          "“你要是等上两年，同样入了门中仙师座下，绝对不会比方才那女子差”",
+          "“到那时候青旒师妹可别忘了五谷堂里还有我赵小六啊”"
+        ]
+      }
+    },
+    {
+      "node_type": "event",
+      "label": "青衫少女因布衣少年的赞美而喜悦",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.88,
+        "evidence": [
+          "禇青旒明眸中闪过的喜悦却躲不过赵小六敏锐的目光",
+          "但是禇青旒明眸中闪过的喜悦却躲不过赵小六敏锐的目光",
+          "脸色却已经好看了许多"
+        ]
+      }
+    },
+    {
+      "node_type": "event",
+      "label": "青衫少女指责布衣少年盯着其他女子看",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.95,
+        "evidence": [
+          "“眼睛直勾勾的盯着人家，哈喇子都快把衣襟打湿了”",
+          "“还说人家是蛤蟆，我看你比别人也好不了多少”"
+        ]
+      }
+    },
+    {
+      "node_type": "foreshadow",
+      "label": "青衫少女未来可能入门成为仙师座下弟子",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.6,
+        "evidence": [
+          "“你要是等上两年，同样入了门中仙师座下”"
+        ]
+      }
+    },
+    {
+      "node_type": "relation",
+      "label": "布衣少年与青衫少女是同门师兄妹",
+      "occurrence_count": 2,
+      "metadata": {
+        "confidence": 0.99,
+        "evidence": [
+          "青旒师妹",
+          "布衣少年一脸正经不苟言笑的回答道"
+        ]
+      }
+    },
+    {
+      "node_type": "world_rule",
+      "label": "存在五谷堂这一场所或组织",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.8,
+        "evidence": [
+          "“五谷堂里还有我赵小六”"
+        ]
+      }
+    },
+    {
+      "node_type": "world_rule",
+      "label": "存在仙道修炼和入门体系",
+      "occurrence_count": 1,
+      "metadata": {
+        "confidence": 0.97,
+        "evidence": [
+          "“好好静心修炼啊，争取早一点入门”",
+          "“入了门中仙师座下”"
+        ]
+      }
+    }
+  ],
+  "graph_edges": [
+    {
+      "edge_type": "advances_to",
+      "source": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "advances_to",
+      "source": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "青衫少女（褚青旒）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "934cda09-028b-4840-b242-81cdbf9c01a1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "8354114c-7056-449c-a903-647b20169909",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "76d23fb1-f2db-4c06-9414-4629e3088b2f",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "23441f07-3b98-4129-b20e-bdafd3fc8738",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "c3ff36af-8a98-4477-920e-287106034fc3",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "target": "934cda09-028b-4840-b242-81cdbf9c01a1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "target": "43041614-fe5a-4333-81a6-84c73a876ae5",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "target": "c9f6d33e-2e85-47fc-8a55-2dc6f40160ff",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "target": "6772da43-71a5-4d31-8d4b-b4a795f671da",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+      "target": "8f453ca7-5fe8-4f3f-a7fc-cb86facf6fb7",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "青衫少女（褚青旒）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "青衫少女未来可能入门成为仙师座下弟子",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "存在仙道修炼和入门体系",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "602c3096-2e31-4554-aa4a-02154257729c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+      "target": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "布衣少年（赵小六/赵井泉）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "青衫少女未来可能入门成为仙师座下弟子",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "存在仙道修炼和入门体系",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "934cda09-028b-4840-b242-81cdbf9c01a1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "8354114c-7056-449c-a903-647b20169909",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "602c3096-2e31-4554-aa4a-02154257729c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "76d23fb1-f2db-4c06-9414-4629e3088b2f",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "23441f07-3b98-4129-b20e-bdafd3fc8738",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "c3ff36af-8a98-4477-920e-287106034fc3",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+      "target": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "target": "e7117fdb-a309-496c-abf8-d562cd5bb877",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "布衣少年（赵小六/赵井泉）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "青衫少女未来可能入门成为仙师座下弟子",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "934cda09-028b-4840-b242-81cdbf9c01a1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "8354114c-7056-449c-a903-647b20169909",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "76d23fb1-f2db-4c06-9414-4629e3088b2f",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "23441f07-3b98-4129-b20e-bdafd3fc8738",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "c3ff36af-8a98-4477-920e-287106034fc3",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+      "target": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "布衣少年（赵小六/赵井泉）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "carries_forward",
+      "source": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+      "target": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "co_occurs",
+      "source": "青衫少女（褚青旒）",
+      "target": "布衣少年（赵小六/赵井泉）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "constrains",
+      "source": "存在仙道修炼和入门体系",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "241207bf-6410-4249-9c07-aab4cf96e0cd",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "934cda09-028b-4840-b242-81cdbf9c01a1",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "5050b64e-0d38-4699-aa0a-0c850ef53919",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "contextualizes",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "evolves_to",
+      "source": "e7117fdb-a309-496c-abf8-d562cd5bb877",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "follows",
+      "source": "23441f07-3b98-4129-b20e-bdafd3fc8738",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "chapter-order"
+      }
+    },
+    {
+      "edge_type": "follows",
+      "source": "23441f07-3b98-4129-b20e-bdafd3fc8738",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "chapter-order"
+      }
+    },
+    {
+      "edge_type": "follows",
+      "source": "23441f07-3b98-4129-b20e-bdafd3fc8738",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "chapter-order"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "b98c6113-2f45-4050-8bdc-345651d0b7e4",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "存在仙道修炼和入门体系",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "602c3096-2e31-4554-aa4a-02154257729c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "adbe3946-1d8f-4054-90d1-eec888e0a24c",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "b7a7945a-160f-4dd6-82dd-5d32d5252ec1",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "157b188c-6328-4241-ac98-9f0aec12ba61",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "青衫少女（褚青旒）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "hints_at",
+      "source": "青衫少女未来可能入门成为仙师座下弟子",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "青衫少女（褚青旒）",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "布衣少年（赵小六/赵井泉）",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "布衣少年（赵小六/赵井泉）",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "青衫少女（褚青旒）",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "青衫少女（褚青旒）",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "participates_in",
+      "source": "布衣少年（赵小六/赵井泉）",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "same-chapter"
+      }
+    },
+    {
+      "edge_type": "pays_off_as",
+      "source": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "pays_off_as",
+      "source": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "pays_off_as",
+      "source": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "pays_off_as",
+      "source": "0b83df80-18d3-4476-944d-cb7810f93341",
+      "target": "布衣少年与青衫少女是同门师兄妹",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "602c3096-2e31-4554-aa4a-02154257729c",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "602c3096-2e31-4554-aa4a-02154257729c",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "8354114c-7056-449c-a903-647b20169909",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "target": "青衫少女因布衣少年的赞美而喜悦",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "8354114c-7056-449c-a903-647b20169909",
+      "target": "布衣少年讨好青衫少女并提及修炼入门",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "8354114c-7056-449c-a903-647b20169909",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "persists_into",
+      "source": "602c3096-2e31-4554-aa4a-02154257729c",
+      "target": "青衫少女指责布衣少年盯着其他女子看",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "cross-chapter-label-match"
+      }
+    },
+    {
+      "edge_type": "relates_to",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "青衫少女（褚青旒）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "relates_to",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "布衣少年（赵小六/赵井泉）",
+      "weight": 1.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "relates_to",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "dc573977-476b-4ea0-9228-a55dac66532f",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "relates_to",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "602c3096-2e31-4554-aa4a-02154257729c",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    },
+    {
+      "edge_type": "relates_to",
+      "source": "布衣少年与青衫少女是同门师兄妹",
+      "target": "8354114c-7056-449c-a903-647b20169909",
+      "weight": 2.0,
+      "metadata": {
+        "provenance": "heuristic-label-match"
+      }
+    }
+  ],
+  "reasoning_graph": {
+    "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+    "upto_chapter": 4,
+    "overview": {
+      "node_count": 48,
+      "edge_count": 322,
+      "node_type_counts": {
+        "continuity": 19,
+        "entity": 6,
+        "event": 12,
+        "foreshadow": 3,
+        "world_rule": 5,
+        "relation": 2,
+        "conflict": 1
+      },
+      "edge_type_counts": {
+        "carries_forward": 169,
+        "constrains": 5,
+        "hints_at": 23,
+        "participates_in": 26,
+        "advances_to": 32,
+        "co_occurs": 4,
+        "follows": 10,
+        "persists_into": 17,
+        "relates_to": 7,
+        "conflict_centers_on": 8,
+        "conflict_involves": 3,
+        "contextualizes": 10,
+        "evolves_to": 1,
+        "pressured_by": 3,
+        "pays_off_as": 4
+      }
+    },
+    "central_nodes": [
+      {
+        "label": "少年抛接黑牌",
+        "node_type": "event",
+        "degree": 28,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "少女害羞并嗔怪少年油嘴滑舌",
+        "node_type": "event",
+        "degree": 27,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "布衣少年（小六子）",
+        "node_type": "entity",
+        "degree": 26,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年与青衫少女是同门师兄妹",
+        "node_type": "relation",
+        "degree": 25,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "少年夸赞少女动作像仙女",
+        "node_type": "event",
+        "degree": 23,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "青衫少女拂弄秀发引起少年凝视",
+        "node_type": "event",
+        "degree": 23,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "布衣少年指桑骂槐讽刺白衣丽人",
+        "node_type": "event",
+        "degree": 22,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年一本正经解释蛤蟆精",
+        "node_type": "event",
+        "degree": 22,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+        "node_type": "continuity",
+        "degree": 22,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "布衣少年",
+        "node_type": "entity",
+        "degree": 21,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "青衫少女因白衣丽人出现而失神",
+        "node_type": "event",
+        "degree": 21,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年用言语打压/讽刺白衣丽人",
+        "node_type": "conflict",
+        "degree": 21,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "青衫少女（青旒师妹）",
+        "node_type": "entity",
+        "degree": 20,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年讨好青衫少女并提及修炼入门",
+        "node_type": "event",
+        "degree": 20,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "布衣少年擅伪装和讲笑话的表演能力",
+        "node_type": "foreshadow",
+        "degree": 19,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "青衫少女指责布衣少年盯着其他女子看",
+        "node_type": "event",
+        "degree": 19,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "青衫少女因布衣少年的赞美而喜悦",
+        "node_type": "event",
+        "degree": 19,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+        "node_type": "continuity",
+        "degree": 19,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+        "node_type": "continuity",
+        "degree": 18,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "黑牌异常振动发热",
+        "node_type": "event",
+        "degree": 16,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      }
+    ],
+    "recent_timeline": [
+      "少年夸赞少女动作像仙女 -[advances_to]-> 布衣少年讨好青衫少女并提及修炼入门",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 布衣少年讨好青衫少女并提及修炼入门",
+      "布衣少年指桑骂槐讽刺白衣丽人 -[advances_to]-> 布衣少年讨好青衫少女并提及修炼入门",
+      "青衫少女因白衣丽人出现而失神 -[advances_to]-> 布衣少年讨好青衫少女并提及修炼入门",
+      "布衣少年一本正经解释蛤蟆精 -[advances_to]-> 布衣少年讨好青衫少女并提及修炼入门",
+      "青衫少女因白衣丽人出现而失神 -[advances_to]-> 青衫少女因布衣少年的赞美而喜悦",
+      "布衣少年指桑骂槐讽刺白衣丽人 -[advances_to]-> 青衫少女因布衣少年的赞美而喜悦",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 青衫少女因布衣少年的赞美而喜悦",
+      "少年夸赞少女动作像仙女 -[advances_to]-> 青衫少女因布衣少年的赞美而喜悦",
+      "白衣丽人忍不住笑出声 -[follows]-> 青衫少女指责布衣少年盯着其他女子看",
+      "白衣丽人忍不住笑出声 -[follows]-> 青衫少女因布衣少年的赞美而喜悦",
+      "白衣丽人忍不住笑出声 -[follows]-> 布衣少年讨好青衫少女并提及修炼入门"
+    ],
+    "reasoning_paths": [
+      "少年抛接黑牌 -[advances_to]-> 少年夸赞少女动作像仙女",
+      "少年抛接黑牌 -[advances_to]-> 少女害羞并嗔怪少年油嘴滑舌",
+      "少年抛接黑牌 -[advances_to]-> 青衫少女拂弄秀发引起少年凝视",
+      "黑牌异常振动发热 -[follows]-> 少年夸赞少女动作像仙女",
+      "黑牌异常振动发热 -[follows]-> 少女害羞并嗔怪少年油嘴滑舌",
+      "黑牌异常振动发热 -[follows]-> 青衫少女拂弄秀发引起少年凝视",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 布衣少年指桑骂槐讽刺白衣丽人",
+      "少年抛接黑牌 -[advances_to]-> 布衣少年指桑骂槐讽刺白衣丽人",
+      "青衫少女拂弄秀发引起少年凝视 -[advances_to]-> 布衣少年指桑骂槐讽刺白衣丽人",
+      "少年夸赞少女动作像仙女 -[advances_to]-> 布衣少年指桑骂槐讽刺白衣丽人",
+      "青衫少女拂弄秀发引起少年凝视 -[advances_to]-> 青衫少女因白衣丽人出现而失神",
+      "少年夸赞少女动作像仙女 -[advances_to]-> 青衫少女因白衣丽人出现而失神",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 青衫少女因白衣丽人出现而失神",
+      "少年抛接黑牌 -[advances_to]-> 布衣少年一本正经解释蛤蟆精",
+      "青衫少女拂弄秀发引起少年凝视 -[advances_to]-> 布衣少年一本正经解释蛤蟆精",
+      "少年夸赞少女动作像仙女 -[advances_to]-> 布衣少年一本正经解释蛤蟆精",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 布衣少年一本正经解释蛤蟆精",
+      "小六子和青旒是同门师兄妹 -[evolves_to]-> 布衣少年与青衫少女是同门师兄妹",
+      "少女害羞并嗔怪少年油嘴滑舌 -[follows]-> 布衣少年指桑骂槐讽刺白衣丽人",
+      "少女害羞并嗔怪少年油嘴滑舌 -[follows]-> 青衫少女因白衣丽人出现而失神"
+    ],
+    "active_conflicts": [
+      "布衣少年用言语打压/讽刺白衣丽人"
+    ],
+    "open_foreshadowing": [
+      "黑牌暗藏神秘力量",
+      "青衫少女未来可能入门成为仙师座下弟子"
+    ],
+    "world_rules": [
+      "存在仙道口诀",
+      "黑牌材质非金非木且触感凉意",
+      "黑牌能响应外来召唤",
+      "存在五谷堂这一场所或组织",
+      "存在仙道修炼和入门体系"
+    ],
+    "state_machine": {
+      "foreshadow": [
+        {
+          "label": "黑牌暗藏神秘力量",
+          "status": "open",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "布衣少年擅伪装和讲笑话的表演能力",
+          "status": "paid_off",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "青衫少女未来可能入门成为仙师座下弟子",
+          "status": "open",
+          "chapter_first_seen": 4,
+          "chapter_last_seen": 4
+        }
+      ],
+      "conflict": [
+        {
+          "label": "布衣少年用言语打压/讽刺白衣丽人",
+          "status": "latent",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        }
+      ],
+      "relation": [
+        {
+          "label": "小六子和青旒是同门师兄妹",
+          "status": "evolved",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "布衣少年与青衫少女是同门师兄妹",
+          "status": "stable",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 4
+        }
+      ],
+      "world_rule": [
+        {
+          "label": "存在仙道口诀",
+          "status": "observed",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "黑牌材质非金非木且触感凉意",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "黑牌能响应外来召唤",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "存在五谷堂这一场所或组织",
+          "status": "observed",
+          "chapter_first_seen": 4,
+          "chapter_last_seen": 4
+        },
+        {
+          "label": "存在仙道修炼和入门体系",
+          "status": "constraining",
+          "chapter_first_seen": 4,
+          "chapter_last_seen": 4
+        }
+      ]
+    },
+    "nodes": [
+      {
+        "node_type": "event",
+        "label": "少年抛接黑牌",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "布衫少年猛然将黑牌抛向空中",
+            "黑糊糊的牌子在空中打了一个旋又落了下来",
+            "下意识中又伸出手去捞住"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "少女害羞并嗔怪少年油嘴滑舌",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.96,
+          "evidence": [
+            "呸，小六子，你现在怎么变得油嘴滑舌了，这些浑话也说得出口？",
+            "我怎么敢和那些仙师相比？"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "布衣少年（小六子）",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 3,
+        "occurrence_count": 2,
+        "metadata": {
+          "confidence": 0.98,
+          "evidence": [
+            "“没，没什么，青旒师妹，你方才那个动作好漂亮啊”",
+            "布衣少年像是突然惊醒过来"
+          ]
+        }
+      },
+      {
+        "node_type": "relation",
+        "label": "布衣少年与青衫少女是同门师兄妹",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 4,
+        "occurrence_count": 2,
+        "metadata": {
+          "confidence": 0.99,
+          "evidence": [
+            "青旒师妹",
+            "布衣少年一脸正经不苟言笑的回答道"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "少年夸赞少女动作像仙女",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.97,
+          "evidence": [
+            "青旒师妹，你方才那个动作好漂亮啊，就像上回在祖师洞前碑林上镌刻的那个仙女",
+            "我的心都快要跳出来了"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "青衫少女拂弄秀发引起少年凝视",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "看见对方傻呆呆的望着自己发呆",
+            "她并不知道自己方才那一下拂nòng秀发的动作勾起了对方如此多的遐思"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "布衣少年一本正经解释蛤蟆精",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.97,
+          "evidence": [
+            "你没看见么？居然有紫sè的大蛤蟆呢，瞪起眼睛望着旁边的天鹅，张个大嘴巴呱啦呱啦正叫得欢呢",
+            "肚皮还一鼓一鼓，这可不是蛤蟆精么？"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "布衣少年指桑骂槐讽刺白衣丽人",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "蛤蟆也出异种了？青旒师妹，这年头天气反常，连虫豸都要出怪了",
+            "居然有紫sè的大蛤蟆呢，瞪起眼睛望着旁边的天鹅"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "布衣少年",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.98,
+          "evidence": [
+            "布衣少年悠悠的念了几遍",
+            "布衫少年猛然将黑牌抛向空中",
+            "布衫少年最终还是小心的将木牌放进了自己xiōng前衣襟中"
+          ]
+        }
+      },
+      {
+        "node_type": "conflict",
+        "label": "布衣少年用言语打压/讽刺白衣丽人",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.85,
+          "evidence": [
+            "蛤蟆也出异种了？",
+            "瞪起眼睛望着旁边的天鹅",
+            "布衣少年自诩不会输给任何人，指桑骂槐含沙shè影那更是他的拿手本事"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "青衫少女因白衣丽人出现而失神",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.9,
+          "evidence": [
+            "青衫少女也是被白衣丽人的出现给完全压得喘不过气来",
+            "茫然的问道：“蛤蟆出异种？哪里有蛤蟆？”"
+          ]
+        }
+      },
+      {
+        "node_type": "entity",
+        "label": "青衫少女（青旒师妹）",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 3,
+        "occurrence_count": 2,
+        "metadata": {
+          "confidence": 0.98,
+          "evidence": [
+            "青衫少女突然有些害羞",
+            "俏皮的翘起娇巧的小鼻子，少女脸上泛起甜蜜的微笑"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "布衣少年讨好青衫少女并提及修炼入门",
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.93,
+          "evidence": [
+            "“你要是等上两年，同样入了门中仙师座下，绝对不会比方才那女子差”",
+            "“到那时候青旒师妹可别忘了五谷堂里还有我赵小六啊”"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "布衣少年擅伪装和讲笑话的表演能力",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.9,
+          "evidence": [
+            "讲笑话自己就不能笑，这是规则，装龙像龙，装虎像虎，这也是布衣少年在原来时代就练就的一身本事"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "青衫少女因布衣少年的赞美而喜悦",
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.88,
+          "evidence": [
+            "禇青旒明眸中闪过的喜悦却躲不过赵小六敏锐的目光",
+            "但是禇青旒明眸中闪过的喜悦却躲不过赵小六敏锐的目光",
+            "脸色却已经好看了许多"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "青衫少女指责布衣少年盯着其他女子看",
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "“眼睛直勾勾的盯着人家，哈喇子都快把衣襟打湿了”",
+            "“还说人家是蛤蟆，我看你比别人也好不了多少”"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。"
+          ]
+        }
+      },
+      {
+        "node_type": "event",
+        "label": "黑牌异常振动发热",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.97,
+          "evidence": [
+            "忽剌剌藏在xiōng前衣襟的那块非金非木的黑牌陡然振动起来",
+            "就像是受到了某种外来力量的召唤，急剧的颤栗起来",
+            "连带着少年xiōng膛也都出现了一阵炽热"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "edge_type": "carries_forward",
+        "source": "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "主角对黑牌的认知从普通玩物变为神秘器物，信息掌握状态发生显著变化。角色位置、关系、力量未变，但潜在威胁/机遇已然浮现。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "主角对黑牌的认知从普通玩物变为神秘器物，信息掌握状态发生显著变化。角色位置、关系、力量未变，但潜在威胁/机遇已然浮现。",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌材质非金非木且触感凉意",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌能响应外来召唤",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌能响应外来召唤",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "constrains",
+        "source": "黑牌材质非金非木且触感凉意",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "hints_at",
+        "source": "黑牌暗藏神秘力量",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "hints_at",
+        "source": "黑牌暗藏神秘力量",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "participates_in",
+        "source": "布衣少年",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "same-chapter"
+        }
+      },
+      {
+        "edge_type": "participates_in",
+        "source": "布衣少年",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "same-chapter"
+        }
+      },
+      {
+        "edge_type": "advances_to",
+        "source": "少年抛接黑牌",
+        "target": "少年夸赞少女动作像仙女",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "cross-chapter-label-match"
+        }
+      },
+      {
+        "edge_type": "advances_to",
+        "source": "少年抛接黑牌",
+        "target": "少女害羞并嗔怪少年油嘴滑舌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "cross-chapter-label-match"
+        }
+      },
+      {
+        "edge_type": "advances_to",
+        "source": "少年抛接黑牌",
+        "target": "青衫少女拂弄秀发引起少年凝视",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "cross-chapter-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "主角对黑牌的认知状态发生显著变化——从普通玩物转变为神秘器物，属于『信息掌握状态』的升级。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "主角对黑牌的认知状态发生显著变化——从普通玩物转变为神秘器物，属于『信息掌握状态』的升级。",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "前情状态摘要表明本章引入了新伏笔『黑牌暗藏神秘力量』，并确立了世界规则『黑牌材质非金非木且触感凉意』、『黑牌能响应外来召唤』，属于『延续+新线索』模式，暂未回收或升级旧冲突。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "前情状态摘要表明本章引入了新伏笔『黑牌暗藏神秘力量』，并确立了世界规则『黑牌材质非金非木且触感凉意』、『黑牌能响应外来召唤』，属于『延续+新线索』模式，暂未回收或升级旧冲突。",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "下一章应揭示黑牌振动的具体成因、主角后续反应，以及这枚黑牌与当前仙道世界的关联。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "下一章应揭示黑牌振动的具体成因、主角后续反应，以及这枚黑牌与当前仙道世界的关联。",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "布衣少年（小六子）",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "青衫少女（青旒师妹）",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "青衫少女拂弄秀发引起少年凝视",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "少年夸赞少女动作像仙女",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "少女害羞并嗔怪少年油嘴滑舌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "布衣少年",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾（来自图谱摘要）黑牌出现异常振动发热，制造了强烈的『继续阅读钩子』，悬念强度高，驱动读者探寻黑牌来源与召唤力量。",
+        "target": "少年抛接黑牌",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章结尾（来自图谱摘要）黑牌出现异常振动发热，制造了强烈的『继续阅读钩子』，悬念强度高，驱动读者探寻黑牌来源与召唤力量。",
+        "target": "黑牌异常振动发热",
+        "weight": 1.0,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      }
+    ]
+  },
+  "state_summary": {
+    "new_foreshadowing": [
+      "青衫少女未来可能入门成为仙师座下弟子"
+    ],
+    "paid_off_foreshadowing": [
+      "布衣少年擅伪装和讲笑话的表演能力"
+    ],
+    "new_conflicts": [],
+    "escalated_conflicts": [],
+    "stable_relations": [
+      "布衣少年与青衫少女是同门师兄妹"
+    ],
+    "evolved_relations": [
+      "小六子和青旒是同门师兄妹"
+    ],
+    "observed_world_rules": [
+      "存在仙道口诀",
+      "存在五谷堂这一场所或组织"
+    ],
+    "constraining_world_rules": [
+      "黑牌材质非金非木且触感凉意",
+      "黑牌能响应外来召唤",
+      "存在仙道修炼和入门体系"
+    ]
+  },
+  "risk_card": {
+    "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+    "chapter_index": 4,
+    "overall_risk_level": "low",
+    "top_risks": [
+      {
+        "checker_name": "character_ooc",
+        "risk_domain": "character",
+        "risk_type": "character_resolution_support_gap",
+        "severity": "low",
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence": [
+          "analysis-layer 的 summary.detailed 中描述‘少年通过指桑骂槐（蛤蟆精）的方式讽刺了路过的白衣丽人’，该事件在 fact-layer 中无直接证据支持（fact-layer events 仅包含少女指责、少年讨好、少女喜悦三项），属于过度推断。",
+          "关系线“小六子和青旒是同门师兄妹”已出现阶段性变化证据。"
+        ],
+        "counter_evidence": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。"
+        ],
+        "related_entities": [],
+        "related_chapters": [
+          4
+        ],
+        "needs_human_review": true,
+        "risk_key": "23685de0-a53e-4229-a946-14d53d5b026d|4|character_ooc|character_resolution_support_gap"
+      },
+      {
+        "checker_name": "plot_logic_consistency",
+        "risk_domain": "plot",
+        "risk_type": "resolution_support_gap",
+        "severity": "low",
+        "confidence": 0.3,
+        "summary": "本章存在“已解决/已兑现”类表述，但支撑链条可能不足，建议人工复核。",
+        "supporting_evidence": [
+          "analysis-layer 的 summary.detailed 中描述‘少年通过指桑骂槐（蛤蟆精）的方式讽刺了路过的白衣丽人’，该事件在 fact-layer 中无直接证据支持（fact-layer events 仅包含少女指责、少年讨好、少女喜悦三项），属于过度推断。",
+          "关系线“小六子和青旒是同门师兄妹”已出现阶段性变化证据。"
+        ],
+        "counter_evidence": [
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "related_entities": [],
+        "related_chapters": [
+          4
+        ],
+        "needs_human_review": true,
+        "risk_key": "23685de0-a53e-4229-a946-14d53d5b026d|4|plot_logic_consistency|resolution_support_gap"
+      }
+    ],
+    "risk_counts_by_domain": {
+      "character": 1,
+      "plot": 1
+    },
+    "risk_counts_by_severity": {
+      "low": 2
+    },
+    "review_status": "pending",
+    "generated_at": "2026-05-06T00:36:54.223544+00:00",
+    "checker_statuses": {
+      "character_ooc": "partial",
+      "world_rule_consistency": "skipped",
+      "relationship_consistency": "skipped",
+      "foreshadow_payoff_consistency": "skipped",
+      "setting_scope_consistency": "skipped",
+      "thread_closure_consistency": "skipped",
+      "plot_logic_consistency": "partial",
+      "timeline_consistency": "skipped",
+      "power_scaling_consistency": "skipped"
+    },
+    "coverage_gaps": [
+      "character_ooc:partial",
+      "world_rule_consistency:skipped",
+      "relationship_consistency:skipped",
+      "foreshadow_payoff_consistency:skipped",
+      "setting_scope_consistency:skipped",
+      "thread_closure_consistency:skipped",
+      "plot_logic_consistency:partial",
+      "timeline_consistency:skipped",
+      "power_scaling_consistency:skipped"
+    ]
+  }
+}
