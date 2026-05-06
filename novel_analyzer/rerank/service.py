@@ -54,6 +54,7 @@ class OnnxCrossEncoderRerankProvider:
             repo_dir = snapshot_download(
                 repo_id=self.model_name,
                 cache_dir=str(cache_dir) if cache_dir else None,
+                local_files_only=True,
                 allow_patterns=[
                     'onnx/*.onnx',
                     'config.json',
@@ -67,10 +68,10 @@ class OnnxCrossEncoderRerankProvider:
             )
         except LocalEntryNotFoundError as exc:
             raise RuntimeError(
-                'Unable to download the ONNX rerank model from Hugging Face in this '
-                'environment. Provide a local exported model directory via '
-                'NOVEL_ANALYZER_RERANK_MODEL_PATH or enable outbound access to '
-                'huggingface.co.'
+                'The ONNX rerank model is not available in local cache. Provide a '
+                'local exported model directory via NOVEL_ANALYZER_RERANK_MODEL_PATH '
+                'or prewarm the Hugging Face cache before enabling rerank in runtime '
+                'request paths.'
             ) from exc
         return Path(repo_dir)
 

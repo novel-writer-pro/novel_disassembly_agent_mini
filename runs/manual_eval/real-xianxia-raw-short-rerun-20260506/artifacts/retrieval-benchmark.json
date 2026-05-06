@@ -1,0 +1,87 @@
+{
+  "contract_version": "retrieval-benchmark.v1",
+  "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+  "queries": [
+    {
+      "query": "青华 黑牌",
+      "fusion_applied": true,
+      "rerank_applied": true,
+      "route_counts": {
+        "fts": 1,
+        "similarity": 5,
+        "like": 5,
+        "vector": 5
+      },
+      "raw_latency_ms": 2943.123008000839,
+      "rerank_latency_ms": 8070.063523999124,
+      "top_raw_chapters": [
+        1,
+        2,
+        4,
+        5,
+        3
+      ],
+      "top_reranked_chapters": [
+        1,
+        2,
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "query": "青旒 小六子",
+      "fusion_applied": true,
+      "rerank_applied": true,
+      "route_counts": {
+        "fts": 1,
+        "similarity": 5,
+        "like": 3,
+        "vector": 5
+      },
+      "raw_latency_ms": 107.60629600008542,
+      "rerank_latency_ms": 4146.518613000808,
+      "top_raw_chapters": [
+        2,
+        4,
+        5,
+        1,
+        3
+      ],
+      "top_reranked_chapters": [
+        2,
+        3,
+        5,
+        4,
+        1
+      ]
+    },
+    {
+      "query": "青华门 入门关",
+      "fusion_applied": true,
+      "rerank_applied": true,
+      "route_counts": {
+        "fts": 1,
+        "similarity": 5,
+        "like": 1,
+        "vector": 5
+      },
+      "raw_latency_ms": 236.37077899911674,
+      "rerank_latency_ms": 4924.058162998335,
+      "top_raw_chapters": [
+        5,
+        1,
+        4,
+        2,
+        3
+      ],
+      "top_reranked_chapters": [
+        5,
+        1,
+        4,
+        3,
+        2
+      ]
+    }
+  ]
+}

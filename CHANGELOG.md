@@ -15,6 +15,7 @@
 - 后续补修后已用同一份原始未归一化修仙样例复测，`inspect/ingest` 直接得到 `normalized_chapter_count=5` / `chapter_count=5`，说明 `第X节` 标题兼容已打通。
 - 后续 5 节原始短复跑已完成：`completed_chapters=5`、`failed_jobs=0`；并确认 chapter 2 的 dialogue schema 问题与 chapter 3 的 normalized_title 问题都未在真实链路上复发。
 - 对完成分支做 stepwise profiling 后，已确认导出慢点边界主要落在 retrieval diagnostics / benchmark 链，而不是 branch report / author knowledge 基础导出。
+- 进一步对完成分支做导出链优化后，`export-retrieval-benchmark`、`export-search-branch-diagnostics`、`export-governance-dashboard` 与 `export-novel-assistant` 已恢复成功导出，说明 operator-facing 导出已从“不可用”改善为“可用但 retrieval 链仍偏重”。
 
 
 ### 小说助手多能力人工测试与评估手册

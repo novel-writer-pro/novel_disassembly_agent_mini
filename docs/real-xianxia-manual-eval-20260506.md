@@ -101,3 +101,7 @@
 ## 导出慢点边界（补充诊断）
 - 对完成分支做 stepwise profiling 后，`status_service.get_run_status`、`export_branch_bundle`、`author.build_branch_knowledge_pack` 都在 0.2s 以内完成。
 - profiling 在进入首个 `retrieval.search_branch_with_diagnostics(...)` 后卡住，说明当前 operator-facing 慢点更靠近 retrieval diagnostics / benchmark 链，而不是 branch report 或 author knowledge 生成。
+
+## 导出慢点优化结果
+- 在完成分支上补入 provider cache 与 rerank 本地缓存优先策略后，`export-retrieval-benchmark`、两条 `export-search-branch-diagnostics`、`export-governance-dashboard`、`export-novel-assistant` 已成功导出。
+- 新结论：operator-facing 导出问题已从“经常超时/不可用”改善为“可用，但 retrieval diagnostics / benchmark 链仍是相对较重的路径”。

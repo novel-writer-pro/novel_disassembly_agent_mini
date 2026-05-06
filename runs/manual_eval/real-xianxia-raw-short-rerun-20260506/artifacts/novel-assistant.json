@@ -1,0 +1,3144 @@
+{
+  "contract_version": "novel-assistant.v1",
+  "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+  "run_id": "51499b32-cdd0-475f-bbc7-2ac27ea0f529",
+  "branch_snapshot": {
+    "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+    "name": "main",
+    "status": "active",
+    "fork_after_chapter_index": 0,
+    "visible_chapters": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "job_statuses": {
+      "1": "validated",
+      "2": "validated",
+      "3": "validated",
+      "4": "validated",
+      "5": "validated"
+    },
+    "manual_excluded_chapters": []
+  },
+  "assistant_summary": {
+    "chapter_count": 5,
+    "review_cluster_count": 1,
+    "review_needs_count": 0,
+    "risk_card_count": 5,
+    "top_entities": [
+      "布衣少年（小六子）",
+      "青衫少女（青旒师妹）",
+      "布衣少年",
+      "布衣少年（赵小六/小六）",
+      "布衣少年（赵小六/赵井泉）"
+    ],
+    "assistant_mode": "commercial-novel-assistant"
+  },
+  "supported_actions": [
+    "split_novel",
+    "retrieve_evidence",
+    "answer_question",
+    "author_knowledge",
+    "risk_gate_review",
+    "continue_writing_preparation",
+    "imitation_preparation",
+    "whole_book_preparation",
+    "whole_book_consistency_backflow",
+    "original_planning",
+    "creation_control",
+    "editor_revision",
+    "reader_feedback_loop",
+    "feedback_revision_bridge",
+    "retrieval_benchmark",
+    "chapter_draft_preparation",
+    "direct_draft_skeleton",
+    "direct_revision_loop",
+    "automatic_rewrite_guidance",
+    "automatic_prose_rewrite",
+    "final_draft_candidate",
+    "publish_ready_release",
+    "sample_based_release_criteria",
+    "release_decision_freeze_artifact",
+    "handoff_approval_record",
+    "operator_release_brief",
+    "release_ops_runbook",
+    "incident_rollback",
+    "postmortem_recovery_record",
+    "recovery_closure_artifact",
+    "final_governance_summary",
+    "governance_dashboard",
+    "governance_report_brief",
+    "release_review_note",
+    "approval_decision_memo",
+    "external_report_bundle",
+    "external_report_markdown",
+    "final_release_archive",
+    "archive_manifest",
+    "archive_retention_metadata",
+    "archive_index_metadata",
+    "archive_navigation_metadata",
+    "archive_integrity_check"
+  ],
+  "recommended_next_actions": [
+    "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
+    "需要问答或检索时，优先使用 retrieval diagnostics 与 benchmark summary 确认召回质量。",
+    "进入 whole-book 之前先看 review_summary 与 risk_summary，避免带病生成。",
+    "生成完成后按 editor revision 与 reader feedback pack 进入修文闭环。"
+  ],
+  "whole_book_readiness_summary": {
+    "whole_book_contract_version": "whole-book-imitation.v1",
+    "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+    "provider_name": "vip1129",
+    "base_url": "https://api.vip1129.cc/v1",
+    "model_name": "gpt-5.4-mini",
+    "provider_last_status": "degraded",
+    "chapter_analysis_count": 5,
+    "fact_record_count": 51,
+    "ready_for_whole_book": true
+  },
+  "sample_evidence_summary": {
+    "available_samples": [
+      "docs/examples/sample-branch-search-diagnostics-20260505.sample.json",
+      "docs/examples/sample-branch-author-knowledge-20260505.sample.json",
+      "docs/examples/sample-branch-novel-assistant-20260505.sample.json",
+      "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json",
+      "docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json"
+    ],
+    "sample_count": 5
+  },
+  "preparation_guidance": {
+    "next_chapter_preparation": [
+      "先确认主角当前目标、关系推进与未解线程，再进行续写规划。",
+      "如果存在待复核问题簇，优先阅读 review summary 后再定续写方向。",
+      "当前最重要的人物/实体：布衣少年（小六子）、青衫少女（青旒师妹）、布衣少年"
+    ],
+    "imitation_preparation": [
+      "先使用 author knowledge 确认人物/规则/线程现状，再进入仿写。",
+      "whole-book 前先确认 retrieval diagnostics 是否能稳定召回关键章节。",
+      "仿写时优先保留这些实体线：布衣少年（小六子）、青衫少女（青旒师妹）、布衣少年"
+    ],
+    "risk_gate_preflight": [
+      "进入生成前先看 risk summary 与 review summary，避免带病生成。"
+    ]
+  },
+  "retrieval_benchmark_summary": {
+    "contract_version": "retrieval-benchmark-summary.v1",
+    "degraded": false,
+    "benchmark_queries": [
+      "卫图 命格",
+      "二姑 资源",
+      "婚事 养生功"
+    ],
+    "query_count": 3,
+    "route_totals": {
+      "vector": 15
+    },
+    "avg_raw_latency_ms": 1447.19,
+    "avg_rerank_latency_ms": 8654.04,
+    "rerank_coverage_ratio": 1.0,
+    "cases": [
+      {
+        "query": "卫图 命格",
+        "fusion_applied": false,
+        "rerank_applied": true,
+        "route_counts": {
+          "vector": 5
+        },
+        "raw_latency_ms": 3900.395242000741,
+        "rerank_latency_ms": 12974.867921999248,
+        "raw_top_chapters": [
+          1,
+          5,
+          4,
+          2,
+          3
+        ],
+        "reranked_top_chapters": [
+          1,
+          4,
+          3,
+          2,
+          5
+        ],
+        "rerank_changed_order": true,
+        "top_overlap": 5
+      },
+      {
+        "query": "二姑 资源",
+        "fusion_applied": false,
+        "rerank_applied": true,
+        "route_counts": {
+          "vector": 5
+        },
+        "raw_latency_ms": 160.2811249995284,
+        "rerank_latency_ms": 7155.812369001069,
+        "raw_top_chapters": [
+          4,
+          5,
+          2,
+          3,
+          1
+        ],
+        "reranked_top_chapters": [
+          4,
+          3,
+          2,
+          5,
+          1
+        ],
+        "rerank_changed_order": true,
+        "top_overlap": 5
+      },
+      {
+        "query": "婚事 养生功",
+        "fusion_applied": false,
+        "rerank_applied": true,
+        "route_counts": {
+          "vector": 5
+        },
+        "raw_latency_ms": 280.8830610010773,
+        "rerank_latency_ms": 5831.441247999464,
+        "raw_top_chapters": [
+          5,
+          4,
+          3,
+          2,
+          1
+        ],
+        "reranked_top_chapters": [
+          3,
+          4,
+          5,
+          2,
+          1
+        ],
+        "rerank_changed_order": true,
+        "top_overlap": 5
+      }
+    ]
+  },
+  "whole_book_consistency_backflow_pack": {
+    "contract_version": "whole-book-consistency-backflow-pack.v1",
+    "sample_path": "docs/examples/whole-book-imitation-run.sandbox-live-20260505.sample.json",
+    "diagnostic_version": "long-book-consistency-diagnostics.v1",
+    "requires_consistency_pass": true,
+    "next_stage_focus": [
+      "优先处理能力族：relationship、rule",
+      "先回看第10章的高优先级修复链",
+      "先回看第9章的高优先级修复链"
+    ],
+    "top_repair_recommendations": [
+      {
+        "action_type": "repair_rhythm",
+        "count": 2,
+        "highest_priority": 1,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          9,
+          10
+        ],
+        "targets": [
+          "rhythm"
+        ],
+        "issue_families": [
+          "rhythm"
+        ]
+      },
+      {
+        "action_type": "expand_middle",
+        "count": 1,
+        "highest_priority": 1,
+        "highest_severity": "high",
+        "chapter_indexes": [
+          9
+        ],
+        "targets": [
+          "draft_body"
+        ],
+        "issue_families": []
+      },
+      {
+        "action_type": "repair_character_motivation",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          9,
+          10
+        ],
+        "targets": [
+          "character_motivation"
+        ],
+        "issue_families": [
+          "motivation"
+        ]
+      },
+      {
+        "action_type": "repair_relationship_transition",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          9,
+          10
+        ],
+        "targets": [
+          "relationship_transition"
+        ],
+        "issue_families": [
+          "relationship"
+        ]
+      }
+    ],
+    "candidate_backflow_actions": [
+      "将 top_repair_recommendations 回灌到 candidate/revision/rewrite 主链。",
+      "若 requires_consistency_pass=true，则禁止直接进入 release。"
+    ],
+    "release_impact": "whole_book_consistency_blocks_release"
+  },
+  "continuation_pack": {
+    "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+    "next_chapter_index": 6,
+    "chapter_goal": "推进主角的身份突破与资源积累",
+    "main_conflict": "长线冲突仍需更多章节显式化",
+    "secondary_conflicts": [],
+    "required_progressions": [
+      "家庭线与身份线必须发生交叉兑现",
+      "chapter_outline:6:推进主角的身份突破与资源积累:长线冲突仍需更多章节显式化:家庭线与身份线必须发生交叉兑现:关键关系带来机会，但同时抬高代价",
+      "chapter_outline:7:推进主角的身份突破与资源积累:长线冲突仍需更多章节显式化:家庭线与身份线必须发生交叉兑现:资源或身份压力迫使主角提前行动",
+      "主角获得可验证的新位置或新资格",
+      "关系线不只是陪衬，而要影响主线选择",
+      "关键关系带来机会，但同时抬高代价"
+    ],
+    "scene_plan": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定",
+          "关键关系带来机会，但同时抬高代价"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "risk_notes": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "character_movements": [
+      "布衣少年（赵小六/小六）",
+      "褚青旒（青旒师妹）",
+      "布衣少年（赵小六/赵井泉）",
+      "青衫少女（褚青旒）"
+    ],
+    "relationship_movements": [],
+    "foreshadow_to_touch": [
+      "家庭线与身份线必须发生交叉兑现",
+      "chapter_outline:6:推进主角的身份突破与资源积累:长线冲突仍需更多章节显式化:家庭线与身份线必须发生交叉兑现:关键关系带来机会，但同时抬高代价",
+      "chapter_outline:7:推进主角的身份突破与资源积累:长线冲突仍需更多章节显式化:家庭线与身份线必须发生交叉兑现:资源或身份压力迫使主角提前行动"
+    ],
+    "rule_constraints": [],
+    "ending_hook": "围绕长线兑现点“家庭线与身份线必须发生交叉兑现”制造下一章推进钩子。",
+    "risk_notes": [
+      "不要直接违背既有世界规则与人物当前状态。",
+      "如要推进关系变化，必须提供中间证据与触发事件。",
+      "禁止：不要无铺垫升级战力",
+      "禁止：不要引入未准备的大设定",
+      "长线兑现：家庭线与身份线必须发生交叉兑现",
+      "长线兑现：主角获得可验证的新位置或新资格",
+      "风险信号：本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+      "风险信号：本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+      "风险信号：本章为日常片段，未直接推进黑牌主线（黑牌暗藏神秘力量等伏笔仍保持开放状态）。"
+    ]
+  },
+  "imitation_pack": {
+    "source_chapter_index": 5,
+    "target_goal": "延续当前主线并保持人物/规则连续性",
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "hard_constraints": [
+      "不要无铺垫升级战力",
+      "不要引入未准备的大设定"
+    ],
+    "soft_constraints": [
+      "家庭线与身份线必须发生交叉兑现",
+      "chapter_outline:6:推进主角的身份突破与资源积累:长线冲突仍需更多章节显式化:家庭线与身份线必须发生交叉兑现:关键关系带来机会，但同时抬高代价",
+      "chapter_outline:7:推进主角的身份突破与资源积累:长线冲突仍需更多章节显式化:家庭线与身份线必须发生交叉兑现:资源或身份压力迫使主角提前行动"
+    ],
+    "risk_focus": [
+      "本章为日常片段，未直接推进黑牌主线（黑牌暗藏神秘力量等伏笔仍保持开放状态）。",
+      "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+      "本章延续并具体化了世界规则：青华门入门体系（每月试炼、目测关通过率、三道关、三十六馆舍）得到明确交代，属于‘延续 + 细化’模式。"
+    ]
+  },
+  "original_planning_pack": {
+    "contract_version": "original-planning-pack.v1",
+    "planning_scope": {
+      "chapter_count": 5,
+      "top_entities": [
+        "布衣少年（小六子）",
+        "青衫少女（青旒师妹）",
+        "布衣少年",
+        "布衣少年（赵小六/小六）",
+        "布衣少年（赵小六/赵井泉）"
+      ],
+      "top_rules": [
+        "黑牌材质非金非木且触感凉意",
+        "黑牌能响应外来召唤",
+        "存在仙道修炼和入门体系",
+        "青华门入门第一关为目测关，通过率极低",
+        "青华门入门需通过三道关"
+      ],
+      "top_threads": []
+    },
+    "world_and_rule_focus": [
+      "黑牌材质非金非木且触感凉意",
+      "黑牌能响应外来召唤",
+      "存在仙道修炼和入门体系"
+    ],
+    "character_arc_candidates": [
+      "布衣少年（小六子）",
+      "青衫少女（青旒师妹）",
+      "布衣少年",
+      "布衣少年（赵小六/小六）"
+    ],
+    "thread_backlog": [],
+    "planning_gaps": [
+      "未解线程显式化不足，建议先补卷纲级伏笔表。"
+    ],
+    "next_planning_actions": [
+      "先固化世界规则、人物目标、长线线程三张底表。",
+      "把未解线程映射到卷纲/章纲，避免续写时只靠局部记忆。",
+      "将 continuation pack 作为单章执行面，而不是替代长期规划。"
+    ],
+    "continuation_goal_hint": "推进主角的身份突破与资源积累"
+  },
+  "creation_control_pack": {
+    "contract_version": "creation-control-pack.v1",
+    "chapter_goal": "推进主角的身份突破与资源积累",
+    "scene_controls": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定",
+          "关键关系带来机会，但同时抬高代价"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "risk_notes": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "ending_hook": "围绕长线兑现点“家庭线与身份线必须发生交叉兑现”制造下一章推进钩子。",
+    "risk_notes": [
+      "不要直接违背既有世界规则与人物当前状态。",
+      "如要推进关系变化，必须提供中间证据与触发事件。",
+      "禁止：不要无铺垫升级战力",
+      "禁止：不要引入未准备的大设定",
+      "长线兑现：家庭线与身份线必须发生交叉兑现",
+      "长线兑现：主角获得可验证的新位置或新资格",
+      "风险信号：本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+      "风险信号：本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+      "风险信号：本章为日常片段，未直接推进黑牌主线（黑牌暗藏神秘力量等伏笔仍保持开放状态）。"
+    ],
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "control_checklist": [
+      "每章必须有明确目标、阻力、回应、章尾钩子。",
+      "风格控制优先看 style_axes，剧情控制优先看 scene_controls。",
+      "如 risk_notes 中出现规则/关系风险，生成前必须先修正。"
+    ]
+  },
+  "editor_revision_pack": {
+    "contract_version": "editor-revision-pack.v1",
+    "revision_priorities": [
+      "当前有 5 张 risk card，改稿时优先消化高风险卡片。",
+      "检查 scene_plan 是否每场都承担推进功能，避免空转段落。",
+      "检查 style_axes 与实际文本是否一致，避免只学句式不学结构。"
+    ],
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "done_definition": [
+      "review / risk 不再阻塞生成。",
+      "scene plan 与正文推进一致。",
+      "仿写约束和人物/规则状态无明显冲突。"
+    ]
+  },
+  "reader_feedback_pack": {
+    "contract_version": "reader-feedback-pack.v1",
+    "feedback_summary": {
+      "contract_version": "reader-feedback-summary.v1",
+      "degraded": false,
+      "comment_count": 0,
+      "signals": [],
+      "signal_counts": {},
+      "pain_point_hypotheses": [],
+      "revision_recommendations": [],
+      "sample_comments": []
+    },
+    "pain_point_hypotheses": [
+      "当前主风险更偏执行质量，而非明显的读者体验断点。"
+    ],
+    "feedback_collection_prompts": [
+      "哪一章开始觉得节奏变慢？原因是什么？",
+      "你最想继续追的角色/线程是什么？",
+      "哪些设定、关系或战力变化让你觉得突兀？"
+    ],
+    "revision_from_feedback": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+    ],
+    "priority_entities": [
+      "布衣少年（小六子）",
+      "青衫少女（青旒师妹）",
+      "布衣少年",
+      "布衣少年（赵小六/小六）"
+    ],
+    "priority_threads": []
+  },
+  "feedback_revision_bridge_pack": {
+    "contract_version": "feedback-revision-bridge-pack.v1",
+    "bridge_actions": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+    ],
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "signal_counts": {},
+    "top_feedback_signals": []
+  },
+  "chapter_draft_preparation_pack": {
+    "contract_version": "chapter-draft-preparation-pack.v1",
+    "draft_goal": "推进主角的身份突破与资源积累",
+    "draft_conflict": "长线冲突仍需更多章节显式化",
+    "draft_payoff": "家庭线与身份线必须发生交叉兑现",
+    "draft_turning_point": "关键关系带来机会，但同时抬高代价",
+    "scene_outline": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定",
+          "关键关系带来机会，但同时抬高代价"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "risk_notes": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "future_chapter_outline": [
+      {
+        "chapter_index": 6,
+        "goal": "推进主角的身份突破与资源积累",
+        "core_conflict": "长线冲突仍需更多章节显式化",
+        "payoff_target": "家庭线与身份线必须发生交叉兑现",
+        "turning_point": "关键关系带来机会，但同时抬高代价"
+      },
+      {
+        "chapter_index": 7,
+        "goal": "推进主角的身份突破与资源积累",
+        "core_conflict": "长线冲突仍需更多章节显式化",
+        "payoff_target": "家庭线与身份线必须发生交叉兑现",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      },
+      {
+        "chapter_index": 8,
+        "goal": "推进主角的身份突破与资源积累",
+        "core_conflict": "长线冲突仍需更多章节显式化",
+        "payoff_target": "家庭线与身份线必须发生交叉兑现",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      }
+    ],
+    "character_focus": [
+      {
+        "label": "布衣少年（小六子）",
+        "role_tags": [
+          "entity",
+          "protagonist"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 3,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注布衣少年（小六子）在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "青衫少女（青旒师妹）",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 3,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注青衫少女（青旒师妹）在后续章节中的目标、关系与代价是否持续一致。"
+      },
+      {
+        "label": "布衣少年",
+        "role_tags": [
+          "entity"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "motivation_candidates": [
+          "在当前叙事里承担持续推进作用"
+        ],
+        "tension_points": [
+          "仍需更多章节证据来确认长期冲突"
+        ],
+        "continuity_focus": "关注布衣少年在后续章节中的目标、关系与代价是否持续一致。"
+      }
+    ],
+    "rule_focus": [
+      "黑牌材质非金非木且触感凉意",
+      "黑牌能响应外来召唤",
+      "存在仙道修炼和入门体系",
+      "青华门入门第一关为目测关，通过率极低"
+    ],
+    "draft_checklist": [
+      "先按 chapter_goal / core_conflict 写出场景草骨架，再补对白与细节。",
+      "优先兑现 payoff_target 与 turning_point，不要只推进表面事件。",
+      "写完后对照 risk_notes / style_axes / rule_constraints 做一次自检。"
+    ],
+    "blocking_risks": [
+      "存在 5 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "direct_draft_skeleton_pack": {
+    "contract_version": "direct-draft-skeleton-pack.v1",
+    "draft_title": "推进主角的身份突破与资源积累",
+    "draft_text": "目标：推进主角的身份突破与资源积累\n核心冲突：长线冲突仍需更多章节显式化\n兑现点：家庭线与身份线必须发生交叉兑现\n转折点：关键关系带来机会，但同时抬高代价\n### 场景1: 承接上一章结果并明确本章目标\n- 必须包含：布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累\n- 注意：不要无铺垫升级战力；不要引入未准备的大设定\n- 草写提示：先写行动推进，再补情绪与对白。\n### 场景2: 推进主冲突并释放新的信息增量\n- 必须包含：长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现；家庭线与身份线必须发生交叉兑现\n- 注意：本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。；本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。\n- 草写提示：先写行动推进，再补情绪与对白。\n### 场景3: 收束局部结果并留出下一章钩子\n- 必须包含：关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化\n- 注意：避免无铺垫的大幅关系/战力跳变\n- 草写提示：先写行动推进，再补情绪与对白。",
+    "scene_blocks": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "risk_notes": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "checklist": [
+      "先按 chapter_goal / core_conflict 写出场景草骨架，再补对白与细节。",
+      "优先兑现 payoff_target 与 turning_point，不要只推进表面事件。",
+      "写完后对照 risk_notes / style_axes / rule_constraints 做一次自检。"
+    ],
+    "blocking_risks": [
+      "存在 5 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "direct_revision_loop_pack": {
+    "contract_version": "direct-revision-loop-pack.v1",
+    "revision_text": "# 修稿目标：推进主角的身份突破与资源积累\n- 先处理逻辑与风险，再处理风格与节奏。\n- 每场都检查 must_keep / revision_notes / chapter continuity。\n- 草骨架摘要：目标：推进主角的身份突破与资源积累\n核心冲突：长线冲突仍需更多章节显式化\n兑现点：家庭线与身份线必须发生交叉兑现\n转折点：关键关系带来机会，但同时抬高代价\n### 场景1: 承接上一章结果并明确本章目标\n- 必须包含：布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累\n- 注意：不要无铺垫升级战力；不要引入未准备的大设定\n-",
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "revised_blocks": [
+      {
+        "scene_index": 1,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "revision_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "revision_notes": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "revision_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "revision_checklist": [
+      "先修逻辑、规则、关系连续性。",
+      "再修场景功能、节奏与章尾钩子。",
+      "最后修文风、对白与细节密度。"
+    ],
+    "blocking_risks": [
+      "存在 5 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "automatic_rewrite_guidance_pack": {
+    "contract_version": "automatic-rewrite-guidance-pack.v1",
+    "guidance_text": "# 自动改写指导\n- 先锁定 must_keep，再处理逻辑/节奏/对白问题。\n- 每次改写只处理一个场景块，避免整体重写导致连续性漂移。\n- 读者风险假设：当前主风险更偏执行质量，而非明显的读者体验断点。",
+    "rewrite_steps": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      }
+    ],
+    "reader_feedback_hypotheses": [
+      "当前主风险更偏执行质量，而非明显的读者体验断点。"
+    ],
+    "rewrite_checklist": [
+      "先修逻辑，再修节奏，再修文风。",
+      "每轮改写后回看 must_keep 是否仍在。",
+      "避免为追求流畅度而丢失 payoff / turning point。"
+    ],
+    "feedback_bridge_actions": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。"
+    ]
+  },
+  "automatic_prose_rewrite_pack": {
+    "contract_version": "automatic-prose-rewrite-pack.v1",
+    "rewrite_title": "推进主角的身份突破与资源积累",
+    "rewrite_text": "### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。",
+    "rewritten_blocks": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "rewrite_prompt": "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累"
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "rewrite_prompt": "长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现"
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "rewrite_prompt": "关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化"
+      }
+    ],
+    "rewrite_checklist": [
+      "先修逻辑，再修节奏，再修文风。",
+      "每轮改写后回看 must_keep 是否仍在。",
+      "避免为追求流畅度而丢失 payoff / turning point。"
+    ],
+    "feedback_signals": []
+  },
+  "final_draft_candidate_pack": {
+    "contract_version": "final-draft-candidate-pack.v1",
+    "candidate_title": "推进主角的身份突破与资源积累",
+    "candidate_text": "# 候选稿：推进主角的身份突破与资源积累\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。",
+    "candidate_blocks": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "推进主角的身份突破与资源积累"
+        ],
+        "rewrite_prompt": "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累"
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "长线冲突仍需更多章节显式化",
+          "家庭线与身份线必须发生交叉兑现"
+        ],
+        "rewrite_prompt": "长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现"
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "关键关系带来机会，但同时抬高代价",
+          "长线冲突仍需更多章节显式化"
+        ],
+        "rewrite_prompt": "关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化"
+      }
+    ],
+    "review_gate": {
+      "needs_review_count": 0,
+      "risk_card_count": 5,
+      "negative_feedback_signal_count": 0,
+      "ready_for_candidate_review": true
+    },
+    "candidate_checklist": [
+      "候选稿必须保留 must_keep 与 payoff / turning point。",
+      "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+      "如果 risk_card_count 较高，不要直接进入最终定稿。"
+    ],
+    "reader_feedback_signals": []
+  },
+  "publish_ready_release_pack": {
+    "contract_version": "publish-ready-release-pack.v1",
+    "release_gate": {
+      "candidate_review_ready": true,
+      "whole_book_ready": true,
+      "whole_book_consistency_ready": false,
+      "ready_for_release": false
+    },
+    "release_summary": "候选稿仍需复核后再发布。",
+    "release_checklist": [
+      "先确认 candidate_review_ready。",
+      "再确认 whole_book_ready 与主链样例完整。",
+      "发布前保留 review_gate / risk evidence 作为回溯依据。"
+    ],
+    "candidate_title": "推进主角的身份突破与资源积累"
+  },
+  "sample_based_release_criteria_bundle": {
+    "contract_version": "sample-based-release-criteria-bundle.v1",
+    "criteria": {
+      "sample_count_ready": true,
+      "retrieval_benchmark_ready": true,
+      "reader_feedback_ready": true,
+      "release_gate_ready": false,
+      "ready_for_bundle_review": false
+    },
+    "sample_count": 5,
+    "retrieval_query_count": 3,
+    "bundle_summary": "样例、retrieval benchmark、release gate 已汇总，可用于 release criteria review。"
+  },
+  "release_decision_freeze_artifact_pack": {
+    "contract_version": "release-decision-freeze-artifact-pack.v1",
+    "decision": "no_go",
+    "freeze_artifact": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "criteria_snapshot": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "release_gate_snapshot": {
+        "candidate_review_ready": true,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      }
+    },
+    "decision_summary": "当前仍处于 no-go / freeze 保守状态。",
+    "next_actions": [
+      "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+      "若 go，则保留 freeze_artifact 并进入 release review。"
+    ]
+  },
+  "handoff_approval_record_pack": {
+    "contract_version": "handoff-approval-record-pack.v1",
+    "approval_status": "pending",
+    "handoff_record": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "release_summary": "候选稿仍需复核后再发布。"
+    },
+    "approval_checklist": [
+      "确认 freeze_artifact 与 release_gate 快照可回溯。",
+      "确认候选稿、release criteria、risk evidence 已一并交接。",
+      "进入 approval 前记录最终 decision 与责任人。"
+    ]
+  },
+  "operator_release_brief_pack": {
+    "contract_version": "operator-release-brief-pack.v1",
+    "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+    "operator_status": "pending",
+    "brief_checklist": [
+      "先看 decision / freeze_reason。",
+      "再看 sample/retrieval/release criteria 是否齐备。",
+      "最后确认是否进入人工 approval 或继续回修。"
+    ]
+  },
+  "release_ops_runbook_pack": {
+    "contract_version": "release-ops-runbook-pack.v1",
+    "runbook_status": "blocked",
+    "runbook_steps": [
+      "检查 operator brief 与 freeze_artifact 是否一致。",
+      "确认 release gate / sample criteria / risk evidence 的最新快照。",
+      "若 decision=no_go，则生成阻断清单并停止发布动作。",
+      "若 decision=go，则进入人工 approval 与 release review。"
+    ],
+    "blockers": [
+      "release_gate_or_sample_criteria_not_ready"
+    ],
+    "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+    "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+  },
+  "incident_rollback_pack": {
+    "contract_version": "incident-rollback-pack.v1",
+    "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+    "rollback_target": "previous_candidate_or_safe_release",
+    "rollback_steps": [
+      "停止当前发布/扩散动作。",
+      "回退到上一版候选稿或安全版本。",
+      "重新收集 risk / review / release gate 快照。",
+      "完成问题修复后重新进入 freeze review。"
+    ],
+    "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+  },
+  "postmortem_recovery_record_pack": {
+    "contract_version": "postmortem-recovery-record-pack.v1",
+    "recovery_record": {
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready"
+    },
+    "postmortem_summary": "已记录 rollback trigger / target / freeze reason，可用于事故复盘与恢复追踪。",
+    "recovery_checklist": [
+      "记录 rollback trigger 与 freeze_reason。",
+      "记录恢复后的风险/评审快照。",
+      "确认问题关闭后再重新进入 freeze/release review。"
+    ]
+  },
+  "recovery_closure_artifact_pack": {
+    "contract_version": "recovery-closure-artifact-pack.v1",
+    "closure_status": "recovery_pending",
+    "closure_summary": "恢复动作仍需持续跟踪。",
+    "closure_record": {
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready"
+    },
+    "closure_checklist": [
+      "确认 rollback trigger / target / freeze reason 已归档。",
+      "确认恢复后快照已重新记录。",
+      "确认是否需要重新进入 release/freeze review。"
+    ]
+  },
+  "final_governance_summary_pack": {
+    "contract_version": "final-governance-summary-pack.v1",
+    "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+    "governance_status": "guarded",
+    "governance_checklist": [
+      "先看 release_ready 与 criteria_ready。",
+      "再看 decision / approval_status / runbook_status。",
+      "最后确认 closure_status 与 recovery 记录是否完备。"
+    ]
+  },
+  "governance_dashboard_pack": {
+    "contract_version": "governance-dashboard-pack.v1",
+    "dashboard_status": "guarded",
+    "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+    "release_gate": {
+      "candidate_review_ready": true,
+      "whole_book_ready": true,
+      "whole_book_consistency_ready": false,
+      "ready_for_release": false
+    },
+    "criteria": {
+      "sample_count_ready": true,
+      "retrieval_benchmark_ready": true,
+      "reader_feedback_ready": true,
+      "release_gate_ready": false,
+      "ready_for_bundle_review": false
+    },
+    "decision": "no_go",
+    "operator_status": "pending",
+    "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+    "whole_book_consistency": {
+      "requires_consistency_pass": true,
+      "release_impact": "whole_book_consistency_blocks_release",
+      "next_stage_focus": [
+        "优先处理能力族：relationship、rule",
+        "先回看第10章的高优先级修复链",
+        "先回看第9章的高优先级修复链"
+      ]
+    }
+  },
+  "governance_report_brief_pack": {
+    "contract_version": "governance-report-brief-pack.v1",
+    "dashboard_status": "guarded",
+    "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+    "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+  },
+  "release_review_note_pack": {
+    "contract_version": "release-review-note-pack.v1",
+    "note_text": "# Release Review Note\n\n- candidate_review_ready: True\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+    "review_status": "blocked",
+    "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+  },
+  "approval_decision_memo_pack": {
+    "contract_version": "approval-decision-memo-pack.v1",
+    "decision_verdict": "REJECT",
+    "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+    "memo_status": "rejected"
+  },
+  "external_report_bundle_pack": {
+    "contract_version": "external-report-bundle-pack.v1",
+    "dashboard": {
+      "contract_version": "governance-dashboard-pack.v1",
+      "dashboard_status": "guarded",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "release_gate": {
+        "candidate_review_ready": true,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      },
+      "criteria": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "decision": "no_go",
+      "operator_status": "pending",
+      "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+      "whole_book_consistency": {
+        "requires_consistency_pass": true,
+        "release_impact": "whole_book_consistency_blocks_release",
+        "next_stage_focus": [
+          "优先处理能力族：relationship、rule",
+          "先回看第10章的高优先级修复链",
+          "先回看第9章的高优先级修复链"
+        ]
+      }
+    },
+    "brief": {
+      "contract_version": "governance-report-brief-pack.v1",
+      "dashboard_status": "guarded",
+      "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "review_note": {
+      "contract_version": "release-review-note-pack.v1",
+      "note_text": "# Release Review Note\n\n- candidate_review_ready: True\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+      "review_status": "blocked",
+      "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "approval_memo": {
+      "contract_version": "approval-decision-memo-pack.v1",
+      "decision_verdict": "REJECT",
+      "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "memo_status": "rejected"
+    },
+    "runbook": {
+      "contract_version": "release-ops-runbook-pack.v1",
+      "runbook_status": "blocked",
+      "runbook_steps": [
+        "检查 operator brief 与 freeze_artifact 是否一致。",
+        "确认 release gate / sample criteria / risk evidence 的最新快照。",
+        "若 decision=no_go，则生成阻断清单并停止发布动作。",
+        "若 decision=go，则进入人工 approval 与 release review。"
+      ],
+      "blockers": [
+        "release_gate_or_sample_criteria_not_ready"
+      ],
+      "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+      "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+    },
+    "rollback": {
+      "contract_version": "incident-rollback-pack.v1",
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "rollback_steps": [
+        "停止当前发布/扩散动作。",
+        "回退到上一版候选稿或安全版本。",
+        "重新收集 risk / review / release gate 快照。",
+        "完成问题修复后重新进入 freeze review。"
+      ],
+      "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+    },
+    "governance_summary": {
+      "contract_version": "final-governance-summary-pack.v1",
+      "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "governance_status": "guarded",
+      "governance_checklist": [
+        "先看 release_ready 与 criteria_ready。",
+        "再看 decision / approval_status / runbook_status。",
+        "最后确认 closure_status 与 recovery 记录是否完备。"
+      ]
+    }
+  },
+  "external_report_markdown_pack": {
+    "contract_version": "external-report-markdown-pack.v1",
+    "markdown_text": "# External Report Bundle\n\n## Dashboard\nrelease_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n\n## Governance Brief\n# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n\n## Release Review Note\n# Release Review Note\n\n- candidate_review_ready: True\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n\n## Approval Memo\n# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n\n## Runbook\n- 检查 operator brief 与 freeze_artifact 是否一致。\n- 确认 release gate / sample criteria / risk evidence 的最新快照。\n- 若 decision=no_go，则生成阻断清单并停止发布动作。\n- 若 decision=go，则进入人工 approval 与 release review。\n\n## Rollback\n- 停止当前发布/扩散动作。\n- 回退到上一版候选稿或安全版本。\n- 重新收集 risk / review / release gate 快照。\n- 完成问题修复后重新进入 freeze review。\n\n## Governance Summary\nrelease_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n",
+    "dashboard_status": "guarded"
+  },
+  "final_release_archive_pack": {
+    "contract_version": "final-release-archive-pack.v1",
+    "candidate": {
+      "contract_version": "final-draft-candidate-pack.v1",
+      "candidate_title": "推进主角的身份突破与资源积累",
+      "candidate_text": "# 候选稿：推进主角的身份突破与资源积累\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。",
+      "candidate_blocks": [
+        {
+          "scene_index": 1,
+          "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+          "must_keep": [
+            "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+            "推进主角的身份突破与资源积累"
+          ],
+          "rewrite_prompt": "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。；推进主角的身份突破与资源积累"
+        },
+        {
+          "scene_index": 2,
+          "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+          "must_keep": [
+            "长线冲突仍需更多章节显式化",
+            "家庭线与身份线必须发生交叉兑现"
+          ],
+          "rewrite_prompt": "长线冲突仍需更多章节显式化；家庭线与身份线必须发生交叉兑现"
+        },
+        {
+          "scene_index": 3,
+          "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+          "must_keep": [
+            "关键关系带来机会，但同时抬高代价",
+            "长线冲突仍需更多章节显式化"
+          ],
+          "rewrite_prompt": "关键关系带来机会，但同时抬高代价；长线冲突仍需更多章节显式化"
+        }
+      ],
+      "review_gate": {
+        "needs_review_count": 0,
+        "risk_card_count": 5,
+        "negative_feedback_signal_count": 0,
+        "ready_for_candidate_review": true
+      },
+      "candidate_checklist": [
+        "候选稿必须保留 must_keep 与 payoff / turning point。",
+        "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+        "如果 risk_card_count 较高，不要直接进入最终定稿。"
+      ],
+      "reader_feedback_signals": []
+    },
+    "freeze_artifact": {
+      "contract_version": "release-decision-freeze-artifact-pack.v1",
+      "decision": "no_go",
+      "freeze_artifact": {
+        "decision": "no_go",
+        "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+        "criteria_snapshot": {
+          "sample_count_ready": true,
+          "retrieval_benchmark_ready": true,
+          "reader_feedback_ready": true,
+          "release_gate_ready": false,
+          "ready_for_bundle_review": false
+        },
+        "release_gate_snapshot": {
+          "candidate_review_ready": true,
+          "whole_book_ready": true,
+          "whole_book_consistency_ready": false,
+          "ready_for_release": false
+        }
+      },
+      "decision_summary": "当前仍处于 no-go / freeze 保守状态。",
+      "next_actions": [
+        "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+        "若 go，则保留 freeze_artifact 并进入 release review。"
+      ]
+    },
+    "handoff_record": {
+      "contract_version": "handoff-approval-record-pack.v1",
+      "approval_status": "pending",
+      "handoff_record": {
+        "decision": "no_go",
+        "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+        "release_summary": "候选稿仍需复核后再发布。"
+      },
+      "approval_checklist": [
+        "确认 freeze_artifact 与 release_gate 快照可回溯。",
+        "确认候选稿、release criteria、risk evidence 已一并交接。",
+        "进入 approval 前记录最终 decision 与责任人。"
+      ]
+    },
+    "external_report_bundle": {
+      "contract_version": "external-report-bundle-pack.v1",
+      "dashboard": {
+        "contract_version": "governance-dashboard-pack.v1",
+        "dashboard_status": "guarded",
+        "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+        "release_gate": {
+          "candidate_review_ready": true,
+          "whole_book_ready": true,
+          "whole_book_consistency_ready": false,
+          "ready_for_release": false
+        },
+        "criteria": {
+          "sample_count_ready": true,
+          "retrieval_benchmark_ready": true,
+          "reader_feedback_ready": true,
+          "release_gate_ready": false,
+          "ready_for_bundle_review": false
+        },
+        "decision": "no_go",
+        "operator_status": "pending",
+        "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+        "whole_book_consistency": {
+          "requires_consistency_pass": true,
+          "release_impact": "whole_book_consistency_blocks_release",
+          "next_stage_focus": [
+            "优先处理能力族：relationship、rule",
+            "先回看第10章的高优先级修复链",
+            "先回看第9章的高优先级修复链"
+          ]
+        }
+      },
+      "brief": {
+        "contract_version": "governance-report-brief-pack.v1",
+        "dashboard_status": "guarded",
+        "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+        "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+      },
+      "review_note": {
+        "contract_version": "release-review-note-pack.v1",
+        "note_text": "# Release Review Note\n\n- candidate_review_ready: True\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+        "review_status": "blocked",
+        "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+      },
+      "approval_memo": {
+        "contract_version": "approval-decision-memo-pack.v1",
+        "decision_verdict": "REJECT",
+        "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+        "memo_status": "rejected"
+      },
+      "runbook": {
+        "contract_version": "release-ops-runbook-pack.v1",
+        "runbook_status": "blocked",
+        "runbook_steps": [
+          "检查 operator brief 与 freeze_artifact 是否一致。",
+          "确认 release gate / sample criteria / risk evidence 的最新快照。",
+          "若 decision=no_go，则生成阻断清单并停止发布动作。",
+          "若 decision=go，则进入人工 approval 与 release review。"
+        ],
+        "blockers": [
+          "release_gate_or_sample_criteria_not_ready"
+        ],
+        "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+        "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+      },
+      "rollback": {
+        "contract_version": "incident-rollback-pack.v1",
+        "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+        "rollback_target": "previous_candidate_or_safe_release",
+        "rollback_steps": [
+          "停止当前发布/扩散动作。",
+          "回退到上一版候选稿或安全版本。",
+          "重新收集 risk / review / release gate 快照。",
+          "完成问题修复后重新进入 freeze review。"
+        ],
+        "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+      },
+      "governance_summary": {
+        "contract_version": "final-governance-summary-pack.v1",
+        "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+        "governance_status": "guarded",
+        "governance_checklist": [
+          "先看 release_ready 与 criteria_ready。",
+          "再看 decision / approval_status / runbook_status。",
+          "最后确认 closure_status 与 recovery 记录是否完备。"
+        ]
+      }
+    },
+    "archive_retention_metadata_pack": {
+      "contract_version": "archive-retention-metadata-pack.v1",
+      "retention_policy": "keep_release_archive_until_next_major_revision",
+      "archive_status": "active",
+      "manifest_contract": "archive-manifest-pack.v1",
+      "manifest_item_count": 4
+    },
+    "archive_index_metadata_pack": {
+      "contract_version": "archive-index-metadata-pack.v1",
+      "archive_key": "sample-branch-final-release-archive-20260505",
+      "manifest_contract": "archive-manifest-pack.v1",
+      "retention_policy": "keep_release_archive_until_next_major_revision",
+      "archive_status": "active",
+      "indexed_sections": [
+        "candidate",
+        "freeze_artifact",
+        "handoff_record",
+        "external_report_bundle"
+      ]
+    },
+    "archive_navigation_metadata_pack": {
+      "contract_version": "archive-navigation-metadata-pack.v1",
+      "archive_key": "sample-branch-final-release-archive-20260505",
+      "navigation_sections": [
+        "candidate",
+        "freeze_artifact",
+        "handoff_record",
+        "external_report_bundle"
+      ],
+      "navigation_summary": "使用 archive_key 与 navigation_sections 进行归档导航与检索。"
+    },
+    "archive_integrity_check_pack": {
+      "contract_version": "archive-integrity-check-pack.v1",
+      "present_keys": [
+        "candidate",
+        "freeze_artifact",
+        "handoff_record",
+        "external_report_bundle"
+      ],
+      "missing_keys": [],
+      "integrity_ok": true
+    },
+    "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。"
+  },
+  "archive_manifest_pack": {
+    "contract_version": "archive-manifest-pack.v1",
+    "manifest_items": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。",
+    "archive_contract": "final-release-archive-pack.v1"
+  },
+  "archive_retention_metadata_pack": {
+    "contract_version": "archive-retention-metadata-pack.v1",
+    "retention_policy": "keep_release_archive_until_next_major_revision",
+    "archive_status": "active",
+    "manifest_contract": "archive-manifest-pack.v1",
+    "manifest_item_count": 4
+  },
+  "archive_index_metadata_pack": {
+    "contract_version": "archive-index-metadata-pack.v1",
+    "archive_key": "sample-branch-final-release-archive-20260505",
+    "manifest_contract": "archive-manifest-pack.v1",
+    "retention_policy": "keep_release_archive_until_next_major_revision",
+    "archive_status": "active",
+    "indexed_sections": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ]
+  },
+  "archive_navigation_metadata_pack": {
+    "contract_version": "archive-navigation-metadata-pack.v1",
+    "archive_key": "sample-branch-final-release-archive-20260505",
+    "navigation_sections": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "navigation_summary": "使用 archive_key 与 navigation_sections 进行归档导航与检索。"
+  },
+  "archive_integrity_check_pack": {
+    "contract_version": "archive-integrity-check-pack.v1",
+    "present_keys": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "missing_keys": [],
+    "integrity_ok": true
+  },
+  "audit_conclusion": {
+    "content_judgement": "当前分支已形成可用审查结果。",
+    "risk_judgement": "当前候选问题簇已完成人工复核，未见需继续升级的明确风险。",
+    "blocking_judgement": "当前无执行阻塞。",
+    "recommended_action": "可保留复核记录并继续后续章节审查。",
+    "review_result_note": "已确认无问题 1 个。",
+    "review_storage_note": "当前 review 数据来自数据库主路径。",
+    "review_owner_note": "当前已记录复核人中，agent 处理了 1 个问题簇。",
+    "current_owner_note": "当前问题簇负责人分布中，agent 负责 1 个问题簇。",
+    "review_actor_note": "最近审查动作记录中，codex 执行了 1 次变更。",
+    "latest_event_type_note": "最近一批问题簇的最新动作类型中，assignment_update 出现了 1 次。",
+    "pending_assignment_note": "存在 1 个已交接但未闭环的问题簇；优先关注 人物风险簇：character_resolution_support_gap（owner=agent）。",
+    "latest_review_note": "最近一次复核记录：状态=reviewed，结果=confirmed-benign，处理人=agent，操作人=codex。"
+  },
+  "review_summary": {
+    "review_storage_mode": "db",
+    "cluster_count": 1,
+    "by_status": {
+      "reviewed": 1
+    },
+    "by_result": {
+      "confirmed-benign": 1
+    },
+    "by_owner": {
+      "agent": 1
+    },
+    "by_actor": {
+      "codex": 1
+    },
+    "by_latest_event_type": {
+      "assignment_update": 1
+    },
+    "by_workflow_lane": {
+      "assignment_queue": 1
+    },
+    "by_queue_priority": {
+      "high": 1
+    },
+    "by_deadline_level": {
+      "soon": 1
+    },
+    "by_batch_operation_hint": {
+      "batch_owner_handoff_followup": 1
+    },
+    "by_escalation_tier": {},
+    "by_auto_next_action_code": {
+      "notify_owner_to_take_over": 1
+    },
+    "by_auto_next_action": {
+      "通知 agent 接手 人物风险簇：character_resolution_support_gap，并尽快给出复核结论。": 1
+    },
+    "by_escalation_reason_code": {
+      "awaiting_owner_followup": 1
+    },
+    "by_escalation_reason": {
+      "当前问题簇已完成交接，但尚未形成最终闭环结论。": 1
+    },
+    "by_priority": {
+      "P3": 1
+    },
+    "by_pattern": {
+      "单点问题": 1
+    },
+    "by_phase2_focus": {},
+    "history_event_count": 1,
+    "latest_review_at": "2026-05-06T08:49:41.530599+08:00",
+    "latest_review_owner": "agent",
+    "latest_review_actor": "codex",
+    "latest_review_event_type": "assignment_update",
+    "latest_review_result": "confirmed-benign",
+    "latest_review_result_label": "确认无问题",
+    "current_owner_top": "agent",
+    "current_owner_top_count": 1,
+    "latest_actor_top": "codex",
+    "latest_actor_top_count": 1,
+    "latest_event_type_top": "assignment_update",
+    "latest_event_type_top_count": 1,
+    "workflow_lane_top": "assignment_queue",
+    "workflow_lane_top_count": 1,
+    "queue_priority_top": "high",
+    "queue_priority_top_count": 1,
+    "deadline_level_top": "soon",
+    "deadline_level_top_count": 1,
+    "batch_operation_hint_top": "batch_owner_handoff_followup",
+    "batch_operation_hint_top_count": 1,
+    "escalation_tier_top": "",
+    "escalation_tier_top_count": 0,
+    "auto_next_action_code_top": "notify_owner_to_take_over",
+    "auto_next_action_code_top_count": 1,
+    "auto_next_action_top": "通知 agent 接手 人物风险簇：character_resolution_support_gap，并尽快给出复核结论。",
+    "auto_next_action_top_count": 1,
+    "escalation_reason_code_top": "awaiting_owner_followup",
+    "escalation_reason_code_top_count": 1,
+    "escalation_reason_top": "当前问题簇已完成交接，但尚未形成最终闭环结论。",
+    "escalation_reason_top_count": 1,
+    "phase2_focus_top": "",
+    "phase2_focus_top_count": 0,
+    "pending_assignment_count": 1,
+    "pending_escalation_count": 0,
+    "resolved_count": 0,
+    "needs_review_count": 0,
+    "action_required_count": 1,
+    "close_ready_count": 0,
+    "batch_suggestions": [
+      {
+        "hint_code": "batch_owner_handoff_followup",
+        "hint_title": "可批量催办交接",
+        "action_bucket": "followup",
+        "batch_priority": "high",
+        "group_strategy": "by_owner",
+        "group_key": "agent",
+        "span_bucket": "single",
+        "cluster_count": 1,
+        "cluster_keys": [
+          "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap"
+        ],
+        "suggested_cluster_order": [
+          "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap"
+        ],
+        "suggested_cluster_order_titles": [
+          "人物风险簇：character_resolution_support_gap"
+        ],
+        "suggested_cluster_order_details": [
+          {
+            "cluster_key": "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap",
+            "cluster_title": "人物风险簇：character_resolution_support_gap",
+            "queue_priority": "high",
+            "review_priority": "P3",
+            "chapter_count": 1,
+            "confidence": 0.35,
+            "human_review_batch_rank_score": 0.0,
+            "human_review_batch_rank_reason": "",
+            "escalation_tier": "",
+            "escalation_urgency_score": 0.0,
+            "escalation_rank_reason": "",
+            "escalation_batch_rank_score": 0.0,
+            "escalation_batch_rank_reason": "",
+            "close_stability_score": 20.5,
+            "close_ready_rank_reason": "close_ready=False | history_count=1 | chapter_count=1 | confidence=0.35 | close_stability_score=20.50",
+            "close_batch_rank_score": 0.0,
+            "close_batch_rank_reason": "",
+            "chapter_span_width": 0,
+            "batch_rank_score": 415.5,
+            "order_reason": "queue=high | priority=P3 | pattern=单点问题 | chapter_count=1 | confidence=0.35 | span_width=0 | batch_rank_score=415.50"
+          }
+        ],
+        "ordering_strategy": "queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter",
+        "suggested_first_cluster_reason": "queue=high | priority=P3 | pattern=单点问题 | chapter_count=1 | confidence=0.35 | span_width=0 | batch_rank_score=415.50",
+        "cluster_titles": [
+          "人物风险簇：character_resolution_support_gap"
+        ],
+        "owners": [
+          "agent"
+        ],
+        "suggested_owner": "agent",
+        "primary_checker": "character_ooc",
+        "pattern_label_top": "单点问题",
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "phase2_focus_top": "",
+        "chapter_spans": [
+          "4"
+        ],
+        "queue_priority_top": "high",
+        "deadline_level_top": "soon",
+        "escalation_tier_top": "",
+        "action_required": true,
+        "resolved_candidate_count": 0,
+        "escalation_candidate_count": 0,
+        "recommended_batch_action": "通知 agent 接手 人物风险簇：character_resolution_support_gap，并尽快给出复核结论。",
+        "suggestion_rank_score": 455.0,
+        "suggestion_rank_reason": "action_bucket=followup | batch_priority=high | cluster_count=1 | action_required=True | suggestion_rank_score=455.00"
+      }
+    ]
+  },
+  "risk_summary": {
+    "risk_card_count": 5,
+    "checker_result_count": 45,
+    "review_candidate_count": 1,
+    "high_risk_chapters": [],
+    "risk_counts_by_domain": {
+      "character": 1,
+      "plot": 1
+    },
+    "risk_counts_by_severity": {
+      "low": 2
+    },
+    "review_candidates_summary": [
+      {
+        "chapter_index": 4,
+        "title": "仙道无凭",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "analysis-layer 的 summary.detailed 中描述‘少年通过指桑骂槐（蛤蟆精）的方式讽刺了路过的白衣丽人’，该事件在 fact-layer 中无直接证据支持（fact-layer events 仅包含少女指责、少年讨好、少女喜悦三项），属于过度推断。",
+          "关系线“小六子和青旒是同门师兄妹”已出现阶段性变化证据。"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。",
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：青衫少女指责布衣少年盯着其他女子看、布衣少年讨好青衫少女并提及修炼入门、青衫少女因布衣少年的赞美而喜悦。",
+          "推进: 本章关系面出现可见变化：布衣少年与青衫少女是同门师兄妹。",
+          "推进: 本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 布衣少年用言语打压/讽刺白衣丽人",
+          "未回收伏笔: 黑牌暗藏神秘力量",
+          "近期时间线: 青衫少女因布衣少年的赞美而喜悦 -[follows]-> 布衣少年表达苦练精修出人头地的决心",
+          "近期时间线: 青衫少女因布衣少年的赞美而喜悦 -[follows]-> 布衣少年描述青华门入门竞争激烈"
+        ]
+      }
+    ],
+    "review_candidate_clusters": [
+      {
+        "cluster_key": "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap",
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "cluster_title": "人物风险簇：character_resolution_support_gap",
+        "suggested_review_action": "优先核对人物动机、关系与行为是否有前文支撑，避免只依据标题或摘要推断人物变化。",
+        "review_priority": "P3",
+        "cluster_status": "reviewed",
+        "chapter_count": 1,
+        "chapters": [
+          4
+        ],
+        "first_chapter": 4,
+        "last_chapter": 4,
+        "max_confidence": 0.35,
+        "titles": [
+          "仙道无凭"
+        ],
+        "sample_summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "chapter_span": "4",
+        "pattern_label": "单点问题",
+        "review_notes": "人工复核：当前更像摘要层过强推断而非实质人物崩坏，作为低优先级观察保留，不升级阻断。",
+        "review_owner": "agent",
+        "review_result": "confirmed-benign",
+        "review_result_label": "确认无问题",
+        "review_history_count": 1,
+        "review_history": [
+          {
+            "event_index": 1,
+            "event_id": "23685de0-a53e-4229-a946-14d53d5b026d:character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap:1",
+            "audit_key": "23685de0-a53e-4229-a946-14d53d5b026d:character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap:1",
+            "previous_values": {
+              "cluster_status": "",
+              "review_result": "",
+              "review_notes": "",
+              "review_owner": "",
+              "review_actor": "",
+              "resolved_at": ""
+            },
+            "current_values": {
+              "cluster_status": "reviewed",
+              "review_result": "confirmed-benign",
+              "review_notes": "人工复核：当前更像摘要层过强推断而非实质人物崩坏，作为低优先级观察保留，不升级阻断。",
+              "review_owner": "agent",
+              "review_actor": "codex",
+              "resolved_at": ""
+            },
+            "previous_cluster_status": "",
+            "previous_review_result": "",
+            "previous_review_notes": "",
+            "previous_review_owner": "",
+            "previous_review_actor": "",
+            "previous_resolved_at": "",
+            "cluster_status": "reviewed",
+            "review_result": "confirmed-benign",
+            "review_notes": "人工复核：当前更像摘要层过强推断而非实质人物崩坏，作为低优先级观察保留，不升级阻断。",
+            "review_owner": "agent",
+            "review_actor": "codex",
+            "resolved_at": "",
+            "event_type": "assignment_update",
+            "changed_fields": [
+              "cluster_status",
+              "review_result",
+              "review_notes",
+              "review_owner",
+              "review_actor"
+            ],
+            "transition": "new->reviewed",
+            "created_at": "2026-05-06T08:49:41.530599+08:00"
+          }
+        ],
+        "latest_review_event": {
+          "event_index": 1,
+          "event_id": "23685de0-a53e-4229-a946-14d53d5b026d:character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap:1",
+          "audit_key": "23685de0-a53e-4229-a946-14d53d5b026d:character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap:1",
+          "previous_values": {
+            "cluster_status": "",
+            "review_result": "",
+            "review_notes": "",
+            "review_owner": "",
+            "review_actor": "",
+            "resolved_at": ""
+          },
+          "current_values": {
+            "cluster_status": "reviewed",
+            "review_result": "confirmed-benign",
+            "review_notes": "人工复核：当前更像摘要层过强推断而非实质人物崩坏，作为低优先级观察保留，不升级阻断。",
+            "review_owner": "agent",
+            "review_actor": "codex",
+            "resolved_at": ""
+          },
+          "previous_cluster_status": "",
+          "previous_review_result": "",
+          "previous_review_notes": "",
+          "previous_review_owner": "",
+          "previous_review_actor": "",
+          "previous_resolved_at": "",
+          "cluster_status": "reviewed",
+          "review_result": "confirmed-benign",
+          "review_notes": "人工复核：当前更像摘要层过强推断而非实质人物崩坏，作为低优先级观察保留，不升级阻断。",
+          "review_owner": "agent",
+          "review_actor": "codex",
+          "resolved_at": "",
+          "event_type": "assignment_update",
+          "changed_fields": [
+            "cluster_status",
+            "review_result",
+            "review_notes",
+            "review_owner",
+            "review_actor"
+          ],
+          "transition": "new->reviewed",
+          "created_at": "2026-05-06T08:49:41.530599+08:00"
+        },
+        "workflow_lane": "assignment_queue",
+        "queue_priority": "high",
+        "action_required": true,
+        "suggested_deadline_level": "soon",
+        "auto_next_action_code": "notify_owner_to_take_over",
+        "auto_next_action": "通知 agent 接手 人物风险簇：character_resolution_support_gap，并尽快给出复核结论。",
+        "escalation_reason_code": "awaiting_owner_followup",
+        "escalation_reason": "当前问题簇已完成交接，但尚未形成最终闭环结论。",
+        "close_ready_gate": false,
+        "close_stability_score": 20.5,
+        "close_ready_rank_reason": "close_ready=False | history_count=1 | chapter_count=1 | confidence=0.35 | close_stability_score=20.50",
+        "close_batch_rank_score": 0.0,
+        "human_review_batch_rank_score": 0.0,
+        "escalation_urgency_score": 0.0,
+        "escalation_tier": "",
+        "escalation_batch_rank_score": 0.0,
+        "batch_operation_hint": "batch_owner_handoff_followup"
+      }
+    ]
+  },
+  "author_knowledge": {
+    "contract_version": "author-knowledge.v1",
+    "branch_id": "23685de0-a53e-4229-a946-14d53d5b026d",
+    "focus_label": "",
+    "chapter_span": {
+      "min": 1,
+      "max": 5,
+      "count": 5
+    },
+    "chapter_cards": [
+      {
+        "chapter_index": 1,
+        "title": "青华",
+        "summary": "黑牌异动，神秘力量初显。",
+        "key_entities": [
+          "布衣少年"
+        ],
+        "key_events": [
+          "少年抛接黑牌",
+          "黑牌异常振动发热"
+        ],
+        "continuity_notes": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+          "主角对黑牌的认知从普通玩物变为神秘器物，信息掌握状态发生显著变化。角色位置、关系、力量未变，但潜在威胁/机遇已然浮现。",
+          "前情摘要为空，无待回收伏笔或升级冲突，本章属于独立引入新线索的情节点。"
+        ]
+      },
+      {
+        "chapter_index": 2,
+        "title": "厌物丽人同行",
+        "summary": "本章聚焦于小六子与青旒师妹的亲密对话，少年被少女魅力所惑，少女羞恼回应，结尾埋下黑牌异常伏笔。",
+        "key_entities": [
+          "布衣少年（小六子）",
+          "青衫少女（青旒师妹）"
+        ],
+        "key_events": [
+          "青衫少女拂弄秀发引起少年凝视",
+          "少年夸赞少女动作像仙女",
+          "少女害羞并嗔怪少年油嘴滑舌"
+        ],
+        "continuity_notes": [
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+          "本章结尾（来自图谱摘要）黑牌出现异常振动发热，制造了强烈的『继续阅读钩子』，悬念强度高，驱动读者探寻黑牌来源与召唤力量。",
+          "主角对黑牌的认知状态发生显著变化——从普通玩物转变为神秘器物，属于『信息掌握状态』的升级。"
+        ]
+      },
+      {
+        "chapter_index": 3,
+        "title": "狡舌",
+        "summary": "布衣少年通过指桑骂槐的玩笑讽刺白衣丽人，青衫师妹茫然，白衣丽人一笑而过，本章以幽默对话展现角色性格与关系。",
+        "key_entities": [
+          "布衣少年（小六子）",
+          "青衫少女（青旒师妹）",
+          "白衣丽人"
+        ],
+        "key_events": [
+          "布衣少年指桑骂槐讽刺白衣丽人",
+          "青衫少女因白衣丽人出现而失神",
+          "布衣少年一本正经解释蛤蟆精",
+          "白衣丽人忍不住笑出声"
+        ],
+        "continuity_notes": [
+          "本章为日常片段，未直接推进黑牌主线（黑牌暗藏神秘力量等伏笔仍保持开放状态）。",
+          "引入白衣丽人，其与布衣少年的互动为后续可能的关系或冲突埋下线索，但当前无明确钩子。",
+          "布衣少年与青衫少女的同门关系在本章进一步稳固（状态稳定），未发生变化。"
+        ]
+      },
+      {
+        "chapter_index": 4,
+        "title": "仙道无凭",
+        "summary": "青衫少女指责布衣少年看其他女子，少年认错并赞美少女，提及她未来可入门仙师座下，少女转怒为喜，关系缓和但暗藏冲突。",
+        "key_entities": [
+          "青衫少女（褚青旒）",
+          "布衣少年（赵小六/赵井泉）"
+        ],
+        "key_events": [
+          "青衫少女指责布衣少年盯着其他女子看",
+          "布衣少年讨好青衫少女并提及修炼入门",
+          "青衫少女因布衣少年的赞美而喜悦"
+        ],
+        "continuity_notes": [
+          "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+          "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+          "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。"
+        ]
+      },
+      {
+        "chapter_index": 5,
+        "title": "世界",
+        "summary": "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+        "key_entities": [
+          "布衣少年（赵小六/小六）",
+          "褚青旒（青旒师妹）"
+        ],
+        "key_events": [
+          "布衣少年描述青华门入门竞争激烈",
+          "布衣少年表达苦练精修出人头地的决心",
+          "褚青旒提醒布衣少年先过入门关"
+        ],
+        "continuity_notes": [
+          "本章延续并具体化了世界规则：青华门入门体系（每月试炼、目测关通过率、三道关、三十六馆舍）得到明确交代，属于‘延续 + 细化’模式。",
+          "布衣少年的决心状态从之前的随意玩耍升级为郑重表态，角色内在动机加强。",
+          "前情中未回收的伏笔（黑牌暗藏神秘力量、青衫少女未来可能入门）在本章暂缓处理，未涉及。"
+        ]
+      }
+    ],
+    "entities": [
+      {
+        "label": "布衣少年",
+        "chapter_index": 1,
+        "confidence": 0.6,
+        "evidence_list": [
+          "布衣少年"
+        ]
+      },
+      {
+        "label": "布衣少年（小六子）",
+        "chapter_index": 2,
+        "confidence": 0.6,
+        "evidence_list": [
+          "布衣少年（小六子）"
+        ]
+      },
+      {
+        "label": "青衫少女（青旒师妹）",
+        "chapter_index": 2,
+        "confidence": 0.6,
+        "evidence_list": [
+          "青衫少女（青旒师妹）"
+        ]
+      },
+      {
+        "label": "布衣少年（小六子）",
+        "chapter_index": 3,
+        "confidence": 0.6,
+        "evidence_list": [
+          "布衣少年（小六子）"
+        ]
+      },
+      {
+        "label": "白衣丽人",
+        "chapter_index": 3,
+        "confidence": 0.6,
+        "evidence_list": [
+          "白衣丽人"
+        ]
+      },
+      {
+        "label": "青衫少女（青旒师妹）",
+        "chapter_index": 3,
+        "confidence": 0.6,
+        "evidence_list": [
+          "青衫少女（青旒师妹）"
+        ]
+      },
+      {
+        "label": "布衣少年（赵小六/赵井泉）",
+        "chapter_index": 4,
+        "confidence": 0.6,
+        "evidence_list": [
+          "布衣少年（赵小六/赵井泉）"
+        ]
+      },
+      {
+        "label": "青衫少女（褚青旒）",
+        "chapter_index": 4,
+        "confidence": 0.6,
+        "evidence_list": [
+          "青衫少女（褚青旒）"
+        ]
+      },
+      {
+        "label": "布衣少年（赵小六/小六）",
+        "chapter_index": 5,
+        "confidence": 0.6,
+        "evidence_list": [
+          "布衣少年（赵小六/小六）"
+        ]
+      },
+      {
+        "label": "褚青旒（青旒师妹）",
+        "chapter_index": 5,
+        "confidence": 0.6,
+        "evidence_list": [
+          "褚青旒（青旒师妹）"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "label": "少年抛接黑牌",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "少年抛接黑牌"
+        ]
+      },
+      {
+        "label": "黑牌异常振动发热",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "黑牌异常振动发热"
+        ]
+      },
+      {
+        "label": "少女害羞并嗔怪少年油嘴滑舌",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "少女害羞并嗔怪少年油嘴滑舌"
+        ]
+      },
+      {
+        "label": "少年夸赞少女动作像仙女",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "少年夸赞少女动作像仙女"
+        ]
+      },
+      {
+        "label": "青衫少女拂弄秀发引起少年凝视",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "青衫少女拂弄秀发引起少年凝视"
+        ]
+      },
+      {
+        "label": "布衣少年一本正经解释蛤蟆精",
+        "chapter_index": 3,
+        "confidence": 0.7,
+        "evidence_list": [
+          "布衣少年一本正经解释蛤蟆精"
+        ]
+      },
+      {
+        "label": "布衣少年指桑骂槐讽刺白衣丽人",
+        "chapter_index": 3,
+        "confidence": 0.7,
+        "evidence_list": [
+          "布衣少年指桑骂槐讽刺白衣丽人"
+        ]
+      },
+      {
+        "label": "白衣丽人忍不住笑出声",
+        "chapter_index": 3,
+        "confidence": 0.7,
+        "evidence_list": [
+          "白衣丽人忍不住笑出声"
+        ]
+      },
+      {
+        "label": "青衫少女因白衣丽人出现而失神",
+        "chapter_index": 3,
+        "confidence": 0.7,
+        "evidence_list": [
+          "青衫少女因白衣丽人出现而失神"
+        ]
+      },
+      {
+        "label": "布衣少年讨好青衫少女并提及修炼入门",
+        "chapter_index": 4,
+        "confidence": 0.7,
+        "evidence_list": [
+          "布衣少年讨好青衫少女并提及修炼入门"
+        ]
+      },
+      {
+        "label": "青衫少女因布衣少年的赞美而喜悦",
+        "chapter_index": 4,
+        "confidence": 0.7,
+        "evidence_list": [
+          "青衫少女因布衣少年的赞美而喜悦"
+        ]
+      },
+      {
+        "label": "青衫少女指责布衣少年盯着其他女子看",
+        "chapter_index": 4,
+        "confidence": 0.7,
+        "evidence_list": [
+          "青衫少女指责布衣少年盯着其他女子看"
+        ]
+      },
+      {
+        "label": "布衣少年描述青华门入门竞争激烈",
+        "chapter_index": 5,
+        "confidence": 0.7,
+        "evidence_list": [
+          "布衣少年描述青华门入门竞争激烈"
+        ]
+      },
+      {
+        "label": "布衣少年表达苦练精修出人头地的决心",
+        "chapter_index": 5,
+        "confidence": 0.7,
+        "evidence_list": [
+          "布衣少年表达苦练精修出人头地的决心"
+        ]
+      },
+      {
+        "label": "褚青旒提醒布衣少年先过入门关",
+        "chapter_index": 5,
+        "confidence": 0.7,
+        "evidence_list": [
+          "褚青旒提醒布衣少年先过入门关"
+        ]
+      }
+    ],
+    "continuity": [
+      {
+        "label": "主角对黑牌的认知从普通玩物变为神秘器物，信息掌握状态发生显著变化。角色位置、关系、力量未变，但潜在威胁/机遇已然浮现。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "主角对黑牌的认知从普通玩物变为神秘器物，信息掌握状态发生显著变化。角色位置、关系、力量未变，但潜在威胁/机遇已然浮现。"
+        ]
+      },
+      {
+        "label": "前情摘要为空，无待回收伏笔或升级冲突，本章属于独立引入新线索的情节点。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "前情摘要为空，无待回收伏笔或升级冲突，本章属于独立引入新线索的情节点。"
+        ]
+      },
+      {
+        "label": "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章末尾黑牌振动发热并伴随胸口炽热感，制造了强烈悬念（钩子），明确指向下一章应当揭示黑牌的来源、召唤力量或主角后续反应。"
+        ]
+      },
+      {
+        "label": "下一章应揭示黑牌振动的具体成因、主角后续反应，以及这枚黑牌与当前仙道世界的关联。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "下一章应揭示黑牌振动的具体成因、主角后续反应，以及这枚黑牌与当前仙道世界的关联。"
+        ]
+      },
+      {
+        "label": "主角对黑牌的认知状态发生显著变化——从普通玩物转变为神秘器物，属于『信息掌握状态』的升级。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "主角对黑牌的认知状态发生显著变化——从普通玩物转变为神秘器物，属于『信息掌握状态』的升级。"
+        ]
+      },
+      {
+        "label": "前情状态摘要表明本章引入了新伏笔『黑牌暗藏神秘力量』，并确立了世界规则『黑牌材质非金非木且触感凉意』、『黑牌能响应外来召唤』，属于『延续+新线索』模式，暂未回收或升级旧冲突。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "前情状态摘要表明本章引入了新伏笔『黑牌暗藏神秘力量』，并确立了世界规则『黑牌材质非金非木且触感凉意』、『黑牌能响应外来召唤』，属于『延续+新线索』模式，暂未回收或升级旧冲突。"
+        ]
+      },
+      {
+        "label": "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章人物互动部分（少年少女同行）为独立日常片段，未直接推进主线，但通过对话丰满了角色关系（同门师兄妹）。"
+        ]
+      },
+      {
+        "label": "本章结尾（来自图谱摘要）黑牌出现异常振动发热，制造了强烈的『继续阅读钩子』，悬念强度高，驱动读者探寻黑牌来源与召唤力量。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章结尾（来自图谱摘要）黑牌出现异常振动发热，制造了强烈的『继续阅读钩子』，悬念强度高，驱动读者探寻黑牌来源与召唤力量。"
+        ]
+      },
+      {
+        "label": "前情状态中的约束性世界规则（黑牌材质、响应召唤）和未回收伏笔均未在本章被触及，属于‘暂缓’状态。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "前情状态中的约束性世界规则（黑牌材质、响应召唤）和未回收伏笔均未在本章被触及，属于‘暂缓’状态。"
+        ]
+      },
+      {
+        "label": "布衣少年与青衫少女的同门关系在本章进一步稳固（状态稳定），未发生变化。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "布衣少年与青衫少女的同门关系在本章进一步稳固（状态稳定），未发生变化。"
+        ]
+      },
+      {
+        "label": "引入白衣丽人，其与布衣少年的互动为后续可能的关系或冲突埋下线索，但当前无明确钩子。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "引入白衣丽人，其与布衣少年的互动为后续可能的关系或冲突埋下线索，但当前无明确钩子。"
+        ]
+      },
+      {
+        "label": "本章为日常片段，未直接推进黑牌主线（黑牌暗藏神秘力量等伏笔仍保持开放状态）。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章为日常片段，未直接推进黑牌主线（黑牌暗藏神秘力量等伏笔仍保持开放状态）。"
+        ]
+      },
+      {
+        "label": "本章结尾没有制造强烈悬念（以笑声结束），读者驱动力较弱；但白衣丽人的身份及布衣少年对她的讽刺态度可能成为后续情节发展的潜在因素。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章结尾没有制造强烈悬念（以笑声结束），读者驱动力较弱；但白衣丽人的身份及布衣少年对她的讽刺态度可能成为后续情节发展的潜在因素。"
+        ]
+      },
+      {
+        "label": "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "伏笔‘布衣少年擅伪装和讲笑话的表演能力’在本章得到局部兑现（指桑骂槐讽刺白衣丽人），但该能力仍有进一步发展的空间。"
+        ]
+      },
+      {
+        "label": "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "伏笔‘黑牌暗藏神秘力量’在本章未涉及，仍保持开放状态，但本章结尾无直接钩子指向黑牌。"
+        ]
+      },
+      {
+        "label": "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "弱证据‘青衫少女未来可能入门成为仙师座下弟子’（置信度0.6）提示了潜在的方向，但未在本章展开，需后续观察。"
+        ]
+      },
+      {
+        "label": "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "新冲突‘布衣少年用言语打压/讽刺白衣丽人’在本章被引入且处于活跃状态，未解决，为后续可能的矛盾埋线。"
+        ]
+      },
+      {
+        "label": "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章延续了前两章建立的同门关系，关系无变化（稳定，置信度0.99）。"
+        ]
+      },
+      {
+        "label": "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章结尾无明显悬念或钩子，驱动下一章的主要因素是冲突‘布衣少年用言语打压/讽刺白衣丽人’的后续发展，以及少女对修炼入门的期待。"
+        ]
+      },
+      {
+        "label": "关系‘布衣少年与青衫少女是同门师兄妹’保持稳定，无变化。",
+        "chapter_index": 5,
+        "confidence": 0.55,
+        "evidence_list": [
+          "关系‘布衣少年与青衫少女是同门师兄妹’保持稳定，无变化。"
+        ]
+      }
+    ],
+    "knowledge_index": [
+      {
+        "label": "布衣少年（小六子）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 3,
+        "occurrence_count": 2,
+        "top_confidence": 0.6
+      },
+      {
+        "label": "青衫少女（青旒师妹）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 3,
+        "occurrence_count": 2,
+        "top_confidence": 0.6
+      },
+      {
+        "label": "少女害羞并嗔怪少年油嘴滑舌",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "少年夸赞少女动作像仙女",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "少年抛接黑牌",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "布衣少年一本正经解释蛤蟆精",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "布衣少年指桑骂槐讽刺白衣丽人",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "布衣少年描述青华门入门竞争激烈",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 5,
+        "last_chapter_index": 5,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "布衣少年表达苦练精修出人头地的决心",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 5,
+        "last_chapter_index": 5,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "布衣少年讨好青衫少女并提及修炼入门",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 4,
+        "last_chapter_index": 4,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "白衣丽人忍不住笑出声",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "褚青旒提醒布衣少年先过入门关",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 5,
+        "last_chapter_index": 5,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "青衫少女因布衣少年的赞美而喜悦",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 4,
+        "last_chapter_index": 4,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "青衫少女因白衣丽人出现而失神",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "青衫少女拂弄秀发引起少年凝视",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "青衫少女指责布衣少年盯着其他女子看",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 4,
+        "last_chapter_index": 4,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "黑牌异常振动发热",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "布衣少年",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.6
+      },
+      {
+        "label": "布衣少年（赵小六/小六）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 5,
+        "last_chapter_index": 5,
+        "occurrence_count": 1,
+        "top_confidence": 0.6
+      },
+      {
+        "label": "布衣少年（赵小六/赵井泉）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 4,
+        "last_chapter_index": 4,
+        "occurrence_count": 1,
+        "top_confidence": 0.6
+      }
+    ],
+    "entity_profiles": [
+      {
+        "label": "布衣少年（小六子）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 3,
+        "occurrence_count": 2,
+        "top_confidence": 0.6,
+        "primary_fact_type": "entity"
+      },
+      {
+        "label": "青衫少女（青旒师妹）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 3,
+        "occurrence_count": 2,
+        "top_confidence": 0.6,
+        "primary_fact_type": "entity"
+      },
+      {
+        "label": "布衣少年",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.6,
+        "primary_fact_type": "entity"
+      },
+      {
+        "label": "布衣少年（赵小六/小六）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 5,
+        "last_chapter_index": 5,
+        "occurrence_count": 1,
+        "top_confidence": 0.6,
+        "primary_fact_type": "entity"
+      },
+      {
+        "label": "布衣少年（赵小六/赵井泉）",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 4,
+        "last_chapter_index": 4,
+        "occurrence_count": 1,
+        "top_confidence": 0.6,
+        "primary_fact_type": "entity"
+      }
+    ],
+    "relationship_index": [
+      {
+        "label": "小六子和青旒是同门师兄妹",
+        "source": "state_summary.evolved_relations"
+      }
+    ],
+    "rule_index": [
+      {
+        "label": "黑牌材质非金非木且触感凉意",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "黑牌能响应外来召唤",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "存在仙道修炼和入门体系",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "青华门入门第一关为目测关，通过率极低",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "青华门入门需通过三道关",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "青华门有三十六座馆舍，掌院仙师分驻",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "青华门每三个月举行一次试炼",
+        "source": "state_summary.constraining_world_rules"
+      }
+    ],
+    "thread_index": [],
+    "summary_layer": {
+      "top_entities": [
+        "布衣少年（小六子）",
+        "青衫少女（青旒师妹）",
+        "布衣少年",
+        "布衣少年（赵小六/小六）",
+        "布衣少年（赵小六/赵井泉）"
+      ],
+      "top_rules": [
+        "黑牌材质非金非木且触感凉意",
+        "黑牌能响应外来召唤",
+        "存在仙道修炼和入门体系",
+        "青华门入门第一关为目测关，通过率极低",
+        "青华门入门需通过三道关"
+      ],
+      "top_relationships": [
+        "小六子和青旒是同门师兄妹"
+      ],
+      "top_threads": [],
+      "chapter_focus": [
+        "青华",
+        "厌物丽人同行",
+        "狡舌"
+      ]
+    },
+    "story_bible_pack": {
+      "contract_version": "story-bible-pack.v1",
+      "premise": "围绕青华所展开的长线叙事，当前聚焦于人物成长、资源获取与身份突破。",
+      "protagonist_candidates": [
+        "布衣少年（小六子）",
+        "青衫少女（青旒师妹）",
+        "布衣少年"
+      ],
+      "world_rules_digest": [
+        "黑牌材质非金非木且触感凉意",
+        "黑牌能响应外来召唤",
+        "存在仙道修炼和入门体系",
+        "青华门入门第一关为目测关，通过率极低",
+        "青华门入门需通过三道关"
+      ],
+      "relationship_backbone": [
+        "小六子和青旒是同门师兄妹"
+      ],
+      "active_threads": [],
+      "chapter_backbone": [
+        {
+          "chapter_index": 1,
+          "title": "青华",
+          "summary": "黑牌异动，神秘力量初显。",
+          "key_events": [
+            "少年抛接黑牌",
+            "黑牌异常振动发热"
+          ]
+        },
+        {
+          "chapter_index": 2,
+          "title": "厌物丽人同行",
+          "summary": "本章聚焦于小六子与青旒师妹的亲密对话，少年被少女魅力所惑，少女羞恼回应，结尾埋下黑牌异常伏笔。",
+          "key_events": [
+            "青衫少女拂弄秀发引起少年凝视",
+            "少年夸赞少女动作像仙女",
+            "少女害羞并嗔怪少年油嘴滑舌"
+          ]
+        },
+        {
+          "chapter_index": 3,
+          "title": "狡舌",
+          "summary": "布衣少年通过指桑骂槐的玩笑讽刺白衣丽人，青衫师妹茫然，白衣丽人一笑而过，本章以幽默对话展现角色性格与关系。",
+          "key_events": [
+            "布衣少年指桑骂槐讽刺白衣丽人",
+            "青衫少女因白衣丽人出现而失神",
+            "布衣少年一本正经解释蛤蟆精"
+          ]
+        },
+        {
+          "chapter_index": 4,
+          "title": "仙道无凭",
+          "summary": "青衫少女指责布衣少年看其他女子，少年认错并赞美少女，提及她未来可入门仙师座下，少女转怒为喜，关系缓和但暗藏冲突。",
+          "key_events": [
+            "青衫少女指责布衣少年盯着其他女子看",
+            "布衣少年讨好青衫少女并提及修炼入门",
+            "青衫少女因布衣少年的赞美而喜悦"
+          ]
+        },
+        {
+          "chapter_index": 5,
+          "title": "世界",
+          "summary": "布衣少年向褚青旒表达苦练精修、出人头地的决心，褚青旒则提醒他先过三道入门关；本章详细介绍了青华门每三个月一次的试炼，目测关通过率极低（十不存一），以及山中三十六座馆舍的布局。",
+          "key_events": [
+            "布衣少年描述青华门入门竞争激烈",
+            "布衣少年表达苦练精修出人头地的决心",
+            "褚青旒提醒布衣少年先过入门关"
+          ]
+        }
+      ],
+      "character_cards": [
+        {
+          "label": "布衣少年（小六子）",
+          "role_tags": [
+            "entity",
+            "protagonist"
+          ],
+          "first_chapter_index": 2,
+          "last_chapter_index": 3,
+          "motivation_candidates": [
+            "在当前叙事里承担持续推进作用"
+          ],
+          "tension_points": [
+            "仍需更多章节证据来确认长期冲突"
+          ],
+          "continuity_focus": "关注布衣少年（小六子）在后续章节中的目标、关系与代价是否持续一致。"
+        },
+        {
+          "label": "青衫少女（青旒师妹）",
+          "role_tags": [
+            "entity"
+          ],
+          "first_chapter_index": 2,
+          "last_chapter_index": 3,
+          "motivation_candidates": [
+            "在当前叙事里承担持续推进作用"
+          ],
+          "tension_points": [
+            "仍需更多章节证据来确认长期冲突"
+          ],
+          "continuity_focus": "关注青衫少女（青旒师妹）在后续章节中的目标、关系与代价是否持续一致。"
+        },
+        {
+          "label": "布衣少年",
+          "role_tags": [
+            "entity"
+          ],
+          "first_chapter_index": 1,
+          "last_chapter_index": 1,
+          "motivation_candidates": [
+            "在当前叙事里承担持续推进作用"
+          ],
+          "tension_points": [
+            "仍需更多章节证据来确认长期冲突"
+          ],
+          "continuity_focus": "关注布衣少年在后续章节中的目标、关系与代价是否持续一致。"
+        },
+        {
+          "label": "布衣少年（赵小六/小六）",
+          "role_tags": [
+            "entity"
+          ],
+          "first_chapter_index": 5,
+          "last_chapter_index": 5,
+          "motivation_candidates": [
+            "在当前叙事里承担持续推进作用"
+          ],
+          "tension_points": [
+            "仍需更多章节证据来确认长期冲突"
+          ],
+          "continuity_focus": "关注布衣少年（赵小六/小六）在后续章节中的目标、关系与代价是否持续一致。"
+        },
+        {
+          "label": "布衣少年（赵小六/赵井泉）",
+          "role_tags": [
+            "entity"
+          ],
+          "first_chapter_index": 4,
+          "last_chapter_index": 4,
+          "motivation_candidates": [
+            "在当前叙事里承担持续推进作用"
+          ],
+          "tension_points": [
+            "仍需更多章节证据来确认长期冲突"
+          ],
+          "continuity_focus": "关注布衣少年（赵小六/赵井泉）在后续章节中的目标、关系与代价是否持续一致。"
+        }
+      ],
+      "motivation_tree": {
+        "contract_version": "motivation-tree.v1",
+        "primary_goal": "推进主角的身份突破与资源积累",
+        "support_goals": [],
+        "obstacles": [
+          "长线冲突仍需更多章节显式化"
+        ],
+        "decision_pressure": [
+          "每次重要选择都要同时考虑身份、资源、关系三重约束。",
+          "不能只追求短期爽点，要检查是否破坏长期成长弧。"
+        ]
+      },
+      "growth_arc": {
+        "contract_version": "growth-arc.v1",
+        "current_stage": "从底层生存转向主动争取身份与能力提升",
+        "completed_beats": [
+          "获得关键关系入口",
+          "开始修炼/资源积累",
+          "形成婚后协作与现实筹划"
+        ],
+        "next_beats": [
+          "把资源积累转成身份跃迁机会",
+          "验证主角是否能承受更高代价与风险",
+          "让家庭、修炼、身份目标形成更强冲突与选择"
+        ],
+        "regression_risks": [
+          "无铺垫的战力或身份跃迁",
+          "关系变化缺少中间证据",
+          "只推进事件，不推进人物选择逻辑"
+        ]
+      },
+      "volume_outline": {
+        "contract_version": "volume-outline.v1",
+        "volume_goal": "推进主角的身份突破与资源积累",
+        "opening_status": "黑牌异动，神秘力量初显。",
+        "mid_volume_turns": [
+          "把关键关系入口转成持续资源通路",
+          "让主角在资源/身份/家庭之间做更难选择"
+        ],
+        "late_volume_payoffs": [
+          "让赎身/脱籍主线迎来一次实质性推进",
+          "让前期修炼与关系经营开始兑现为新位置或新风险"
+        ],
+        "gating_threads": [],
+        "required_payoffs": [
+          "家庭线与身份线必须发生交叉兑现"
+        ]
+      },
+      "arc_outline": {
+        "contract_version": "arc-outline.v1",
+        "arc_name": "身份突破与能力积累弧",
+        "setup": [
+          "确认主角受限的初始位置与现实代价",
+          "建立修炼、关系、家庭三条支撑线"
+        ],
+        "progression": [
+          "获得关键关系入口",
+          "开始修炼/资源积累",
+          "形成婚后协作与现实筹划",
+          "把资源积累转成身份跃迁机会",
+          "验证主角是否能承受更高代价与风险"
+        ],
+        "turning_points": [
+          "关键关系带来机会，但同时抬高代价",
+          "资源或身份压力迫使主角提前行动"
+        ],
+        "payoff_targets": [
+          "主角获得可验证的新位置或新资格",
+          "关系线不只是陪衬，而要影响主线选择"
+        ],
+        "anti_patterns": [
+          "无铺垫的战力或身份跃迁",
+          "关系变化缺少中间证据",
+          "只推进事件，不推进人物选择逻辑"
+        ]
+      },
+      "future_chapter_outline": [
+        {
+          "chapter_index": 6,
+          "goal": "推进主角的身份突破与资源积累",
+          "core_conflict": "长线冲突仍需更多章节显式化",
+          "payoff_target": "家庭线与身份线必须发生交叉兑现",
+          "turning_point": "关键关系带来机会，但同时抬高代价"
+        },
+        {
+          "chapter_index": 7,
+          "goal": "推进主角的身份突破与资源积累",
+          "core_conflict": "长线冲突仍需更多章节显式化",
+          "payoff_target": "家庭线与身份线必须发生交叉兑现",
+          "turning_point": "资源或身份压力迫使主角提前行动"
+        },
+        {
+          "chapter_index": 8,
+          "goal": "推进主角的身份突破与资源积累",
+          "core_conflict": "长线冲突仍需更多章节显式化",
+          "payoff_target": "家庭线与身份线必须发生交叉兑现",
+          "turning_point": "资源或身份压力迫使主角提前行动"
+        }
+      ],
+      "arc_questions": [
+        "主角当前最核心的长期目标是否稳定？",
+        "哪些关系会决定下一阶段资源或身份突破？",
+        "哪些未解线程必须进入卷纲级管理，而不能只留在章节记忆里？"
+      ],
+      "next_author_actions": [
+        "把 active_threads 按主线 / 支线 / 伏笔分层整理。",
+        "把 protagonist_candidates 扩成角色卡、动机与代价表。",
+        "把 world_rules_digest 转成可直接约束续写/仿写的规则表。"
+      ]
+    },
+    "relationship_watch": [
+      "小六子和青旒是同门师兄妹"
+    ],
+    "rule_watch": [
+      "黑牌材质非金非木且触感凉意",
+      "黑牌能响应外来召唤",
+      "存在仙道修炼和入门体系",
+      "青华门入门第一关为目测关，通过率极低",
+      "青华门入门需通过三道关",
+      "青华门有三十六座馆舍，掌院仙师分驻",
+      "青华门每三个月举行一次试炼"
+    ],
+    "unresolved_threads": [],
+    "state_summary": {
+      "new_foreshadowing": [],
+      "paid_off_foreshadowing": [
+        "布衣少年擅伪装和讲笑话的表演能力",
+        "青衫少女未来可能入门成为仙师座下弟子"
+      ],
+      "new_conflicts": [],
+      "escalated_conflicts": [],
+      "stable_relations": [
+        "布衣少年与青衫少女是同门师兄妹"
+      ],
+      "evolved_relations": [
+        "小六子和青旒是同门师兄妹"
+      ],
+      "observed_world_rules": [
+        "存在仙道口诀",
+        "存在五谷堂这一场所或组织"
+      ],
+      "constraining_world_rules": [
+        "黑牌材质非金非木且触感凉意",
+        "黑牌能响应外来召唤",
+        "存在仙道修炼和入门体系",
+        "青华门入门第一关为目测关，通过率极低",
+        "青华门入门需通过三道关",
+        "青华门有三十六座馆舍，掌院仙师分驻",
+        "青华门每三个月举行一次试炼"
+      ]
+    },
+    "graph_overview": {
+      "node_count": 64,
+      "edge_count": 524,
+      "node_type_counts": {
+        "continuity": 26,
+        "entity": 8,
+        "event": 15,
+        "foreshadow": 3,
+        "world_rule": 9,
+        "relation": 2,
+        "conflict": 1
+      },
+      "edge_type_counts": {
+        "carries_forward": 316,
+        "constrains": 13,
+        "hints_at": 23,
+        "participates_in": 32,
+        "advances_to": 50,
+        "co_occurs": 5,
+        "follows": 13,
+        "persists_into": 28,
+        "relates_to": 7,
+        "conflict_centers_on": 8,
+        "conflict_involves": 3,
+        "contextualizes": 10,
+        "evolves_to": 1,
+        "pressured_by": 3,
+        "pays_off_as": 12
+      }
+    },
+    "central_nodes": [
+      {
+        "label": "少女害羞并嗔怪少年油嘴滑舌",
+        "node_type": "event",
+        "degree": 36,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "少年抛接黑牌",
+        "node_type": "event",
+        "degree": 34,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "布衣少年（小六子）",
+        "node_type": "entity",
+        "degree": 34,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年讨好青衫少女并提及修炼入门",
+        "node_type": "event",
+        "degree": 32,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "布衣少年与青衫少女是同门师兄妹",
+        "node_type": "relation",
+        "degree": 31,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "青衫少女因布衣少年的赞美而喜悦",
+        "node_type": "event",
+        "degree": 31,
+        "chapter_first_seen": 4,
+        "chapter_last_seen": 4
+      },
+      {
+        "label": "布衣少年指桑骂槐讽刺白衣丽人",
+        "node_type": "event",
+        "degree": 30,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年一本正经解释蛤蟆精",
+        "node_type": "event",
+        "degree": 30,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "布衣少年",
+        "node_type": "entity",
+        "degree": 29,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "少年夸赞少女动作像仙女",
+        "node_type": "event",
+        "degree": 29,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      }
+    ],
+    "recent_timeline": [
+      "青衫少女指责布衣少年盯着其他女子看 -[advances_to]-> 布衣少年描述青华门入门竞争激烈",
+      "布衣少年讨好青衫少女并提及修炼入门 -[advances_to]-> 褚青旒提醒布衣少年先过入门关",
+      "布衣少年讨好青衫少女并提及修炼入门 -[advances_to]-> 布衣少年描述青华门入门竞争激烈",
+      "青衫少女因布衣少年的赞美而喜悦 -[advances_to]-> 布衣少年描述青华门入门竞争激烈",
+      "青衫少女指责布衣少年盯着其他女子看 -[advances_to]-> 褚青旒提醒布衣少年先过入门关",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 褚青旒提醒布衣少年先过入门关",
+      "青衫少女因布衣少年的赞美而喜悦 -[advances_to]-> 褚青旒提醒布衣少年先过入门关",
+      "少女害羞并嗔怪少年油嘴滑舌 -[advances_to]-> 布衣少年表达苦练精修出人头地的决心",
+      "布衣少年指桑骂槐讽刺白衣丽人 -[advances_to]-> 褚青旒提醒布衣少年先过入门关",
+      "青衫少女因布衣少年的赞美而喜悦 -[follows]-> 褚青旒提醒布衣少年先过入门关"
+    ],
+    "recommended_questions": [
+      "主角当前最重要的推进线是什么？",
+      "当前有哪些关键关系与未解线程？",
+      "规则/世界观约束最近有哪些变化？"
+    ]
+  },
+  "retrieval_diagnostics": null,
+  "qa_answer": null
+}

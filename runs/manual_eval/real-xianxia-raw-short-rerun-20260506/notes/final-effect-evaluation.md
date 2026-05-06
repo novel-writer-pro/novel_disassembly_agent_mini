@@ -37,14 +37,14 @@
 - 导入兼容性：**5/5**
 - 小模型结构化稳定性：**4.5/5**
 - 拆书主链稳定性：**5/5**
-- 风险/复核链接入度：**4/5**
+- 风险/复核链接入度：**4.5/5**
 - author-facing 知识组织：**4/5**
-- retrieval/operator 导出稳定性：**3/5**
-- 当前商业化中台 readiness：**4/5**
+- retrieval/operator 导出稳定性：**4/5**
+- 当前商业化中台 readiness：**4.3/5**
 
 ## Why not 5/5 yet
-1. retrieval benchmark / diagnostics / novel-assistant 大包导出在该分支上仍出现超时或偏慢现象；
-2. chapter 4 存在一个低风险 review candidate，需要人工复核以确认 precision。
+1. retrieval / diagnostics / novel-assistant 导出虽然已恢复可用，但 retrieval diagnostics 链仍明显比 branch report / author knowledge 更重；
+2. chapter 4 的低风险 review candidate 虽已人工复核为 benign，但还需要更多真实样本确认 risk precision。
 
 ## Final assessment
 对于真实中文修仙 / 男频开篇文本，当前系统已经具备：
@@ -68,3 +68,11 @@
   - `export_service.export_branch_bundle` ≈ 0.191s
   - `author.build_branch_knowledge_pack` ≈ 0.089s
 - profiling 在进入首个 `retrieval.search_branch_with_diagnostics(...)` 后长时间无新增结果，说明当前慢点边界已收缩到 retrieval diagnostics / benchmark 链，而不是 branch report / author knowledge / 基础状态读取。
+
+## Export profiling update
+- provider cache + rerank 本地缓存优先策略落地后，以下导出在完成分支上已恢复成功：
+  - `export-retrieval-benchmark`
+  - `export-search-branch-diagnostics`（两条 query）
+  - `export-governance-dashboard`
+  - `export-novel-assistant`
+- 这说明本轮优化已经把“严格超时窗口内大包不可用”的问题，推进成“可用但 retrieval diagnostics 链仍偏重”。
