@@ -132,3 +132,8 @@
 - 该更激进裁剪已回退，说明当前 rerank 慢点并不主要由文档文本长度决定。
 
 - 进一步尝试只对 top5 候选做 rerank，在完成分支上复测约为 6.998s，仍未优于较优基线，因此也已回退。
+
+## vector route 按需跳过结果
+- 在完成分支上，当 lexical route 已覆盖足够候选时，诊断链允许跳过 `vector route`。
+- fresh evidence：service 级 `search_branch_with_diagnostics` 约 4.375s；CLI `export-search-branch-diagnostics` 20s 内成功；CLI `export-retrieval-benchmark` 25s 内成功。
+- 结论：当前 retrieval operator export 已恢复到短超时窗口内可用，后续首要慢点进一步收缩到 rerank 本体。

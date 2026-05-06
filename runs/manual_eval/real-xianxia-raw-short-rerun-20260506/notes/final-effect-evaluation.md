@@ -39,11 +39,11 @@
 - 拆书主链稳定性：**5/5**
 - 风险/复核链接入度：**4.5/5**
 - author-facing 知识组织：**4/5**
-- retrieval/operator 导出稳定性：**4/5**
-- 当前商业化中台 readiness：**4.3/5**
+- retrieval/operator 导出稳定性：**4.5/5**
+- 当前商业化中台 readiness：**4.5/5**
 
 ## Why not 5/5 yet
-1. retrieval / diagnostics / novel-assistant 导出虽然已恢复可用，但 retrieval diagnostics 链中 `rerank` 与 `vector route` 仍明显偏重；其中 rerank 输入裁剪已带来小幅收益，但未从根本上改变慢点排序；
+1. retrieval / diagnostics / novel-assistant 导出已恢复可用，且 diagnostics/benchmark 已进入较短窗口可用范围；但 rerank 仍是第一慢点，后续仍应优先优化 rerank 本体；
 2. chapter 4 的低风险 review candidate 虽已人工复核为 benign，但还需要更多真实样本确认 risk precision。
 
 ## Final assessment
@@ -162,3 +162,9 @@
 - 结论：当前 rerank 慢点并不只是单条文档文本过长导致，后续应优先考虑 rerank 本体/模型层优化，而不是继续激进裁剪文本。
 
 - 继续尝试把 rerank 候选直接收紧到 top5 后，在同一完成分支上的 rerank 复测约为 `6.998s`，同样未优于约 `6.021s` 的较优基线，因此该改动也已回退。
+
+## Vector skip optimization result
+- 在完成分支上，当高置信 lexical route（如 `fts`）已覆盖 `limit` 个 unique chapters 时，允许安全跳过 `vector route`。
+- fresh evidence：`search_branch_with_diagnostics` service 级计时约 **4.375s**。
+- fresh evidence：CLI `export-search-branch-diagnostics` 在 **20s** 窗口内成功，CLI `export-retrieval-benchmark` 在 **25s** 窗口内成功。
+- 这说明当前 operator-facing retrieval 导出已经从“经常超时/偏慢”推进到“可在较短窗口内稳定完成”。

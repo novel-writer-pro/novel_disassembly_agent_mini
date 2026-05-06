@@ -9,17 +9,16 @@
       "route_counts": {
         "fts": 1,
         "similarity": 5,
-        "like": 5,
-        "vector": 5
+        "like": 5
       },
-      "raw_latency_ms": 2943.123008000839,
-      "rerank_latency_ms": 8070.063523999124,
+      "raw_latency_ms": 85.3649429991492,
+      "rerank_latency_ms": 6209.922840000218,
       "top_raw_chapters": [
         1,
         2,
         4,
-        5,
-        3
+        3,
+        5
       ],
       "top_reranked_chapters": [
         1,
@@ -36,11 +35,10 @@
       "route_counts": {
         "fts": 1,
         "similarity": 5,
-        "like": 3,
-        "vector": 5
+        "like": 3
       },
-      "raw_latency_ms": 107.60629600008542,
-      "rerank_latency_ms": 4146.518613000808,
+      "raw_latency_ms": 11.829945999124902,
+      "rerank_latency_ms": 5435.927238000659,
       "top_raw_chapters": [
         2,
         4,
@@ -63,15 +61,14 @@
       "route_counts": {
         "fts": 1,
         "similarity": 5,
-        "like": 1,
-        "vector": 5
+        "like": 1
       },
-      "raw_latency_ms": 236.37077899911674,
-      "rerank_latency_ms": 4924.058162998335,
+      "raw_latency_ms": 9.66939299905789,
+      "rerank_latency_ms": 4840.862589999233,
       "top_raw_chapters": [
         5,
-        1,
         4,
+        1,
         2,
         3
       ],

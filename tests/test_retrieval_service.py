@@ -340,6 +340,55 @@ def test_search_branch_with_diagnostics_preserves_raw_and_reranked_views(
         assert diagnostics.reranked_hits == reranked_hits
 
 
+def test_search_branch_routes_skip_vector_when_lexical_coverage_is_enough(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _session() as session:
+        service = RetrievalService(session, Settings(rerank_backend="disabled"))
+        monkeypatch.setattr(service.session.bind.dialect, "name", "postgresql", raising=False)
+        lexical_rows = [
+            {
+                "chapter_index": index,
+                "title": f"第{index}章",
+                "summary_text": f"正文{index}",
+                "keyword_list": [],
+                "score": 1.0 / index,
+            }
+            for index in range(1, 6)
+        ]
+
+        monkeypatch.setattr(service, "_fts_config_name", lambda: "simple")
+
+        def _fake_execute(stmt, params=None):  # noqa: ANN001
+            sql = str(stmt)
+            class _Result:
+                def __init__(self, rows):
+                    self._rows = rows
+                def mappings(self):
+                    return self
+                def all(self):
+                    return self._rows
+            if "bm25_vector @@" in sql:
+                return _Result(lexical_rows[:1])
+            if "similarity(title || ' ' || bm25_text" in sql:
+                return _Result(lexical_rows)
+            if "ILIKE" in sql:
+                return _Result(lexical_rows)
+            return _Result([])
+
+        monkeypatch.setattr(service.session, "execute", _fake_execute)
+        monkeypatch.setattr(service, "_keyword_overlap_fallback", lambda branch_id, query, limit: [])
+        monkeypatch.setattr(service, "_entity_exact_route", lambda branch_id, query, limit: [])
+
+        def _fail_vector(*args, **kwargs):  # noqa: ANN002, ANN003
+            raise AssertionError("vector route should be skipped")
+
+        monkeypatch.setattr(service, "_vector_route", _fail_vector)
+        routes, diagnostics = service._search_branch_routes_with_diagnostics("branch-x", "命格", limit=5)
+        assert routes
+        assert any(item.route == "vector" and item.hit_count == 0 for item in diagnostics)
+
+
 def test_rrf_fusion_prioritizes_consensus_hits_without_changing_single_lane() -> None:
     lane_one = [
         RetrievalHit(

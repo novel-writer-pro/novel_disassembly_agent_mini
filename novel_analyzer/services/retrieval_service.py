@@ -473,6 +473,30 @@ class RetrievalService:
     def _elapsed_ms(start: float) -> float:
         return max(0.0, (time.perf_counter() - start) * 1000.0)
 
+    @staticmethod
+    def _covered_chapter_count(routes: list[tuple[str, list[RetrievalHit]]]) -> int:
+        seen: set[int] = set()
+        for _route_name, hits in routes:
+            for hit in hits:
+                seen.add(hit.chapter_index)
+        return len(seen)
+
+    def _should_skip_vector_route(
+        self,
+        routes: list[tuple[str, list[RetrievalHit]]],
+        *,
+        limit: int,
+    ) -> bool:
+        if not routes:
+            return False
+        has_high_confidence_lexical = any(
+            route_name in {"fts", "entity_exact"} and hits
+            for route_name, hits in routes
+        )
+        if not has_high_confidence_lexical:
+            return False
+        return self._covered_chapter_count(routes) >= limit
+
     def _timed_route(
         self,
         *,
@@ -794,15 +818,24 @@ class RetrievalService:
                 routes.append(route)
 
             started_at = time.perf_counter()
-            vector_hits = self._vector_route(branch_id, query, fetch_limit)
-            route = self._timed_route(
-                route_name="vector",
-                started_at=started_at,
-                hits=vector_hits,
-                route_diagnostics=route_diagnostics,
-            )
-            if route is not None:
-                routes.append(route)
+            if self._should_skip_vector_route(routes, limit=limit):
+                route_diagnostics.append(
+                    RetrievalRouteDiagnostics(
+                        route="vector",
+                        hit_count=0,
+                        latency_ms=0.0,
+                    )
+                )
+            else:
+                vector_hits = self._vector_route(branch_id, query, fetch_limit)
+                route = self._timed_route(
+                    route_name="vector",
+                    started_at=started_at,
+                    hits=vector_hits,
+                    route_diagnostics=route_diagnostics,
+                )
+                if route is not None:
+                    routes.append(route)
             return routes, route_diagnostics
 
         raise RuntimeError(
