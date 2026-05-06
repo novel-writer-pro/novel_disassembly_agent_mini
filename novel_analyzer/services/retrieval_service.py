@@ -72,6 +72,10 @@ class RetrievalSearchDiagnostics:
 class RetrievalService:
     """Materializes retrieval-friendly rows from validated chapter analysis."""
 
+    RAW_CANDIDATE_MULTIPLIER = 2
+    RERANK_CANDIDATE_MULTIPLIER = 2
+    MAX_RERANK_CANDIDATES = 10
+
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
         self.settings = settings or get_settings()
@@ -244,18 +248,24 @@ class RetrievalService:
     ) -> tuple[list[RetrievalHit], bool]:
         if not hits:
             return hits, False
+        candidate_limit = min(
+            len(hits),
+            max(limit * self.RERANK_CANDIDATE_MULTIPLIER, limit),
+            self.MAX_RERANK_CANDIDATES,
+        )
+        rerank_candidates = hits[:candidate_limit]
         provider = get_rerank_provider(self.settings)
         if isinstance(provider, DisabledRerankProvider):
             return hits[:limit], False
         try:
             rerank_scores = provider.rerank(
                 query,
-                [self._hit_rerank_text(hit) for hit in hits],
+                [self._hit_rerank_text(hit) for hit in rerank_candidates],
             )
         except Exception:
             return hits[:limit], False
         reranked = sorted(
-            zip(hits, rerank_scores, strict=True),
+            zip(rerank_candidates, rerank_scores, strict=True),
             key=lambda item: (-item[1], -item[0].score, item[0].chapter_index),
         )
         return (
@@ -647,7 +657,7 @@ class RetrievalService:
         if self.session.bind is None:
             raise ValueError("session is not bound")
         dialect = self.session.bind.dialect.name
-        fetch_limit = max(limit * 4, limit)
+        fetch_limit = max(limit * self.RAW_CANDIDATE_MULTIPLIER, limit)
         route_diagnostics: list[RetrievalRouteDiagnostics] = []
         if dialect == "postgresql":
             routes: list[tuple[str, list[RetrievalHit]]] = []
@@ -809,7 +819,7 @@ class RetrievalService:
 
         return self._fuse_recall_lists(
             self._collect_recall_candidates(branch_id, query, limit),
-            limit=max(limit * 4, limit),
+            limit=max(limit * self.RAW_CANDIDATE_MULTIPLIER, limit),
         )
 
     def search_branch(self, branch_id: str, query: str, limit: int = 5) -> list[RetrievalHit]:

@@ -117,3 +117,8 @@
   - `vector route` 约 2.5s；
   - `rerank` 约 6.3s。
 - 新结论：retrieval diagnostics 链的主要性能瓶颈已进一步收缩到 `rerank` 与 `vector route`，而不是 SQL route 本身。
+
+## Candidate cap 验证结论
+- 新增 rerank candidate cap 后，在当前 5 节完成分支上再次 route profiling。
+- fresh evidence：`raw_search` 仅返回 5 个候选，因此 rerank 仍对 5 个候选执行，耗时约 6.7s。
+- 结论：candidate cap 对更大 branch 有保护价值，但对该短样例分支的主要慢点改善有限，下一步应直接优化 rerank 本体。

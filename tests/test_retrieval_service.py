@@ -124,15 +124,19 @@ def test_default_fts_config_remains_simple_without_pg_jieba(tmp_path: Path) -> N
 
 def test_apply_rerank_reorders_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeRerankProvider:
+        seen_docs: list[str] | None = None
+
         def rerank(self, query: str, documents: list[str]) -> list[float]:
-            _ = query, documents
+            _ = query
+            self.seen_docs = documents
             return [0.2, 0.9]
 
     with _session() as session:
+        provider = _FakeRerankProvider()
         service = RetrievalService(session, Settings(rerank_model_name="fake-model"))
         monkeypatch.setattr(
             "novel_analyzer.services.retrieval_service.get_rerank_provider",
-            lambda settings=None: _FakeRerankProvider(),
+            lambda settings=None: provider,
         )
         hits = [
             RetrievalHit(
@@ -147,6 +151,41 @@ def test_apply_rerank_reorders_hits(monkeypatch: pytest.MonkeyPatch) -> None:
         assert [hit.chapter_index for hit in reranked] == [2, 1]
         assert reranked[0].score == pytest.approx(0.9)
         assert reranked[1].score == pytest.approx(0.2)
+        assert provider.seen_docs is not None
+        assert len(provider.seen_docs) == 2
+
+
+def test_apply_rerank_caps_candidate_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _FakeRerankProvider:
+        seen_docs: list[str] | None = None
+
+        def rerank(self, query: str, documents: list[str]) -> list[float]:
+            _ = query
+            self.seen_docs = documents
+            return [float(index) for index, _ in enumerate(documents, start=1)]
+
+    with _session() as session:
+        provider = _FakeRerankProvider()
+        service = RetrievalService(session, Settings(rerank_model_name="fake-model"))
+        monkeypatch.setattr(
+            "novel_analyzer.services.retrieval_service.get_rerank_provider",
+            lambda settings=None: provider,
+        )
+        hits = [
+            RetrievalHit(
+                chapter_index=index,
+                title=f"第{index}章",
+                summary_text=f"正文{index}",
+                score=1.0 / index,
+                keyword_list=[],
+            )
+            for index in range(1, 21)
+        ]
+        reranked, rerank_applied = service._apply_rerank("命格", hits, limit=5)
+        assert rerank_applied is True
+        assert provider.seen_docs is not None
+        assert len(provider.seen_docs) == service.MAX_RERANK_CANDIDATES
+        assert len(reranked) == 5
 
 
 def test_apply_rerank_falls_back_when_provider_errors(monkeypatch: pytest.MonkeyPatch) -> None:

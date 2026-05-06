@@ -144,3 +144,8 @@
   - `raw_search` ≈ 0.197s
   - `rerank` ≈ 6.312s
 - 这说明 retrieval diagnostics 的最重路径已经被收缩到：`rerank` 第一、`vector route` 第二，SQL/keyword/entity-exact 路由都不是主要瓶颈。
+
+## Candidate-cap follow-up
+- 已新增 rerank candidate cap 与 raw candidate multiplier 收敛。
+- 但在当前 5 节完成分支上，`raw_search` 只产生了 5 个候选，因此 rerank 实际仍对 5 个候选执行，时延约 `6.688s`。
+- 这说明本轮裁剪更偏向保护更大规模 branch；对当前小分支而言，下一步真正需要优化的是 rerank 本体，而不是继续压缩候选规模。
