@@ -4,9 +4,11 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
+from novel_analyzer.embedding.service import get_embedding_provider
 from novel_analyzer.config.settings import Settings
 from novel_analyzer.database.models import ChunkEmbedding, RetrievalChunk, RetrievalDocument
 from novel_analyzer.database.session import create_schema
+from novel_analyzer.rerank.service import get_rerank_provider
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.retrieval_service import (
     RetrievalHit,
@@ -82,6 +84,17 @@ def test_repeated_materialization_replaces_chunks_without_orphans(tmp_path: Path
         assert first.id == second.id
         assert session.query(RetrievalChunk).count() == first_chunk_count
         assert session.query(ChunkEmbedding).count() == first_embedding_count
+
+
+def test_embedding_and_rerank_providers_are_cached() -> None:
+    settings = Settings(embedding_backend="stub", rerank_model_name="")
+    first_embedding = get_embedding_provider(settings)
+    second_embedding = get_embedding_provider(settings)
+    assert first_embedding is second_embedding
+
+    first_rerank = get_rerank_provider(settings)
+    second_rerank = get_rerank_provider(settings)
+    assert first_rerank is second_rerank
 
 
 def test_search_branch_requires_postgresql_runtime(tmp_path: Path) -> None:
