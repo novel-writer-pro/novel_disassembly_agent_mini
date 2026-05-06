@@ -74,6 +74,18 @@ def test_chapter_intake_output_accepts_chapter_id_alias() -> None:
     assert output.normalized_title == "测试章"
 
 
+def test_chapter_intake_output_accepts_title_alias_for_normalized_title() -> None:
+    output = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_number": 3,
+            "title": "狡舌",
+            "cleaned_text": "正文",
+        }
+    )
+    assert output.chapter_index == 3
+    assert output.normalized_title == "狡舌"
+
+
 def test_chapter_intake_output_accepts_dialogue_candidate_objects() -> None:
     output = ChapterIntakeOutput.model_validate(
         {

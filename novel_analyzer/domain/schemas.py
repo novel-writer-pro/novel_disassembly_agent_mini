@@ -48,6 +48,8 @@ class ChapterIntakeOutput(BaseModel):
             value['chapter_index'] = value['chapter_id']
         if 'normalized_title' not in value and 'chapter_title' in value:
             value['normalized_title'] = value['chapter_title']
+        if 'normalized_title' not in value and 'title' in value:
+            value['normalized_title'] = value['title']
         if 'cleaned_text' not in value and 'paragraph_blocks' in value:
             blocks = value.get('paragraph_blocks') or []
             if isinstance(blocks, list):

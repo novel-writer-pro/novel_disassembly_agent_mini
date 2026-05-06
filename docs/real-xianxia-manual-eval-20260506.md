@@ -89,3 +89,11 @@
   - `ingest ... --title 真实中文修仙样例-青华-原文直跑复测`
   - fresh evidence：`chapter_count=5`
 - 说明本轮切章修复已经覆盖真实原文，不再需要手动把 `第一节` 改成 `第1章` 才能导入。
+
+## 补充验证（5节短复跑完成后）
+- 原始未归一化 5 节真实修仙文本短复跑分支：`run_id=51499b32-cdd0-475f-bbc7-2ac27ea0f529`。
+- fresh evidence：`completed_chapters=5`、`failed_jobs=0`、`graph_node_count=64`、`graph_edge_count=524`。
+- chapter 2 未再出现 `dialogue_candidates` schema fail。
+- chapter 3 未再出现 `normalized_title` 缺失导致的 `small_model_pipeline` fail，也未进入 `monolithic_fallback`。
+- chapter 4 / 5 同样完成 `validated`，说明这两类兼容修复已经在整条 5 节原始文本上取得运行面证据。
+- 对应效果评估见：`runs/manual_eval/real-xianxia-raw-short-rerun-20260506/notes/final-effect-evaluation.md`。

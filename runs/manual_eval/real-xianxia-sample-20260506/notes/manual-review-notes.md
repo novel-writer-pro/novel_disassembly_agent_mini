@@ -6,18 +6,18 @@
 ---
 
 ## 1. 基本信息
-- 测试日期：2026-05-06
+- 测试日期：2026-05-062026-05-06
 - 测试人：
-- 小说标题：真实中文修仙样例-青华（原文 + 最小标题归一化副本）
-- 小说类型 / 题材：中文修仙 / 男频向开篇样例
-- 文本来源：仓库本地缓存 `.cache/novel-analyzer/uploads/c495a0a263b947058a19dad743dab8a1-novel.txt`
+- 小说标题：真实中文修仙样例-青华（原文 + 最小标题归一化副本）真实中文修仙样例-青华（原文 + 最小标题归一化副本）
+- 小说类型 / 题材：中文修仙 / 男频向开篇样例中文修仙 / 男频向开篇样例
+- 文本来源：仓库本地缓存 `.cache/novel-analyzer/uploads/c495a0a263b947058a19dad743dab8a1-novel.txt`仓库本地缓存 `.cache/novel-analyzer/uploads/c495a0a263b947058a19dad743dab8a1-novel.txt`
 - 文本字数：
-- 章节数：原文 3 节（归一化后 3 章）
+- 章节数：原文 3 节（归一化后 3 章）原文 3 节（归一化后 3 章）
 - `novel_id`：78ff3ac4-1e4f-4dc9-bf84-a3107421fdbe
 - `manifest_id`：90030aca-da86-4956-bef9-b1ec54106148
-- `run_id`：b0fb667b-ce1e-47a0-8346-92e3dbc6d3bc
-- `branch_id`：86ce179e-475a-42b9-ade3-a81a8626dc5f
-- provider / model：DeepSeek / deepseek-v4-flash
+- `run_id`：b0fb667b-ce1e-47a0-8346-92e3dbc6d3bcb0fb667b-ce1e-47a0-8346-92e3dbc6d3bc
+- `branch_id`：86ce179e-475a-42b9-ade3-a81a8626dc5f86ce179e-475a-42b9-ade3-a81a8626dc5f
+- provider / model：DeepSeek / deepseek-v4-flashDeepSeek / deepseek-v4-flash
 - 数据库环境：PostgreSQL `novel_analyzer`（本地 127.0.0.1:5432）
 
 ---
@@ -299,3 +299,13 @@
 - 采用最小归一化副本后，3 章主链成功完成，说明当前系统对真实中文修仙文本内容本身是可处理的，但对章节标题格式仍需增强。
 - 第 2 章触发 `small_model_pipeline` schema 不兼容（`dialogue_candidates` 返回对象），系统自动通过 `monolithic_fallback` 收口，鲁棒性有效。
 - `export-author-knowledge` 成功；但 `export-governance-dashboard` 与 `export-search-branch-diagnostics` 在本轮单独验证中 40s 超时，说明 operator-facing 导出链仍需继续优化。
+
+
+## 15. 本轮补充结论
+- 原始真实文本存在格式兼容性问题：`第一节/第二节` 标题未被切章器识别，direct ingest 得到 `chapter_count=0`。
+- 采用最小归一化副本后，3 章主链成功完成，说明当前系统对真实中文修仙文本内容本身是可处理的，但对章节标题格式仍需增强。
+- 第 2 章触发 `small_model_pipeline` schema 不兼容（`dialogue_candidates` 返回对象），系统自动通过 `monolithic_fallback` 收口，鲁棒性有效。
+- 第 1 章的世界观/伏笔抽取较强，但摘要略偏泛化；第 2 章的人物互动和情绪曲线抓取得较好。
+- 当前最明确的两个产品化改进点：
+  1. ingest heading parser 支持“第X节/卷-节”格式；
+  2. chapter intake 对 `dialogue_candidates` 增加对象兼容解析。
