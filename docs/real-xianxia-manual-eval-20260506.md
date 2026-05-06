@@ -110,3 +110,10 @@
 - 在完成分支 `23685de0-a53e-4229-a946-14d53d5b026d` 上已成功导入 3 条 reader feedback，并导出 `reader-feedback-summary.json`。
 - feedback summary 已给出 `signals` 与 `revision_recommendations`，说明 reader feedback 闭环在真实样例上可用。
 - `show-whole-book-imitation-readiness` 已成功返回 readiness contract，当前分支 `chapter_analysis_count=5`、`fact_record_count=51`，但 provider health 为 `degraded`，说明 whole-book 前还需确认上游 provider 恢复。
+
+## Route-level profiling（补充诊断）
+- 在完成分支上对 retrieval route 逐项计时后，已确认：
+  - `fts/similarity/like/keyword/entity_exact` 都在毫秒级或接近毫秒级；
+  - `vector route` 约 2.5s；
+  - `rerank` 约 6.3s。
+- 新结论：retrieval diagnostics 链的主要性能瓶颈已进一步收缩到 `rerank` 与 `vector route`，而不是 SQL route 本身。

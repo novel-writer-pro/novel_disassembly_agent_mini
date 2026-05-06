@@ -43,7 +43,7 @@
 - 当前商业化中台 readiness：**4.3/5**
 
 ## Why not 5/5 yet
-1. retrieval / diagnostics / novel-assistant 导出虽然已恢复可用，但 retrieval diagnostics 链仍明显比 branch report / author knowledge 更重；
+1. retrieval / diagnostics / novel-assistant 导出虽然已恢复可用，但 retrieval diagnostics 链中 `rerank` 与 `vector route` 仍明显偏重；
 2. chapter 4 的低风险 review candidate 虽已人工复核为 benign，但还需要更多真实样本确认 risk precision。
 
 ## Final assessment
@@ -132,3 +132,15 @@
   ]
 }
 ```
+
+## Route-level profiling update
+- postfix route profiling 结果：
+  - `fts` ≈ 0.004s
+  - `similarity` ≈ 0.004s
+  - `like` ≈ 0.001s
+  - `keyword` ≈ 0.001s
+  - `entity_exact` ≈ 0.003s
+  - `vector` ≈ 2.501s
+  - `raw_search` ≈ 0.197s
+  - `rerank` ≈ 6.312s
+- 这说明 retrieval diagnostics 的最重路径已经被收缩到：`rerank` 第一、`vector route` 第二，SQL/keyword/entity-exact 路由都不是主要瓶颈。

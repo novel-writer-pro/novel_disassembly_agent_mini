@@ -16,6 +16,7 @@
 - 后续 5 节原始短复跑已完成：`completed_chapters=5`、`failed_jobs=0`；并确认 chapter 2 的 dialogue schema 问题与 chapter 3 的 normalized_title 问题都未在真实链路上复发。
 - 对完成分支做 stepwise profiling 后，已确认导出慢点边界主要落在 retrieval diagnostics / benchmark 链，而不是 branch report / author knowledge 基础导出。
 - 进一步对完成分支做导出链优化后，`export-retrieval-benchmark`、`export-search-branch-diagnostics`、`export-governance-dashboard` 与 `export-novel-assistant` 已恢复成功导出，说明 operator-facing 导出已从“不可用”改善为“可用但 retrieval 链仍偏重”。
+- 继续做 route-level profiling 后，已确认 retrieval diagnostics 链中 `rerank`（约 6.3s）与 `vector route`（约 2.5s）是主要慢点，SQL route 并非主瓶颈。
 - 在完成分支上补入 reader feedback 真导入与 whole-book readiness 证据：3 条评论成功导入，feedback summary 可导出；whole-book readiness contract 成功返回，但 provider health 仍提示 degraded。
 
 
