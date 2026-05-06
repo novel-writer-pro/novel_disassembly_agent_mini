@@ -48,5 +48,10 @@
     "name": "assistant._reader_feedback_pack",
     "seconds": 0.003,
     "status": "ok"
+  },
+  {
+    "name": "assistant.build_branch_assistant_pack",
+    "seconds": 444.82,
+    "status": "ok"
   }
 ]

@@ -1,0 +1,28 @@
+{
+  "contract_version": "reader-feedback-summary.v1",
+  "degraded": false,
+  "comment_count": 3,
+  "signals": [
+    "general_feedback",
+    "pacing_slow",
+    "reader_hook_strong"
+  ],
+  "signal_counts": {
+    "general_feedback": 1,
+    "pacing_slow": 1,
+    "reader_hook_strong": 1
+  },
+  "pain_point_hypotheses": [
+    "读者可能认为当前章节节奏偏慢。",
+    "读者对后续情节仍有持续追读意愿。"
+  ],
+  "revision_recommendations": [
+    "压缩中段铺垫，增强行动推进密度。",
+    "保留章尾钩子并加强下一章期待。"
+  ],
+  "sample_comments": [
+    "入门关和青华门设定有意思，不过人物动机还可以再扎实一点。",
+    "青旒和小六子的互动挺自然，但中段节奏稍慢。",
+    "黑牌这个钩子不错，想继续看后面怎么展开。"
+  ]
+}

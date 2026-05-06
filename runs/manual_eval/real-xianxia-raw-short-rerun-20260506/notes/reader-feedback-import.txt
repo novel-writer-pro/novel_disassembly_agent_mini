@@ -1,0 +1,9 @@
+{
+  "contract_version": "reader-feedback-import.v1",
+  "created_count": 3,
+  "created_ids": [
+    "38356fb0-1b3a-4f76-9419-61d5478eaa2c",
+    "7e000cfd-bdd2-46b6-8d52-1f2fafb5f362",
+    "73079b5a-770a-41a5-91a4-70dc5907851a"
+  ]
+}
