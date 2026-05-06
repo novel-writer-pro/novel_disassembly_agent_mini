@@ -18,6 +18,7 @@
 - 进一步对完成分支做导出链优化后，`export-retrieval-benchmark`、`export-search-branch-diagnostics`、`export-governance-dashboard` 与 `export-novel-assistant` 已恢复成功导出，说明 operator-facing 导出已从“不可用”改善为“可用但 retrieval 链仍偏重”。
 - 继续做 route-level profiling 后，已确认 retrieval diagnostics 链中 `rerank`（约 6.3s）与 `vector route`（约 2.5s）是主要慢点，SQL route 并非主瓶颈。
 - 继续加入 rerank candidate cap 后复测发现：当前 5 节分支的 raw_search 仅有 5 个候选，因此 rerank 仍约 6.7s；说明该改动更偏向保护大分支，而短分支的下一步优化应聚焦 rerank 本体。
+- 继续加入 rerank 输入裁剪后复测，完成分支上的 rerank 时延从约 6.688s 降到约 6.021s，说明已有小幅收益，但 rerank 仍是第一慢点。
 - 在完成分支上补入 reader feedback 真导入与 whole-book readiness 证据：3 条评论成功导入，feedback summary 可导出；whole-book readiness contract 成功返回，但 provider health 仍提示 degraded。
 
 

@@ -1,0 +1,51 @@
+[
+  {
+    "name": "route:fts",
+    "seconds": 0.005,
+    "status": "ok",
+    "count": 1
+  },
+  {
+    "name": "route:similarity",
+    "seconds": 0.003,
+    "status": "ok",
+    "count": 5
+  },
+  {
+    "name": "route:like",
+    "seconds": 0.004,
+    "status": "ok",
+    "count": 5
+  },
+  {
+    "name": "route:keyword",
+    "seconds": 0.001,
+    "status": "ok",
+    "count": 0
+  },
+  {
+    "name": "route:entity_exact",
+    "seconds": 0.004,
+    "status": "ok",
+    "count": 0
+  },
+  {
+    "name": "route:vector",
+    "seconds": 2.643,
+    "status": "ok",
+    "count": 5
+  },
+  {
+    "name": "route:raw_search",
+    "seconds": 0.185,
+    "status": "ok",
+    "count": 5
+  },
+  {
+    "name": "route:rerank",
+    "seconds": 6.021,
+    "status": "ok",
+    "count": 5,
+    "applied": true
+  }
+]

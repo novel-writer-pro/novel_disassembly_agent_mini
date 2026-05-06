@@ -188,6 +188,19 @@ def test_apply_rerank_caps_candidate_count(monkeypatch: pytest.MonkeyPatch) -> N
         assert len(reranked) == 5
 
 
+def test_hit_rerank_text_is_capped() -> None:
+    hit = RetrievalHit(
+        chapter_index=1,
+        title="标题",
+        summary_text="很长的正文" * 200,
+        score=1.0,
+        keyword_list=["关键词A", "关键词B"],
+    )
+    text = RetrievalService._hit_rerank_text(hit)
+    assert len(text) <= RetrievalService.RERANK_TEXT_CHAR_LIMIT + 1
+    assert text.endswith("…")
+
+
 def test_apply_rerank_falls_back_when_provider_errors(monkeypatch: pytest.MonkeyPatch) -> None:
     class _BrokenRerankProvider:
         def rerank(self, query: str, documents: list[str]) -> list[float]:

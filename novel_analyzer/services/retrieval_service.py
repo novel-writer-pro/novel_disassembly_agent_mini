@@ -75,6 +75,7 @@ class RetrievalService:
     RAW_CANDIDATE_MULTIPLIER = 2
     RERANK_CANDIDATE_MULTIPLIER = 2
     MAX_RERANK_CANDIDATES = 10
+    RERANK_TEXT_CHAR_LIMIT = 320
 
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
@@ -174,9 +175,13 @@ class RetrievalService:
     @staticmethod
     def _hit_rerank_text(hit: RetrievalHit) -> str:
         keywords = ", ".join(hit.keyword_list[:8])
-        return "\n".join(
+        text = "\n".join(
             part for part in [hit.title.strip(), hit.summary_text.strip(), keywords.strip()] if part
         )
+        if len(text) <= RetrievalService.RERANK_TEXT_CHAR_LIMIT:
+            return text
+        clipped = text[: RetrievalService.RERANK_TEXT_CHAR_LIMIT].rstrip('，。；;、, \n')
+        return clipped + '…'
 
     @staticmethod
     def _fuse_recall_lists(

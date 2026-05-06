@@ -122,3 +122,7 @@
 - 新增 rerank candidate cap 后，在当前 5 节完成分支上再次 route profiling。
 - fresh evidence：`raw_search` 仅返回 5 个候选，因此 rerank 仍对 5 个候选执行，耗时约 6.7s。
 - 结论：candidate cap 对更大 branch 有保护价值，但对该短样例分支的主要慢点改善有限，下一步应直接优化 rerank 本体。
+
+## rerank 输入裁剪结果
+- 在完成分支上补入 rerank 输入裁剪后，再做 route-level profiling：`rerank` 从约 6.688s 降到约 6.021s。
+- 结论：当前短样例分支上已有小幅性能收益，但 rerank 仍是第一慢点，后续仍需优化 rerank 本体。

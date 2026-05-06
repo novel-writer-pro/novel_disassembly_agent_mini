@@ -43,7 +43,7 @@
 - 当前商业化中台 readiness：**4.3/5**
 
 ## Why not 5/5 yet
-1. retrieval / diagnostics / novel-assistant 导出虽然已恢复可用，但 retrieval diagnostics 链中 `rerank` 与 `vector route` 仍明显偏重；
+1. retrieval / diagnostics / novel-assistant 导出虽然已恢复可用，但 retrieval diagnostics 链中 `rerank` 与 `vector route` 仍明显偏重；其中 rerank 输入裁剪已带来小幅收益，但未从根本上改变慢点排序；
 2. chapter 4 的低风险 review candidate 虽已人工复核为 benign，但还需要更多真实样本确认 risk precision。
 
 ## Final assessment
@@ -149,3 +149,9 @@
 - 已新增 rerank candidate cap 与 raw candidate multiplier 收敛。
 - 但在当前 5 节完成分支上，`raw_search` 只产生了 5 个候选，因此 rerank 实际仍对 5 个候选执行，时延约 `6.688s`。
 - 这说明本轮裁剪更偏向保护更大规模 branch；对当前小分支而言，下一步真正需要优化的是 rerank 本体，而不是继续压缩候选规模。
+
+## Rerank input trim result
+- 在相同完成分支上，route profiling 显示：
+  - 之前 `rerank` ≈ 6.688s
+  - 本轮加入 rerank 输入裁剪后 `rerank` ≈ 6.021s
+- 这说明输入裁剪在当前短样例分支上带来了约 10% 左右的真实收益，但 `rerank` 仍然是第一慢点。
