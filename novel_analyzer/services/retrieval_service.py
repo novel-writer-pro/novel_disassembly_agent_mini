@@ -497,6 +497,31 @@ class RetrievalService:
             return False
         return self._covered_chapter_count(routes) >= limit
 
+    @staticmethod
+    def _should_skip_rerank_for_diagnostics(
+        routes: list[tuple[str, list[RetrievalHit]]],
+        raw_hits: list[RetrievalHit],
+        *,
+        limit: int,
+    ) -> bool:
+        if not routes or not raw_hits:
+            return False
+        top_chapter = raw_hits[0].chapter_index
+        has_high_confidence_lexical_top = any(
+            route_name in {"fts", "entity_exact"} and hits and hits[0].chapter_index == top_chapter
+            for route_name, hits in routes
+        )
+        if not has_high_confidence_lexical_top:
+            return False
+        contributing_routes = sum(
+            1
+            for _route_name, hits in routes
+            if any(hit.chapter_index == top_chapter for hit in hits[:limit])
+        )
+        if contributing_routes < 2:
+            return False
+        return RetrievalService._covered_chapter_count(routes) >= limit
+
     def _timed_route(
         self,
         *,
@@ -902,9 +927,14 @@ class RetrievalService:
             limit=max(limit * 4, limit),
         )
         raw_latency_ms = self._elapsed_ms(raw_started_at)
-        rerank_started_at = time.perf_counter()
-        reranked_hits, rerank_applied = self._apply_rerank(query, raw_hits, limit=limit)
-        rerank_latency_ms = self._elapsed_ms(rerank_started_at)
+        if self._should_skip_rerank_for_diagnostics(routes, raw_hits, limit=limit):
+            reranked_hits = raw_hits[:limit]
+            rerank_applied = False
+            rerank_latency_ms = 0.0
+        else:
+            rerank_started_at = time.perf_counter()
+            reranked_hits, rerank_applied = self._apply_rerank(query, raw_hits, limit=limit)
+            rerank_latency_ms = self._elapsed_ms(rerank_started_at)
         return RetrievalSearchDiagnostics(
             query=query,
             raw_hits=raw_hits,

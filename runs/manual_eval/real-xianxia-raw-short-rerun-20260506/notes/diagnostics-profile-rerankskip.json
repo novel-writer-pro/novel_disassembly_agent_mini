@@ -1,0 +1,23 @@
+{
+  "seconds": 0.031,
+  "rerank_applied": false,
+  "route_counts": {
+    "fts": 1,
+    "similarity": 5,
+    "like": 5
+  },
+  "raw_top": [
+    1,
+    2,
+    4,
+    3,
+    5
+  ],
+  "rerank_top": [
+    1,
+    2,
+    4,
+    3,
+    5
+  ]
+}

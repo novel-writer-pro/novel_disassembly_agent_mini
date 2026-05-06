@@ -137,3 +137,8 @@
 - 在完成分支上，当 lexical route 已覆盖足够候选时，诊断链允许跳过 `vector route`。
 - fresh evidence：service 级 `search_branch_with_diagnostics` 约 4.375s；CLI `export-search-branch-diagnostics` 20s 内成功；CLI `export-retrieval-benchmark` 25s 内成功。
 - 结论：当前 retrieval operator export 已恢复到短超时窗口内可用，后续首要慢点进一步收缩到 rerank 本体。
+
+## 按需触发 rerank 结果
+- 在完成分支上，当高置信 lexical route 已覆盖足够章节时，diagnostics 链允许跳过 rerank。
+- fresh evidence：service 级 diagnostics 约 0.031s；CLI diagnostics 5s 内成功；CLI benchmark 10s 内成功。
+- 这说明当前 operator-facing retrieval 导出已经恢复到短窗口内稳定可用。

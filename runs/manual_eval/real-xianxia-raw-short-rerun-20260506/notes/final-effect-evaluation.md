@@ -39,11 +39,11 @@
 - 拆书主链稳定性：**5/5**
 - 风险/复核链接入度：**4.5/5**
 - author-facing 知识组织：**4/5**
-- retrieval/operator 导出稳定性：**4.5/5**
-- 当前商业化中台 readiness：**4.5/5**
+- retrieval/operator 导出稳定性：**5/5**
+- 当前商业化中台 readiness：**4.7/5**
 
 ## Why not 5/5 yet
-1. retrieval / diagnostics / novel-assistant 导出已恢复可用，且 diagnostics/benchmark 已进入较短窗口可用范围；但 rerank 仍是第一慢点，后续仍应优先优化 rerank 本体；
+1. retrieval / diagnostics / novel-assistant 导出已恢复到短窗口可用；但当前收益主要来自按需跳过 rerank，后续仍需在更长文本上验证该策略的质量边界；
 2. chapter 4 的低风险 review candidate 虽已人工复核为 benign，但还需要更多真实样本确认 risk precision。
 
 ## Final assessment
@@ -168,3 +168,9 @@
 - fresh evidence：`search_branch_with_diagnostics` service 级计时约 **4.375s**。
 - fresh evidence：CLI `export-search-branch-diagnostics` 在 **20s** 窗口内成功，CLI `export-retrieval-benchmark` 在 **25s** 窗口内成功。
 - 这说明当前 operator-facing retrieval 导出已经从“经常超时/偏慢”推进到“可在较短窗口内稳定完成”。
+
+## Rerank-on-demand result
+- 在完成分支上，当高置信 lexical route 已覆盖足够章节时，diagnostics 允许直接跳过 rerank。
+- fresh evidence：service 级 `search_branch_with_diagnostics` 从约 **4.375s** 降到约 **0.031s**。
+- fresh evidence：CLI `export-search-branch-diagnostics` 在 **5s** 窗口内成功，CLI `export-retrieval-benchmark` 在 **10s** 窗口内成功。
+- 当前该 query 的 `rerank_applied=false`，且 `raw_top` 与 `rerank_top` 保持一致，说明这次跳过在该真实分支上没有改变结果顺序。

@@ -340,6 +340,35 @@ def test_search_branch_with_diagnostics_preserves_raw_and_reranked_views(
         assert diagnostics.reranked_hits == reranked_hits
 
 
+def test_search_branch_with_diagnostics_can_skip_rerank_when_lexical_top_is_stable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _session() as session:
+        service = RetrievalService(session, Settings(embedding_backend="stub"))
+        fts_hits = [
+            RetrievalHit(chapter_index=1, title="一", summary_text="强相关", score=1.0, keyword_list=[]),
+        ]
+        like_hits = [
+            RetrievalHit(chapter_index=1, title="一", summary_text="强相关", score=1.0, keyword_list=[]),
+            RetrievalHit(chapter_index=2, title="二", summary_text="次相关", score=0.8, keyword_list=[]),
+        ]
+
+        monkeypatch.setattr(
+            service,
+            "_search_branch_routes",
+            lambda branch_id, query, limit: [("fts", fts_hits), ("like", like_hits)],
+        )
+
+        def _fail_rerank(*args, **kwargs):  # noqa: ANN002, ANN003
+            raise AssertionError("_apply_rerank should be skipped")
+
+        monkeypatch.setattr(service, "_apply_rerank", _fail_rerank)
+        diagnostics = service.search_branch_with_diagnostics("branch-1", "命格", limit=2)
+        assert diagnostics.rerank_applied is False
+        assert diagnostics.rerank_latency_ms == 0.0
+        assert [hit.chapter_index for hit in diagnostics.reranked_hits] == [1, 2]
+
+
 def test_search_branch_routes_skip_vector_when_lexical_coverage_is_enough(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
