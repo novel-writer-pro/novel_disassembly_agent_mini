@@ -60,3 +60,11 @@
 1. 在 20~50 章真实男频修仙文本上继续复测稳定性。
 2. 专门排查 retrieval / diagnostics / novel-assistant 导出的慢点。
 3. 对 chapter 4 的 review candidate 做人工复核，确认 risk lane precision。
+
+## Export profiling evidence
+- stepwise profiling 结果已落盘到 `notes/export-profile.json`。
+- 当前已确认快速完成的步骤：
+  - `status_service.get_run_status` ≈ 0.023s
+  - `export_service.export_branch_bundle` ≈ 0.191s
+  - `author.build_branch_knowledge_pack` ≈ 0.089s
+- profiling 在进入首个 `retrieval.search_branch_with_diagnostics(...)` 后长时间无新增结果，说明当前慢点边界已收缩到 retrieval diagnostics / benchmark 链，而不是 branch report / author knowledge / 基础状态读取。

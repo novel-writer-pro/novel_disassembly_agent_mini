@@ -97,3 +97,7 @@
 - chapter 3 未再出现 `normalized_title` 缺失导致的 `small_model_pipeline` fail，也未进入 `monolithic_fallback`。
 - chapter 4 / 5 同样完成 `validated`，说明这两类兼容修复已经在整条 5 节原始文本上取得运行面证据。
 - 对应效果评估见：`runs/manual_eval/real-xianxia-raw-short-rerun-20260506/notes/final-effect-evaluation.md`。
+
+## 导出慢点边界（补充诊断）
+- 对完成分支做 stepwise profiling 后，`status_service.get_run_status`、`export_branch_bundle`、`author.build_branch_knowledge_pack` 都在 0.2s 以内完成。
+- profiling 在进入首个 `retrieval.search_branch_with_diagnostics(...)` 后卡住，说明当前 operator-facing 慢点更靠近 retrieval diagnostics / benchmark 链，而不是 branch report 或 author knowledge 生成。
