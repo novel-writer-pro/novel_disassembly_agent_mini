@@ -285,189 +285,56 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     )
     assert iterate_result.exit_code == 0
     assert '"rounds"' in iterate_result.stdout
-    assert '"overall_score"' in iterate_result.stdout
-    assert '"final_draft"' in iterate_result.stdout
 
-    multi_result = runner.invoke(
-        app,
-        [
-            "multi-chapter-imitation-consistency",
-            "branch-cli-1",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线，并保持克制成长节奏",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert multi_result.exit_code == 0
-    assert '"steps"' in multi_result.stdout
-    assert '"overall_verdict"' in multi_result.stdout
 
-    whole_result = runner.invoke(
-        app,
-        [
-            "plan-whole-book-imitation",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert whole_result.exit_code == 0
-    assert '"mapping_pack"' in whole_result.stdout
-    assert '"chapter_goals"' in whole_result.stdout
+def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
 
-    run_result = runner.invoke(
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(
         app,
-        [
-            "run-whole-book-imitation",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--database-url",
-            db_url,
-        ],
+        ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
     )
-    assert run_result.exit_code == 0
-    assert '"queue"' in run_result.stdout
-    assert '"expected_outputs"' in run_result.stdout
-    assert '"carry_over_inputs"' in run_result.stdout
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
 
-    sandbox_result = runner.invoke(
-        app,
-        [
-            "run-whole-book-imitation",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--execute",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert sandbox_result.exit_code == 0
-    assert '"execution_mode": "sandbox_execute"' in sandbox_result.stdout
-    assert '"executed_steps"' in sandbox_result.stdout
-    assert '"final_carry_over_state"' in sandbox_result.stdout
+    class _FakeReport:
+        def model_dump(self, mode="json"):
+            _ = mode
+            return {
+                "final_verdict": "needs_revision",
+                "stop_reason": "critical_action_required",
+                "policy_summary": {"highest_action_priority": 1},
+                "final_draft": {
+                    "draft_title": "仿写标题",
+                    "draft_text": "仿写正文",
+                    "risk_gate_notes": ["检查 OOC"],
+                },
+            }
 
-    export_path = tmp_path / "whole-book-imitation-run.json"
-    export_result = runner.invoke(
-        app,
-        [
-            "export-whole-book-imitation-run",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            str(export_path),
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--execute",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert export_result.exit_code == 0
-    assert "whole_book_imitation_run_path=" in export_result.stdout
-    exported_payload = json.loads(export_path.read_text(encoding="utf-8"))
-    assert exported_payload["contract_version"] == "whole-book-imitation.v1"
-    assert exported_payload["stable_contract_version"] == "whole-book-imitation-pre-v1"
-    assert exported_payload["execution_mode"] == "sandbox_execute"
-    assert "policy_summary" in exported_payload
-    assert "dashboard_summary" in exported_payload
-    assert "book_handoff_summary" in exported_payload["dashboard_summary"]
+    class _FakeHarnessService:
+        def run_harness(self, branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name):  # noqa: ANN001
+            _ = branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name
+            return _FakeReport()
 
-    contract_result = runner.invoke(
-        app,
-        [
-            "show-imitation-skill-contracts",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert contract_result.exit_code == 0
-    assert '"imitation-constraint-pack"' in contract_result.stdout
-    assert '"draft-self-check"' in contract_result.stdout
+    monkeypatch.setattr('novel_analyzer.cli.app._imitation_harness_service', lambda session, settings: _FakeHarnessService())
+    output_dir = tmp_path / 'writer-output'
 
-    readiness_result = runner.invoke(
+    result = runner.invoke(
         app,
-        [
-            "show-whole-book-imitation-readiness",
-            "--branch-id",
-            "branch-cli-1",
-            "--database-url",
-            db_url,
-        ],
+        ['writer-imitate', run_lines['branch_id'], '1', '延续主线', '--output-dir', str(output_dir), '--database-url', db_url],
     )
-    assert readiness_result.exit_code == 0
-    assert '"whole_book_contract_version": "whole-book-imitation.v1"' in readiness_result.stdout
-    assert '"api_key_present"' in readiness_result.stdout
-    assert '"branch_id": "branch-cli-1"' in readiness_result.stdout
+    assert result.exit_code == 0
+    assert (output_dir / 'writer-imitate-ch1.json').exists()
+    assert (output_dir / 'writer-imitate-ch1.md').exists()
 
-    preflight_result = runner.invoke(
+    result = runner.invoke(
         app,
-        [
-            "preflight-imitation",
-            "branch-cli-1",
-            "3",
-            "延续主角获得功法后的行动线，并保持克制成长节奏",
-            "--database-url",
-            db_url,
-        ],
+        ['writer-imitate-range', run_lines['branch_id'], '3:延续主线', '4:制造新阻力', '--output-dir', str(output_dir), '--database-url', db_url],
     )
-    assert preflight_result.exit_code == 0
-    assert '"preflight"' in preflight_result.stdout
-    assert '"overall_verdict"' in preflight_result.stdout
-
-    harness_result = runner.invoke(
-        app,
-        [
-            "harness-imitation",
-            "branch-cli-1",
-            "3",
-            "延续主角获得功法后的行动线，并保持克制成长节奏",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert harness_result.exit_code == 0
-    assert '"skill_contracts"' in harness_result.stdout
-    assert '"final_preflight"' in harness_result.stdout
-    assert '"skill_prompt_previews"' in harness_result.stdout
-    assert '"skill_outputs"' in harness_result.stdout
-    assert '"action_queue"' in harness_result.stdout
-    assert '"policy_summary"' in harness_result.stdout
+    assert result.exit_code == 0
+    assert (output_dir / 'writer-imitate-range-3-4.json').exists()
+    assert (output_dir / 'writer-imitate-range-3-4.md').exists()

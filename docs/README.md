@@ -74,6 +74,7 @@
 6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
 7. [`./review-template.md`](./review-template.md)
 8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+9. [`./writer-imitation-workflow.md`](./writer-imitation-workflow.md)
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
@@ -83,6 +84,7 @@
 - 第 5 步：按全能力手册做拆书 / 检索 / 风险 / 仿写 / 治理人工测试
 - 第 6 步：用人工测试记录模板沉淀结论与薄弱点
 - 第 7 步：试跑后用模板做复盘
+- 第 8 步：如果进入仿写实战，按 writer imitation workflow 走 output 工作目录
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 
@@ -150,8 +152,9 @@
 6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
 7. [`./review-template.md`](./review-template.md)
 8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
-9. [`../apps/web/README.md`](../apps/web/README.md)
-10. [`../apps/api/README.md`](../apps/api/README.md)
+9. [`./writer-imitation-workflow.md`](./writer-imitation-workflow.md)
+10. [`../apps/web/README.md`](../apps/web/README.md)
+11. [`../apps/api/README.md`](../apps/api/README.md)
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)

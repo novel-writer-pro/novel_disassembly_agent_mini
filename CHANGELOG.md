@@ -1,5 +1,11 @@
 ## 2026-05-05
 
+### 仿写实战工作流与 output 工作目录补齐
+- 新增 `writer-imitate` 与 `writer-imitate-range` CLI，统一把仿写结果输出到 `output/`。
+- `output/` 已加入 `.gitignore`，明确只作为仿写工作目录，不纳入版本管理。
+- 新增 `docs/writer-imitation-workflow.md`，把仿写实战流程、关键字段、工作目录约束和后续增强方向写清楚。
+
+
 ### 小说导入、切章与保存规范补强
 - 自动切章现在支持真实中文网文常见的 `第X节` 标题，不再只识别 `第X章`。
 - CLI 新增 `ingest-chapter-list`，支持按 JSON chapter list 做逐章 / 多章导入。

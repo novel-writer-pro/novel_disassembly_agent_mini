@@ -2329,6 +2329,146 @@ def show_whole_book_imitation_readiness(
         echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
+def _write_writer_imitation_outputs(
+    output_dir: Path,
+    stem: str,
+    payload: dict[str, object],
+) -> tuple[Path, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / f"{stem}.json"
+    md_path = output_dir / f"{stem}.md"
+    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    lines: list[str] = [f"# {stem}"]
+    final_draft = payload.get("final_draft", {})
+    if isinstance(final_draft, dict):
+        draft_title = str(final_draft.get("draft_title", "")).strip()
+        draft_text = str(final_draft.get("draft_text", "")).strip()
+        if draft_title:
+            lines.append(f"\n## Draft Title\n{draft_title}")
+        if draft_text:
+            lines.append(f"\n## Draft Text\n{draft_text}")
+        risk_gate_notes = final_draft.get("risk_gate_notes", [])
+        if isinstance(risk_gate_notes, list) and risk_gate_notes:
+            lines.append("\n## Risk Gate Notes")
+            lines.extend(f"- {str(item)}" for item in risk_gate_notes[:12])
+    final_verdict = str(payload.get("final_verdict", "")).strip()
+    if final_verdict:
+        lines.append(f"\n## Final Verdict\n- {final_verdict}")
+    stop_reason = str(payload.get("stop_reason", "")).strip()
+    if stop_reason:
+        lines.append(f"\n## Stop Reason\n- {stop_reason}")
+    policy_summary = payload.get("policy_summary", {})
+    if isinstance(policy_summary, dict) and policy_summary:
+        lines.append("\n## Policy Summary")
+        for key, value in policy_summary.items():
+            lines.append(f"- {key}: {value}")
+    items = payload.get("items", [])
+    if isinstance(items, list) and items:
+        lines.append("\n## Range Items")
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            chapter_index = item.get("source_chapter_index")
+            target_goal = item.get("target_goal")
+            final_verdict = item.get("final_verdict")
+            stop_reason = item.get("stop_reason")
+            lines.append(f"\n### Chapter {chapter_index}")
+            lines.append(f"- target_goal: {target_goal}")
+            lines.append(f"- final_verdict: {final_verdict}")
+            lines.append(f"- stop_reason: {stop_reason}")
+            final_draft = item.get("final_draft", {})
+            if isinstance(final_draft, dict):
+                draft_title = str(final_draft.get("draft_title", "")).strip()
+                draft_text = str(final_draft.get("draft_text", "")).strip()
+                if draft_title:
+                    lines.append(f"- draft_title: {draft_title}")
+                if draft_text:
+                    lines.append("")
+                    lines.append(draft_text)
+    md_path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+    return json_path, md_path
+
+
+@app.command()
+def writer_imitate(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    database_url: str | None = None,
+) -> None:
+    """Writer-facing imitation entrypoint that writes artifacts into output/."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        payload = report.model_dump(mode="json")
+        stem = f"writer-imitate-ch{source_chapter_index}"
+        json_path, md_path = _write_writer_imitation_outputs(output_dir, stem, payload)
+        echo(f"writer_imitate_json={json_path}")
+        echo(f"writer_imitate_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_range(
+    branch_id: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    database_url: str | None = None,
+) -> None:
+    """Batch writer-facing imitation entrypoint for multiple source chapters."""
+
+    parsed = _parse_chapter_goal_spec(chapter_spec)
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _imitation_harness_service(session, settings)
+        outputs: list[dict[str, object]] = []
+        for source_chapter_index, target_goal in parsed:
+            report = service.run_harness(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+            )
+            payload = report.model_dump(mode="json")
+            outputs.append(
+                {
+                    "source_chapter_index": source_chapter_index,
+                    "target_goal": target_goal,
+                    "final_verdict": payload.get("final_verdict"),
+                    "stop_reason": payload.get("stop_reason"),
+                    "final_draft": payload.get("final_draft", {}),
+                    "policy_summary": payload.get("policy_summary", {}),
+                }
+            )
+        stem = f"writer-imitate-range-{parsed[0][0]}-{parsed[-1][0]}"
+        json_path, md_path = _write_writer_imitation_outputs(
+            output_dir,
+            stem,
+            {"items": outputs, "branch_id": branch_id},
+        )
+        echo(f"writer_imitate_range_json={json_path}")
+        echo(f"writer_imitate_range_markdown={md_path}")
+
+
 @app.command()
 def preflight_imitation(
     branch_id: str,
