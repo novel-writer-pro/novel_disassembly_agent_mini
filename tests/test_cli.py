@@ -341,3 +341,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert result.exit_code == 0
     assert (output_dir / 'writer-imitate-range-3-4.json').exists()
     assert (output_dir / 'writer-imitate-range-3-4.md').exists()
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-review', run_lines['branch_id'], '1', '延续主线', '--output-dir', str(output_dir), '--database-url', db_url],
+    )
+    assert result.exit_code == 0
+    review_md = output_dir / 'writer-imitate-review-ch1.md'
+    assert review_md.exists()
+    review_text = review_md.read_text(encoding='utf-8')
+    assert '## Draft Text' in review_text
+    assert '【Harness Action Queue】' not in review_text

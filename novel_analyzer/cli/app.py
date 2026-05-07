@@ -2400,6 +2400,50 @@ def _write_writer_imitation_outputs(
     return json_path, md_path
 
 
+def _writer_review_markdown(
+    *,
+    source_chapter_index: int,
+    target_goal: str,
+    report_payload: dict[str, object],
+) -> str:
+    lines: list[str] = [f"# writer-imitate-review-ch{source_chapter_index}"]
+    lines.append(f"\n- source_chapter_index: {source_chapter_index}")
+    lines.append(f"- target_goal: {target_goal}")
+
+    final_verdict = str(report_payload.get("final_verdict", "")).strip()
+    stop_reason = str(report_payload.get("stop_reason", "")).strip()
+    if final_verdict:
+        lines.append(f"- final_verdict: {final_verdict}")
+    if stop_reason:
+        lines.append(f"- stop_reason: {stop_reason}")
+
+    final_draft = report_payload.get("final_draft", {})
+    if isinstance(final_draft, dict):
+        draft_title = str(final_draft.get("draft_title", "")).strip()
+        draft_text = str(final_draft.get("draft_text", "")).strip()
+        visible_draft_text = draft_text.split("【Harness Action Queue】", 1)[0].rstrip()
+        if draft_title:
+            lines.append(f"\n## Draft Title\n{draft_title}")
+        if visible_draft_text:
+            lines.append(f"\n## Draft Text\n{visible_draft_text}")
+        risk_gate_notes = final_draft.get("risk_gate_notes", [])
+        if isinstance(risk_gate_notes, list) and risk_gate_notes:
+            lines.append("\n## Risk Gate Notes")
+            seen: set[str] = set()
+            for item in risk_gate_notes:
+                note = str(item).strip()
+                if note and note not in seen:
+                    seen.add(note)
+                    lines.append(f"- {note}")
+
+    policy_summary = report_payload.get("policy_summary", {})
+    if isinstance(policy_summary, dict) and policy_summary:
+        lines.append("\n## Policy Summary")
+        for key, value in policy_summary.items():
+            lines.append(f"- {key}: {value}")
+    return "\n".join(lines).strip() + "\n"
+
+
 @app.command()
 def writer_imitate(
     branch_id: str,
@@ -2477,6 +2521,44 @@ def writer_imitate_range(
         )
         echo(f"writer_imitate_range_json={json_path}")
         echo(f"writer_imitate_range_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_review(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    database_url: str | None = None,
+) -> None:
+    """Writer-facing single-chapter imitation review markdown export."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+        payload = report.model_dump(mode="json")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        md_path = output_dir / f"writer-imitate-review-ch{source_chapter_index}.md"
+        md_path.write_text(
+            _writer_review_markdown(
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                report_payload=payload,
+            ),
+            encoding="utf-8",
+        )
+        echo(f"writer_imitate_review_markdown={md_path}")
 
 
 @app.command()
