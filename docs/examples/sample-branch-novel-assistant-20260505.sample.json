@@ -1,0 +1,3589 @@
+{
+  "contract_version": "novel-assistant.v1",
+  "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+  "run_id": "ac9449b9-7326-474f-bb72-4416375a7491",
+  "branch_snapshot": {
+    "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+    "name": "main",
+    "status": "active",
+    "fork_after_chapter_index": 0,
+    "visible_chapters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "job_statuses": {
+      "1": "validated",
+      "2": "validated",
+      "3": "validated",
+      "4": "validated",
+      "5": "validated",
+      "6": "validated",
+      "7": "validated",
+      "8": "validated",
+      "9": "validated",
+      "10": "validated"
+    },
+    "manual_excluded_chapters": []
+  },
+  "assistant_summary": {
+    "chapter_count": 10,
+    "review_cluster_count": 2,
+    "review_needs_count": 1,
+    "risk_card_count": 10,
+    "top_entities": [
+      "卫图"
+    ],
+    "assistant_mode": "commercial-novel-assistant"
+  },
+  "supported_actions": [
+    "split_novel",
+    "retrieve_evidence",
+    "answer_question",
+    "author_knowledge",
+    "risk_gate_review",
+    "continue_writing_preparation",
+    "imitation_preparation",
+    "whole_book_preparation",
+    "whole_book_consistency_backflow",
+    "original_planning",
+    "creation_control",
+    "editor_revision",
+    "reader_feedback_loop",
+    "feedback_revision_bridge",
+    "retrieval_benchmark",
+    "chapter_draft_preparation",
+    "direct_draft_skeleton",
+    "direct_revision_loop",
+    "automatic_rewrite_guidance",
+    "automatic_prose_rewrite",
+    "final_draft_candidate",
+    "publish_ready_release",
+    "sample_based_release_criteria",
+    "release_decision_freeze_artifact",
+    "handoff_approval_record",
+    "operator_release_brief",
+    "release_ops_runbook",
+    "incident_rollback",
+    "postmortem_recovery_record",
+    "recovery_closure_artifact",
+    "final_governance_summary",
+    "governance_dashboard",
+    "governance_report_brief",
+    "release_review_note",
+    "approval_decision_memo",
+    "external_report_bundle",
+    "external_report_markdown",
+    "final_release_archive",
+    "archive_manifest",
+    "archive_retention_metadata",
+    "archive_integrity_check"
+  ],
+  "recommended_next_actions": [
+    "先用 author knowledge 确认人物/规则/线程现状，再进入续写/仿写。",
+    "需要问答或检索时，优先使用 retrieval diagnostics 与 benchmark summary 确认召回质量。",
+    "进入 whole-book 之前先看 review_summary 与 risk_summary，避免带病生成。",
+    "生成完成后按 editor revision 与 reader feedback pack 进入修文闭环。"
+  ],
+  "whole_book_readiness_summary": {
+    "whole_book_contract_version": "whole-book-imitation.v1",
+    "whole_book_stable_contract_version": "whole-book-imitation-pre-v1",
+    "provider_name": "vip1129",
+    "base_url": "https://api.vip1129.cc/v1",
+    "model_name": "gpt-5.4-mini",
+    "provider_last_status": "degraded",
+    "chapter_analysis_count": 11,
+    "fact_record_count": 232,
+    "ready_for_whole_book": true
+  },
+  "sample_evidence_summary": {
+    "available_samples": [
+      "docs/examples/sample-branch-search-diagnostics-20260505.sample.json",
+      "docs/examples/sample-branch-author-knowledge-20260505.sample.json",
+      "docs/examples/sample-branch-novel-assistant-20260505.sample.json",
+      "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json",
+      "docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json"
+    ],
+    "sample_count": 5
+  },
+  "preparation_guidance": {
+    "next_chapter_preparation": [
+      "先确认主角当前目标、关系推进与未解线程，再进行续写规划。",
+      "如果存在待复核问题簇，优先阅读 review summary 后再定续写方向。",
+      "当前最重要的人物/实体：卫图"
+    ],
+    "imitation_preparation": [
+      "先使用 author knowledge 确认人物/规则/线程现状，再进入仿写。",
+      "whole-book 前先确认 retrieval diagnostics 是否能稳定召回关键章节。",
+      "仿写时优先保留这些实体线：卫图"
+    ],
+    "risk_gate_preflight": [
+      "进入生成前先看 risk summary 与 review summary，避免带病生成。",
+      "当前仍有 1 个 needs_review 问题簇，建议先复核。"
+    ]
+  },
+  "retrieval_benchmark_summary": {
+    "contract_version": "retrieval-benchmark-summary.v1",
+    "degraded": false,
+    "benchmark_queries": [
+      "卫图 命格",
+      "二姑 资源",
+      "婚事 养生功"
+    ],
+    "query_count": 3,
+    "route_totals": {
+      "fts": 7,
+      "similarity": 27,
+      "like": 27,
+      "keyword": 12
+    },
+    "avg_raw_latency_ms": 37.73,
+    "avg_rerank_latency_ms": 0.01,
+    "rerank_coverage_ratio": 0.0,
+    "cases": [
+      {
+        "query": "卫图 命格",
+        "fusion_applied": true,
+        "rerank_applied": false,
+        "route_counts": {
+          "fts": 3,
+          "similarity": 10,
+          "like": 10,
+          "keyword": 10
+        },
+        "raw_latency_ms": 36.79014199587982,
+        "rerank_latency_ms": 0.005036999937146902,
+        "raw_top_chapters": [
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        "reranked_top_chapters": [
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        "rerank_changed_order": false,
+        "top_overlap": 5
+      },
+      {
+        "query": "二姑 资源",
+        "fusion_applied": true,
+        "rerank_applied": false,
+        "route_counts": {
+          "fts": 3,
+          "similarity": 7,
+          "like": 8,
+          "keyword": 1
+        },
+        "raw_latency_ms": 34.32486999372486,
+        "rerank_latency_ms": 0.005549998604692519,
+        "raw_top_chapters": [
+          1,
+          2,
+          3,
+          4,
+          8
+        ],
+        "reranked_top_chapters": [
+          1,
+          2,
+          3,
+          4,
+          8
+        ],
+        "rerank_changed_order": false,
+        "top_overlap": 5
+      },
+      {
+        "query": "婚事 养生功",
+        "fusion_applied": true,
+        "rerank_applied": false,
+        "route_counts": {
+          "fts": 1,
+          "similarity": 10,
+          "like": 9,
+          "keyword": 1
+        },
+        "raw_latency_ms": 42.06358900410123,
+        "rerank_latency_ms": 0.005640002200379968,
+        "raw_top_chapters": [
+          10,
+          9,
+          4,
+          2,
+          5
+        ],
+        "reranked_top_chapters": [
+          10,
+          9,
+          4,
+          2,
+          5
+        ],
+        "rerank_changed_order": false,
+        "top_overlap": 5
+      }
+    ]
+  },
+  "whole_book_consistency_backflow_pack": {
+    "contract_version": "whole-book-consistency-backflow-pack.v1",
+    "sample_path": "docs/examples/whole-book-imitation-run.sandbox-live-20260505.sample.json",
+    "diagnostic_version": "long-book-consistency-diagnostics.v1",
+    "requires_consistency_pass": true,
+    "next_stage_focus": [
+      "优先处理能力族：relationship、rule",
+      "先回看第10章的高优先级修复链",
+      "先回看第9章的高优先级修复链"
+    ],
+    "top_repair_recommendations": [
+      {
+        "action_type": "repair_rhythm",
+        "count": 2,
+        "highest_priority": 1,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          9,
+          10
+        ],
+        "targets": [
+          "rhythm"
+        ],
+        "issue_families": [
+          "rhythm"
+        ]
+      },
+      {
+        "action_type": "expand_middle",
+        "count": 1,
+        "highest_priority": 1,
+        "highest_severity": "high",
+        "chapter_indexes": [
+          9
+        ],
+        "targets": [
+          "draft_body"
+        ],
+        "issue_families": []
+      },
+      {
+        "action_type": "repair_character_motivation",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          9,
+          10
+        ],
+        "targets": [
+          "character_motivation"
+        ],
+        "issue_families": [
+          "motivation"
+        ]
+      },
+      {
+        "action_type": "repair_relationship_transition",
+        "count": 2,
+        "highest_priority": 2,
+        "highest_severity": "medium",
+        "chapter_indexes": [
+          9,
+          10
+        ],
+        "targets": [
+          "relationship_transition"
+        ],
+        "issue_families": [
+          "relationship"
+        ]
+      }
+    ],
+    "candidate_backflow_actions": [
+      "将 top_repair_recommendations 回灌到 candidate/revision/rewrite 主链。",
+      "若 requires_consistency_pass=true，则禁止直接进入 release。"
+    ],
+    "release_impact": "whole_book_consistency_blocks_release"
+  },
+  "continuation_pack": {
+    "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+    "next_chapter_index": 11,
+    "chapter_goal": "完成赎身/脱籍并争取进入更高身份路径",
+    "main_conflict": "身份与身契限制",
+    "secondary_conflicts": [
+      "银钱与资源不足"
+    ],
+    "required_progressions": [
+      "保持家庭与婚后协作稳定",
+      "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+      "持续通过修炼累积可转化能力",
+      "主角获得可验证的新位置或新资格",
+      "关系线不只是陪衬，而要影响主线选择"
+    ],
+    "scene_plan": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "risk_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "身份与身契限制"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "character_movements": [
+      "养生功",
+      "李荭",
+      "杏",
+      "身契"
+    ],
+    "relationship_movements": [],
+    "foreshadow_to_touch": [
+      "保持家庭与婚后协作稳定",
+      "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+      "持续通过修炼累积可转化能力"
+    ],
+    "rule_constraints": [],
+    "ending_hook": "围绕长线兑现点“保持家庭与婚后协作稳定”制造下一章推进钩子。",
+    "risk_notes": [
+      "不要直接违背既有世界规则与人物当前状态。",
+      "如要推进关系变化，必须提供中间证据与触发事件。",
+      "禁止：不要无铺垫升级战力",
+      "禁止：不要引入未准备的大设定",
+      "长线兑现：保持家庭与婚后协作稳定",
+      "长线兑现：持续通过修炼累积可转化能力",
+      "风险信号：本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+      "风险信号：本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。",
+      "风险信号：本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。"
+    ]
+  },
+  "imitation_pack": {
+    "source_chapter_index": 10,
+    "target_goal": "延续当前主线并保持人物/规则连续性",
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "hard_constraints": [
+      "不要无铺垫升级战力",
+      "不要引入未准备的大设定"
+    ],
+    "soft_constraints": [
+      "保持家庭与婚后协作稳定",
+      "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+      "持续通过修炼累积可转化能力"
+    ],
+    "risk_focus": [
+      "本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。",
+      "本章整体属于前情的延续与局部兑现：此前关于武举、脱籍、上升路径的想法，在这一章被明确说出口，并进入“算钱、算地、算收成”的执行阶段。",
+      "承接前文关于李耀祖可能借收成施压的铺垫，本章将“迟则生变”的担忧转化为具体行动。"
+    ]
+  },
+  "original_planning_pack": {
+    "contract_version": "original-planning-pack.v1",
+    "planning_scope": {
+      "chapter_count": 10,
+      "top_entities": [
+        "卫图"
+      ],
+      "top_rules": [
+        "命格以金紫之色呈现，且可在脑海中显化为玺印",
+        "本章确认存在“命格”设定",
+        "李宅主仆在饮食上存在明显等级差异",
+        "李宅仆役有佃奴与马倌的分化，待遇不同",
+        "李宅的马需要三更天加喂夜草"
+      ],
+      "top_threads": []
+    },
+    "world_and_rule_focus": [
+      "命格以金紫之色呈现，且可在脑海中显化为玺印",
+      "本章确认存在“命格”设定",
+      "李宅主仆在饮食上存在明显等级差异"
+    ],
+    "character_arc_candidates": [
+      "卫图"
+    ],
+    "thread_backlog": [],
+    "planning_gaps": [
+      "主要人物密度不足，建议先补角色卡与动机链。",
+      "未解线程显式化不足，建议先补卷纲级伏笔表。"
+    ],
+    "next_planning_actions": [
+      "先固化世界规则、人物目标、长线线程三张底表。",
+      "把未解线程映射到卷纲/章纲，避免续写时只靠局部记忆。",
+      "将 continuation pack 作为单章执行面，而不是替代长期规划。"
+    ],
+    "continuation_goal_hint": "完成赎身/脱籍并争取进入更高身份路径"
+  },
+  "creation_control_pack": {
+    "contract_version": "creation-control-pack.v1",
+    "chapter_goal": "完成赎身/脱籍并争取进入更高身份路径",
+    "scene_controls": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "risk_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "身份与身契限制"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "ending_hook": "围绕长线兑现点“保持家庭与婚后协作稳定”制造下一章推进钩子。",
+    "risk_notes": [
+      "不要直接违背既有世界规则与人物当前状态。",
+      "如要推进关系变化，必须提供中间证据与触发事件。",
+      "禁止：不要无铺垫升级战力",
+      "禁止：不要引入未准备的大设定",
+      "长线兑现：保持家庭与婚后协作稳定",
+      "长线兑现：持续通过修炼累积可转化能力",
+      "风险信号：本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+      "风险信号：本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。",
+      "风险信号：本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。"
+    ],
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "control_checklist": [
+      "每章必须有明确目标、阻力、回应、章尾钩子。",
+      "风格控制优先看 style_axes，剧情控制优先看 scene_controls。",
+      "如 risk_notes 中出现规则/关系风险，生成前必须先修正。"
+    ]
+  },
+  "editor_revision_pack": {
+    "contract_version": "editor-revision-pack.v1",
+    "revision_priorities": [
+      "先处理 1 个 needs_review 问题簇，再推进正文定稿。",
+      "当前有 10 张 risk card，改稿时优先消化高风险卡片。",
+      "检查 scene_plan 是否每场都承担推进功能，避免空转段落。",
+      "检查 style_axes 与实际文本是否一致，避免只学句式不学结构。"
+    ],
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "done_definition": [
+      "review / risk 不再阻塞生成。",
+      "scene plan 与正文推进一致。",
+      "仿写约束和人物/规则状态无明显冲突。"
+    ]
+  },
+  "reader_feedback_pack": {
+    "contract_version": "reader-feedback-pack.v1",
+    "feedback_summary": {
+      "contract_version": "reader-feedback-summary.v1",
+      "degraded": false,
+      "comment_count": 3,
+      "signals": [
+        "reader_hook_strong",
+        "logic_confusion",
+        "pacing_slow"
+      ],
+      "signal_counts": {
+        "reader_hook_strong": 1,
+        "logic_confusion": 1,
+        "pacing_slow": 1
+      },
+      "pain_point_hypotheses": [
+        "读者可能认为当前章节节奏偏慢。",
+        "读者可能对部分逻辑/衔接存在疑惑。",
+        "读者对后续情节仍有持续追读意愿。"
+      ],
+      "revision_recommendations": [
+        "压缩中段铺垫，增强行动推进密度。",
+        "补足前因后果和转折证据，降低理解门槛。",
+        "保留章尾钩子并加强下一章期待。"
+      ],
+      "sample_comments": [
+        "章尾钩子不错，我想看他赎身后怎么走。",
+        "主角这里的决策有点突兀，逻辑不太顺。",
+        "这几章节奏有点慢，但我还是想继续追。"
+      ]
+    },
+    "pain_point_hypotheses": [
+      "读者可能感到部分逻辑/衔接点仍不够顺。",
+      "读者可能认为当前章节节奏偏慢。",
+      "读者可能对部分逻辑/衔接存在疑惑。",
+      "读者对后续情节仍有持续追读意愿。"
+    ],
+    "feedback_collection_prompts": [
+      "哪一章开始觉得节奏变慢？原因是什么？",
+      "你最想继续追的角色/线程是什么？",
+      "哪些设定、关系或战力变化让你觉得突兀？"
+    ],
+    "revision_from_feedback": [
+      "把反馈映射回 thread / character / rule，再决定是补铺垫还是删枝杈。",
+      "优先处理会影响续读率的章尾钩子、主角目标感、信息负担问题。",
+      "压缩中段铺垫，增强行动推进密度。",
+      "补足前因后果和转折证据，降低理解门槛。",
+      "保留章尾钩子并加强下一章期待。"
+    ],
+    "priority_entities": [
+      "卫图"
+    ],
+    "priority_threads": []
+  },
+  "feedback_revision_bridge_pack": {
+    "contract_version": "feedback-revision-bridge-pack.v1",
+    "bridge_actions": [
+      "优先走 structure_and_pacing lane，压缩拖沓段落。",
+      "优先走 logic_and_risk lane，补足因果与过渡证据。",
+      "保留并强化 hook，不要在修稿中削弱章尾期待。"
+    ],
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "signal_counts": {
+      "reader_hook_strong": 1,
+      "logic_confusion": 1,
+      "pacing_slow": 1
+    },
+    "top_feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
+  },
+  "chapter_draft_preparation_pack": {
+    "contract_version": "chapter-draft-preparation-pack.v1",
+    "draft_goal": "完成赎身/脱籍并争取进入更高身份路径",
+    "draft_conflict": "身份与身契限制",
+    "draft_payoff": "保持家庭与婚后协作稳定",
+    "draft_turning_point": "关键关系带来机会，但同时抬高代价",
+    "scene_outline": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "risk_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "身份与身契限制"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "style_axes": [
+      "沿用原章的叙事视角与信息释放顺序",
+      "沿用原章的冲突-应对-收束节奏",
+      "优先保持人物选择逻辑，而非表面句式模仿"
+    ],
+    "scene_beats": [
+      "承接上一章结果并明确当前需求/目标",
+      "通过一次身份/资源/关系阻力制造推进成本",
+      "让主角给出克制但更坚定的行动回应",
+      "章尾给出下一步可执行钩子"
+    ],
+    "future_chapter_outline": [
+      {
+        "chapter_index": 9,
+        "goal": "完成赎身/脱籍并争取进入更高身份路径",
+        "core_conflict": "身份与身契限制",
+        "payoff_target": "保持家庭与婚后协作稳定",
+        "turning_point": "关键关系带来机会，但同时抬高代价"
+      },
+      {
+        "chapter_index": 10,
+        "goal": "保持家庭与婚后协作稳定",
+        "core_conflict": "银钱与资源不足",
+        "payoff_target": "持续通过修炼累积可转化能力",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      },
+      {
+        "chapter_index": 11,
+        "goal": "持续通过修炼累积可转化能力",
+        "core_conflict": "银钱与资源不足",
+        "payoff_target": "经营关键关系以换取资源与信息入口",
+        "turning_point": "资源或身份压力迫使主角提前行动"
+      }
+    ],
+    "character_focus": [
+      {
+        "label": "卫图",
+        "role_tags": [
+          "entity",
+          "protagonist",
+          "relationship-core"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 10,
+        "motivation_candidates": [
+          "追求身份突破与长期上升",
+          "获取资源与能力积累",
+          "维持家庭与关系稳定"
+        ],
+        "tension_points": [
+          "受身份/阶层约束",
+          "关键关系将影响后续选择空间"
+        ],
+        "continuity_focus": "关注卫图在后续章节中的目标、关系与代价是否持续一致。"
+      }
+    ],
+    "rule_focus": [
+      "命格以金紫之色呈现，且可在脑海中显化为玺印",
+      "本章确认存在“命格”设定",
+      "李宅主仆在饮食上存在明显等级差异",
+      "李宅仆役有佃奴与马倌的分化，待遇不同"
+    ],
+    "draft_checklist": [
+      "先按 chapter_goal / core_conflict 写出场景草骨架，再补对白与细节。",
+      "优先兑现 payoff_target 与 turning_point，不要只推进表面事件。",
+      "写完后对照 risk_notes / style_axes / rule_constraints 做一次自检。"
+    ],
+    "blocking_risks": [
+      "存在 1 个 needs_review 问题簇，草稿前应优先确认。",
+      "存在 10 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "direct_draft_skeleton_pack": {
+    "contract_version": "direct-draft-skeleton-pack.v1",
+    "draft_title": "完成赎身/脱籍并争取进入更高身份路径",
+    "draft_text": "目标：完成赎身/脱籍并争取进入更高身份路径\n核心冲突：身份与身契限制\n兑现点：保持家庭与婚后协作稳定\n转折点：关键关系带来机会，但同时抬高代价\n### 场景1: 承接上一章结果并明确本章目标\n- 必须包含：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 注意：不要无铺垫升级战力；不要引入未准备的大设定\n- 草写提示：先写行动推进，再补情绪与对白。\n### 场景2: 推进主冲突并释放新的信息增量\n- 必须包含：身份与身契限制；保持家庭与婚后协作稳定\n- 注意：本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。；本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。\n- 草写提示：先写行动推进，再补情绪与对白。\n### 场景3: 收束局部结果并留出下一章钩子\n- 必须包含：身份与身契限制\n- 注意：避免无铺垫的大幅关系/战力跳变\n- 草写提示：先写行动推进，再补情绪与对白。",
+    "scene_blocks": [
+      {
+        "scene_index": 1,
+        "purpose": "承接上一章结果并明确本章目标",
+        "must_include": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "risk_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "purpose": "推进主冲突并释放新的信息增量",
+        "must_include": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "risk_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "purpose": "收束局部结果并留出下一章钩子",
+        "must_include": [
+          "身份与身契限制"
+        ],
+        "risk_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "checklist": [
+      "先按 chapter_goal / core_conflict 写出场景草骨架，再补对白与细节。",
+      "优先兑现 payoff_target 与 turning_point，不要只推进表面事件。",
+      "写完后对照 risk_notes / style_axes / rule_constraints 做一次自检。"
+    ],
+    "blocking_risks": [
+      "存在 1 个 needs_review 问题簇，草稿前应优先确认。",
+      "存在 10 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "direct_revision_loop_pack": {
+    "contract_version": "direct-revision-loop-pack.v1",
+    "revision_text": "# 修稿目标：完成赎身/脱籍并争取进入更高身份路径\n- 先处理逻辑与风险，再处理风格与节奏。\n- 每场都检查 must_keep / revision_notes / chapter continuity。\n- 草骨架摘要：目标：完成赎身/脱籍并争取进入更高身份路径\n核心冲突：身份与身契限制\n兑现点：保持家庭与婚后协作稳定\n转折点：关键关系带来机会，但同时抬高代价\n### 场景1: 承接上一章结果并明确本章目标\n- 必须包含：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 注意：不要无铺垫升级战力；不要引入未准备的大设定\n- 草写提示：先写行动推进，再补情绪与对白。\n###",
+    "revision_lanes": [
+      {
+        "lane": "logic_and_risk",
+        "goal": "先修逻辑、规则、关系连续性。"
+      },
+      {
+        "lane": "structure_and_pacing",
+        "goal": "再修场景功能、章尾钩子、节奏切分。"
+      },
+      {
+        "lane": "style_and_dialogue",
+        "goal": "最后修文风、对白、细节密度。"
+      }
+    ],
+    "revised_blocks": [
+      {
+        "scene_index": 1,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "revision_notes": [
+          "不要无铺垫升级战力",
+          "不要引入未准备的大设定"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "revision_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章整体属于对前情的延续与局部兑现：此前关于卖身身份、宗族关系和婚后生活的线索，在这里被明确落到“能否入祠堂”这一具体规则上，属于约束强化而非状态跃迁。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "revision_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "revision_notes": [
+          "避免无铺垫的大幅关系/战力跳变"
+        ]
+      }
+    ],
+    "revision_checklist": [
+      "先修逻辑、规则、关系连续性。",
+      "再修场景功能、节奏与章尾钩子。",
+      "最后修文风、对白与细节密度。"
+    ],
+    "blocking_risks": [
+      "存在 1 个 needs_review 问题簇，草稿前应优先确认。",
+      "存在 10 张 risk card，起草时要规避高风险路径。"
+    ]
+  },
+  "automatic_rewrite_guidance_pack": {
+    "contract_version": "automatic-rewrite-guidance-pack.v1",
+    "guidance_text": "# 自动改写指导\n- 先锁定 must_keep，再处理逻辑/节奏/对白问题。\n- 每次改写只处理一个场景块，避免整体重写导致连续性漂移。\n- 读者风险假设：读者可能感到部分逻辑/衔接点仍不够顺。；读者可能认为当前章节节奏偏慢。",
+    "rewrite_steps": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "rewrite_actions": [
+          "先保持 must_keep 不丢失，再重写冲突展开。",
+          "优先把 revision_notes 对应的问题改成可见的行动/对白/转折。"
+        ]
+      }
+    ],
+    "reader_feedback_hypotheses": [
+      "读者可能感到部分逻辑/衔接点仍不够顺。",
+      "读者可能认为当前章节节奏偏慢。",
+      "读者可能对部分逻辑/衔接存在疑惑。"
+    ],
+    "rewrite_checklist": [
+      "先修逻辑，再修节奏，再修文风。",
+      "每轮改写后回看 must_keep 是否仍在。",
+      "避免为追求流畅度而丢失 payoff / turning point。"
+    ],
+    "feedback_bridge_actions": [
+      "优先走 structure_and_pacing lane，压缩拖沓段落。",
+      "优先走 logic_and_risk lane，补足因果与过渡证据。",
+      "保留并强化 hook，不要在修稿中削弱章尾期待。"
+    ]
+  },
+  "automatic_prose_rewrite_pack": {
+    "contract_version": "automatic-prose-rewrite-pack.v1",
+    "rewrite_title": "完成赎身/脱籍并争取进入更高身份路径",
+    "rewrite_text": "### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion",
+    "rewritten_blocks": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "rewrite_prompt": "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程"
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "rewrite_prompt": "身份与身契限制；保持家庭与婚后协作稳定"
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "rewrite_prompt": "身份与身契限制"
+      }
+    ],
+    "rewrite_checklist": [
+      "先修逻辑，再修节奏，再修文风。",
+      "每轮改写后回看 must_keep 是否仍在。",
+      "避免为追求流畅度而丢失 payoff / turning point。"
+    ],
+    "feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
+  },
+  "final_draft_candidate_pack": {
+    "contract_version": "final-draft-candidate-pack.v1",
+    "candidate_title": "完成赎身/脱籍并争取进入更高身份路径",
+    "candidate_text": "# 候选稿：完成赎身/脱籍并争取进入更高身份路径\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion",
+    "candidate_blocks": [
+      {
+        "scene_index": 1,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+          "延续当前主线并优先处理高价值未解线程"
+        ],
+        "rewrite_prompt": "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程"
+      },
+      {
+        "scene_index": 2,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制",
+          "保持家庭与婚后协作稳定"
+        ],
+        "rewrite_prompt": "身份与身契限制；保持家庭与婚后协作稳定"
+      },
+      {
+        "scene_index": 3,
+        "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+        "must_keep": [
+          "身份与身契限制"
+        ],
+        "rewrite_prompt": "身份与身契限制"
+      }
+    ],
+    "review_gate": {
+      "needs_review_count": 1,
+      "risk_card_count": 10,
+      "negative_feedback_signal_count": 2,
+      "ready_for_candidate_review": false
+    },
+    "candidate_checklist": [
+      "候选稿必须保留 must_keep 与 payoff / turning point。",
+      "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+      "如果 risk_card_count 较高，不要直接进入最终定稿。"
+    ],
+    "reader_feedback_signals": [
+      "reader_hook_strong",
+      "logic_confusion",
+      "pacing_slow"
+    ]
+  },
+  "publish_ready_release_pack": {
+    "contract_version": "publish-ready-release-pack.v1",
+    "release_gate": {
+      "candidate_review_ready": false,
+      "whole_book_ready": true,
+      "whole_book_consistency_ready": false,
+      "ready_for_release": false
+    },
+    "release_summary": "候选稿仍需复核后再发布。",
+    "release_checklist": [
+      "先确认 candidate_review_ready。",
+      "再确认 whole_book_ready 与主链样例完整。",
+      "发布前保留 review_gate / risk evidence 作为回溯依据。"
+    ],
+    "candidate_title": "完成赎身/脱籍并争取进入更高身份路径"
+  },
+  "sample_based_release_criteria_bundle": {
+    "contract_version": "sample-based-release-criteria-bundle.v1",
+    "criteria": {
+      "sample_count_ready": true,
+      "retrieval_benchmark_ready": true,
+      "reader_feedback_ready": true,
+      "release_gate_ready": false,
+      "ready_for_bundle_review": false
+    },
+    "sample_count": 5,
+    "retrieval_query_count": 3,
+    "bundle_summary": "样例、retrieval benchmark、release gate 已汇总，可用于 release criteria review。"
+  },
+  "release_decision_freeze_artifact_pack": {
+    "contract_version": "release-decision-freeze-artifact-pack.v1",
+    "decision": "no_go",
+    "freeze_artifact": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "criteria_snapshot": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "release_gate_snapshot": {
+        "candidate_review_ready": false,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      }
+    },
+    "decision_summary": "当前仍处于 no-go / freeze 保守状态。",
+    "next_actions": [
+      "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+      "若 go，则保留 freeze_artifact 并进入 release review。"
+    ]
+  },
+  "handoff_approval_record_pack": {
+    "contract_version": "handoff-approval-record-pack.v1",
+    "approval_status": "pending",
+    "handoff_record": {
+      "decision": "no_go",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+      "release_summary": "候选稿仍需复核后再发布。"
+    },
+    "approval_checklist": [
+      "确认 freeze_artifact 与 release_gate 快照可回溯。",
+      "确认候选稿、release criteria、risk evidence 已一并交接。",
+      "进入 approval 前记录最终 decision 与责任人。"
+    ]
+  },
+  "operator_release_brief_pack": {
+    "contract_version": "operator-release-brief-pack.v1",
+    "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+    "operator_status": "pending",
+    "brief_checklist": [
+      "先看 decision / freeze_reason。",
+      "再看 sample/retrieval/release criteria 是否齐备。",
+      "最后确认是否进入人工 approval 或继续回修。"
+    ]
+  },
+  "release_ops_runbook_pack": {
+    "contract_version": "release-ops-runbook-pack.v1",
+    "runbook_status": "blocked",
+    "runbook_steps": [
+      "检查 operator brief 与 freeze_artifact 是否一致。",
+      "确认 release gate / sample criteria / risk evidence 的最新快照。",
+      "若 decision=no_go，则生成阻断清单并停止发布动作。",
+      "若 decision=go，则进入人工 approval 与 release review。"
+    ],
+    "blockers": [
+      "release_gate_or_sample_criteria_not_ready"
+    ],
+    "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+    "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+  },
+  "incident_rollback_pack": {
+    "contract_version": "incident-rollback-pack.v1",
+    "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+    "rollback_target": "previous_candidate_or_safe_release",
+    "rollback_steps": [
+      "停止当前发布/扩散动作。",
+      "回退到上一版候选稿或安全版本。",
+      "重新收集 risk / review / release gate 快照。",
+      "完成问题修复后重新进入 freeze review。"
+    ],
+    "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+  },
+  "postmortem_recovery_record_pack": {
+    "contract_version": "postmortem-recovery-record-pack.v1",
+    "recovery_record": {
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready"
+    },
+    "postmortem_summary": "已记录 rollback trigger / target / freeze reason，可用于事故复盘与恢复追踪。",
+    "recovery_checklist": [
+      "记录 rollback trigger 与 freeze_reason。",
+      "记录恢复后的风险/评审快照。",
+      "确认问题关闭后再重新进入 freeze/release review。"
+    ]
+  },
+  "recovery_closure_artifact_pack": {
+    "contract_version": "recovery-closure-artifact-pack.v1",
+    "closure_status": "recovery_pending",
+    "closure_summary": "恢复动作仍需持续跟踪。",
+    "closure_record": {
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "freeze_reason": "release_gate_or_sample_criteria_not_ready"
+    },
+    "closure_checklist": [
+      "确认 rollback trigger / target / freeze reason 已归档。",
+      "确认恢复后快照已重新记录。",
+      "确认是否需要重新进入 release/freeze review。"
+    ]
+  },
+  "final_governance_summary_pack": {
+    "contract_version": "final-governance-summary-pack.v1",
+    "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+    "governance_status": "guarded",
+    "governance_checklist": [
+      "先看 release_ready 与 criteria_ready。",
+      "再看 decision / approval_status / runbook_status。",
+      "最后确认 closure_status 与 recovery 记录是否完备。"
+    ]
+  },
+  "governance_dashboard_pack": {
+    "contract_version": "governance-dashboard-pack.v1",
+    "dashboard_status": "guarded",
+    "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+    "release_gate": {
+      "candidate_review_ready": false,
+      "whole_book_ready": true,
+      "whole_book_consistency_ready": false,
+      "ready_for_release": false
+    },
+    "criteria": {
+      "sample_count_ready": true,
+      "retrieval_benchmark_ready": true,
+      "reader_feedback_ready": true,
+      "release_gate_ready": false,
+      "ready_for_bundle_review": false
+    },
+    "decision": "no_go",
+    "operator_status": "pending",
+    "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+    "whole_book_consistency": {
+      "requires_consistency_pass": true,
+      "release_impact": "whole_book_consistency_blocks_release",
+      "next_stage_focus": [
+        "优先处理能力族：relationship、rule",
+        "先回看第10章的高优先级修复链",
+        "先回看第9章的高优先级修复链"
+      ]
+    }
+  },
+  "governance_report_brief_pack": {
+    "contract_version": "governance-report-brief-pack.v1",
+    "dashboard_status": "guarded",
+    "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+    "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+  },
+  "release_review_note_pack": {
+    "contract_version": "release-review-note-pack.v1",
+    "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+    "review_status": "blocked",
+    "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+  },
+  "approval_decision_memo_pack": {
+    "contract_version": "approval-decision-memo-pack.v1",
+    "decision_verdict": "REJECT",
+    "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+    "memo_status": "rejected"
+  },
+  "external_report_bundle_pack": {
+    "contract_version": "external-report-bundle-pack.v1",
+    "dashboard": {
+      "contract_version": "governance-dashboard-pack.v1",
+      "dashboard_status": "guarded",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "release_gate": {
+        "candidate_review_ready": false,
+        "whole_book_ready": true,
+        "whole_book_consistency_ready": false,
+        "ready_for_release": false
+      },
+      "criteria": {
+        "sample_count_ready": true,
+        "retrieval_benchmark_ready": true,
+        "reader_feedback_ready": true,
+        "release_gate_ready": false,
+        "ready_for_bundle_review": false
+      },
+      "decision": "no_go",
+      "operator_status": "pending",
+      "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+      "whole_book_consistency": {
+        "requires_consistency_pass": true,
+        "release_impact": "whole_book_consistency_blocks_release",
+        "next_stage_focus": [
+          "优先处理能力族：relationship、rule",
+          "先回看第10章的高优先级修复链",
+          "先回看第9章的高优先级修复链"
+        ]
+      }
+    },
+    "brief": {
+      "contract_version": "governance-report-brief-pack.v1",
+      "dashboard_status": "guarded",
+      "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "review_note": {
+      "contract_version": "release-review-note-pack.v1",
+      "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+      "review_status": "blocked",
+      "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+    },
+    "approval_memo": {
+      "contract_version": "approval-decision-memo-pack.v1",
+      "decision_verdict": "REJECT",
+      "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+      "memo_status": "rejected"
+    },
+    "runbook": {
+      "contract_version": "release-ops-runbook-pack.v1",
+      "runbook_status": "blocked",
+      "runbook_steps": [
+        "检查 operator brief 与 freeze_artifact 是否一致。",
+        "确认 release gate / sample criteria / risk evidence 的最新快照。",
+        "若 decision=no_go，则生成阻断清单并停止发布动作。",
+        "若 decision=go，则进入人工 approval 与 release review。"
+      ],
+      "blockers": [
+        "release_gate_or_sample_criteria_not_ready"
+      ],
+      "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+      "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+    },
+    "rollback": {
+      "contract_version": "incident-rollback-pack.v1",
+      "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+      "rollback_target": "previous_candidate_or_safe_release",
+      "rollback_steps": [
+        "停止当前发布/扩散动作。",
+        "回退到上一版候选稿或安全版本。",
+        "重新收集 risk / review / release gate 快照。",
+        "完成问题修复后重新进入 freeze review。"
+      ],
+      "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+    },
+    "governance_summary": {
+      "contract_version": "final-governance-summary-pack.v1",
+      "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+      "governance_status": "guarded",
+      "governance_checklist": [
+        "先看 release_ready 与 criteria_ready。",
+        "再看 decision / approval_status / runbook_status。",
+        "最后确认 closure_status 与 recovery 记录是否完备。"
+      ]
+    }
+  },
+  "external_report_markdown_pack": {
+    "contract_version": "external-report-markdown-pack.v1",
+    "markdown_text": "# External Report Bundle\n\n## Dashboard\nrelease_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n\n## Governance Brief\n# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n\n## Release Review Note\n# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n\n## Approval Memo\n# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n\n## Runbook\n- 检查 operator brief 与 freeze_artifact 是否一致。\n- 确认 release gate / sample criteria / risk evidence 的最新快照。\n- 若 decision=no_go，则生成阻断清单并停止发布动作。\n- 若 decision=go，则进入人工 approval 与 release review。\n\n## Rollback\n- 停止当前发布/扩散动作。\n- 回退到上一版候选稿或安全版本。\n- 重新收集 risk / review / release gate 快照。\n- 完成问题修复后重新进入 freeze review。\n\n## Governance Summary\nrelease_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n",
+    "dashboard_status": "guarded"
+  },
+  "final_release_archive_pack": {
+    "contract_version": "final-release-archive-pack.v1",
+    "candidate": {
+      "contract_version": "final-draft-candidate-pack.v1",
+      "candidate_title": "完成赎身/脱籍并争取进入更高身份路径",
+      "candidate_text": "# 候选稿：完成赎身/脱籍并争取进入更高身份路径\n\n### 改写场景1\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景2\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制；保持家庭与婚后协作稳定\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion\n### 改写场景3\n- 改写目标：先修逻辑/风险，再修节奏/对白\n- 必须保留：身份与身契限制\n- 改写提示：把问题改成更明确的行动、对白、冲突承接。\n- 读者反馈优先：reader_hook_strong；logic_confusion",
+      "candidate_blocks": [
+        {
+          "scene_index": 1,
+          "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+          "must_keep": [
+            "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+            "延续当前主线并优先处理高价值未解线程"
+          ],
+          "rewrite_prompt": "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。；延续当前主线并优先处理高价值未解线程"
+        },
+        {
+          "scene_index": 2,
+          "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+          "must_keep": [
+            "身份与身契限制",
+            "保持家庭与婚后协作稳定"
+          ],
+          "rewrite_prompt": "身份与身契限制；保持家庭与婚后协作稳定"
+        },
+        {
+          "scene_index": 3,
+          "rewrite_goal": "先修逻辑/风险，再修节奏/对白",
+          "must_keep": [
+            "身份与身契限制"
+          ],
+          "rewrite_prompt": "身份与身契限制"
+        }
+      ],
+      "review_gate": {
+        "needs_review_count": 1,
+        "risk_card_count": 10,
+        "negative_feedback_signal_count": 2,
+        "ready_for_candidate_review": false
+      },
+      "candidate_checklist": [
+        "候选稿必须保留 must_keep 与 payoff / turning point。",
+        "候选稿输出后先过 review_gate，再进入人工/模型复核。",
+        "如果 risk_card_count 较高，不要直接进入最终定稿。"
+      ],
+      "reader_feedback_signals": [
+        "reader_hook_strong",
+        "logic_confusion",
+        "pacing_slow"
+      ]
+    },
+    "freeze_artifact": {
+      "contract_version": "release-decision-freeze-artifact-pack.v1",
+      "decision": "no_go",
+      "freeze_artifact": {
+        "decision": "no_go",
+        "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+        "criteria_snapshot": {
+          "sample_count_ready": true,
+          "retrieval_benchmark_ready": true,
+          "reader_feedback_ready": true,
+          "release_gate_ready": false,
+          "ready_for_bundle_review": false
+        },
+        "release_gate_snapshot": {
+          "candidate_review_ready": false,
+          "whole_book_ready": true,
+          "whole_book_consistency_ready": false,
+          "ready_for_release": false
+        }
+      },
+      "decision_summary": "当前仍处于 no-go / freeze 保守状态。",
+      "next_actions": [
+        "若 no_go，则优先关闭 review_gate 与 release criteria 缺口。",
+        "若 go，则保留 freeze_artifact 并进入 release review。"
+      ]
+    },
+    "handoff_record": {
+      "contract_version": "handoff-approval-record-pack.v1",
+      "approval_status": "pending",
+      "handoff_record": {
+        "decision": "no_go",
+        "freeze_reason": "release_gate_or_sample_criteria_not_ready",
+        "release_summary": "候选稿仍需复核后再发布。"
+      },
+      "approval_checklist": [
+        "确认 freeze_artifact 与 release_gate 快照可回溯。",
+        "确认候选稿、release criteria、risk evidence 已一并交接。",
+        "进入 approval 前记录最终 decision 与责任人。"
+      ]
+    },
+    "external_report_bundle": {
+      "contract_version": "external-report-bundle-pack.v1",
+      "dashboard": {
+        "contract_version": "governance-dashboard-pack.v1",
+        "dashboard_status": "guarded",
+        "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+        "release_gate": {
+          "candidate_review_ready": false,
+          "whole_book_ready": true,
+          "whole_book_consistency_ready": false,
+          "ready_for_release": false
+        },
+        "criteria": {
+          "sample_count_ready": true,
+          "retrieval_benchmark_ready": true,
+          "reader_feedback_ready": true,
+          "release_gate_ready": false,
+          "ready_for_bundle_review": false
+        },
+        "decision": "no_go",
+        "operator_status": "pending",
+        "operator_brief": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False",
+        "whole_book_consistency": {
+          "requires_consistency_pass": true,
+          "release_impact": "whole_book_consistency_blocks_release",
+          "next_stage_focus": [
+            "优先处理能力族：relationship、rule",
+            "先回看第10章的高优先级修复链",
+            "先回看第9章的高优先级修复链"
+          ]
+        }
+      },
+      "brief": {
+        "contract_version": "governance-report-brief-pack.v1",
+        "dashboard_status": "guarded",
+        "brief_text": "# Governance Report Brief\n\n- dashboard_status: guarded\n- governance_status: guarded\n- summary_card: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- operator_brief: decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+        "summary_card": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+      },
+      "review_note": {
+        "contract_version": "release-review-note-pack.v1",
+        "note_text": "# Release Review Note\n\n- candidate_review_ready: False\n- whole_book_ready: True\n- ready_for_release: False\n- criteria_ready: False\n- governance_brief: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_consistency_release_impact: whole_book_consistency_blocks_release\n",
+        "review_status": "blocked",
+        "note_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending"
+      },
+      "approval_memo": {
+        "contract_version": "approval-decision-memo-pack.v1",
+        "decision_verdict": "REJECT",
+        "memo_text": "# Approval Decision Memo\n\n- verdict: REJECT\n- decision: no_go\n- freeze_reason: release_gate_or_sample_criteria_not_ready\n- review_note: release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending\n- whole_book_release_impact: whole_book_consistency_blocks_release\n",
+        "memo_status": "rejected"
+      },
+      "runbook": {
+        "contract_version": "release-ops-runbook-pack.v1",
+        "runbook_status": "blocked",
+        "runbook_steps": [
+          "检查 operator brief 与 freeze_artifact 是否一致。",
+          "确认 release gate / sample criteria / risk evidence 的最新快照。",
+          "若 decision=no_go，则生成阻断清单并停止发布动作。",
+          "若 decision=go，则进入人工 approval 与 release review。"
+        ],
+        "blockers": [
+          "release_gate_or_sample_criteria_not_ready"
+        ],
+        "rollback_note": "若发布后发现风险回归，回退到候选稿并重新进入 freeze review。",
+        "brief_summary": "decision=no_go | freeze_reason=release_gate_or_sample_criteria_not_ready | sample_count_ready=True | retrieval_benchmark_ready=True | release_gate_ready=False"
+      },
+      "rollback": {
+        "contract_version": "incident-rollback-pack.v1",
+        "rollback_trigger": "release_gate_or_sample_criteria_not_ready",
+        "rollback_target": "previous_candidate_or_safe_release",
+        "rollback_steps": [
+          "停止当前发布/扩散动作。",
+          "回退到上一版候选稿或安全版本。",
+          "重新收集 risk / review / release gate 快照。",
+          "完成问题修复后重新进入 freeze review。"
+        ],
+        "rollback_summary": "若触发 release 风险或 freeze 阻断，按既定回退链处理。"
+      },
+      "governance_summary": {
+        "contract_version": "final-governance-summary-pack.v1",
+        "governance_summary": "release_ready=False | criteria_ready=False | decision=no_go | approval_status=pending | runbook_status=blocked | closure_status=recovery_pending",
+        "governance_status": "guarded",
+        "governance_checklist": [
+          "先看 release_ready 与 criteria_ready。",
+          "再看 decision / approval_status / runbook_status。",
+          "最后确认 closure_status 与 recovery 记录是否完备。"
+        ]
+      }
+    },
+    "archive_retention_metadata_pack": {
+      "contract_version": "archive-retention-metadata-pack.v1",
+      "retention_policy": "keep_release_archive_until_next_major_revision",
+      "archive_status": "active",
+      "manifest_contract": "archive-manifest-pack.v1",
+      "manifest_item_count": 4
+    },
+    "archive_integrity_check_pack": {
+      "contract_version": "archive-integrity-check-pack.v1",
+      "present_keys": [
+        "candidate",
+        "freeze_artifact",
+        "handoff_record",
+        "external_report_bundle"
+      ],
+      "missing_keys": [],
+      "integrity_ok": true
+    },
+    "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。"
+  },
+  "archive_manifest_pack": {
+    "contract_version": "archive-manifest-pack.v1",
+    "manifest_items": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "archive_summary": "已汇总候选稿、freeze 决策、handoff 记录与外部治理包，可直接归档。",
+    "archive_contract": "final-release-archive-pack.v1"
+  },
+  "archive_retention_metadata_pack": {
+    "contract_version": "archive-retention-metadata-pack.v1",
+    "retention_policy": "keep_release_archive_until_next_major_revision",
+    "archive_status": "active",
+    "manifest_contract": "archive-manifest-pack.v1",
+    "manifest_item_count": 4
+  },
+  "archive_integrity_check_pack": {
+    "contract_version": "archive-integrity-check-pack.v1",
+    "present_keys": [
+      "candidate",
+      "freeze_artifact",
+      "handoff_record",
+      "external_report_bundle"
+    ],
+    "missing_keys": [],
+    "integrity_ok": true
+  },
+  "audit_conclusion": {
+    "content_judgement": "当前分支已形成可用的阶段性审查结果，但候选风险分布较密集。",
+    "risk_judgement": "当前未发现明确高风险，但人工复核候选较多，需谨慎使用整体稳定结论。",
+    "blocking_judgement": "当前无执行阻塞。",
+    "recommended_action": "按章节优先级批量复核候选章节，再决定是否给出整体稳定判断。",
+    "review_progress_note": "仍待人工复核问题簇 1 个。",
+    "needs_review_note": "当前仍有 1 个问题簇处于 needs_review，建议优先安排人工复核。",
+    "review_storage_note": "当前 review 数据来自数据库主路径。"
+  },
+  "review_summary": {
+    "review_storage_mode": "db",
+    "cluster_count": 2,
+    "by_status": {
+      "needs_review": 1,
+      "open": 1
+    },
+    "by_result": {},
+    "by_owner": {},
+    "by_actor": {},
+    "by_latest_event_type": {},
+    "by_workflow_lane": {
+      "human_review_queue": 1,
+      "monitor_queue": 1
+    },
+    "by_queue_priority": {
+      "high": 1,
+      "low": 1
+    },
+    "by_deadline_level": {
+      "soon": 1,
+      "backlog": 1
+    },
+    "by_batch_operation_hint": {
+      "batch_human_review_queue": 1,
+      "batch_monitoring_watchlist": 1
+    },
+    "by_escalation_tier": {},
+    "by_auto_next_action_code": {
+      "schedule_human_review": 1,
+      "observe_and_wait": 1
+    },
+    "by_auto_next_action": {
+      "优先安排人工复核 人物风险簇：character_resolution_support_gap，确认是否需要升级或关闭。": 1,
+      "继续观察 人物风险簇：transition_support_gap，等待更多证据后再决定是否升级。": 1
+    },
+    "by_escalation_reason_code": {
+      "awaiting_human_confirmation": 1
+    },
+    "by_escalation_reason": {
+      "当前问题簇仍缺少人工确认，暂不适合直接关闭。": 1
+    },
+    "by_priority": {
+      "P1": 1,
+      "P3": 1
+    },
+    "by_pattern": {
+      "持续型问题": 1,
+      "单点问题": 1
+    },
+    "by_phase2_focus": {},
+    "history_event_count": 0,
+    "latest_review_at": "",
+    "latest_review_owner": "",
+    "latest_review_actor": "",
+    "latest_review_event_type": "",
+    "latest_review_result": "",
+    "latest_review_result_label": null,
+    "current_owner_top": "",
+    "current_owner_top_count": 0,
+    "latest_actor_top": "",
+    "latest_actor_top_count": 0,
+    "latest_event_type_top": "",
+    "latest_event_type_top_count": 0,
+    "workflow_lane_top": "human_review_queue",
+    "workflow_lane_top_count": 1,
+    "queue_priority_top": "high",
+    "queue_priority_top_count": 1,
+    "deadline_level_top": "backlog",
+    "deadline_level_top_count": 1,
+    "batch_operation_hint_top": "batch_human_review_queue",
+    "batch_operation_hint_top_count": 1,
+    "escalation_tier_top": "",
+    "escalation_tier_top_count": 0,
+    "auto_next_action_code_top": "observe_and_wait",
+    "auto_next_action_code_top_count": 1,
+    "auto_next_action_top": "优先安排人工复核 人物风险簇：character_resolution_support_gap，确认是否需要升级或关闭。",
+    "auto_next_action_top_count": 1,
+    "escalation_reason_code_top": "awaiting_human_confirmation",
+    "escalation_reason_code_top_count": 1,
+    "escalation_reason_top": "当前问题簇仍缺少人工确认，暂不适合直接关闭。",
+    "escalation_reason_top_count": 1,
+    "phase2_focus_top": "",
+    "phase2_focus_top_count": 0,
+    "pending_assignment_count": 0,
+    "pending_escalation_count": 0,
+    "resolved_count": 0,
+    "needs_review_count": 1,
+    "action_required_count": 1,
+    "close_ready_count": 0,
+    "batch_suggestions": [
+      {
+        "hint_code": "batch_human_review_queue",
+        "hint_title": "可批量人工复核",
+        "action_bucket": "review",
+        "batch_priority": "medium",
+        "group_strategy": "by_checker_span",
+        "group_key": "character_ooc:long_run",
+        "span_bucket": "long_run",
+        "cluster_count": 1,
+        "cluster_keys": [
+          "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap"
+        ],
+        "suggested_cluster_order": [
+          "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap"
+        ],
+        "suggested_cluster_order_titles": [
+          "人物风险簇：character_resolution_support_gap"
+        ],
+        "suggested_cluster_order_details": [
+          {
+            "cluster_key": "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap",
+            "cluster_title": "人物风险簇：character_resolution_support_gap",
+            "queue_priority": "high",
+            "review_priority": "P1",
+            "chapter_count": 5,
+            "confidence": 0.35,
+            "human_review_batch_rank_score": 97.0,
+            "human_review_batch_rank_reason": "priority=P1 | pattern=持续型问题 | chapter_count=5 | confidence=0.35 | human_review_batch_rank_score=97.00",
+            "escalation_tier": "",
+            "escalation_urgency_score": 0.0,
+            "escalation_rank_reason": "",
+            "escalation_batch_rank_score": 0.0,
+            "escalation_batch_rank_reason": "",
+            "close_stability_score": 13.5,
+            "close_ready_rank_reason": "close_ready=False | history_count=0 | chapter_count=5 | confidence=0.35 | close_stability_score=13.50",
+            "close_batch_rank_score": 0.0,
+            "close_batch_rank_reason": "",
+            "chapter_span_width": 6,
+            "batch_rank_score": 449.5,
+            "order_reason": "queue=high | priority=P1 | pattern=持续型问题 | chapter_count=5 | confidence=0.35 | span_width=6 | batch_rank_score=449.50"
+          }
+        ],
+        "ordering_strategy": "queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter",
+        "suggested_first_cluster_reason": "queue=high | priority=P1 | pattern=持续型问题 | chapter_count=5 | confidence=0.35 | span_width=6 | batch_rank_score=449.50",
+        "cluster_titles": [
+          "人物风险簇：character_resolution_support_gap"
+        ],
+        "owners": [],
+        "suggested_owner": "",
+        "primary_checker": "character_ooc",
+        "pattern_label_top": "持续型问题",
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "phase2_focus_top": "",
+        "chapter_spans": [
+          "3-9"
+        ],
+        "queue_priority_top": "high",
+        "deadline_level_top": "soon",
+        "escalation_tier_top": "",
+        "action_required": true,
+        "resolved_candidate_count": 0,
+        "escalation_candidate_count": 0,
+        "recommended_batch_action": "优先安排人工复核 人物风险簇：character_resolution_support_gap，确认是否需要升级或关闭。",
+        "suggestion_rank_score": 345.0,
+        "suggestion_rank_reason": "action_bucket=review | batch_priority=medium | cluster_count=1 | action_required=True | suggestion_rank_score=345.00"
+      },
+      {
+        "hint_code": "batch_monitoring_watchlist",
+        "hint_title": "可批量观察跟踪",
+        "action_bucket": "monitor",
+        "batch_priority": "low",
+        "group_strategy": "by_checker",
+        "group_key": "character_ooc",
+        "span_bucket": "single",
+        "cluster_count": 1,
+        "cluster_keys": [
+          "character_ooc|plot_logic_consistency|::|relationship_shift_candidate|transition_support_gap"
+        ],
+        "suggested_cluster_order": [
+          "character_ooc|plot_logic_consistency|::|relationship_shift_candidate|transition_support_gap"
+        ],
+        "suggested_cluster_order_titles": [
+          "人物风险簇：transition_support_gap"
+        ],
+        "suggested_cluster_order_details": [
+          {
+            "cluster_key": "character_ooc|plot_logic_consistency|::|relationship_shift_candidate|transition_support_gap",
+            "cluster_title": "人物风险簇：transition_support_gap",
+            "queue_priority": "low",
+            "review_priority": "P3",
+            "chapter_count": 1,
+            "confidence": 0.35,
+            "human_review_batch_rank_score": 0.0,
+            "human_review_batch_rank_reason": "",
+            "escalation_tier": "",
+            "escalation_urgency_score": 0.0,
+            "escalation_rank_reason": "",
+            "escalation_batch_rank_score": 0.0,
+            "escalation_batch_rank_reason": "",
+            "close_stability_score": 5.5,
+            "close_ready_rank_reason": "close_ready=False | history_count=0 | chapter_count=1 | confidence=0.35 | close_stability_score=5.50",
+            "close_batch_rank_score": 0.0,
+            "close_batch_rank_reason": "",
+            "chapter_span_width": 0,
+            "batch_rank_score": 215.5,
+            "order_reason": "queue=low | priority=P3 | pattern=单点问题 | chapter_count=1 | confidence=0.35 | span_width=0 | batch_rank_score=215.50"
+          }
+        ],
+        "ordering_strategy": "queue_priority -> review_priority -> chapter_count -> confidence -> chapter_span_width -> first_chapter",
+        "suggested_first_cluster_reason": "queue=low | priority=P3 | pattern=单点问题 | chapter_count=1 | confidence=0.35 | span_width=0 | batch_rank_score=215.50",
+        "cluster_titles": [
+          "人物风险簇：transition_support_gap"
+        ],
+        "owners": [],
+        "suggested_owner": "",
+        "primary_checker": "character_ooc",
+        "pattern_label_top": "单点问题",
+        "risk_types": [
+          "relationship_shift_candidate",
+          "transition_support_gap"
+        ],
+        "phase2_focus_top": "",
+        "chapter_spans": [
+          "2"
+        ],
+        "queue_priority_top": "low",
+        "deadline_level_top": "backlog",
+        "escalation_tier_top": "",
+        "action_required": false,
+        "resolved_candidate_count": 0,
+        "escalation_candidate_count": 0,
+        "recommended_batch_action": "继续观察 人物风险簇：transition_support_gap，等待更多证据后再决定是否升级。",
+        "suggestion_rank_score": 75.0,
+        "suggestion_rank_reason": "action_bucket=monitor | batch_priority=low | cluster_count=1 | action_required=False | suggestion_rank_score=75.00"
+      }
+    ]
+  },
+  "risk_summary": {
+    "risk_card_count": 10,
+    "checker_result_count": 90,
+    "review_candidate_count": 6,
+    "high_risk_chapters": [],
+    "risk_counts_by_domain": {
+      "character": 6,
+      "plot": 6
+    },
+    "risk_counts_by_severity": {
+      "low": 12
+    },
+    "review_candidates_summary": [
+      {
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "relationship_shift_candidate",
+          "transition_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章推进结论与证据支撑之间存在可疑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "本章状态推进集中体现在：卫图在李宅灶房试吃萝卜炖肉、厨娘杏给卫图送来萝卜炖肉并允许其试味、卫图得知黄家大少爷从府城游学回来了。",
+          "本章主要写卫图在李宅的日常劳动中察觉命格信息，并借着去黄宅拜见二姑卫荭的机会，为后续打听养生功与武道资源埋下行动线。"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化可能是推进摘要过强，并不必然构成 OOC。",
+          "当前推进说明与证据约束之间仍可能存在解释空间。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：卫图在李宅灶房试吃萝卜炖肉、厨娘杏给卫图送来萝卜炖肉并允许其试味、卫图得知黄家大少爷从府城游学回来了。",
+          "推进: 本章关系面出现可见变化：卫图与杏存在暧昧关系、杏对李家主母的偷吃行为被默许。",
+          "推进: 本章冲突面继续推进：卫图家贫，只能买便宜胭脂去见二姑、卫图担心空手上门会遭二姑白眼。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 卫图担心养马失误会遭李老爷责罚",
+          "活跃冲突: 卫图的贫苦处境与求道愿望之间的现实落差",
+          "未回收伏笔: 白阳县灾荒和赈灾账目异常暗示局势将乱",
+          "近期时间线: 卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 李童氏要求卫图抬头，重新审视他"
+        ]
+      },
+      {
+        "chapter_index": 3,
+        "title": "养生功法",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "证据只表明卫荭同意让阮武师教卫图几手，并未证明她会持续、实质性地帮卫图解决后续问题；将“可能会帮”上升为已验证，证据不足。",
+          "前文伏笔“卫图怀疑自己所在世界可能存在仙人修行”在当前分支中已有兑现信号。"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。",
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：卫图向卫荭提出想学养生功、卫荭同意请阮武师教卫图几手养生功、卫荭离开时让丫鬟带走礼物。",
+          "推进: 本章关系面出现可见变化：卫图与卫荭是亲属关系、卫荭已嫁入黄家。",
+          "推进: 本章冲突面继续推进：卫图提出学武被卫荭拒绝为独门武功，只能转为养生功、卫荭对卫图的请求只提供有限帮助。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 卫图担心养马失误会遭李老爷责罚",
+          "活跃冲突: 卫图的贫苦处境与求道愿望之间的现实落差",
+          "未回收伏笔: 白阳县灾荒和赈灾账目异常暗示局势将乱",
+          "近期时间线: 卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 李童氏要求卫图抬头，重新审视他"
+        ]
+      },
+      {
+        "chapter_index": 6,
+        "title": "郑国官兵（求收藏，求追读）",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "前文伏笔““大器晚成”命格可能在晚年显效”在当前分支中已有兑现信号。",
+          "analysis.summary.one_sentence"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。",
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：卫图和杏婚后继续在李宅内外忙活、李童氏多次夸奖杏的勤快表现、杏不再私下偷吃灶房里的荤腥。",
+          "推进: 本章关系面出现可见变化：卫图与杏已成婚、杏与李童氏保持主仆关系。",
+          "推进: 本章冲突面继续推进：杏请求租李宅粮田当佃户未被当场答应、卫图和杏的回乡路线面临山匪与野兽风险。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 卫图担心养马失误会遭李老爷责罚",
+          "活跃冲突: 卫图的贫苦处境与求道愿望之间的现实落差",
+          "未回收伏笔: 白阳县灾荒和赈灾账目异常暗示局势将乱",
+          "近期时间线: 卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 李童氏要求卫图抬头，重新审视他"
+        ]
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "前文伏笔““大器晚成”命格可能在晚年显效”在当前分支中已有兑现信号。",
+          "输入事实层与前情状态中没有关于章节标题或标题意涵的证据，属于元信息推断。"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。",
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：卫图从卫豹口中得知昨夜官兵所杀刀匪疑似来自隔壁白阳县、卫豹向卫图说明白阳县赈灾中义仓粮食短缺严重、卫豹拿出攒下的钱给卫图，表示可用于置办家业或赎回身契。",
+          "推进: 本章关系面出现可见变化：卫图与杏是夫妻、卫图与卫豹是父子。",
+          "推进: 本章冲突面继续推进：卫图作为家奴无法进入卫家祠堂、杏因不能入祠堂而感到委屈。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 卫图担心养马失误会遭李老爷责罚",
+          "活跃冲突: 卫图的贫苦处境与求道愿望之间的现实落差",
+          "未回收伏笔: 白阳县灾荒和赈灾账目异常暗示局势将乱",
+          "近期时间线: 卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 李童氏要求卫图抬头，重新审视他"
+        ]
+      },
+      {
+        "chapter_index": 8,
+        "title": "私房钱（求收藏，求追读）",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "前文伏笔““大器晚成”命格可能在晚年显效”在当前分支中已有兑现信号。",
+          "本章对角色位置没有出现跃迁，卫图仍处在‘家奴/身契未赎回’的受限状态；但信息掌握明显增加，已经确认自己若不赎身便无法入祠堂，这会直接影响他对家族、身份和未来安排的判断。"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。",
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：卫图得知脱奴籍需要先赎回身契，再去衙门户房办理手续、卫图判断自己赎身的最低门槛约为十两银子、卫图向杏询问她手上的私房钱。",
+          "推进: 本章关系面出现可见变化：卫图与杏是夫妻关系，且共担脱籍压力、杏的私房钱被视为她自己的嫁奁，卫图未经同意不能动用。",
+          "推进: 本章冲突面继续推进：卫图想脱籍去考武举，但缺少赎身银且需要主家放行、杏担心卫图离开李宅后失去稳定活计。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 卫图担心养马失误会遭李老爷责罚",
+          "活跃冲突: 卫图的贫苦处境与求道愿望之间的现实落差",
+          "未回收伏笔: 白阳县灾荒和赈灾账目异常暗示局势将乱",
+          "近期时间线: 卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 李童氏要求卫图抬头，重新审视他"
+        ]
+      },
+      {
+        "chapter_index": 9,
+        "title": "逼上绝境（求收藏，求追读）",
+        "overall_risk_level": "low",
+        "risk_count": 2,
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "confidence": 0.35,
+        "summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "supporting_evidence_preview": [
+          "前文伏笔““大器晚成”命格可能在晚年显效”在当前分支中已有兑现信号。",
+          "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。"
+        ],
+        "counter_evidence_preview": [
+          "当前人物变化与“已解决/已兑现”类表述之间仍可能存在解释空间。",
+          "当前已出现解决性表述，但其证据链可能仍不完整。"
+        ],
+        "needs_human_review": true,
+        "continuity_evidence_preview": [
+          "推进: 本章状态推进集中体现在：李童氏把三亩河沿地租给卫图夫妇、李家地租按六成交粮，且包含官府地税、卫图计算种三亩地后还能留下四成收成。",
+          "推进: 本章关系面出现可见变化：卫图与李耀祖存在主仆关系、卫图与李童氏是租地协商关系。",
+          "推进: 本章冲突面继续推进：李耀祖疑似借支开卫图来逼他献上杏、卫图若不就范，租田收成与来年租地都可能受影响。"
+        ],
+        "branch_signal_preview": [
+          "活跃冲突: 卫图担心养马失误会遭李老爷责罚",
+          "活跃冲突: 卫图的贫苦处境与求道愿望之间的现实落差",
+          "未回收伏笔: 白阳县灾荒和赈灾账目异常暗示局势将乱",
+          "近期时间线: 卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 李童氏要求卫图抬头，重新审视他"
+        ]
+      }
+    ],
+    "review_candidate_clusters": [
+      {
+        "cluster_key": "character_ooc|plot_logic_consistency|::|character_resolution_support_gap|resolution_support_gap",
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "risk_types": [
+          "character_resolution_support_gap",
+          "resolution_support_gap"
+        ],
+        "cluster_title": "人物风险簇：character_resolution_support_gap",
+        "suggested_review_action": "优先核对人物动机、关系与行为是否有前文支撑，避免只依据标题或摘要推断人物变化。",
+        "review_priority": "P1",
+        "cluster_status": "needs_review",
+        "chapter_count": 5,
+        "chapters": [
+          3,
+          6,
+          7,
+          8,
+          9
+        ],
+        "first_chapter": 3,
+        "last_chapter": 9,
+        "max_confidence": 0.35,
+        "titles": [
+          "养生功法",
+          "郑国官兵（求收藏，求追读）",
+          "不入祠堂（求收藏 求追读）",
+          "私房钱（求收藏，求追读）"
+        ],
+        "sample_summary": "本章人物状态变化与解决性表述之间存在支撑缺口，建议人工复核。",
+        "chapter_span": "3-9",
+        "pattern_label": "持续型问题",
+        "workflow_lane": "human_review_queue",
+        "queue_priority": "high",
+        "action_required": true,
+        "suggested_deadline_level": "soon",
+        "auto_next_action_code": "schedule_human_review",
+        "auto_next_action": "优先安排人工复核 人物风险簇：character_resolution_support_gap，确认是否需要升级或关闭。",
+        "escalation_reason_code": "awaiting_human_confirmation",
+        "escalation_reason": "当前问题簇仍缺少人工确认，暂不适合直接关闭。",
+        "close_ready_gate": false,
+        "close_stability_score": 13.5,
+        "close_ready_rank_reason": "close_ready=False | history_count=0 | chapter_count=5 | confidence=0.35 | close_stability_score=13.50",
+        "close_batch_rank_score": 0.0,
+        "human_review_batch_rank_score": 97.0,
+        "human_review_batch_rank_reason": "priority=P1 | pattern=持续型问题 | chapter_count=5 | confidence=0.35 | human_review_batch_rank_score=97.00",
+        "escalation_urgency_score": 0.0,
+        "escalation_tier": "",
+        "escalation_batch_rank_score": 0.0,
+        "batch_operation_hint": "batch_human_review_queue"
+      },
+      {
+        "cluster_key": "character_ooc|plot_logic_consistency|::|relationship_shift_candidate|transition_support_gap",
+        "checker_names": [
+          "character_ooc",
+          "plot_logic_consistency"
+        ],
+        "risk_types": [
+          "relationship_shift_candidate",
+          "transition_support_gap"
+        ],
+        "cluster_title": "人物风险簇：transition_support_gap",
+        "suggested_review_action": "优先核对人物动机、关系与行为是否有前文支撑，避免只依据标题或摘要推断人物变化。",
+        "review_priority": "P3",
+        "cluster_status": "open",
+        "chapter_count": 1,
+        "chapters": [
+          2
+        ],
+        "first_chapter": 2,
+        "last_chapter": 2,
+        "max_confidence": 0.35,
+        "titles": [
+          "二姑卫荭"
+        ],
+        "sample_summary": "本章推进结论与证据支撑之间存在可疑缺口，建议人工复核。",
+        "chapter_span": "2",
+        "pattern_label": "单点问题",
+        "workflow_lane": "monitor_queue",
+        "queue_priority": "low",
+        "action_required": false,
+        "suggested_deadline_level": "backlog",
+        "auto_next_action_code": "observe_and_wait",
+        "auto_next_action": "继续观察 人物风险簇：transition_support_gap，等待更多证据后再决定是否升级。",
+        "escalation_reason_code": "",
+        "close_ready_gate": false,
+        "close_stability_score": 5.5,
+        "close_ready_rank_reason": "close_ready=False | history_count=0 | chapter_count=1 | confidence=0.35 | close_stability_score=5.50",
+        "close_batch_rank_score": 0.0,
+        "human_review_batch_rank_score": 0.0,
+        "escalation_urgency_score": 0.0,
+        "escalation_tier": "",
+        "escalation_batch_rank_score": 0.0,
+        "batch_operation_hint": "batch_monitoring_watchlist"
+      }
+    ]
+  },
+  "author_knowledge": {
+    "contract_version": "author-knowledge.v1",
+    "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+    "focus_label": "卫图",
+    "chapter_span": {
+      "min": 1,
+      "max": 10,
+      "count": 10
+    },
+    "chapter_cards": [
+      {
+        "chapter_index": 1,
+        "title": "大器晚成",
+        "summary": "本章以卫图夜起喂马、抽旱烟缓解疲惫为日常底色，穿插其从佃奴升为李宅马倌的过往，以及眉心金光闪烁、准备去找二姑等信息，呈现出“低处谋变”的过渡状态。",
+        "key_entities": [
+          "卫图",
+          "李老爷",
+          "卫豹",
+          "老刘头",
+          "二姑"
+        ],
+        "key_events": [
+          "卫图夜里起身喂马",
+          "卫图抽旱烟缓解疲惫",
+          "卫图给自己洗漱并发现容貌异常老态",
+          "卫图在水中看到自己容貌不断变老",
+          "卫图发现脑海中的命格“大器晚成”"
+        ],
+        "continuity_notes": [
+          "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。",
+          "卫图的社会位置并未在本章发生跃迁，仍是依靠养马技艺维持生计，但回顾其从佃奴升为马倌的经历，强化了“靠技艺改变命运”的主线方向，符合章节标题所指向的晚成意味。",
+          "与二姑、黄老爷、黄宅武师相关的信息为后续行动提供了明确入口，但目前仍停留在计划层面，属于轻度钩子而非强悬念；下一章驱动因素很可能是卫图去找二姑后获得新的关系资源或信息。"
+        ]
+      },
+      {
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "summary": "卫图先在李宅做马倌与杂役，随后离开李宅去胭脂铺挑选礼物，再前往黄宅求见二姑卫荭，准备借亲属关系打听养生功等线索。",
+        "key_entities": [
+          "卫图",
+          "厨娘杏",
+          "李家主母",
+          "二姑卫荭",
+          "黄家大少爷"
+        ],
+        "key_events": [
+          "卫图在李宅灶房试吃萝卜炖肉",
+          "厨娘杏给卫图送来萝卜炖肉并允许其试味",
+          "卫图得知黄家大少爷从府城游学回来了",
+          "卫图向厨娘杏告假离开李宅",
+          "卫图掐了杏的屁股"
+        ],
+        "continuity_notes": [
+          "本章对主线的处理更接近“延续 + 局部推进”，没有回收旧伏笔，也没有明显的强冲突升级；此前关于命格、养生功、武师资源的伏笔仍处于开放状态。",
+          "卫图的角色位置没有发生跃迁，仍是李宅马倌/杂役；但他已从单纯劳动转向主动搜集修行线索，信息掌握状态出现明确推进。",
+          "二姑卫荭的身份仍被明确为黄家妇人而非卫家本家人，这一关系设定在本章继续起约束作用，决定了卫图必须依靠礼物与亲缘关系才能顺利接触她。"
+        ]
+      },
+      {
+        "chapter_index": 3,
+        "title": "养生功法",
+        "summary": "卫图借亲缘关系拜见二姑，请得养生功图册，并在回到李宅后开始学习《龟息养气功》，章节重点是求法、得法与初练。",
+        "key_entities": [
+          "卫图",
+          "卫荭",
+          "阮武师",
+          "翠柳",
+          "青荷"
+        ],
+        "key_events": [
+          "卫图向卫荭提出想学养生功",
+          "卫荭同意请阮武师教卫图几手养生功",
+          "卫荭离开时让丫鬟带走礼物",
+          "翠柳带卫图去见阮武师",
+          "阮武师把龟息养气功图册交给卫图"
+        ],
+        "continuity_notes": [
+          "本章对“卫图想学养生功”这一前情伏笔做了明确兑现：他已见到二姑、说明来意，并实际拿到《龟息养气功》图册，属于局部兑现而非完全解决。",
+          "“二姑卫荭可能会帮卫图解决事情”这一悬念目前是延续并部分兑现：她提供了通路和人情协助，但尚未显出更深层的实质性资源支持，后续仍有观察空间。",
+          "“黄宅可能存在可供卫图利用的人脉或资源”在本章得到初步验证：卫图通过黄宅的关系进入阮武师的接触面，说明该资源通道确实可用，但强度仍偏温和。"
+        ]
+      },
+      {
+        "chapter_index": 4,
+        "title": "珍惜眼下",
+        "summary": "卫图认清阶级难以跨越，转而持续苦练《龟息养气功》并初见成效；随后被大奶奶召见，得知与杏的婚事可能获准，心情由克制转为欣喜。",
+        "key_entities": [
+          "卫图",
+          "杏",
+          "李童氏",
+          "李耀祖",
+          "春兰"
+        ],
+        "key_events": [
+          "卫图思考异界阶级固化、科举与从商的现实限制，确认自身难以轻易翻身。",
+          "他按约将《龟息养气功》图册交还，并誊抄副本私藏。",
+          "卫图连续数月高强度练习养生功，直到夜晚感到体内生出暖流。",
+          "次日他发现身体素质明显提升。",
+          "春兰告知大奶奶找他，并暗示他与杏的婚事可能获准。"
+        ],
+        "continuity_notes": [
+          "承接前文获得《龟息养气功》后的修炼线，本章首次写出进度推进与身体反应，说明前文铺垫开始兑现。",
+          "“杏”的关系线继续推进，从此前的情感/日常照应转为正式婚事议题。",
+          "卫图对命运、阶级和武道前景的判断更趋清醒，表明他不再幻想短期内彻底改命，但仍保留实干态度。"
+        ]
+      },
+      {
+        "chapter_index": 5,
+        "title": "婚事敲定（求收藏，求追读）",
+        "summary": "李童氏认可卫图的感恩态度，正式敲定他与杏的婚事并安排新房；次日两人成婚后开始规划回乡报喜、攒钱置业与未来子女教育，卫图也重新投入养生功修炼。",
+        "key_entities": [
+          "卫图",
+          "杏",
+          "李童氏",
+          "春兰",
+          "卫豹"
+        ],
+        "key_events": [
+          "卫图说明自己对李家的活命之恩心怀感激",
+          "李童氏同意卫图与杏成婚并安排婚房与贺礼",
+          "卫图与杏完婚并入住新房",
+          "新婚后两人商量回乡通知卫豹与后续生活安排",
+          "卫图婚后恢复并加强《龟息养气功》练习"
+        ],
+        "continuity_notes": [
+          "承接前文卫图在李宅的身份与与杏的关系铺垫，本章将暧昧关系正式落实为婚姻。",
+          "李童氏对卫图感恩态度的认可，说明此前‘恩情’叙述在本章得到回收。",
+          "杏主动规划婚后生计，延续了底层求生与积累家业的线索。"
+        ]
+      },
+      {
+        "chapter_index": 6,
+        "title": "郑国官兵（求收藏，求追读）",
+        "summary": "卫图和杏婚后继续勤勉在李宅忙活，李童氏持续夸奖杏的变化；章节末尾出现郑国官兵骑队，引出新的外部动向。",
+        "key_entities": [
+          "卫图",
+          "杏",
+          "李童氏",
+          "车把式",
+          "郑国官兵"
+        ],
+        "key_events": [
+          "卫图和杏婚后继续在李宅内外忙活",
+          "李童氏多次夸奖杏的勤快表现",
+          "杏不再私下偷吃灶房里的荤腥",
+          "杏向李童氏提出回乡探亲",
+          "李童氏答应在杏回乡期间不找人顶班"
+        ],
+        "continuity_notes": [
+          "本章对前情是明显的延续：卫图与杏的婚后状态不再停留在‘刚成婚’的短暂停顿，而是直接进入稳定劳动与日常协作，说明关系已经落实到生活层面。",
+          "杏的状态变化是本章最明确的角色变化之一：从先前的偷摸吃荤，转为不再私下偷吃、把肉端上内宅饭桌，显示婚后行为更收敛、更顾家。这个变化证据充分，可视为关系和生活习惯的同步收束。",
+          "李童氏对两人的勤快表现持续夸奖，且态度中带有对婚事的满意，说明她对这段关系的掌控与认可仍在延续，没有出现新的冲突升级。"
+        ]
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "summary": "卫图回到乡下后，从卫豹口中了解到白阳县灾荒、刀匪来源及赈灾粮缺的乱象；同时卫豹拿出积攒的钱资助他，并明确告知赎回身契前家奴不能入祠堂拜祖先，令卫图对自身处境与未来出路产生新的思考。",
+        "key_entities": [
+          "卫图",
+          "卫豹",
+          "杏",
+          "李童氏"
+        ],
+        "key_events": [
+          "卫图从卫豹口中得知昨夜官兵所杀刀匪疑似来自隔壁白阳县",
+          "卫豹向卫图说明白阳县赈灾中义仓粮食短缺严重",
+          "卫豹拿出攒下的钱给卫图，表示可用于置办家业或赎回身契",
+          "卫豹明确告知卫图，家奴未赎回身契不能入祠堂拜祖先",
+          "卫图和杏清晨离开卫家村"
+        ],
+        "continuity_notes": [
+          "本章整体属于前情的延续与局部兑现：卫图此前关于外部局势、家族关系和回乡安排的线索，在本章被集中补充，尤其是白阳县灾荒与刀匪来源属于对乱世背景的明确加深。",
+          "本章对角色位置没有出现跃迁，卫图仍处在‘家奴/身契未赎回’的受限状态；但信息掌握明显增加，已经确认自己若不赎身便无法入祠堂，这会直接影响他对家族、身份和未来安排的判断。",
+          "卫豹拿钱属于对父子关系的补偿性推进，体现情感修复，但并未改变根本阶层处境，属于‘情感层面缓和、现实层面不变’。"
+        ]
+      },
+      {
+        "chapter_index": 8,
+        "title": "私房钱（求收藏，求追读）",
+        "summary": "卫图明确提出脱籍去考武举，并向杏打听私房钱；杏拿出三两七钱，说明两人正尝试为赎身与未来筹钱，但距离十两门槛仍有明显缺口。",
+        "key_entities": [
+          "卫图",
+          "杏",
+          "李老爷",
+          "李童氏"
+        ],
+        "key_events": [
+          "卫图得知脱奴籍需要先赎回身契，再去衙门户房办理手续",
+          "卫图判断自己赎身的最低门槛约为十两银子",
+          "卫图向杏询问她手上的私房钱",
+          "卫图向杏说明自己想脱籍去考武举",
+          "杏起初强烈反对卫图脱籍去考武举"
+        ],
+        "continuity_notes": [
+          "本章属于前情的延续与局部兑现：卫图此前关于武举、脱籍和养成上升路径的想法，在这一章被明确说出口，并开始进入银钱筹备阶段。",
+          "角色状态上没有发生跃迁，卫图仍处于‘家奴/身契未赎回’的受限状态；但信息掌握更具体，已明确知道脱籍必须先赎回身契，再去衙门户房办手续。",
+          "卫图与杏的关系在本章表现为共同面对现实压力的婚后同盟，二人开始共享更具体的生计与未来规划；这属于关系层面的巩固，而非新转折。"
+        ]
+      },
+      {
+        "chapter_index": 9,
+        "title": "逼上绝境（求收藏，求追读）",
+        "summary": "卫图确认武举与脱籍路线后，进入攒钱、算账、租地的现实推进阶段。",
+        "key_entities": [
+          "卫图",
+          "李耀祖",
+          "李童氏",
+          "杏",
+          "彩霞"
+        ],
+        "key_events": [
+          "李童氏把三亩河沿地租给卫图夫妇",
+          "李家地租按六成交粮，且包含官府地税",
+          "卫图计算种三亩地后还能留下四成收成",
+          "卫图认为麦苗间还能间种黄豆增收",
+          "李耀祖催着提前交府学束脩"
+        ],
+        "continuity_notes": [
+          "本章整体属于前情的延续与局部兑现：此前关于武举、脱籍、上升路径的想法，在这一章被明确说出口，并进入“算钱、算地、算收成”的执行阶段。",
+          "角色状态上，卫图并未完成阶层跃迁，仍处在身契未赎回的受限状态；但他对脱籍流程的认知更具体，已经明确知道必须先赎回身契，再去衙门户房办手续。",
+          "关系层面没有出现剧烈反转，但卫图与杏的婚后关系更像共同承担生计压力的同盟；李童氏租地给卫图夫妇，也说明主家对这段关系的处置已进入可操作层面。"
+        ]
+      },
+      {
+        "chapter_index": 10,
+        "title": "抬起头来（求收藏 求追读）",
+        "summary": "卫图判断局势将变，决定尽快向李童氏提出赎身并参加武举；他先与杏商量并做应急安排，随后在内宅正式摊牌，引发李童氏的强烈震惊与审视。",
+        "key_entities": [
+          "卫图",
+          "杏",
+          "李童氏",
+          "李耀祖",
+          "李宅"
+        ],
+        "key_events": [
+          "卫图判断李耀祖可能借秋收施压，决定提前赎身",
+          "卫图夜里向杏交代计划并让她做好撤离准备",
+          "杏默默收拾细软，并要求不要丢下自己",
+          "次日卫图照常干活后进入内宅见李童氏",
+          "卫图提出赎身并说明要参加明年武举"
+        ],
+        "continuity_notes": [
+          "承接前文关于李耀祖可能借收成施压的铺垫，本章将“迟则生变”的担忧转化为具体行动。",
+          "卫图与杏的夫妻关系进一步明确，杏从单纯顺从转为主动要求同行，显示她已意识到风险。",
+          "赎身与武举为后续主线埋下明确目标，也把卫图从被动仆役位置推向主动争取身份的阶段。"
+        ]
+      }
+    ],
+    "entities": [
+      {
+        "label": "卫图",
+        "chapter_index": 1,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 2,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 3,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 4,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 5,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 6,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 7,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 8,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 9,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      },
+      {
+        "label": "卫图",
+        "chapter_index": 10,
+        "confidence": 0.6,
+        "evidence_list": [
+          "卫图"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "label": "卫图产生修炼养生功并求仙的计划",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图产生修炼养生功并求仙的计划"
+        ]
+      },
+      {
+        "label": "卫图从佃奴升为李宅新的马倌",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图从佃奴升为李宅新的马倌"
+        ]
+      },
+      {
+        "label": "卫图准备明天去找二姑打听养生功",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图准备明天去找二姑打听养生功"
+        ]
+      },
+      {
+        "label": "卫图判断命格属性为坚韧不拔、必有所成",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图判断命格属性为坚韧不拔、必有所成"
+        ]
+      },
+      {
+        "label": "卫图发现脑海中的命格“大器晚成”",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图发现脑海中的命格“大器晚成”"
+        ]
+      },
+      {
+        "label": "卫图在水中看到自己容貌不断变老",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图在水中看到自己容貌不断变老"
+        ]
+      },
+      {
+        "label": "卫图夜里起身喂马",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图夜里起身喂马"
+        ]
+      },
+      {
+        "label": "卫图抽旱烟缓解疲惫",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图抽旱烟缓解疲惫"
+        ]
+      },
+      {
+        "label": "卫图次日继续在李宅做杂役和马倌工作",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图次日继续在李宅做杂役和马倌工作"
+        ]
+      },
+      {
+        "label": "卫图给自己洗漱并发现容貌异常老态",
+        "chapter_index": 1,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图给自己洗漱并发现容貌异常老态"
+        ]
+      },
+      {
+        "label": "二姑卫荭接见卫图",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "二姑卫荭接见卫图"
+        ]
+      },
+      {
+        "label": "卫图前往黄宅并通报要见二姑",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图前往黄宅并通报要见二姑"
+        ]
+      },
+      {
+        "label": "卫图去胭脂铺为二姑挑选礼物",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图去胭脂铺为二姑挑选礼物"
+        ]
+      },
+      {
+        "label": "卫图向厨娘杏告假离开李宅",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图向厨娘杏告假离开李宅"
+        ]
+      },
+      {
+        "label": "卫图在李宅灶房试吃萝卜炖肉",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图在李宅灶房试吃萝卜炖肉"
+        ]
+      },
+      {
+        "label": "卫图在黄宅前院厢房等待二姑卫荭",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图在黄宅前院厢房等待二姑卫荭"
+        ]
+      },
+      {
+        "label": "卫图得知黄家大少爷从府城游学回来了",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图得知黄家大少爷从府城游学回来了"
+        ]
+      },
+      {
+        "label": "卫图掐了杏的屁股",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图掐了杏的屁股"
+        ]
+      },
+      {
+        "label": "卫图说明自己是来求二姑帮忙的",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图说明自己是来求二姑帮忙的"
+        ]
+      },
+      {
+        "label": "卫图购买金燕脂作为礼物",
+        "chapter_index": 2,
+        "confidence": 0.7,
+        "evidence_list": [
+          "卫图购买金燕脂作为礼物"
+        ]
+      }
+    ],
+    "continuity": [
+      {
+        "label": "与二姑、黄老爷、黄宅武师相关的信息为后续行动提供了明确入口，但目前仍停留在计划层面，属于轻度钩子而非强悬念；下一章驱动因素很可能是卫图去找二姑后获得新的关系资源或信息。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "与二姑、黄老爷、黄宅武师相关的信息为后续行动提供了明确入口，但目前仍停留在计划层面，属于轻度钩子而非强悬念；下一章驱动因素很可能是卫图去找二姑后获得新的关系资源或信息。"
+        ]
+      },
+      {
+        "label": "关于证据强度：‘卫图抽旱烟缓解疲惫’这一点有直接原文支撑，可信度较高；若将其概括为“借旱烟排解劳累”，属于合理总结，但不应过度外推为更深层心理转折。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "关于证据强度：‘卫图抽旱烟缓解疲惫’这一点有直接原文支撑，可信度较高；若将其概括为“借旱烟排解劳累”，属于合理总结，但不应过度外推为更深层心理转折。"
+        ]
+      },
+      {
+        "label": "卫图的社会位置并未在本章发生跃迁，仍是依靠养马技艺维持生计，但回顾其从佃奴升为马倌的经历，强化了“靠技艺改变命运”的主线方向，符合章节标题所指向的晚成意味。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "卫图的社会位置并未在本章发生跃迁，仍是依靠养马技艺维持生计，但回顾其从佃奴升为马倌的经历，强化了“靠技艺改变命运”的主线方向，符合章节标题所指向的晚成意味。"
+        ]
+      },
+      {
+        "label": "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。"
+        ]
+      },
+      {
+        "label": "若按前情状态看，本章没有看到已知冲突的正面升级或伏笔回收，更像是对既有困境的延续与对新线索的局部铺垫；整体节奏保守，重点在于把卫图的生存处境、成长履历和未来行动方向稳固下来。",
+        "chapter_index": 1,
+        "confidence": 0.55,
+        "evidence_list": [
+          "若按前情状态看，本章没有看到已知冲突的正面升级或伏笔回收，更像是对既有困境的延续与对新线索的局部铺垫；整体节奏保守，重点在于把卫图的生存处境、成长履历和未来行动方向稳固下来。"
+        ]
+      },
+      {
+        "label": "二姑卫荭的身份仍被明确为黄家妇人而非卫家本家人，这一关系设定在本章继续起约束作用，决定了卫图必须依靠礼物与亲缘关系才能顺利接触她。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "二姑卫荭的身份仍被明确为黄家妇人而非卫家本家人，这一关系设定在本章继续起约束作用，决定了卫图必须依靠礼物与亲缘关系才能顺利接触她。"
+        ]
+      },
+      {
+        "label": "关于卫图与杏的暧昧关系、李家主母默许偷吃等信息，本章虽未作为主线推进点，但继续强化了李宅内部的日常秩序与人际边界，属于稳定背景信息。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "关于卫图与杏的暧昧关系、李家主母默许偷吃等信息，本章虽未作为主线推进点，但继续强化了李宅内部的日常秩序与人际边界，属于稳定背景信息。"
+        ]
+      },
+      {
+        "label": "卫图的角色位置没有发生跃迁，仍是李宅马倌/杂役；但他已从单纯劳动转向主动搜集修行线索，信息掌握状态出现明确推进。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "卫图的角色位置没有发生跃迁，仍是李宅马倌/杂役；但他已从单纯劳动转向主动搜集修行线索，信息掌握状态出现明确推进。"
+        ]
+      },
+      {
+        "label": "本章的钩子更偏‘信息型’而非‘危机型’，即悬念不在于立刻爆发冲突，而在于卫图能否通过这次会面拿到对自己有用的修行线索。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章的钩子更偏‘信息型’而非‘危机型’，即悬念不在于立刻爆发冲突，而在于卫图能否通过这次会面拿到对自己有用的修行线索。"
+        ]
+      },
+      {
+        "label": "结尾存在继续阅读钩子，但强度偏中等：卫图已见到二姑并说明来意，下一章的主要驱动因素大概率是二姑是否愿意提供养生功、黄宅内部是否有更进一步的武师或武道信息。",
+        "chapter_index": 2,
+        "confidence": 0.55,
+        "evidence_list": [
+          "结尾存在继续阅读钩子，但强度偏中等：卫图已见到二姑并说明来意，下一章的主要驱动因素大概率是二姑是否愿意提供养生功、黄宅内部是否有更进一步的武师或武道信息。"
+        ]
+      },
+      {
+        "label": "“二姑卫荭可能会帮卫图解决事情”这一悬念目前是延续并部分兑现：她提供了通路和人情协助，但尚未显出更深层的实质性资源支持，后续仍有观察空间。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "“二姑卫荭可能会帮卫图解决事情”这一悬念目前是延续并部分兑现：她提供了通路和人情协助，但尚未显出更深层的实质性资源支持，后续仍有观察空间。"
+        ]
+      },
+      {
+        "label": "“黄宅可能存在可供卫图利用的人脉或资源”在本章得到初步验证：卫图通过黄宅的关系进入阮武师的接触面，说明该资源通道确实可用，但强度仍偏温和。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "“黄宅可能存在可供卫图利用的人脉或资源”在本章得到初步验证：卫图通过黄宅的关系进入阮武师的接触面，说明该资源通道确实可用，但强度仍偏温和。"
+        ]
+      },
+      {
+        "label": "关系状态上，卫图与卫荭的亲属关系、与黄宅的外亲通行关系仍在发挥约束和通行作用；卫荭对他起初有防备，但最终并未拒绝，故该关系属于延续中略有缓和。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "关系状态上，卫图与卫荭的亲属关系、与黄宅的外亲通行关系仍在发挥约束和通行作用；卫荭对他起初有防备，但最终并未拒绝，故该关系属于延续中略有缓和。"
+        ]
+      },
+      {
+        "label": "本章对“卫图想学养生功”这一前情伏笔做了明确兑现：他已见到二姑、说明来意，并实际拿到《龟息养气功》图册，属于局部兑现而非完全解决。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章对“卫图想学养生功”这一前情伏笔做了明确兑现：他已见到二姑、说明来意，并实际拿到《龟息养气功》图册，属于局部兑现而非完全解决。"
+        ]
+      },
+      {
+        "label": "章节结尾存在继续阅读钩子，强度为中等偏弱：并非强反转或危机收束，而是以‘命格进度提示 + 开始站桩练习’作为后续驱动。下一章主要动力很可能是卫图继续修炼后的效果变化，以及七日后是否按约归还图册。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "章节结尾存在继续阅读钩子，强度为中等偏弱：并非强反转或危机收束，而是以‘命格进度提示 + 开始站桩练习’作为后续驱动。下一章主要动力很可能是卫图继续修炼后的效果变化，以及七日后是否按约归还图册。"
+        ]
+      },
+      {
+        "label": "角色状态方面，本章最明显的变化是卫图从‘打算求法’进入‘已得功法、已开始练功’阶段；信息掌握上，他确认了养生功的结构、修成后的收益，以及命格对修炼周期的判断。",
+        "chapter_index": 3,
+        "confidence": 0.55,
+        "evidence_list": [
+          "角色状态方面，本章最明显的变化是卫图从‘打算求法’进入‘已得功法、已开始练功’阶段；信息掌握上，他确认了养生功的结构、修成后的收益，以及命格对修炼周期的判断。"
+        ]
+      },
+      {
+        "label": "卫图对命运、阶级和武道前景的判断更趋清醒，表明他不再幻想短期内彻底改命，但仍保留实干态度。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "卫图对命运、阶级和武道前景的判断更趋清醒，表明他不再幻想短期内彻底改命，但仍保留实干态度。"
+        ]
+      },
+      {
+        "label": "本章结尾以李童氏开口“李家应该待你不薄”形成新悬念，暗示后续将讨论卫图在李家的位置或回报。",
+        "chapter_index": 4,
+        "confidence": 0.55,
+        "evidence_list": [
+          "本章结尾以李童氏开口“李家应该待你不薄”形成新悬念，暗示后续将讨论卫图在李家的位置或回报。"
+        ]
+      },
+      {
+        "label": "卫图在婚后重新强调修炼，提示人物主线仍将回到实力提升与命运改变。",
+        "chapter_index": 5,
+        "confidence": 0.55,
+        "evidence_list": [
+          "卫图在婚后重新强调修炼，提示人物主线仍将回到实力提升与命运改变。"
+        ]
+      },
+      {
+        "label": "承接前文卫图在李宅的身份与与杏的关系铺垫，本章将暧昧关系正式落实为婚姻。",
+        "chapter_index": 5,
+        "confidence": 0.55,
+        "evidence_list": [
+          "承接前文卫图在李宅的身份与与杏的关系铺垫，本章将暧昧关系正式落实为婚姻。"
+        ]
+      }
+    ],
+    "knowledge_index": [
+      {
+        "label": "卫图",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 10,
+        "occurrence_count": 10,
+        "top_confidence": 0.6
+      },
+      {
+        "label": "二姑卫荭接见卫图",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 2,
+        "last_chapter_index": 2,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "半年后，杏放弃了让卫图这一年当佃户开源攒钱的打算",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 7,
+        "last_chapter_index": 7,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图与杏合计后得出，两人现有钱数距离十两还差三两三钱",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 8,
+        "last_chapter_index": 8,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图与杏完婚并入住新房",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 5,
+        "last_chapter_index": 5,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图产生修炼养生功并求仙的计划",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图从佃奴升为李宅新的马倌",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图从卫豹口中得知昨夜官兵所杀刀匪疑似来自隔壁白阳县",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 7,
+        "last_chapter_index": 7,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图从图册序言确认养气功成后可进入感气之境",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图以会影响李兴业读书为由推掉提议",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 9,
+        "last_chapter_index": 9,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图估计只要练好弓射，自己考武秀才问题不大",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 8,
+        "last_chapter_index": 8,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图修炼龟息养气功一年多后达到小成迹象",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 7,
+        "last_chapter_index": 7,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图决定若赎身不成就逃离李宅去做刀客",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 9,
+        "last_chapter_index": 9,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图准备明天去找二姑打听养生功",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图判断命格属性为坚韧不拔、必有所成",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 1,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图判断官兵可能是在剿匪",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 6,
+        "last_chapter_index": 6,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图判断李耀祖可能借秋收施压，决定提前赎身",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 10,
+        "last_chapter_index": 10,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图判断自己修成龟息养气功需要五年",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 3,
+        "last_chapter_index": 3,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图判断自己已具备参加武举考试的气力条件",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 7,
+        "last_chapter_index": 7,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      },
+      {
+        "label": "卫图判断自己有把握去搏武举",
+        "fact_types": [
+          "event"
+        ],
+        "first_chapter_index": 9,
+        "last_chapter_index": 9,
+        "occurrence_count": 1,
+        "top_confidence": 0.7
+      }
+    ],
+    "entity_profiles": [
+      {
+        "label": "卫图",
+        "fact_types": [
+          "entity"
+        ],
+        "first_chapter_index": 1,
+        "last_chapter_index": 10,
+        "occurrence_count": 10,
+        "top_confidence": 0.6,
+        "primary_fact_type": "entity"
+      }
+    ],
+    "relationship_index": [
+      {
+        "label": "二姑与黄老爷存在偏房关系",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与李宅主家的雇佣从属关系",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图受老刘头传授养马技艺",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与二姑卫荭是亲属关系",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与杏存在暧昧关系",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与黄宅之间存在外亲通行关系",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫荭已嫁入黄家，身份更接近黄家妇而非卫家人",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与卫荭是亲属关系",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与阮武师发生接触",
+        "source": "state_summary.evolved_relations"
+      },
+      {
+        "label": "卫图与黄宅护院存在上下资源关系",
+        "source": "state_summary.evolved_relations"
+      }
+    ],
+    "rule_index": [
+      {
+        "label": "命格以金紫之色呈现，且可在脑海中显化为玺印",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "本章确认存在“命格”设定",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "李宅主仆在饮食上存在明显等级差异",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "李宅仆役有佃奴与马倌的分化，待遇不同",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "李宅的马需要三更天加喂夜草",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "武功秘法中存在养生功，可用于延年益寿",
+        "source": "state_summary.constraining_world_rules"
+      },
+      {
+        "label": "厨娘偷吃在李家属于默认存在的现象",
+        "source": "state_summary.constraining_world_rules"
+      }
+    ],
+    "thread_index": [],
+    "summary_layer": {
+      "top_entities": [
+        "卫图"
+      ],
+      "top_rules": [
+        "命格以金紫之色呈现，且可在脑海中显化为玺印",
+        "本章确认存在“命格”设定",
+        "李宅主仆在饮食上存在明显等级差异",
+        "李宅仆役有佃奴与马倌的分化，待遇不同",
+        "李宅的马需要三更天加喂夜草"
+      ],
+      "top_relationships": [
+        "二姑与黄老爷存在偏房关系",
+        "卫图与李宅主家的雇佣从属关系",
+        "卫图受老刘头传授养马技艺",
+        "卫图与二姑卫荭是亲属关系",
+        "卫图与杏存在暧昧关系"
+      ],
+      "top_threads": [],
+      "chapter_focus": [
+        "大器晚成",
+        "二姑卫荭",
+        "养生功法"
+      ]
+    },
+    "story_bible_pack": {
+      "contract_version": "story-bible-pack.v1",
+      "premise": "围绕大器晚成所展开的长线叙事，当前聚焦于人物成长、资源获取与身份突破。",
+      "protagonist_candidates": [
+        "卫图"
+      ],
+      "world_rules_digest": [
+        "命格以金紫之色呈现，且可在脑海中显化为玺印",
+        "本章确认存在“命格”设定",
+        "李宅主仆在饮食上存在明显等级差异",
+        "李宅仆役有佃奴与马倌的分化，待遇不同",
+        "李宅的马需要三更天加喂夜草"
+      ],
+      "relationship_backbone": [
+        "二姑与黄老爷存在偏房关系",
+        "卫图与李宅主家的雇佣从属关系",
+        "卫图受老刘头传授养马技艺",
+        "卫图与二姑卫荭是亲属关系",
+        "卫图与杏存在暧昧关系"
+      ],
+      "active_threads": [],
+      "chapter_backbone": [
+        {
+          "chapter_index": 1,
+          "title": "大器晚成",
+          "summary": "本章以卫图夜起喂马、抽旱烟缓解疲惫为日常底色，穿插其从佃奴升为李宅马倌的过往，以及眉心金光闪烁、准备去找二姑等信息，呈现出“低处谋变”的过渡状态。",
+          "key_events": [
+            "卫图夜里起身喂马",
+            "卫图抽旱烟缓解疲惫",
+            "卫图给自己洗漱并发现容貌异常老态"
+          ]
+        },
+        {
+          "chapter_index": 2,
+          "title": "二姑卫荭",
+          "summary": "卫图先在李宅做马倌与杂役，随后离开李宅去胭脂铺挑选礼物，再前往黄宅求见二姑卫荭，准备借亲属关系打听养生功等线索。",
+          "key_events": [
+            "卫图在李宅灶房试吃萝卜炖肉",
+            "厨娘杏给卫图送来萝卜炖肉并允许其试味",
+            "卫图得知黄家大少爷从府城游学回来了"
+          ]
+        },
+        {
+          "chapter_index": 3,
+          "title": "养生功法",
+          "summary": "卫图借亲缘关系拜见二姑，请得养生功图册，并在回到李宅后开始学习《龟息养气功》，章节重点是求法、得法与初练。",
+          "key_events": [
+            "卫图向卫荭提出想学养生功",
+            "卫荭同意请阮武师教卫图几手养生功",
+            "卫荭离开时让丫鬟带走礼物"
+          ]
+        },
+        {
+          "chapter_index": 4,
+          "title": "珍惜眼下",
+          "summary": "卫图认清阶级难以跨越，转而持续苦练《龟息养气功》并初见成效；随后被大奶奶召见，得知与杏的婚事可能获准，心情由克制转为欣喜。",
+          "key_events": [
+            "卫图思考异界阶级固化、科举与从商的现实限制，确认自身难以轻易翻身。",
+            "他按约将《龟息养气功》图册交还，并誊抄副本私藏。",
+            "卫图连续数月高强度练习养生功，直到夜晚感到体内生出暖流。"
+          ]
+        },
+        {
+          "chapter_index": 5,
+          "title": "婚事敲定（求收藏，求追读）",
+          "summary": "李童氏认可卫图的感恩态度，正式敲定他与杏的婚事并安排新房；次日两人成婚后开始规划回乡报喜、攒钱置业与未来子女教育，卫图也重新投入养生功修炼。",
+          "key_events": [
+            "卫图说明自己对李家的活命之恩心怀感激",
+            "李童氏同意卫图与杏成婚并安排婚房与贺礼",
+            "卫图与杏完婚并入住新房"
+          ]
+        },
+        {
+          "chapter_index": 6,
+          "title": "郑国官兵（求收藏，求追读）",
+          "summary": "卫图和杏婚后继续勤勉在李宅忙活，李童氏持续夸奖杏的变化；章节末尾出现郑国官兵骑队，引出新的外部动向。",
+          "key_events": [
+            "卫图和杏婚后继续在李宅内外忙活",
+            "李童氏多次夸奖杏的勤快表现",
+            "杏不再私下偷吃灶房里的荤腥"
+          ]
+        },
+        {
+          "chapter_index": 7,
+          "title": "不入祠堂（求收藏 求追读）",
+          "summary": "卫图回到乡下后，从卫豹口中了解到白阳县灾荒、刀匪来源及赈灾粮缺的乱象；同时卫豹拿出积攒的钱资助他，并明确告知赎回身契前家奴不能入祠堂拜祖先，令卫图对自身处境与未来出路产生新的思考。",
+          "key_events": [
+            "卫图从卫豹口中得知昨夜官兵所杀刀匪疑似来自隔壁白阳县",
+            "卫豹向卫图说明白阳县赈灾中义仓粮食短缺严重",
+            "卫豹拿出攒下的钱给卫图，表示可用于置办家业或赎回身契"
+          ]
+        },
+        {
+          "chapter_index": 8,
+          "title": "私房钱（求收藏，求追读）",
+          "summary": "卫图明确提出脱籍去考武举，并向杏打听私房钱；杏拿出三两七钱，说明两人正尝试为赎身与未来筹钱，但距离十两门槛仍有明显缺口。",
+          "key_events": [
+            "卫图得知脱奴籍需要先赎回身契，再去衙门户房办理手续",
+            "卫图判断自己赎身的最低门槛约为十两银子",
+            "卫图向杏询问她手上的私房钱"
+          ]
+        }
+      ],
+      "character_cards": [
+        {
+          "label": "卫图",
+          "role_tags": [
+            "entity",
+            "protagonist",
+            "relationship-core"
+          ],
+          "first_chapter_index": 1,
+          "last_chapter_index": 10,
+          "motivation_candidates": [
+            "追求身份突破与长期上升",
+            "获取资源与能力积累",
+            "维持家庭与关系稳定"
+          ],
+          "tension_points": [
+            "受身份/阶层约束",
+            "关键关系将影响后续选择空间"
+          ],
+          "continuity_focus": "关注卫图在后续章节中的目标、关系与代价是否持续一致。"
+        }
+      ],
+      "motivation_tree": {
+        "contract_version": "motivation-tree.v1",
+        "primary_goal": "完成赎身/脱籍并争取进入更高身份路径",
+        "support_goals": [
+          "保持家庭与婚后协作稳定",
+          "持续通过修炼累积可转化能力",
+          "经营关键关系以换取资源与信息入口"
+        ],
+        "obstacles": [
+          "身份与身契限制",
+          "银钱与资源不足"
+        ],
+        "decision_pressure": [
+          "每次重要选择都要同时考虑身份、资源、关系三重约束。",
+          "不能只追求短期爽点，要检查是否破坏长期成长弧。"
+        ]
+      },
+      "growth_arc": {
+        "contract_version": "growth-arc.v1",
+        "current_stage": "从底层生存转向主动争取身份与能力提升",
+        "completed_beats": [
+          "获得关键关系入口",
+          "开始修炼/资源积累",
+          "形成婚后协作与现实筹划"
+        ],
+        "next_beats": [
+          "把资源积累转成身份跃迁机会",
+          "验证主角是否能承受更高代价与风险",
+          "让家庭、修炼、身份目标形成更强冲突与选择"
+        ],
+        "regression_risks": [
+          "无铺垫的战力或身份跃迁",
+          "关系变化缺少中间证据",
+          "只推进事件，不推进人物选择逻辑"
+        ]
+      },
+      "volume_outline": {
+        "contract_version": "volume-outline.v1",
+        "volume_goal": "完成赎身/脱籍并争取进入更高身份路径",
+        "opening_status": "本章以卫图夜起喂马、抽旱烟缓解疲惫为日常底色，穿插其从佃奴升为李宅马倌的过往，以及眉心金光闪烁、准备去找二姑等信息，呈现出“低处谋变”的过渡状态。",
+        "mid_volume_turns": [
+          "把关键关系入口转成持续资源通路",
+          "让主角在资源/身份/家庭之间做更难选择"
+        ],
+        "late_volume_payoffs": [
+          "让赎身/脱籍主线迎来一次实质性推进",
+          "让前期修炼与关系经营开始兑现为新位置或新风险"
+        ],
+        "gating_threads": [],
+        "required_payoffs": [
+          "保持家庭与婚后协作稳定",
+          "持续通过修炼累积可转化能力",
+          "经营关键关系以换取资源与信息入口"
+        ]
+      },
+      "arc_outline": {
+        "contract_version": "arc-outline.v1",
+        "arc_name": "身份突破与能力积累弧",
+        "setup": [
+          "确认主角受限的初始位置与现实代价",
+          "建立修炼、关系、家庭三条支撑线"
+        ],
+        "progression": [
+          "获得关键关系入口",
+          "开始修炼/资源积累",
+          "形成婚后协作与现实筹划",
+          "把资源积累转成身份跃迁机会",
+          "验证主角是否能承受更高代价与风险"
+        ],
+        "turning_points": [
+          "关键关系带来机会，但同时抬高代价",
+          "资源或身份压力迫使主角提前行动"
+        ],
+        "payoff_targets": [
+          "主角获得可验证的新位置或新资格",
+          "关系线不只是陪衬，而要影响主线选择"
+        ],
+        "anti_patterns": [
+          "无铺垫的战力或身份跃迁",
+          "关系变化缺少中间证据",
+          "只推进事件，不推进人物选择逻辑"
+        ]
+      },
+      "future_chapter_outline": [
+        {
+          "chapter_index": 9,
+          "goal": "完成赎身/脱籍并争取进入更高身份路径",
+          "core_conflict": "身份与身契限制",
+          "payoff_target": "保持家庭与婚后协作稳定",
+          "turning_point": "关键关系带来机会，但同时抬高代价"
+        },
+        {
+          "chapter_index": 10,
+          "goal": "保持家庭与婚后协作稳定",
+          "core_conflict": "银钱与资源不足",
+          "payoff_target": "持续通过修炼累积可转化能力",
+          "turning_point": "资源或身份压力迫使主角提前行动"
+        },
+        {
+          "chapter_index": 11,
+          "goal": "持续通过修炼累积可转化能力",
+          "core_conflict": "银钱与资源不足",
+          "payoff_target": "经营关键关系以换取资源与信息入口",
+          "turning_point": "资源或身份压力迫使主角提前行动"
+        }
+      ],
+      "arc_questions": [
+        "主角当前最核心的长期目标是否稳定？",
+        "哪些关系会决定下一阶段资源或身份突破？",
+        "哪些未解线程必须进入卷纲级管理，而不能只留在章节记忆里？"
+      ],
+      "next_author_actions": [
+        "把 active_threads 按主线 / 支线 / 伏笔分层整理。",
+        "把 protagonist_candidates 扩成角色卡、动机与代价表。",
+        "把 world_rules_digest 转成可直接约束续写/仿写的规则表。"
+      ]
+    },
+    "relationship_watch": [
+      "二姑与黄老爷存在偏房关系",
+      "卫图与李宅主家的雇佣从属关系",
+      "卫图受老刘头传授养马技艺",
+      "卫图与二姑卫荭是亲属关系",
+      "卫图与杏存在暧昧关系",
+      "卫图与黄宅之间存在外亲通行关系",
+      "卫荭已嫁入黄家，身份更接近黄家妇而非卫家人",
+      "卫图与卫荭是亲属关系",
+      "卫图与阮武师发生接触",
+      "卫图与黄宅护院存在上下资源关系"
+    ],
+    "rule_watch": [
+      "命格以金紫之色呈现，且可在脑海中显化为玺印",
+      "本章确认存在“命格”设定",
+      "李宅主仆在饮食上存在明显等级差异",
+      "李宅仆役有佃奴与马倌的分化，待遇不同",
+      "李宅的马需要三更天加喂夜草",
+      "武功秘法中存在养生功，可用于延年益寿",
+      "厨娘偷吃在李家属于默认存在的现象"
+    ],
+    "unresolved_threads": [],
+    "state_summary": {
+      "new_foreshadowing": [],
+      "paid_off_foreshadowing": [
+        "“大器晚成”命格可能在晚年显效",
+        "卫图怀疑自己所在世界可能存在仙人修行",
+        "卫图计划从二姑处寻找养生功线索",
+        "黄宅可能存在武师和武功资源",
+        "二姑卫荭可能会帮卫图解决事情",
+        "卫图此次上门的真正请求尚未说出",
+        "黄宅可能存在可供卫图利用的人脉或资源",
+        "卫图下次不要再来找卫荭",
+        "卫图可能在五年后验证命格和功法效果",
+        "卫图可能继续依靠龟息养气功修炼",
+        "龟息养气功修成后可进入感气之境",
+        "卫图看到郑国官兵与刀客厮杀，暗示官道附近有剿匪行动"
+      ],
+      "new_conflicts": [],
+      "escalated_conflicts": [
+        "卫图担心养马失误会遭李老爷责罚",
+        "卫图的贫苦处境与求道愿望之间的现实落差",
+        "卫图家贫，只能买便宜胭脂去见二姑",
+        "卫图担心空手上门会遭二姑白眼",
+        "卫荭对卫图的来意先表现出明显防备",
+        "李宅饮食资源有限，肉食并不常见",
+        "卫图发现修炼龟息养气功需要五年",
+        "卫图在黄宅受到冷眼和轻视",
+        "卫图提出学武被卫荭拒绝为独门武功，只能转为养生功",
+        "卫荭对卫图的请求只提供有限帮助",
+        "黄家少爷对卫图身份表示嫌弃",
+        "卫图和杏的回乡路线面临山匪与野兽风险"
+      ],
+      "stable_relations": [
+        "杏对李家主母的偷吃行为被默许",
+        "卫荭已嫁入黄家"
+      ],
+      "evolved_relations": [
+        "二姑与黄老爷存在偏房关系",
+        "卫图与李宅主家的雇佣从属关系",
+        "卫图受老刘头传授养马技艺",
+        "卫图与二姑卫荭是亲属关系",
+        "卫图与杏存在暧昧关系",
+        "卫图与黄宅之间存在外亲通行关系",
+        "卫荭已嫁入黄家，身份更接近黄家妇而非卫家人",
+        "卫图与卫荭是亲属关系",
+        "卫图与阮武师发生接触",
+        "卫图与黄宅护院存在上下资源关系"
+      ],
+      "observed_world_rules": [
+        "庆丰府存在武者与武道传承",
+        "庆丰府武者常兼具刀客、农人或匪徒身份",
+        "武者多靠血勇好斗，但年老后容易因暗伤暴毙",
+        "武道搏杀能力有限，十人敌已算强者",
+        "古代普通家庭吃肉是奢侈事"
+      ],
+      "constraining_world_rules": [
+        "命格以金紫之色呈现，且可在脑海中显化为玺印",
+        "本章确认存在“命格”设定",
+        "李宅主仆在饮食上存在明显等级差异",
+        "李宅仆役有佃奴与马倌的分化，待遇不同",
+        "李宅的马需要三更天加喂夜草",
+        "武功秘法中存在养生功，可用于延年益寿",
+        "厨娘偷吃在李家属于默认存在的现象"
+      ]
+    },
+    "graph_overview": {
+      "node_count": 351,
+      "edge_count": 11379,
+      "node_type_counts": {
+        "conflict": 27,
+        "continuity": 58,
+        "entity": 31,
+        "event": 113,
+        "foreshadow": 28,
+        "relation": 33,
+        "world_rule": 61
+      },
+      "edge_type_counts": {
+        "carries_forward": 4072,
+        "co_occurs": 135,
+        "conflict_centers_on": 1109,
+        "conflict_involves": 46,
+        "constrains": 406,
+        "contextualizes": 1297,
+        "hints_at": 1401,
+        "participates_in": 640,
+        "pressured_by": 46,
+        "relates_to": 58,
+        "advances_to": 530,
+        "escalates_to": 114,
+        "evolves_to": 145,
+        "follows": 103,
+        "pays_off_as": 1154,
+        "persists_into": 123
+      }
+    },
+    "central_nodes": [
+      {
+        "label": "卫图",
+        "node_type": "entity",
+        "degree": 348,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 10
+      },
+      {
+        "label": "卫图怀疑自己所在世界可能存在仙人修行",
+        "node_type": "foreshadow",
+        "degree": 192,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "黄宅可能存在可供卫图利用的人脉或资源",
+        "node_type": "foreshadow",
+        "degree": 187,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "卫图计划从二姑处寻找养生功线索",
+        "node_type": "foreshadow",
+        "degree": 185,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "李童氏的反应说明她此前对卫图的低姿态形成了误判，后续主仆关系很可能进入更敏感的谈判或对抗。",
+        "node_type": "continuity",
+        "degree": 180,
+        "chapter_first_seen": 10,
+        "chapter_last_seen": 10
+      },
+      {
+        "label": "赎身与武举为后续主线埋下明确目标，也把卫图从被动仆役位置推向主动争取身份的阶段。",
+        "node_type": "continuity",
+        "degree": 177,
+        "chapter_first_seen": 10,
+        "chapter_last_seen": 10
+      },
+      {
+        "label": "关系层面没有出现剧烈反转，但卫图与杏的婚后关系更像共同承担生计压力的同盟；李童氏租地给卫图夫妇，也说明主家对这段关系的处置已进入可操作层面。",
+        "node_type": "continuity",
+        "degree": 176,
+        "chapter_first_seen": 9,
+        "chapter_last_seen": 9
+      },
+      {
+        "label": "二姑卫荭可能会帮卫图解决事情",
+        "node_type": "foreshadow",
+        "degree": 175,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "本章对李童氏的态度可视为‘有限放行’而非彻底支持：她松口租地，给了卫图实际生存资源，但并没有改变李家租佃与主仆结构的根本约束。",
+        "node_type": "continuity",
+        "degree": 174,
+        "chapter_first_seen": 9,
+        "chapter_last_seen": 9
+      },
+      {
+        "label": "卫图可能继续依靠龟息养气功修炼",
+        "node_type": "foreshadow",
+        "degree": 171,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      }
+    ],
+    "recent_timeline": [
+      "卫图回家后向彩霞打听李耀祖突然支开他的原因 -[advances_to]-> 卫图提出赎身并说明要参加明年武举",
+      "卫图回到堂屋后喂马并练养生功 -[advances_to]-> 卫图夜里向杏交代计划并让她做好撤离准备",
+      "卫图判断自己有把握去搏武举 -[advances_to]-> 卫图夜里向杏交代计划并让她做好撤离准备",
+      "李耀祖放弃了让卫图去李兴业身边当小厮的提议 -[advances_to]-> 卫图提出赎身并说明要参加明年武举",
+      "卫图以会影响李兴业读书为由推掉提议 -[advances_to]-> 卫图提出赎身并说明要参加明年武举",
+      "卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 卫图提出赎身并说明要参加明年武举",
+      "卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 卫图夜里向杏交代计划并让她做好撤离准备",
+      "卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 杏默默收拾细软，并要求不要丢下自己",
+      "卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 卫图判断李耀祖可能借秋收施压，决定提前赎身",
+      "卫图决定若赎身不成就逃离李宅去做刀客 -[follows]-> 次日卫图照常干活后进入内宅见李童氏"
+    ],
+    "recommended_questions": [
+      "主角当前最重要的推进线是什么？",
+      "当前有哪些关键关系与未解线程？",
+      "规则/世界观约束最近有哪些变化？"
+    ]
+  },
+  "retrieval_diagnostics": {
+    "query": "卫图",
+    "fusion_applied": true,
+    "rerank_applied": false,
+    "route_counts": {
+      "fts": 10,
+      "similarity": 10,
+      "like": 10,
+      "keyword": 10,
+      "entity_exact": 10
+    },
+    "raw_latency_ms": 65.58743301138747,
+    "rerank_latency_ms": 0.08034901111386716,
+    "raw_hits": [
+      {
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "score": 0.08091796563504654
+      },
+      {
+        "chapter_index": 3,
+        "title": "养生功法",
+        "score": 0.07886904761904762
+      },
+      {
+        "chapter_index": 1,
+        "title": "大器晚成",
+        "score": 0.07756965588468633
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "score": 0.07701341966083831
+      },
+      {
+        "chapter_index": 9,
+        "title": "逼上绝境（求收藏，求追读）",
+        "score": 0.076395086914021
+      }
+    ],
+    "reranked_hits": [
+      {
+        "chapter_index": 2,
+        "title": "二姑卫荭",
+        "score": 0.08091796563504654
+      },
+      {
+        "chapter_index": 3,
+        "title": "养生功法",
+        "score": 0.07886904761904762
+      },
+      {
+        "chapter_index": 1,
+        "title": "大器晚成",
+        "score": 0.07756965588468633
+      },
+      {
+        "chapter_index": 7,
+        "title": "不入祠堂（求收藏 求追读）",
+        "score": 0.07701341966083831
+      },
+      {
+        "chapter_index": 9,
+        "title": "逼上绝境（求收藏，求追读）",
+        "score": 0.076395086914021
+      }
+    ]
+  },
+  "qa_answer": null
+}

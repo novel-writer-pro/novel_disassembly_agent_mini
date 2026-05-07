@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Protocol, cast
 
@@ -53,6 +54,7 @@ class OnnxCrossEncoderRerankProvider:
             repo_dir = snapshot_download(
                 repo_id=self.model_name,
                 cache_dir=str(cache_dir) if cache_dir else None,
+                local_files_only=True,
                 allow_patterns=[
                     'onnx/*.onnx',
                     'config.json',
@@ -66,10 +68,10 @@ class OnnxCrossEncoderRerankProvider:
             )
         except LocalEntryNotFoundError as exc:
             raise RuntimeError(
-                'Unable to download the ONNX rerank model from Hugging Face in this '
-                'environment. Provide a local exported model directory via '
-                'NOVEL_ANALYZER_RERANK_MODEL_PATH or enable outbound access to '
-                'huggingface.co.'
+                'The ONNX rerank model is not available in local cache. Provide a '
+                'local exported model directory via NOVEL_ANALYZER_RERANK_MODEL_PATH '
+                'or prewarm the Hugging Face cache before enabling rerank in runtime '
+                'request paths.'
             ) from exc
         return Path(repo_dir)
 
@@ -132,17 +134,34 @@ class OnnxCrossEncoderRerankProvider:
         return cast(list[float], logits.astype(np.float32).tolist())
 
 
+@lru_cache(maxsize=8)
+def _cached_rerank_provider(
+    backend: str,
+    model_name: str,
+    model_path: str,
+    cache_dir: str,
+    max_length: int,
+) -> RerankProvider:
+    if not model_name:
+        return DisabledRerankProvider()
+    if backend == 'onnx':
+        return OnnxCrossEncoderRerankProvider(
+            model_name=model_name,
+            model_path=model_path or None,
+            cache_dir=cache_dir or None,
+            max_length=max_length,
+        )
+    return DisabledRerankProvider()
+
+
 def get_rerank_provider(settings: Settings | None = None) -> RerankProvider:
     """Return the configured rerank provider."""
 
     runtime = settings or get_settings()
-    if not runtime.rerank_model_name:
-        return DisabledRerankProvider()
-    if runtime.rerank_backend == 'onnx':
-        return OnnxCrossEncoderRerankProvider(
-            model_name=runtime.rerank_model_name,
-            model_path=runtime.rerank_model_path or None,
-            cache_dir=runtime.rerank_cache_dir,
-            max_length=runtime.rerank_max_length,
-        )
-    return DisabledRerankProvider()
+    return _cached_rerank_provider(
+        runtime.rerank_backend,
+        runtime.rerank_model_name,
+        runtime.rerank_model_path,
+        runtime.rerank_cache_dir,
+        runtime.rerank_max_length,
+    )

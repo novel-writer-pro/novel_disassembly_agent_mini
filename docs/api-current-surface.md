@@ -14,6 +14,8 @@
 
 ### 导入 / 启动 / 恢复
 - `POST /api/import`
+  - 支持 multipart `file` 整本上传
+  - 也支持 JSON `chapters` list 的逐章 / 多章导入
 - `POST /api/start`
 - `POST /api/recovery`
 

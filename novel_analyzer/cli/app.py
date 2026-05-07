@@ -35,6 +35,7 @@ from novel_analyzer.runtime.cluster_review_state import (
     read_cluster_review_state,
     write_cluster_review_state,
 )
+from novel_analyzer.services.steering_library_service import SteeringLibraryService
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -97,6 +98,33 @@ def _parse_chapter_goal_spec(chapter_spec: list[str]) -> list[tuple[int, str]]:
             raise typer.Exit(code=1)
         chapter_goals.append((int(chapter_text), goal))
     return chapter_goals
+
+
+def _steering_pack(
+    worldview_note: list[str],
+    trope_axis: list[str],
+    innovation_directive: list[str],
+    taboo_innovation: list[str],
+    knowledge_ref: list[str],
+    trope_doc: list[str] | None = None,
+    worldview_doc: list[str] | None = None,
+    audience_doc: list[str] | None = None,
+) -> tuple[dict[str, list[str]], dict[str, object]]:
+    retrieval = SteeringLibraryService().retrieve_pack(
+        query_text=" ".join(
+            worldview_note + trope_axis + innovation_directive + taboo_innovation + knowledge_ref + (trope_doc or []) + (worldview_doc or []) + (audience_doc or [])
+        ),
+        trope_docs=trope_doc or [],
+        worldview_docs=worldview_doc or [],
+        audience_docs=audience_doc or [],
+    )
+    pack = retrieval["steering_pack"]
+    pack["worldview_capsule"].extend(item for item in worldview_note if item.strip())
+    pack["trope_axes"].extend(item for item in trope_axis if item.strip())
+    pack["innovation_directives"].extend(item for item in innovation_directive if item.strip())
+    pack["taboo_innovations"].extend(item for item in taboo_innovation if item.strip())
+    pack["external_knowledge_refs"].extend(item for item in knowledge_ref if item.strip())
+    return pack, retrieval["retrieval_meta"]
 
 
 def _build_story_mapping_pack(
@@ -357,6 +385,18 @@ def _author_knowledge_service(session: Session) -> Any:
     return AuthorKnowledgeService(session)
 
 
+def _novel_assistant_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.novel_assistant_service import NovelAssistantService
+
+    return NovelAssistantService(session, settings)
+
+
+def _reader_feedback_service(session: Session) -> Any:
+    from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
+
+    return ReaderFeedbackService(session)
+
+
 @app.command()
 def init_db(
     database_url: str | None = None,
@@ -476,6 +516,35 @@ def ingest(
         echo(f"novel_id={novel.id}")
         echo(f"manifest_id={manifest.id}")
         echo(f"chapter_count={manifest.chapter_count}")
+
+
+@app.command()
+def ingest_chapter_list(
+    input_path: Path,
+    title: str | None = None,
+    source_name: str = typer.Option("chapter-list-import", "--source-name"),
+    database_url: str | None = None,
+) -> None:
+    """Persist a novel from a JSON chapter list and derive a chapter manifest."""
+
+    payload = json.loads(input_path.read_text(encoding="utf-8"))
+    chapters = payload.get("chapters", []) if isinstance(payload, dict) else payload
+    if not isinstance(chapters, list):
+        echo("chapter list payload must be a JSON list or an object with `chapters`")
+        raise typer.Exit(code=1)
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        novel, manifest = _ingest_service(session, settings).ingest_chapter_list(
+            [item for item in chapters if isinstance(item, dict)],
+            title=title,
+            source_name=source_name,
+        )
+        echo(f"novel_id={novel.id}")
+        echo(f"manifest_id={manifest.id}")
+        echo(f"chapter_count={manifest.chapter_count}")
+        echo(f"source_path={novel.source_path}")
 
 
 @app.command()
@@ -887,6 +956,43 @@ def export_search_branch_diagnostics(
 
 
 @app.command()
+def export_retrieval_benchmark(
+    branch_id: str,
+    output_path: Path,
+    query: list[str] = typer.Option([], "--query"),
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export a multi-query retrieval benchmark bundle for one branch."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    queries = query or ["卫图 命格", "二姑 养生功", "资源 婚事"]
+    with factory() as session:
+        service = _retrieval_service(session, settings)
+        results = []
+        for item in queries:
+            payload = service.search_branch_with_diagnostics(branch_id, item, limit)
+            results.append({
+                "query": payload.query,
+                "fusion_applied": payload.fusion_applied,
+                "rerank_applied": payload.rerank_applied,
+                "route_counts": payload.route_counts or {},
+                "raw_latency_ms": payload.raw_latency_ms,
+                "rerank_latency_ms": payload.rerank_latency_ms,
+                "top_raw_chapters": [hit.chapter_index for hit in payload.raw_hits[:limit]],
+                "top_reranked_chapters": [hit.chapter_index for hit in payload.reranked_hits[:limit]],
+            })
+        output = {
+            "contract_version": "retrieval-benchmark.v1",
+            "branch_id": branch_id,
+            "queries": results,
+        }
+        output_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"retrieval_benchmark_path={output_path}")
+
+
+@app.command()
 def ask_branch(
     branch_id: str,
     question: str,
@@ -915,6 +1021,310 @@ def ask_branch(
 
 
 
+
+
+
+@app.command()
+def show_novel_assistant(
+    branch_id: str,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Show the unified novel assistant capability pack."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def export_novel_assistant(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the unified novel assistant capability pack to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"novel_assistant_path={output_path}")
+
+
+
+@app.command()
+def show_governance_dashboard(
+    branch_id: str,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Show the governance dashboard slice from the unified novel assistant pack."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        echo(json.dumps(payload.get("governance_dashboard_pack", {}), ensure_ascii=False, indent=2))
+
+
+@app.command()
+def export_governance_dashboard(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the governance dashboard slice to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        output_path.write_text(json.dumps(payload.get("governance_dashboard_pack", {}), ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"governance_dashboard_path={output_path}")
+
+
+@app.command()
+def export_governance_report_brief(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the governance report brief to Markdown."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        brief = payload.get("governance_report_brief_pack", {})
+        output_path.write_text(str(brief.get("brief_text", "")), encoding='utf-8')
+        echo(f"governance_report_brief_path={output_path}")
+
+
+@app.command()
+def export_release_review_note(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the release review note to Markdown."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        note = payload.get("release_review_note_pack", {})
+        output_path.write_text(str(note.get("note_text", "")), encoding='utf-8')
+        echo(f"release_review_note_path={output_path}")
+
+
+@app.command()
+def export_approval_decision_memo(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the approval decision memo to Markdown."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        memo = payload.get("approval_decision_memo_pack", {})
+        output_path.write_text(str(memo.get("memo_text", "")), encoding='utf-8')
+        echo(f"approval_decision_memo_path={output_path}")
+
+
+@app.command()
+def export_external_report_bundle(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the external report bundle to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        bundle = payload.get("external_report_bundle_pack", {})
+        output_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"external_report_bundle_path={output_path}")
+
+
+@app.command()
+def export_external_report_markdown(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the external report bundle as Markdown."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        report = payload.get("external_report_markdown_pack", {})
+        output_path.write_text(str(report.get("markdown_text", "")), encoding='utf-8')
+        echo(f"external_report_markdown_path={output_path}")
+
+
+@app.command()
+def export_final_release_archive(
+    branch_id: str,
+    output_path: Path,
+    query: str = "",
+    question: str = "",
+    from_chapter_index: int | None = None,
+    upto_chapter_index: int | None = None,
+    focus_label: str = "",
+    limit: int = 5,
+    database_url: str | None = None,
+) -> None:
+    """Export the final release archive bundle to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _novel_assistant_service(session, settings).build_branch_assistant_pack(
+            branch_id,
+            query=query,
+            question=question,
+            from_chapter_index=from_chapter_index,
+            upto_chapter_index=upto_chapter_index,
+            focus_label=focus_label,
+            limit=limit,
+        )
+        archive = payload.get("final_release_archive_pack", {})
+        output_path.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"final_release_archive_path={output_path}")
 
 @app.command()
 def show_raw_output(
@@ -1079,6 +1489,38 @@ def export_branch_qa_context(
         payload = _export_service(session).export_branch_qa_context(run_id, branch_id)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         echo(f"branch_qa_context_path={output_path}")
+
+
+@app.command()
+def import_reader_feedback(
+    branch_id: str,
+    input_path: Path,
+    database_url: str | None = None,
+) -> None:
+    """Import reader comments from JSON list."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    comments = json.loads(input_path.read_text(encoding='utf-8'))
+    with factory() as session:
+        payload = _reader_feedback_service(session).import_comments(branch_id, comments)
+        echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def export_reader_feedback_summary(
+    branch_id: str,
+    output_path: Path,
+    database_url: str | None = None,
+) -> None:
+    """Export reader feedback summary to JSON."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        payload = _reader_feedback_service(session).summarize_branch_feedback(branch_id)
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        echo(f"reader_feedback_summary_path={output_path}")
 
 
 @app.command()
@@ -1915,6 +2357,511 @@ def show_whole_book_imitation_readiness(
         echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
+def _write_writer_imitation_outputs(
+    output_dir: Path,
+    stem: str,
+    payload: dict[str, object],
+) -> tuple[Path, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / f"{stem}.json"
+    md_path = output_dir / f"{stem}.md"
+    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    lines: list[str] = [f"# {stem}"]
+    steering_pack = payload.get("steering_pack", {})
+    if isinstance(steering_pack, dict) and steering_pack:
+        lines.append("\n## Steering Pack")
+        for key, value in steering_pack.items():
+            if isinstance(value, list):
+                joined = "；".join(str(item) for item in value if str(item).strip())
+                lines.append(f"- {key}: {joined}")
+            else:
+                lines.append(f"- {key}: {value}")
+    steering_retrieval_meta = payload.get("steering_retrieval_meta", {})
+    if isinstance(steering_retrieval_meta, dict) and steering_retrieval_meta:
+        lines.append("\n## Steering Retrieval Meta")
+        for key in ["selected_trope_docs", "selected_worldview_docs", "selected_audience_docs"]:
+            value = steering_retrieval_meta.get(key, [])
+            if isinstance(value, list) and value:
+                lines.append(f"- {key}: {'；'.join(str(item) for item in value)}")
+        hit_reasons = steering_retrieval_meta.get("hit_reasons", {})
+        if isinstance(hit_reasons, dict) and hit_reasons:
+            lines.append("\n### Hit Reasons")
+            for bucket, mapping in hit_reasons.items():
+                if not isinstance(mapping, dict) or not mapping:
+                    continue
+                lines.append(f"- {bucket}:")
+                for slug, reasons in mapping.items():
+                    joined = "；".join(str(item) for item in reasons if str(item).strip())
+                    lines.append(f"  - {slug}: {joined}")
+    final_draft = payload.get("final_draft", {})
+    if isinstance(final_draft, dict):
+        draft_title = str(final_draft.get("draft_title", "")).strip()
+        draft_text = str(final_draft.get("draft_text", "")).strip()
+        visible_draft_text = draft_text.split("【Harness Action Queue】", 1)[0].rstrip()
+        if draft_title:
+            lines.append(f"\n## Draft Title\n{draft_title}")
+        if visible_draft_text:
+            lines.append(f"\n## Draft Text\n{visible_draft_text}")
+        risk_gate_notes = final_draft.get("risk_gate_notes", [])
+        if isinstance(risk_gate_notes, list) and risk_gate_notes:
+            deduped_notes: list[str] = []
+            seen_notes: set[str] = set()
+            for item in risk_gate_notes:
+                note = str(item).strip()
+                if not note or note in seen_notes:
+                    continue
+                seen_notes.add(note)
+                deduped_notes.append(note)
+            lines.append("\n## Risk Gate Notes")
+            lines.extend(f"- {item}" for item in deduped_notes[:12])
+    final_verdict = str(payload.get("final_verdict", "")).strip()
+    if final_verdict:
+        lines.append(f"\n## Final Verdict\n- {final_verdict}")
+    stop_reason = str(payload.get("stop_reason", "")).strip()
+    if stop_reason:
+        lines.append(f"\n## Stop Reason\n- {stop_reason}")
+    policy_summary = payload.get("policy_summary", {})
+    if isinstance(policy_summary, dict) and policy_summary:
+        lines.append("\n## Policy Summary")
+        for key, value in policy_summary.items():
+            lines.append(f"- {key}: {value}")
+    items = payload.get("items", [])
+    if isinstance(items, list) and items:
+        lines.append("\n## Range Items")
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            chapter_index = item.get("source_chapter_index")
+            target_goal = item.get("target_goal")
+            final_verdict = item.get("final_verdict")
+            stop_reason = item.get("stop_reason")
+            lines.append(f"\n### Chapter {chapter_index}")
+            lines.append(f"- target_goal: {target_goal}")
+            lines.append(f"- final_verdict: {final_verdict}")
+            lines.append(f"- stop_reason: {stop_reason}")
+            final_draft = item.get("final_draft", {})
+            if isinstance(final_draft, dict):
+                draft_title = str(final_draft.get("draft_title", "")).strip()
+                draft_text = str(final_draft.get("draft_text", "")).strip()
+                visible_draft_text = draft_text.split("【Harness Action Queue】", 1)[0].rstrip()
+                if draft_title:
+                    lines.append(f"- draft_title: {draft_title}")
+                if visible_draft_text:
+                    lines.append("")
+                    lines.append(visible_draft_text)
+    experiment_meta = payload.get("experiment_meta", {})
+    if isinstance(experiment_meta, dict) and experiment_meta:
+        lines.append("\n## Experiment Meta")
+        for key, value in experiment_meta.items():
+            if isinstance(value, dict):
+                lines.append(f"- {key}:")
+                for sub_key, sub_value in value.items():
+                    lines.append(f"  - {sub_key}: {sub_value}")
+            else:
+                lines.append(f"- {key}: {value}")
+    md_path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+    return json_path, md_path
+
+
+def _writer_review_markdown(
+    *,
+    source_chapter_index: int,
+    target_goal: str,
+    report_payload: dict[str, object],
+) -> str:
+    lines: list[str] = [f"# writer-imitate-review-ch{source_chapter_index}"]
+    lines.append(f"\n- source_chapter_index: {source_chapter_index}")
+    lines.append(f"- target_goal: {target_goal}")
+
+    final_verdict = str(report_payload.get("final_verdict", "")).strip()
+    stop_reason = str(report_payload.get("stop_reason", "")).strip()
+    if final_verdict:
+        lines.append(f"- final_verdict: {final_verdict}")
+    if stop_reason:
+        lines.append(f"- stop_reason: {stop_reason}")
+
+    rounds = report_payload.get("rounds", [])
+    first_round = rounds[0] if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict) else {}
+    if isinstance(first_round, dict):
+        comparison = first_round.get("comparison", {})
+        if isinstance(comparison, dict):
+            lines.append("\n## Side-by-side Review")
+            lines.append(f"- source_title: {comparison.get('original_title', '')}")
+            lines.append(f"- draft_title: {comparison.get('draft_title', '')}")
+            lines.append(f"- source_length: {comparison.get('source_length', '')}")
+            lines.append(f"- draft_length: {comparison.get('draft_length', '')}")
+            structure_notes = comparison.get("structure_overlap_notes", [])
+            if isinstance(structure_notes, list) and structure_notes:
+                lines.append("\n### Structure Notes")
+                lines.extend(f"- {str(item)}" for item in structure_notes[:8])
+            style_notes = comparison.get("style_alignment_notes", [])
+            if isinstance(style_notes, list) and style_notes:
+                lines.append("\n### Style Notes")
+                lines.extend(f"- {str(item)}" for item in style_notes[:8])
+            risk_notes = comparison.get("risk_alignment_notes", [])
+            if isinstance(risk_notes, list) and risk_notes:
+                lines.append("\n### Risk Alignment Notes")
+                lines.extend(f"- {str(item)}" for item in risk_notes[:8])
+
+    final_draft = report_payload.get("final_draft", {})
+    if isinstance(final_draft, dict):
+        draft_title = str(final_draft.get("draft_title", "")).strip()
+        draft_text = str(final_draft.get("draft_text", "")).strip()
+        visible_draft_text = draft_text.split("【Harness Action Queue】", 1)[0].rstrip()
+        if draft_title:
+            lines.append(f"\n## Draft Title\n{draft_title}")
+        if visible_draft_text:
+            lines.append(f"\n## Draft Text\n{visible_draft_text}")
+        risk_gate_notes = final_draft.get("risk_gate_notes", [])
+        if isinstance(risk_gate_notes, list) and risk_gate_notes:
+            lines.append("\n## Risk Gate Notes")
+            seen: set[str] = set()
+            for item in risk_gate_notes:
+                note = str(item).strip()
+                if note and note not in seen:
+                    seen.add(note)
+                    lines.append(f"- {note}")
+
+    policy_summary = report_payload.get("policy_summary", {})
+    if isinstance(policy_summary, dict) and policy_summary:
+        lines.append("\n## Policy Summary")
+        for key, value in policy_summary.items():
+            lines.append(f"- {key}: {value}")
+
+    action_queue = report_payload.get("action_queue", [])
+    if isinstance(action_queue, list) and action_queue:
+        lines.append("\n## Action Queue")
+        for item in action_queue[:12]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                f"- P{item.get('priority')} | {item.get('severity')} | "
+                f"{item.get('action_type')} -> {item.get('target')}"
+            )
+    return "\n".join(lines).strip() + "\n"
+
+
+def _writer_output_index_markdown(output_dir: Path) -> str:
+    lines: list[str] = ["# Writer Imitation Output Index"]
+    json_files = sorted(output_dir.glob("writer-imitate-range-*.json"))
+    if not json_files:
+        return "# Writer Imitation Output Index\n\n- no writer-imitate-range json files found\n"
+
+    for path in json_files:
+        lines.append(f"\n## {path.name}")
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            lines.append(f"- parse_error: {exc}")
+            continue
+        items = payload.get("items", [])
+        if not isinstance(items, list):
+            lines.append("- items: unavailable")
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            chapter_index = item.get("source_chapter_index")
+            target_goal = item.get("target_goal")
+            final_verdict = item.get("final_verdict")
+            stop_reason = item.get("stop_reason")
+            final_draft = item.get("final_draft", {})
+            draft_title = ""
+            draft_len = 0
+            if isinstance(final_draft, dict):
+                draft_title = str(final_draft.get("draft_title", "")).strip()
+                draft_len = len(str(final_draft.get("draft_text", "")))
+            lines.append(
+                f"- chapter {chapter_index}: verdict={final_verdict} | stop={stop_reason} | "
+                f"title={draft_title} | draft_len={draft_len}"
+            )
+            if target_goal:
+                lines.append(f"  - target_goal: {target_goal}")
+    return "\n".join(lines).strip() + "\n"
+
+
+@app.command()
+def writer_imitate(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
+    database_url: str | None = None,
+) -> None:
+    """Writer-facing imitation entrypoint that writes artifacts into output/."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        steering, retrieval_meta = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
+        )
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+            steering_pack=steering,
+        )
+        payload = report.model_dump(mode="json")
+        payload["steering_pack"] = steering
+        payload["steering_retrieval_meta"] = retrieval_meta
+        stem = f"writer-imitate-ch{source_chapter_index}"
+        json_path, md_path = _write_writer_imitation_outputs(output_dir, stem, payload)
+        echo(f"writer_imitate_json={json_path}")
+        echo(f"writer_imitate_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_range(
+    branch_id: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 3:目标A 4:目标B"),
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
+    database_url: str | None = None,
+) -> None:
+    """Batch writer-facing imitation entrypoint for multiple source chapters."""
+
+    parsed = _parse_chapter_goal_spec(chapter_spec)
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        service = _imitation_harness_service(session, settings)
+        outputs: list[dict[str, object]] = []
+        steering, retrieval_meta = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
+        )
+        for source_chapter_index, target_goal in parsed:
+            report = service.run_harness(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+                steering_pack=steering,
+            )
+            payload = report.model_dump(mode="json")
+            outputs.append(
+                {
+                    "source_chapter_index": source_chapter_index,
+                    "target_goal": target_goal,
+                    "final_verdict": payload.get("final_verdict"),
+                    "stop_reason": payload.get("stop_reason"),
+                    "final_draft": payload.get("final_draft", {}),
+                    "policy_summary": payload.get("policy_summary", {}),
+                }
+            )
+        stem = f"writer-imitate-range-{parsed[0][0]}-{parsed[-1][0]}"
+        json_path, md_path = _write_writer_imitation_outputs(
+            output_dir,
+            stem,
+            {"items": outputs, "branch_id": branch_id, "steering_pack": steering, "steering_retrieval_meta": retrieval_meta},
+        )
+        echo(f"writer_imitate_range_json={json_path}")
+        echo(f"writer_imitate_range_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_review(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
+    database_url: str | None = None,
+) -> None:
+    """Writer-facing single-chapter imitation review markdown export."""
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        steering, retrieval_meta = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
+        )
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+            steering_pack=steering,
+        )
+        payload = report.model_dump(mode="json")
+        payload["steering_pack"] = steering
+        payload["steering_retrieval_meta"] = retrieval_meta
+        output_dir.mkdir(parents=True, exist_ok=True)
+        md_path = output_dir / f"writer-imitate-review-ch{source_chapter_index}.md"
+        md_path.write_text(
+            _writer_review_markdown(
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                report_payload=payload,
+            ),
+            encoding="utf-8",
+        )
+        echo(f"writer_imitate_review_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_index(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Generate a writer-facing index page for output/ imitation artifacts."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    md_path = output_dir / "writer-imitate-index.md"
+    md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
+    echo(f"writer_imitate_index_markdown={md_path}")
+
+
+@app.command()
+def writer_innovation_experiment(
+    branch_id: str,
+    experiment_name: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 24:强化阶层冲击 25:强化回乡情绪"),
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
+    database_url: str | None = None,
+) -> None:
+    """Run a batch innovation-steered imitation experiment and persist a reusable bundle."""
+
+    parsed = _parse_chapter_goal_spec(chapter_spec)
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    steering, retrieval_meta = _steering_pack(
+        worldview_note,
+        trope_axis,
+        innovation_directive,
+        taboo_innovation,
+        knowledge_ref,
+        trope_doc,
+        worldview_doc,
+        audience_doc,
+    )
+    with factory() as session:
+        service = _imitation_harness_service(session, settings)
+        outputs: list[dict[str, object]] = []
+        for source_chapter_index, target_goal in parsed:
+            report = service.run_harness(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+                steering_pack=steering,
+            )
+            payload = report.model_dump(mode="json")
+            outputs.append(
+                {
+                    "source_chapter_index": source_chapter_index,
+                    "target_goal": target_goal,
+                    "final_verdict": payload.get("final_verdict"),
+                    "stop_reason": payload.get("stop_reason"),
+                    "final_draft": payload.get("final_draft", {}),
+                    "policy_summary": payload.get("policy_summary", {}),
+                    "steering_summary": steering,
+                }
+            )
+        stem = f"writer-innovation-experiment-{experiment_name}"
+        json_path, md_path = _write_writer_imitation_outputs(
+            output_dir,
+            stem,
+            {
+                "contract_version": "writer-innovation-experiment.v1",
+                "experiment_name": experiment_name,
+                "branch_id": branch_id,
+                "steering_pack": steering,
+                "steering_retrieval_meta": retrieval_meta,
+                "items": outputs,
+                "experiment_meta": {
+                    "chapter_count": len(outputs),
+                    "use_llm": use_llm,
+                    "max_rounds": max_rounds,
+                    "model_name": model_name or settings.llm_model_name,
+                    "innovation_delta_summary": {
+                        "worldview_note_count": len(steering.get("worldview_capsule", [])),
+                        "trope_axis_count": len(steering.get("trope_axes", [])),
+                        "innovation_directive_count": len(steering.get("innovation_directives", [])),
+                    },
+                    "risk_delta_summary": {
+                        "taboo_innovation_count": len(steering.get("taboo_innovations", [])),
+                        "external_knowledge_ref_count": len(steering.get("external_knowledge_refs", [])),
+                    },
+                },
+            },
+        )
+        echo(f"writer_innovation_experiment_json={json_path}")
+        echo(f"writer_innovation_experiment_markdown={md_path}")
+
+
 @app.command()
 def preflight_imitation(
     branch_id: str,
@@ -1922,6 +2869,14 @@ def preflight_imitation(
     target_goal: str,
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Run deterministic preflight checks before formal imitation gate/risk review."""
@@ -1936,12 +2891,32 @@ def preflight_imitation(
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name or None,
+                steering_pack=_steering_pack(
+                    worldview_note,
+                    trope_axis,
+                    innovation_directive,
+                    taboo_innovation,
+                    knowledge_ref,
+                    trope_doc,
+                    worldview_doc,
+                    audience_doc,
+                )[0],
             )
             if use_llm
             else chapter_service.build_skeleton_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
+                steering_pack=_steering_pack(
+                    worldview_note,
+                    trope_axis,
+                    innovation_directive,
+                    taboo_innovation,
+                    knowledge_ref,
+                    trope_doc,
+                    worldview_doc,
+                    audience_doc,
+                )[0],
             )
         )
         comparison = chapter_service.compare_with_source(
@@ -1976,6 +2951,14 @@ def harness_imitation(
     max_rounds: int = typer.Option(2, "--max-rounds"),
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Run the first controlled imitation harness with skill contracts and preflight routing."""
@@ -1983,6 +2966,16 @@ def harness_imitation(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
+        steering, _retrieval_meta = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
+        )
         report = _imitation_harness_service(session, settings).run_harness(
             branch_id,
             source_chapter_index=source_chapter_index,
@@ -1990,6 +2983,7 @@ def harness_imitation(
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
+            steering_pack=steering,
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 

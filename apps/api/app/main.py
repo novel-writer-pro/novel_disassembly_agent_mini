@@ -66,6 +66,7 @@ from novel_analyzer.services.cluster_review_service import (
     ClusterReviewStorageUnavailable,
 )
 from novel_analyzer.services.export_service import ExportService
+from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.job_event_service import JobEventService
 from novel_analyzer.services.qa_service import BranchQAService
 from novel_analyzer.services.retrieval_service import RetrievalService
@@ -1276,19 +1277,31 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
 
     if path == "/api/import" and method == "POST":
         body = _body(environ)
-        file_item = body.get("file")
-        if file_item is None:
-            return _response(
-                start_response,
-                status="400 Bad Request",
-                payload={"error": "missing uploaded file"},
-            )
-        path_on_disk = _persist_uploaded_text(file_item)
         title = str(body.get("title") or "")
         profile = str(body.get("pipeline_profile") or "auto-lite")
         database_url = str(body.get("database_url") or "") or None
         max_chapters_raw = str(body.get("max_chapters") or "").strip()
         max_chapters = int(max_chapters_raw) if max_chapters_raw else None
+        file_item = body.get("file")
+        chapter_items = body.get("chapters")
+        if file_item is not None:
+            path_on_disk = _persist_uploaded_text(file_item)
+        elif isinstance(chapter_items, list):
+            runtime = get_settings().model_copy(deep=True)
+            if database_url:
+                runtime.database_url = database_url
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                path_on_disk = IngestService(session, runtime).persist_chapter_list_file(
+                    [item for item in chapter_items if isinstance(item, dict)],
+                    source_name="api-chapter-list-import",
+                )
+        else:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "missing uploaded file or `chapters` list"},
+            )
         try:
             result = ingest_and_start_pipeline(
                 path=path_on_disk,

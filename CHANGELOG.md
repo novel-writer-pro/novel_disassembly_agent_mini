@@ -1,3 +1,56 @@
+## 2026-05-05
+
+### 仿写实战工作流与 output 工作目录补齐
+- 新增 `writer-imitate` 与 `writer-imitate-range` CLI，统一把仿写结果输出到 `output/`。
+- `output/` 已加入 `.gitignore`，明确只作为仿写工作目录，不纳入版本管理。
+- 新增 `docs/writer-imitation-workflow.md`，把仿写实战流程、关键字段、工作目录约束和后续增强方向写清楚。
+- writer-facing `writer-imitate` / `writer-imitate-range` markdown 导出现在会移除 `Harness Action Queue` 正文污染，并对重复 `risk_gate_notes` 做去重，方便直接在 `output/` 下阅读和实战。
+
+
+### 小说导入、切章与保存规范补强
+- 自动切章现在支持真实中文网文常见的 `第X节` 标题，不再只识别 `第X章`。
+- CLI 新增 `ingest-chapter-list`，支持按 JSON chapter list 做逐章 / 多章导入。
+- `POST /api/import` 现在也支持 JSON `chapters` list 导入，便于外部系统先分章再送入主链。
+- 新增 `docs/novel-ingest-chapter-standard.md`，集中说明切章标准、原文保存位置、续跑/续传原则，以及 chapter list 接口规范。
+
+
+### 真实中文修仙样例首轮 manual eval
+- 新增 `docs/real-xianxia-manual-eval-20260506.md`，记录首个真实中文修仙样例的 manual eval 结果与问题清单。
+- 真实原文使用 `第一节/第二节/第三节` 标题时，`inspect/ingest` 显示 `chapter_count=0`，确认当前切章器对节级标题兼容不足。
+- 对标题做最小归一化后，3 章主链成功完成；但第 2 章暴露 `small_model_pipeline` 的 `dialogue_candidates` schema 不兼容，依赖 `monolithic_fallback` 收口。
+- 同时记录 operator-facing 导出链在该真实分支上的超时现象，作为下一轮 retrieval / governance 稳定性排查入口。
+- 后续补修后已用同一份原始未归一化修仙样例复测，`inspect/ingest` 直接得到 `normalized_chapter_count=5` / `chapter_count=5`，说明 `第X节` 标题兼容已打通。
+- 后续 5 节原始短复跑已完成：`completed_chapters=5`、`failed_jobs=0`；并确认 chapter 2 的 dialogue schema 问题与 chapter 3 的 normalized_title 问题都未在真实链路上复发。
+- 对完成分支做 stepwise profiling 后，已确认导出慢点边界主要落在 retrieval diagnostics / benchmark 链，而不是 branch report / author knowledge 基础导出。
+- 进一步对完成分支做导出链优化后，`export-retrieval-benchmark`、`export-search-branch-diagnostics`、`export-governance-dashboard` 与 `export-novel-assistant` 已恢复成功导出，说明 operator-facing 导出已从“不可用”改善为“可用但 retrieval 链仍偏重”。
+- 继续做 route-level profiling 后，已确认 retrieval diagnostics 链中 `rerank`（约 6.3s）与 `vector route`（约 2.5s）是主要慢点，SQL route 并非主瓶颈。
+- 继续加入 rerank candidate cap 后复测发现：当前 5 节分支的 raw_search 仅有 5 个候选，因此 rerank 仍约 6.7s；说明该改动更偏向保护大分支，而短分支的下一步优化应聚焦 rerank 本体。
+- 在完成分支上补入按需触发 rerank 后，service 级 diagnostics 约 0.031s，CLI diagnostics/benchmark 分别在 5s/10s 窗口内成功，说明 retrieval operator export 已恢复到短窗口稳定可用。
+- 在完成分支上引入 vector route 按需跳过后，`search_branch_with_diagnostics` service 级约 4.375s，CLI diagnostics/benchmark 也已在 20s/25s 窗口内成功，说明 retrieval operator export 进一步恢复。
+- 继续加入 rerank 输入裁剪后复测，完成分支上的 rerank 时延从约 6.688s 降到约 6.021s，说明已有小幅收益，但 rerank 仍是第一慢点。
+- 进一步尝试把 rerank 文本裁剪从 320 收紧到 160 后，在完成分支上未得到更好时延（约 6.745s），因此已回退，并把该负向证据记录到评估文档中。
+- 进一步尝试只对 top5 候选做 rerank，在完成分支上复测约 6.998s，未优于当前较优基线，因此该改动已回退并作为负向证据保留。
+- 在完成分支上补入 reader feedback 真导入与 whole-book readiness 证据：3 条评论成功导入，feedback summary 可导出；whole-book readiness contract 成功返回，但 provider health 仍提示 degraded。
+
+
+### 小说助手多能力人工测试与评估手册
+- 新增 `docs/novel-assistant-manual-eval-handbook-20260505.md`，把导入新小说后的人工测试流程收口成一份可直接执行的操作手册。
+- 手册覆盖拆书、检索/RRF/rerank、风险检测、续写/仿写、whole-book、reader feedback、governance/archive 的人工验收路径。
+- 同时补入“薄弱点溯源”方法，要求问题按源文本层 / 知识层 / 检索层 / 控制生成层 / 治理层定位，而不是只给模糊结论。
+- `docs/README.md` 已同步把这份手册挂到使用者主路径，方便后续手动测试与商业化验收。
+- 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
+- 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
+- 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
+## 2026-05-05
+
+### AI 小说助手主链与治理导出升级
+- 新增并持续扩展了 novel assistant 主链：planning / control / revision / rewrite / candidate / governance / archive。
+- 关键能力包括：story bible、future chapter outline、draft preparation、direct skeleton、revision loop、automatic rewrite、final candidate、publish-ready release、sample-based release criteria、freeze artifact、handoff approval、operator brief、runbook、rollback、postmortem、closure、governance summary、external report bundle、final release archive。
+- 新增真实 reader feedback ingestion 与 live PostgreSQL 验证样例。
+- 新增 whole-book consistency backflow 到 candidate/release/governance surfaces。
+- 每轮遇到的挑战（例如旧库缺表降级、sample-derived backflow、markdown 拼接错误）均通过测试、样例刷新和文档收口闭环。
+
 ## 2026-05-04
 - Added executable eval/governance cross-lane sample bundle coverage via `CrossLaneSampleBundle`, `EvalGovernanceService.evaluate_sample_bundle()`, and `docs/examples/eval-governance-cross-lane-bundle.sample.json`.
 - Documented the `eval-governance-freeze.v1` handoff gate across README, docs index, final handoff, release handoff, and the eval governance sample release contract.
@@ -185,6 +238,179 @@
 - 目的：把“我们有没有考虑这些能力、哪些已经利用充分、哪些还没做强”收口为结构化文档，方便后续持续建设
 
 ### 对话设计器与 research pack 本地 skill 资产补齐
+
+## 2026-05-07
+
+### 仿写创新 steering pack 落地
+- 为仿写链新增外置 steering pack 入口，可显式注入：
+  - `worldview_capsule`
+  - `trope_axes`
+  - `innovation_directives`
+  - `taboo_innovations`
+  - `external_knowledge_refs`
+- 代码接入点：
+  - `ChapterImitationPlan` 新增对应字段
+  - `ChapterImitationService.build_imitation_plan(...)`
+  - `build_skeleton_draft(...)`
+  - `build_llm_draft(...)`
+  - `HarnessControllerService.build_skill_outputs(...)`
+  - `build_skill_prompt_previews(...)`
+  - `run_harness(...)`
+  - CLI:
+    - `writer-imitate`
+    - `writer-imitate-range`
+    - `writer-imitate-review`
+    - `preflight-imitation`
+    - `harness-imitation`
+- 目的：
+  - 让仿写不只贴着 source chapter 走
+  - 允许显式注入新的世界观底座、题材套路轴与创新导向
+  - 同时保留 taboo list 防止越界创新
+- 新增文档：
+  - `docs/imitation-innovation-and-steering.md`
+  - `docs/writer-imitation-workflow.md` 补 steering pack 用法
+- 新增回归：
+  - `tests/test_chapter_imitation_service.py`
+  - `tests/test_imitation_harness_service.py`
+  - `tests/test_cli.py`
+- 验证：
+  - `./.venv/bin/pytest tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py tests/test_cli.py -q`
+  - `26 passed`
+  - `python3 -m py_compile ...` 通过
+
+### steering pack 持久化与批量创新实验流程补齐
+- 将 `steering_pack` 持久化到 writer-facing 输出：
+  - `writer-imitate*.json`
+  - `writer-imitate*.md`
+  - `writer-innovation-experiment-*.json/.md`
+- 新增批量实验 CLI：
+  - `writer-innovation-experiment`
+- 新增文档：
+  - `docs/trope-worldview-rag-library-format.md`
+  - `docs/batch-innovation-experiment-workflow.md`
+- 价值：
+  - 让世界观/套路/创新导向不只在执行时存在，而是能被落盘复盘
+  - 给后续 trope/worldview RAG 文档库一个可执行的文档格式
+  - 给连续章节提供一条统一底座的创新实验工作流
+
+### 本地 steering 文档库装配器落地
+- 新增：
+  - `novel_analyzer/services/steering_library_service.py`
+  - `rag/trope-library/xianxia-underdog-ledger.md`
+  - `rag/worldview-dossiers/aura-decline-tax-state.md`
+  - `rag/audience-expectation-notes/male-xianxia-commercial-hooks.md`
+- 新能力：
+  - 通过 `--trope-doc`
+  - `--worldview-doc`
+  - `--audience-doc`
+  从本地 markdown 文档库装配 steering pack
+- 接入点：
+  - `writer-imitate`
+  - `writer-imitate-range`
+  - `writer-imitate-review`
+  - `preflight-imitation`
+  - `harness-imitation`
+  - `writer-innovation-experiment`
+- 价值：
+  - 不必直接上复杂 RAG，也能先把 trope/worldview/audience 文档库接入仿写链
+  - 后续真正做检索层时，可复用同一 steering pack contract
+- 验证：
+  - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
+  - `27 passed`
+
+### steering 最小检索器 + 命中原因 + innovation/risk delta
+- 为 `SteeringLibraryService` 新增最小 retrieval/ranking：
+  - 基于 slug / label / section 内容做轻量匹配
+  - 输出 `retrieval_meta.hit_reasons`
+- 为 experiment / writer 输出新增：
+  - `steering_retrieval_meta`
+  - `experiment_meta.innovation_delta_summary`
+  - `experiment_meta.risk_delta_summary`
+- 价值：
+  - 不再只是“装配到哪些文档”，而是知道“为什么命中这些文档”
+  - 让实验结果可复盘“创新增量”和“越界风险增量”
+- 验证：
+  - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
+  - `28 passed`
+
+### 命中文档摘要 + 样例库扩充
+- 在 writer-facing markdown 输出中新增：
+  - `## Steering Retrieval Meta`
+  - `### Hit Reasons`
+- 扩充本地样例库：
+  - `rag/trope-library/clan-bureaucracy-power-climb.md`
+  - `rag/worldview-dossiers/sect-credit-feudal-order.md`
+  - `rag/audience-expectation-notes/cautious-growth-reader-signals.md`
+- 价值：
+  - 让人工复盘能直接看到“命中了哪些文档、为什么命中”
+  - 让本地文档库不再只有单条样例，更接近最小可用实验库
+- 验证：
+  - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
+  - `29 passed`
+
+### 长分支推进到 30 章并锁定 fresh evidence
+- 继续推进真实中文修仙长分支 `62e636f0-c901-4167-aa1c-aff3da9c83ef`
+- fresh evidence：
+  - `completed_chapters=30`
+  - `failed_jobs=0`
+  - `running_jobs=0`
+  - `next_chapter=31`
+  - `fact_count=491`
+  - `graph_node_count=679`
+  - `graph_edge_count=37602`
+- 新增落盘证据：
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/status-after-30.txt`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/chapters-after-30.txt`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch21.bundle.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch22.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch23.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch24.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch25.raw.json`
+- 价值：把“真实长分支是否已推进到 30 章”从口头状态升级为可复查证据
+
+### provider 波动下的 22~25 章 fallback 边界补证
+- 对 chapter 22~25 导出 raw output，确认存在：
+  - `402 Insufficient Balance`
+  - `403 SUBSCRIPTION_NOT_FOUND`
+- 与已落地的 `analysis_service` 本地 heuristic fallback 一起，形成新的主链判断：
+  - provider 不可用时仍可保章节不断档
+  - 但 chapter 22~25 的细粒度语义质量仍需后续 provider 恢复后补跑
+- 价值：避免把 fallback 章误当成完整语义分析章，减少后续仿写/评估误判
+
+### 新小说仿写 21~30 正文补写落到 output/
+- 在 `output/novel-imitation-21-30/` 下新增：
+  - `combined.md`
+  - `eval-notes.md`
+  - `README.md`
+  - `ch21-周家子女.md` ~ `ch30-料峭春风.md`
+- 本轮不是继续输出 skeleton，而是基于：
+  - branch context
+  - chapter bundle
+  - raw output
+  - 已完成章节连续状态
+  进行人工实战补写
+- 当前状态：21~30 已达到“可连续阅读、可人工审稿、可顺着写 31+”的水平
+- 价值：把用户要的“根据示例小说仿写新的小说”从结构稿推进到可读正文稿
+
+### 文档入口补充本地仿写正文评审路径
+- 更新 `docs/real-xianxia-manual-eval-20260506.md`
+  - 补入长分支推进到 30 章
+  - 补入 provider fallback 边界
+  - 补入 `output/novel-imitation-21-30/` 的正文评审入口
+- 更新 `docs/README.md`
+  - 在使用者阅读顺序中补充本地 `output` 仿写正文入口说明
+- 价值：减少后续接手时只看到流程文档、却找不到最新正文样稿的问题
+
+### targeted regression 继续通过
+- 验证：
+  - `./.venv/bin/pytest tests/test_analysis_service.py tests/test_cli.py -q`
+- 结果：
+  - `24 passed`
+- 说明：
+  - provider unavailable fallback
+  - writer review markdown 增强
+  - writer index CLI
+  当前回归仍稳定
 - 新增：
   - `skills_dir/dialogue-designer/`
   - `skills_dir/research-pack/`

@@ -48,6 +48,8 @@ class ChapterIntakeOutput(BaseModel):
             value['chapter_index'] = value['chapter_id']
         if 'normalized_title' not in value and 'chapter_title' in value:
             value['normalized_title'] = value['chapter_title']
+        if 'normalized_title' not in value and 'title' in value:
+            value['normalized_title'] = value['title']
         if 'cleaned_text' not in value and 'paragraph_blocks' in value:
             blocks = value.get('paragraph_blocks') or []
             if isinstance(blocks, list):
@@ -80,6 +82,33 @@ class ChapterIntakeOutput(BaseModel):
     @classmethod
     def _normalize_scene_candidates(cls, value: Any) -> Any:
         return cls._coerce_blocks(value)
+
+    @field_validator('dialogue_candidates', mode='before')
+    @classmethod
+    def _normalize_dialogue_candidates(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return []
+        normalized: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    normalized.append(text)
+                continue
+            if isinstance(item, dict):
+                speaker = str(item.get('speaker') or '').strip()
+                text = str(
+                    item.get('text')
+                    or item.get('line')
+                    or item.get('content')
+                    or item.get('dialogue')
+                    or ''
+                ).strip()
+                if speaker and text:
+                    normalized.append(f"{speaker}: {text}")
+                elif text:
+                    normalized.append(text)
+        return normalized
 
 
 class ChapterFactExtractionOutput(BaseModel):
@@ -670,6 +699,11 @@ class ChapterImitationPlan(BaseModel):
     hard_constraints: list[str] = Field(default_factory=list)
     soft_constraints: list[str] = Field(default_factory=list)
     risk_focus: list[str] = Field(default_factory=list)
+    worldview_capsule: list[str] = Field(default_factory=list)
+    trope_axes: list[str] = Field(default_factory=list)
+    innovation_directives: list[str] = Field(default_factory=list)
+    taboo_innovations: list[str] = Field(default_factory=list)
+    external_knowledge_refs: list[str] = Field(default_factory=list)
 
 
 class ChapterImitationDraft(BaseModel):

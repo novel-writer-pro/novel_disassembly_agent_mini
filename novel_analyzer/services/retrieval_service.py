@@ -72,6 +72,11 @@ class RetrievalSearchDiagnostics:
 class RetrievalService:
     """Materializes retrieval-friendly rows from validated chapter analysis."""
 
+    RAW_CANDIDATE_MULTIPLIER = 2
+    RERANK_CANDIDATE_MULTIPLIER = 2
+    MAX_RERANK_CANDIDATES = 10
+    RERANK_TEXT_CHAR_LIMIT = 320
+
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
         self.settings = settings or get_settings()
@@ -170,9 +175,13 @@ class RetrievalService:
     @staticmethod
     def _hit_rerank_text(hit: RetrievalHit) -> str:
         keywords = ", ".join(hit.keyword_list[:8])
-        return "\n".join(
+        text = "\n".join(
             part for part in [hit.title.strip(), hit.summary_text.strip(), keywords.strip()] if part
         )
+        if len(text) <= RetrievalService.RERANK_TEXT_CHAR_LIMIT:
+            return text
+        clipped = text[: RetrievalService.RERANK_TEXT_CHAR_LIMIT].rstrip('，。；;、, \n')
+        return clipped + '…'
 
     @staticmethod
     def _fuse_recall_lists(
@@ -244,18 +253,24 @@ class RetrievalService:
     ) -> tuple[list[RetrievalHit], bool]:
         if not hits:
             return hits, False
+        candidate_limit = min(
+            len(hits),
+            max(limit * self.RERANK_CANDIDATE_MULTIPLIER, limit),
+            self.MAX_RERANK_CANDIDATES,
+        )
+        rerank_candidates = hits[:candidate_limit]
         provider = get_rerank_provider(self.settings)
         if isinstance(provider, DisabledRerankProvider):
             return hits[:limit], False
         try:
             rerank_scores = provider.rerank(
                 query,
-                [self._hit_rerank_text(hit) for hit in hits],
+                [self._hit_rerank_text(hit) for hit in rerank_candidates],
             )
         except Exception:
             return hits[:limit], False
         reranked = sorted(
-            zip(hits, rerank_scores, strict=True),
+            zip(rerank_candidates, rerank_scores, strict=True),
             key=lambda item: (-item[1], -item[0].score, item[0].chapter_index),
         )
         return (
@@ -458,6 +473,55 @@ class RetrievalService:
     def _elapsed_ms(start: float) -> float:
         return max(0.0, (time.perf_counter() - start) * 1000.0)
 
+    @staticmethod
+    def _covered_chapter_count(routes: list[tuple[str, list[RetrievalHit]]]) -> int:
+        seen: set[int] = set()
+        for _route_name, hits in routes:
+            for hit in hits:
+                seen.add(hit.chapter_index)
+        return len(seen)
+
+    def _should_skip_vector_route(
+        self,
+        routes: list[tuple[str, list[RetrievalHit]]],
+        *,
+        limit: int,
+    ) -> bool:
+        if not routes:
+            return False
+        has_high_confidence_lexical = any(
+            route_name in {"fts", "entity_exact"} and hits
+            for route_name, hits in routes
+        )
+        if not has_high_confidence_lexical:
+            return False
+        return self._covered_chapter_count(routes) >= limit
+
+    @staticmethod
+    def _should_skip_rerank_for_diagnostics(
+        routes: list[tuple[str, list[RetrievalHit]]],
+        raw_hits: list[RetrievalHit],
+        *,
+        limit: int,
+    ) -> bool:
+        if not routes or not raw_hits:
+            return False
+        top_chapter = raw_hits[0].chapter_index
+        has_high_confidence_lexical_top = any(
+            route_name in {"fts", "entity_exact"} and hits and hits[0].chapter_index == top_chapter
+            for route_name, hits in routes
+        )
+        if not has_high_confidence_lexical_top:
+            return False
+        contributing_routes = sum(
+            1
+            for _route_name, hits in routes
+            if any(hit.chapter_index == top_chapter for hit in hits[:limit])
+        )
+        if contributing_routes < 2:
+            return False
+        return RetrievalService._covered_chapter_count(routes) >= limit
+
     def _timed_route(
         self,
         *,
@@ -647,7 +711,7 @@ class RetrievalService:
         if self.session.bind is None:
             raise ValueError("session is not bound")
         dialect = self.session.bind.dialect.name
-        fetch_limit = max(limit * 4, limit)
+        fetch_limit = max(limit * self.RAW_CANDIDATE_MULTIPLIER, limit)
         route_diagnostics: list[RetrievalRouteDiagnostics] = []
         if dialect == "postgresql":
             routes: list[tuple[str, list[RetrievalHit]]] = []
@@ -779,15 +843,24 @@ class RetrievalService:
                 routes.append(route)
 
             started_at = time.perf_counter()
-            vector_hits = self._vector_route(branch_id, query, fetch_limit)
-            route = self._timed_route(
-                route_name="vector",
-                started_at=started_at,
-                hits=vector_hits,
-                route_diagnostics=route_diagnostics,
-            )
-            if route is not None:
-                routes.append(route)
+            if self._should_skip_vector_route(routes, limit=limit):
+                route_diagnostics.append(
+                    RetrievalRouteDiagnostics(
+                        route="vector",
+                        hit_count=0,
+                        latency_ms=0.0,
+                    )
+                )
+            else:
+                vector_hits = self._vector_route(branch_id, query, fetch_limit)
+                route = self._timed_route(
+                    route_name="vector",
+                    started_at=started_at,
+                    hits=vector_hits,
+                    route_diagnostics=route_diagnostics,
+                )
+                if route is not None:
+                    routes.append(route)
             return routes, route_diagnostics
 
         raise RuntimeError(
@@ -809,7 +882,7 @@ class RetrievalService:
 
         return self._fuse_recall_lists(
             self._collect_recall_candidates(branch_id, query, limit),
-            limit=max(limit * 4, limit),
+            limit=max(limit * self.RAW_CANDIDATE_MULTIPLIER, limit),
         )
 
     def search_branch(self, branch_id: str, query: str, limit: int = 5) -> list[RetrievalHit]:
@@ -854,9 +927,14 @@ class RetrievalService:
             limit=max(limit * 4, limit),
         )
         raw_latency_ms = self._elapsed_ms(raw_started_at)
-        rerank_started_at = time.perf_counter()
-        reranked_hits, rerank_applied = self._apply_rerank(query, raw_hits, limit=limit)
-        rerank_latency_ms = self._elapsed_ms(rerank_started_at)
+        if self._should_skip_rerank_for_diagnostics(routes, raw_hits, limit=limit):
+            reranked_hits = raw_hits[:limit]
+            rerank_applied = False
+            rerank_latency_ms = 0.0
+        else:
+            rerank_started_at = time.perf_counter()
+            reranked_hits, rerank_applied = self._apply_rerank(query, raw_hits, limit=limit)
+            rerank_latency_ms = self._elapsed_ms(rerank_started_at)
         return RetrievalSearchDiagnostics(
             query=query,
             raw_hits=raw_hits,

@@ -187,3 +187,13 @@ novel-analyzer show-whole-book-imitation-readiness \
   - `last_status = ok`
   - `success_events = 7`
   - `last_error = null`
+
+
+### 2026-05-05 DeepSeek provider-backed success
+
+- `docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json`
+- `contract_version = whole-book-imitation.v1`
+- `execution_mode = sandbox_execute`
+- `executed_steps = 2`
+- `overall_score = 84`
+- `overall_risk_level = low`

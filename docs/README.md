@@ -25,6 +25,8 @@
 - [`./architecture/README.md`](./architecture/README.md)
 - [`./architecture/ai-novel-system-blueprint.md`](./architecture/ai-novel-system-blueprint.md)
 - [`./architecture/independent-agent-knowledge-and-retrieval.md`](./architecture/independent-agent-knowledge-and-retrieval.md)
+- [`./architecture/novel-assistant-system-architecture.md`](./architecture/novel-assistant-system-architecture.md)
+- [`./architecture/novel-assistant-business-architecture.md`](./architecture/novel-assistant-business-architecture.md)
 - [`./architecture/risk-audit-semantic-enhancement.md`](./architecture/risk-audit-semantic-enhancement.md)
 - [`./architecture/risk-audit-embedding-pgvector-implementation-spec.md`](./architecture/risk-audit-embedding-pgvector-implementation-spec.md)
 - [`./architecture/risk-audit-completion-status.md`](./architecture/risk-audit-completion-status.md)
@@ -41,13 +43,16 @@
 - [`./features/imitation-checkout-20260504.md`](./features/imitation-checkout-20260504.md)
 - [`./features/eval-governance-checkout-20260504.md`](./features/eval-governance-checkout-20260504.md)
 - [`./features/independent-agent-capability-checkout-20260505.md`](./features/independent-agent-capability-checkout-20260505.md)
+- [`./features/novel-assistant-control-checkout-20260505.md`](./features/novel-assistant-control-checkout-20260505.md)
 - [`./product/ai-novel-product-strategy.md`](./product/ai-novel-product-strategy.md)
 - [`./product/ai-novel-capability-scorecard.md`](./product/ai-novel-capability-scorecard.md)
+- [`./product/ai-novel-capability-map.md`](./product/ai-novel-capability-map.md)
 - [`./strategy/ai-novel-system-benchmark.md`](./strategy/ai-novel-system-benchmark.md)
 - [`./strategy/docs-governance-and-handoff-checklist.md`](./strategy/docs-governance-and-handoff-checklist.md)
 - [`./strategy/docs-information-architecture-guide.md`](./strategy/docs-information-architecture-guide.md)
 - [`./strategy/docs-faq-and-consolidation-guide.md`](./strategy/docs-faq-and-consolidation-guide.md)
 - [`./strategy/capability-roadmap-and-deliverables.md`](./strategy/capability-roadmap-and-deliverables.md)
+- [`./process/README.md`](./process/README.md)
 - [`./whitepaper/ai-novel-system-whitepaper.md`](./whitepaper/ai-novel-system-whitepaper.md)
 - [`./whitepaper/ai-novel-system-whitepaper-v2.md`](./whitepaper/ai-novel-system-whitepaper-v2.md)
 
@@ -63,15 +68,38 @@
 ### 推荐阅读顺序
 1. [`./cli-operations-manual.md`](./cli-operations-manual.md)
 2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
-3. [`./real-run-checklist.md`](./real-run-checklist.md)
-4. [`./review-template.md`](./review-template.md)
-5. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+3. [`./novel-ingest-chapter-standard.md`](./novel-ingest-chapter-standard.md)
+4. [`./real-run-checklist.md`](./real-run-checklist.md)
+5. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
+6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
+7. [`./review-template.md`](./review-template.md)
+8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+9. [`./writer-imitation-workflow.md`](./writer-imitation-workflow.md)
+10. `../output/novel-imitation-21-30/README.md`（本地仿写正文评审入口，不提交）
+11. [`./reader-sim-review-usage.md`](./reader-sim-review-usage.md)
+12. [`./imitation-innovation-and-steering.md`](./imitation-innovation-and-steering.md)
+13. [`./trope-worldview-rag-library-format.md`](./trope-worldview-rag-library-format.md)
+14. [`./batch-innovation-experiment-workflow.md`](./batch-innovation-experiment-workflow.md)
+15. [`./imitation-next-dev-handoff.md`](./imitation-next-dev-handoff.md)
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
 - 第 2 步：再看日常使用细节
-- 第 3 步：真实小说试跑前看清单
-- 第 4 步：试跑后用模板做复盘
+- 第 3 步：先确认导入、切章、保存与续传规范
+- 第 4 步：真实小说试跑前看清单
+- 第 5 步：按全能力手册做拆书 / 检索 / 风险 / 仿写 / 治理人工测试
+- 第 6 步：用人工测试记录模板沉淀结论与薄弱点
+- 第 7 步：试跑后用模板做复盘
+- 第 8 步：如果进入仿写实战，按 writer imitation workflow 走 output 工作目录
+- 第 9 步：若已进入真实仿写补写，可直接查看 `output/novel-imitation-21-30/combined.md` 做连续人工审稿
+- 第 10 步：若想确认“模拟读者阅读 / reader sim”怎么用，直接看 `reader-sim-review-usage.md`
+- 第 11 步：若想让仿写不只保守贴原章，而是显式引入新世界观/套路/创新导向，直接看 `imitation-innovation-and-steering.md`
+- 第 12 步：若想建设 trope/worldview 文档库并准备 RAG，直接看 `trope-worldview-rag-library-format.md`
+- 第 13 步：若想对一批章节统一做创新导向实验，直接看 `batch-innovation-experiment-workflow.md`
+- 第 14 步：若想直接从本地 trope/worldview/audience 文档装配 steering pack，先准备 `rag/` 目录再走 innovation experiment
+- 第 15 步：若本轮要暂停并为后续继续开发留交接入口，直接看 `imitation-next-dev-handoff.md`
+- 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
+- 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 
 ---
 
@@ -131,11 +159,15 @@
 ### 使用类文档
 1. [`./cli-operations-manual.md`](./cli-operations-manual.md)
 2. [`./direct-usage-guide.md`](./direct-usage-guide.md)
-3. [`./real-run-checklist.md`](./real-run-checklist.md)
-4. [`./review-template.md`](./review-template.md)
-5. [`./session-handoff-manual.md`](./session-handoff-manual.md)
-6. [`../apps/web/README.md`](../apps/web/README.md)
-7. [`../apps/api/README.md`](../apps/api/README.md)
+3. [`./novel-ingest-chapter-standard.md`](./novel-ingest-chapter-standard.md)
+4. [`./real-run-checklist.md`](./real-run-checklist.md)
+5. [`./novel-assistant-manual-eval-handbook-20260505.md`](./novel-assistant-manual-eval-handbook-20260505.md)
+6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
+7. [`./review-template.md`](./review-template.md)
+8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+9. [`./writer-imitation-workflow.md`](./writer-imitation-workflow.md)
+10. [`../apps/web/README.md`](../apps/web/README.md)
+11. [`../apps/api/README.md`](../apps/api/README.md)
 
 ### 接口类文档
 1. [`./interface-manifest.md`](./interface-manifest.md)
@@ -151,32 +183,44 @@
 11. [`./examples/whole-book-imitation-run.sample.json`](./examples/whole-book-imitation-run.sample.json)
 12. [`./examples/whole-book-imitation-run.request.sample.json`](./examples/whole-book-imitation-run.request.sample.json)
 13. [`./examples/whole-book-imitation-run.provider-success-20260504.sample.json`](./examples/whole-book-imitation-run.provider-success-20260504.sample.json)
-14. [`./examples/sample-branch-report.post-migration-20260504.sample.md`](./examples/sample-branch-report.post-migration-20260504.sample.md)
-15. [`./examples/whole-book-imitation-run.error.provider-billing.sample.json`](./examples/whole-book-imitation-run.error.provider-billing.sample.json)
-16. [`./examples/sample-branch-search-diagnostics-20260505.sample.json`](./examples/sample-branch-search-diagnostics-20260505.sample.json)
-17. [`./examples/sample-branch-author-knowledge-20260505.sample.json`](./examples/sample-branch-author-knowledge-20260505.sample.json)
-18. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
-19. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
-20. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
-21. [`./whole-book-imitation-freeze-evidence-20260503.md`](./whole-book-imitation-freeze-evidence-20260503.md)
-22. [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
-23. [`./whole-book-imitation-integration-quickstart.md`](./whole-book-imitation-integration-quickstart.md)
-24. [`./whole-book-imitation-docs-index.md`](./whole-book-imitation-docs-index.md)
-25. [`./whole-book-imitation-provider-recovery-checklist.md`](./whole-book-imitation-provider-recovery-checklist.md)
-26. [`./whole-book-imitation-sample-coverage-matrix.md`](./whole-book-imitation-sample-coverage-matrix.md)
-27. [`./whole-book-imitation-handoff-brief.md`](./whole-book-imitation-handoff-brief.md)
-28. [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
-29. [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
+14. [`./examples/whole-book-imitation-run.sandbox-live-20260505.sample.json`](./examples/whole-book-imitation-run.sandbox-live-20260505.sample.json)
+15. [`./examples/sample-branch-report.post-migration-20260504.sample.md`](./examples/sample-branch-report.post-migration-20260504.sample.md)
+16. [`./examples/whole-book-imitation-run.error.provider-billing.sample.json`](./examples/whole-book-imitation-run.error.provider-billing.sample.json)
+17. [`./examples/sample-branch-search-diagnostics-20260505.sample.json`](./examples/sample-branch-search-diagnostics-20260505.sample.json)
+18. [`./examples/sample-branch-author-knowledge-20260505.sample.json`](./examples/sample-branch-author-knowledge-20260505.sample.json)
+19. [`./examples/sample-branch-novel-assistant-20260505.sample.json`](./examples/sample-branch-novel-assistant-20260505.sample.json)
+20. [`./examples/sample-branch-retrieval-benchmark-20260505.sample.json`](./examples/sample-branch-retrieval-benchmark-20260505.sample.json)
+21. [`./examples/sample-branch-governance-dashboard-20260505.sample.json`](./examples/sample-branch-governance-dashboard-20260505.sample.json)
+22. [`./examples/sample-branch-governance-report-brief-20260505.sample.md`](./examples/sample-branch-governance-report-brief-20260505.sample.md)
+23. [`./examples/sample-branch-release-review-note-20260505.sample.md`](./examples/sample-branch-release-review-note-20260505.sample.md)
+24. [`./examples/sample-branch-approval-decision-memo-20260505.sample.md`](./examples/sample-branch-approval-decision-memo-20260505.sample.md)
+25. [`./examples/sample-reader-feedback-summary-20260505.sample.json`](./examples/sample-reader-feedback-summary-20260505.sample.json)
+26. [`./examples/sample-branch-external-report-bundle-20260505.sample.json`](./examples/sample-branch-external-report-bundle-20260505.sample.json)
+27. [`./examples/sample-branch-external-report-bundle-20260505.sample.md`](./examples/sample-branch-external-report-bundle-20260505.sample.md)
+28. [`./examples/sample-branch-final-release-archive-20260505.sample.json`](./examples/sample-branch-final-release-archive-20260505.sample.json)
+29. [`./whole-book-imitation-api-stability-summary.md`](./whole-book-imitation-api-stability-summary.md)
+30. [`./whole-book-imitation-api-versioning.md`](./whole-book-imitation-api-versioning.md)
+31. [`./whole-book-imitation-api-freeze-readiness.md`](./whole-book-imitation-api-freeze-readiness.md)
+32. [`./whole-book-imitation-freeze-evidence-20260503.md`](./whole-book-imitation-freeze-evidence-20260503.md)
+33. [`./examples/whole-book-imitation-readiness.sample.json`](./examples/whole-book-imitation-readiness.sample.json)
+34. [`./whole-book-imitation-integration-quickstart.md`](./whole-book-imitation-integration-quickstart.md)
+35. [`./whole-book-imitation-docs-index.md`](./whole-book-imitation-docs-index.md)
+36. [`./whole-book-imitation-provider-recovery-checklist.md`](./whole-book-imitation-provider-recovery-checklist.md)
+37. [`./whole-book-imitation-sample-coverage-matrix.md`](./whole-book-imitation-sample-coverage-matrix.md)
+38. [`./whole-book-imitation-handoff-brief.md`](./whole-book-imitation-handoff-brief.md)
+39. [`./eval-governance-sample-release-contract.md`](./eval-governance-sample-release-contract.md)
+40. [`./examples/eval-governance-cross-lane-bundle.sample.json`](./examples/eval-governance-cross-lane-bundle.sample.json)
 
 ### 交付与维护类文档
-1. [`./final-handoff.md`](./final-handoff.md)
-2. [`./release-handoff-brief.md`](./release-handoff-brief.md)
-3. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
-4. [`./model-eval-template.md`](./model-eval-template.md)
-5. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
-6. [`./application-seams.md`](./application-seams.md)
-7. [`./api-contract.md`](./api-contract.md)
-8. [`./storage-lifecycle.md`](./storage-lifecycle.md)
+1. [`./release-delivery-archive-index-20260505.md`](./release-delivery-archive-index-20260505.md)
+2. [`./final-handoff.md`](./final-handoff.md)
+3. [`./release-handoff-brief.md`](./release-handoff-brief.md)
+4. [`./real-run-evaluation-1-12.md`](./real-run-evaluation-1-12.md)
+5. [`./model-eval-template.md`](./model-eval-template.md)
+6. [`./agent-skills-and-embedding.md`](./agent-skills-and-embedding.md)
+7. [`./application-seams.md`](./application-seams.md)
+8. [`./api-contract.md`](./api-contract.md)
+9. [`./storage-lifecycle.md`](./storage-lifecycle.md)
 
 ### 风险审查体系文档
 1. [`./risk-audit-docs-index.md`](./risk-audit-docs-index.md)

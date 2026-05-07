@@ -790,12 +790,14 @@ class HarnessControllerService:
         source_chapter_index: int,
         target_goal: str,
         draft: ChapterImitationDraft,
+        steering_pack: dict[str, object] | None = None,
     ) -> dict[str, str]:
         title, source_text = self.chapter_imitation._source_chapter_text(branch_id, source_chapter_index)  # noqa: SLF001
         plan = self.chapter_imitation.build_imitation_plan(
             branch_id,
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
+            steering_pack=steering_pack,
         )
         planner_context = self.chapter_imitation.next_chapter_planner.build_context(
             branch_id,
@@ -818,7 +820,16 @@ class HarnessControllerService:
                 "source_plan_json": json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
                 "branch_context_json": json.dumps(planner_context.model_dump(mode="json"), ensure_ascii=False, indent=2),
                 "mapping_pack_json": "{}",
-                "carry_over_state_json": "{}",
+                "carry_over_state_json": json.dumps(
+                    {
+                        "worldview_capsule": plan.worldview_capsule,
+                        "trope_axes": plan.trope_axes,
+                        "innovation_directives": plan.innovation_directives,
+                        "external_knowledge_refs": plan.external_knowledge_refs,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
             },
             "draft-self-check": {
                 "draft_text": draft.draft_text,
@@ -906,11 +917,13 @@ class HarnessControllerService:
         target_goal: str,
         draft: ChapterImitationDraft,
         strategy_input: dict[str, object] | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> dict[str, dict[str, object]]:
         plan = self.chapter_imitation.build_imitation_plan(
             branch_id,
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
+            steering_pack=steering_pack,
         )
         planner_context = self.chapter_imitation.next_chapter_planner.build_context(
             branch_id,
@@ -961,9 +974,15 @@ class HarnessControllerService:
                 planner_context.relationship_state_notes[:2]
                 + planner_context.unresolved_threads[:2]
                 + planner_context.world_rules[:2]
+                + [f"trope:{item}" for item in plan.trope_axes[:2]]
+                + [f"worldview:{item}" for item in plan.worldview_capsule[:2]]
             ),
             "relationship_watchpoints": planner_context.relationship_state_notes[:3],
             "rule_watchpoints": planner_context.world_rules[:3],
+            "worldview_capsule": plan.worldview_capsule[:4],
+            "trope_axes": plan.trope_axes[:4],
+            "innovation_directives": plan.innovation_directives[:4],
+            "external_knowledge_refs": plan.external_knowledge_refs[:4],
         }
         strategy = strategy_input or {}
         if strategy:
@@ -1120,6 +1139,7 @@ class HarnessControllerService:
         use_llm: bool = False,
         model_name: str | None = None,
         strategy_input: dict[str, object] | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationHarnessReport:
         skill_contracts = self.list_skill_contracts()
         draft = (
@@ -1128,12 +1148,14 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name,
+                steering_pack=steering_pack,
             )
             if use_llm
             else self.chapter_imitation.build_skeleton_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
+                steering_pack=steering_pack,
             )
         )
 
@@ -1156,6 +1178,7 @@ class HarnessControllerService:
                 target_goal=target_goal,
                 draft=draft,
                 strategy_input=strategy_input,
+                steering_pack=steering_pack,
             )
             preflight = self.preflight_draft(
                 branch_id,
@@ -1207,6 +1230,7 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 draft=draft,
+                steering_pack=steering_pack,
             )
             rounds.append(
                 ChapterImitationHarnessRound(

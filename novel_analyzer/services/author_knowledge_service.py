@@ -19,6 +19,213 @@ class AuthorKnowledgeService:
         self.session = session
         self.context = ContextService(session)
 
+    @staticmethod
+    def _story_bible_pack(
+        *,
+        chapter_cards: list[dict[str, Any]],
+        entity_profiles: list[dict[str, Any]],
+        relationship_index: list[dict[str, Any]],
+        rule_index: list[dict[str, Any]],
+        thread_index: list[dict[str, Any]],
+        summary_layer: dict[str, Any],
+    ) -> dict[str, object]:
+        protagonist_candidates = [item.get("label", "") for item in entity_profiles[:3] if item.get("label")]
+        backbone = []
+        for card in chapter_cards[:8]:
+            backbone.append(
+                {
+                    "chapter_index": card.get("chapter_index"),
+                    "title": card.get("title", ""),
+                    "summary": card.get("summary", ""),
+                    "key_events": list(card.get("key_events", []))[:3],
+                }
+            )
+        actives = [item.get("label", "") for item in relationship_index[:5] if item.get("label")]
+        rules = [item.get("label", "") for item in rule_index[:5] if item.get("label")]
+        threads = [item.get("label", "") for item in thread_index[:6] if item.get("label")]
+        premise = ""
+        if summary_layer.get("chapter_focus"):
+            premise = f"围绕{summary_layer['chapter_focus'][0]}所展开的长线叙事，当前聚焦于人物成长、资源获取与身份突破。"
+
+        chapter_text = "\n".join(str(card.get("summary", "")) for card in chapter_cards)
+        relationship_text = "\n".join(actives)
+        thread_text = "\n".join(threads)
+        character_cards = []
+        for item in entity_profiles[:6]:
+            label = str(item.get("label", "")).strip()
+            if not label:
+                continue
+            role_tags = ["entity"]
+            if protagonist_candidates and label == protagonist_candidates[0]:
+                role_tags.append("protagonist")
+            if label in relationship_text:
+                role_tags.append("relationship-core")
+            if label in thread_text:
+                role_tags.append("thread-linked")
+            motivations = []
+            if label in chapter_text:
+                if any(key in chapter_text for key in ["赎身", "脱籍", "武举", "身份"]):
+                    motivations.append("追求身份突破与长期上升")
+                if any(key in chapter_text for key in ["资源", "养生功", "功法", "修炼"]):
+                    motivations.append("获取资源与能力积累")
+                if any(key in chapter_text for key in ["婚事", "家", "夫妇", "亲属"]):
+                    motivations.append("维持家庭与关系稳定")
+            if not motivations:
+                motivations.append("在当前叙事里承担持续推进作用")
+            tensions = []
+            if any(key in chapter_text for key in ["阶级", "家奴", "身契"]):
+                tensions.append("受身份/阶层约束")
+            if label in relationship_text:
+                tensions.append("关键关系将影响后续选择空间")
+            if not tensions:
+                tensions.append("仍需更多章节证据来确认长期冲突")
+            character_cards.append(
+                {
+                    "label": label,
+                    "role_tags": role_tags,
+                    "first_chapter_index": item.get("first_chapter_index"),
+                    "last_chapter_index": item.get("last_chapter_index"),
+                    "motivation_candidates": motivations[:3],
+                    "tension_points": tensions[:3],
+                    "continuity_focus": f"关注{label}在后续章节中的目标、关系与代价是否持续一致。",
+                }
+            )
+
+        primary_goal = "推进主角的身份突破与资源积累"
+        if any(key in chapter_text for key in ["武举", "脱籍", "赎身"]):
+            primary_goal = "完成赎身/脱籍并争取进入更高身份路径"
+        support_goals = []
+        if any(key in chapter_text for key in ["婚事", "夫妇", "杏"]):
+            support_goals.append("保持家庭与婚后协作稳定")
+        if any(key in chapter_text for key in ["养生功", "功法", "修炼"]):
+            support_goals.append("持续通过修炼累积可转化能力")
+        if any(key in relationship_text for key in ["二姑", "卫荭", "李宅"]):
+            support_goals.append("经营关键关系以换取资源与信息入口")
+        obstacles = []
+        if any(key in chapter_text for key in ["家奴", "身契", "阶级"]):
+            obstacles.append("身份与身契限制")
+        if any(key in chapter_text for key in ["银子", "钱", "收成"]):
+            obstacles.append("银钱与资源不足")
+        if any(key in thread_text for key in ["冲突", "风险"]):
+            obstacles.append("未解线程与潜在风险压力")
+        if not obstacles:
+            obstacles.append("长线冲突仍需更多章节显式化")
+        motivation_tree = {
+            "contract_version": "motivation-tree.v1",
+            "primary_goal": primary_goal,
+            "support_goals": support_goals[:4],
+            "obstacles": obstacles[:4],
+            "decision_pressure": [
+                "每次重要选择都要同时考虑身份、资源、关系三重约束。",
+                "不能只追求短期爽点，要检查是否破坏长期成长弧。",
+            ],
+        }
+        growth_arc = {
+            "contract_version": "growth-arc.v1",
+            "current_stage": "从底层生存转向主动争取身份与能力提升",
+            "completed_beats": [
+                "获得关键关系入口",
+                "开始修炼/资源积累",
+                "形成婚后协作与现实筹划",
+            ],
+            "next_beats": [
+                "把资源积累转成身份跃迁机会",
+                "验证主角是否能承受更高代价与风险",
+                "让家庭、修炼、身份目标形成更强冲突与选择",
+            ],
+            "regression_risks": [
+                "无铺垫的战力或身份跃迁",
+                "关系变化缺少中间证据",
+                "只推进事件，不推进人物选择逻辑",
+            ],
+        }
+        volume_outline = {
+            "contract_version": "volume-outline.v1",
+            "volume_goal": primary_goal,
+            "opening_status": backbone[0]["summary"] if backbone else premise,
+            "mid_volume_turns": [
+                "把关键关系入口转成持续资源通路",
+                "让主角在资源/身份/家庭之间做更难选择",
+            ],
+            "late_volume_payoffs": [
+                "让赎身/脱籍主线迎来一次实质性推进",
+                "让前期修炼与关系经营开始兑现为新位置或新风险",
+            ],
+            "gating_threads": threads[:4],
+            "required_payoffs": support_goals[:3] or ["家庭线与身份线必须发生交叉兑现"],
+        }
+        arc_outline = {
+            "contract_version": "arc-outline.v1",
+            "arc_name": "身份突破与能力积累弧",
+            "setup": [
+                "确认主角受限的初始位置与现实代价",
+                "建立修炼、关系、家庭三条支撑线",
+            ],
+            "progression": growth_arc["completed_beats"] + growth_arc["next_beats"][:2],
+            "turning_points": [
+                "关键关系带来机会，但同时抬高代价",
+                "资源或身份压力迫使主角提前行动",
+            ],
+            "payoff_targets": [
+                "主角获得可验证的新位置或新资格",
+                "关系线不只是陪衬，而要影响主线选择",
+            ],
+            "anti_patterns": growth_arc["regression_risks"],
+        }
+        latest_index = int(backbone[-1]["chapter_index"]) if backbone else 0
+        future_chapter_outline = []
+        for offset in range(1, 4):
+            next_index = latest_index + offset
+            goal = primary_goal if offset == 1 else (support_goals[min(offset - 2, len(support_goals) - 1)] if support_goals else primary_goal)
+            if not goal:
+                goal = primary_goal
+            conflict = (
+                obstacles[min(offset - 1, len(obstacles) - 1)]
+                if obstacles else "让主线推进面临新的现实代价"
+            )
+            payoff = (
+                volume_outline["required_payoffs"][min(offset - 1, len(volume_outline["required_payoffs"]) - 1)]
+                if volume_outline.get("required_payoffs") else "让主线与关系线发生交叉兑现"
+            )
+            turn = (
+                arc_outline["turning_points"][min(offset - 1, len(arc_outline["turning_points"]) - 1)]
+                if arc_outline.get("turning_points") else "让主角做出更难的选择"
+            )
+            future_chapter_outline.append(
+                {
+                    "chapter_index": next_index,
+                    "goal": goal,
+                    "core_conflict": conflict,
+                    "payoff_target": payoff,
+                    "turning_point": turn,
+                }
+            )
+        return {
+            "contract_version": "story-bible-pack.v1",
+            "premise": premise,
+            "protagonist_candidates": protagonist_candidates,
+            "world_rules_digest": rules,
+            "relationship_backbone": actives,
+            "active_threads": threads,
+            "chapter_backbone": backbone,
+            "character_cards": character_cards,
+            "motivation_tree": motivation_tree,
+            "growth_arc": growth_arc,
+            "volume_outline": volume_outline,
+            "arc_outline": arc_outline,
+            "future_chapter_outline": future_chapter_outline,
+            "arc_questions": [
+                "主角当前最核心的长期目标是否稳定？",
+                "哪些关系会决定下一阶段资源或身份突破？",
+                "哪些未解线程必须进入卷纲级管理，而不能只留在章节记忆里？",
+            ],
+            "next_author_actions": [
+                "把 active_threads 按主线 / 支线 / 伏笔分层整理。",
+                "把 protagonist_candidates 扩成角色卡、动机与代价表。",
+                "把 world_rules_digest 转成可直接约束续写/仿写的规则表。",
+            ],
+        }
+
     def build_branch_knowledge_pack(
         self,
         branch_id: str,
@@ -127,6 +334,21 @@ class AuthorKnowledgeService:
             {"label": str(item), "source": "state_summary.new_conflicts"}
             for item in unresolved_threads
         ][:limit_per_section]
+        summary_layer = {
+            "top_entities": [item["label"] for item in entity_profiles[:5]],
+            "top_rules": [item["label"] for item in rule_index[:5]],
+            "top_relationships": [item["label"] for item in relationship_index[:5]],
+            "top_threads": [item["label"] for item in thread_index[:5]],
+            "chapter_focus": [item["title"] for item in chapter_cards[:3]],
+        }
+        story_bible_pack = self._story_bible_pack(
+            chapter_cards=chapter_cards,
+            entity_profiles=entity_profiles,
+            relationship_index=relationship_index,
+            rule_index=rule_index,
+            thread_index=thread_index,
+            summary_layer=summary_layer,
+        )
 
         return {
             "contract_version": "author-knowledge.v1",
@@ -146,6 +368,8 @@ class AuthorKnowledgeService:
             "relationship_index": relationship_index,
             "rule_index": rule_index,
             "thread_index": thread_index,
+            "summary_layer": summary_layer,
+            "story_bible_pack": story_bible_pack,
             "relationship_watch": relationship_watch,
             "rule_watch": rule_watch,
             "unresolved_threads": unresolved_threads,

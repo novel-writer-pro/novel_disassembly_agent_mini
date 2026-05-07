@@ -63,6 +63,15 @@ def test_author_knowledge_service_builds_branch_knowledge_pack(tmp_path: Path) -
         assert pack['relationship_index'] is not None
         assert pack['rule_index'] is not None
         assert pack['thread_index'] is not None
+        assert pack['summary_layer']
+        assert pack['story_bible_pack']['contract_version'] == 'story-bible-pack.v1'
+        assert pack['story_bible_pack']['chapter_backbone']
+        assert pack['story_bible_pack']['character_cards']
+        assert pack['story_bible_pack']['motivation_tree']['contract_version'] == 'motivation-tree.v1'
+        assert pack['story_bible_pack']['growth_arc']['contract_version'] == 'growth-arc.v1'
+        assert pack['story_bible_pack']['volume_outline']['contract_version'] == 'volume-outline.v1'
+        assert pack['story_bible_pack']['arc_outline']['contract_version'] == 'arc-outline.v1'
+        assert len(pack['story_bible_pack']['future_chapter_outline']) == 3
         assert pack['relationship_watch'] is not None
         assert pack['rule_watch'] is not None
         assert pack['unresolved_threads'] is not None
@@ -117,3 +126,6 @@ def test_author_knowledge_service_supports_focus_label_and_chapter_range(tmp_pat
         assert pack['chapter_span']['max'] == 3
         assert all('卫图' in item['label'] for item in pack['entities'])
         assert all('卫图' in item['label'] for item in pack['entity_profiles'])
+        assert pack['summary_layer']['top_entities']
+        assert pack['story_bible_pack']['active_threads'] is not None
+        assert pack['story_bible_pack']['character_cards'][0]['continuity_focus']

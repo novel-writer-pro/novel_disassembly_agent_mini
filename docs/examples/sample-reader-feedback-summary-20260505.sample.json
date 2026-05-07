@@ -1,0 +1,31 @@
+{
+  "contract_version": "reader-feedback-summary.v1",
+  "degraded": false,
+  "comment_count": 3,
+  "signals": [
+    "pacing_slow",
+    "logic_confusion",
+    "reader_hook_strong"
+  ],
+  "signal_counts": {
+    "pacing_slow": 1,
+    "logic_confusion": 1,
+    "reader_hook_strong": 1
+  },
+  "pain_point_hypotheses": [
+    "读者可能认为当前章节节奏偏慢。",
+    "读者可能对部分逻辑/衔接存在疑惑。",
+    "读者对后续情节仍有持续追读意愿。"
+  ],
+  "revision_recommendations": [
+    "压缩中段铺垫，增强行动推进密度。",
+    "补足前因后果和转折证据，降低理解门槛。",
+    "保留章尾钩子并加强下一章期待。"
+  ],
+  "sample_comments": [
+    "节奏有点慢，但我还想继续看。",
+    "这里角色反应有点突兀，逻辑不太顺。",
+    "章尾钩子还不错，我想看后续。"
+  ],
+  "sample_branch_id": "d7ccf24c-1c16-45d9-a446-b40ce1590305"
+}

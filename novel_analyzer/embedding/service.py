@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, cast
@@ -180,15 +181,34 @@ class OnnxBgeEmbeddingProvider:
         return cast(list[list[float]], normalized.astype(np.float32).tolist())
 
 
+@lru_cache(maxsize=8)
+def _cached_embedding_provider(
+    backend: str,
+    model_name: str,
+    model_path: str,
+    cache_dir: str,
+    max_length: int,
+    stub_dim: int,
+) -> EmbeddingProvider:
+    if backend == 'onnx':
+        return OnnxBgeEmbeddingProvider(
+            model_name=model_name,
+            model_path=model_path or None,
+            cache_dir=cache_dir or None,
+            max_length=max_length,
+        )
+    return DeterministicStubEmbeddingProvider(dim=stub_dim)
+
+
 def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvider:
     """Return the configured embedding provider."""
 
     runtime = settings or get_settings()
-    if runtime.embedding_backend == 'onnx':
-        return OnnxBgeEmbeddingProvider(
-            model_name=runtime.embedding_model_name,
-            model_path=runtime.embedding_model_path or None,
-            cache_dir=runtime.embedding_cache_dir,
-            max_length=runtime.embedding_max_length,
-        )
-    return DeterministicStubEmbeddingProvider(dim=runtime.embedding_stub_dim)
+    return _cached_embedding_provider(
+        runtime.embedding_backend,
+        runtime.embedding_model_name,
+        runtime.embedding_model_path,
+        runtime.embedding_cache_dir,
+        runtime.embedding_max_length,
+        runtime.embedding_stub_dim,
+    )

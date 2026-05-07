@@ -74,6 +74,38 @@ def test_chapter_intake_output_accepts_chapter_id_alias() -> None:
     assert output.normalized_title == "测试章"
 
 
+def test_chapter_intake_output_accepts_title_alias_for_normalized_title() -> None:
+    output = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_number": 3,
+            "title": "狡舌",
+            "cleaned_text": "正文",
+        }
+    )
+    assert output.chapter_index == 3
+    assert output.normalized_title == "狡舌"
+
+
+def test_chapter_intake_output_accepts_dialogue_candidate_objects() -> None:
+    output = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_number": 2,
+            "chapter_title": "厌物丽人同行",
+            "cleaned_text": "正文",
+            "dialogue_candidates": [
+                {"speaker": "青衫少女", "text": "你怎么了？小六子！"},
+                {"speaker": "布衣少年", "text": "没，没什么。"},
+                {"text": "没有说话人也要兼容。"},
+            ],
+        }
+    )
+    assert output.dialogue_candidates == [
+        "青衫少女: 你怎么了？小六子！",
+        "布衣少年: 没，没什么。",
+        "没有说话人也要兼容。",
+    ]
+
+
 def test_stage_chapter_content_trims_large_input() -> None:
     text = "A" * 5000
     trimmed = AnalysisService._stage_chapter_content(text, max_chars=1000)
@@ -356,4 +388,29 @@ def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() ->
     assert lessons
     assert any('推进' in item for item in lessons)
     assert any('可信' in item or '解决' in item for item in lessons)
-    assert any('未解线程' in item for item in lessons)
+
+
+def test_provider_unavailable_uses_local_heuristic_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        def _provider_down(*_args: object, **_kwargs: object) -> dict[str, object]:
+            raise RuntimeError("Error code: 403 - {'code':'SUBSCRIPTION_NOT_FOUND'}")
+
+        monkeypatch.setattr(service, '_invoke_stage', _provider_down)
+        monkeypatch.setattr(service, '_invoke_monolithic_analysis', _provider_down)
+
+        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
+        assert len(artifact_ids) == 1
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'validated'

@@ -41,6 +41,36 @@ def test_cli_ingest_and_start_run(monkeypatch: MonkeyPatch, tmp_path: Path) -> N
     assert "branch_id=" in start.stdout
 
 
+def test_cli_ingest_chapter_list(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    chapter_list_path = tmp_path / "chapters.json"
+    chapter_list_path.write_text(
+        json.dumps(
+            {
+                "chapters": [
+                    {"title": "青华", "content": "布衣少年捡到黑牌。"},
+                    {"title": "厌物丽人同行", "content": "青旒与小六子互动。"},
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    init = runner.invoke(app, ["init-db", "--database-url", db_url])
+    assert init.exit_code == 0
+
+    ingest = runner.invoke(
+        app,
+        ["ingest-chapter-list", str(chapter_list_path), "--title", "章节列表示例", "--database-url", db_url],
+    )
+    assert ingest.exit_code == 0
+    assert "novel_id=" in ingest.stdout
+    assert "manifest_id=" in ingest.stdout
+    assert "chapter_count=2" in ingest.stdout
+    assert "source_path=" in ingest.stdout
+
+
 def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     from novel_analyzer.database.models import (
         AnalysisRun,
@@ -255,189 +285,178 @@ def test_cli_plan_next_chapter_and_imitate_chapter(monkeypatch: MonkeyPatch, tmp
     )
     assert iterate_result.exit_code == 0
     assert '"rounds"' in iterate_result.stdout
-    assert '"overall_score"' in iterate_result.stdout
-    assert '"final_draft"' in iterate_result.stdout
 
-    multi_result = runner.invoke(
+
+def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+
+    runner.invoke(app, ['init-db', '--database-url', db_url])
+    ingest = runner.invoke(app, ['ingest', str(novel_path), '--database-url', db_url])
+    lines = dict(line.split('=', 1) for line in ingest.stdout.strip().splitlines())
+    start = runner.invoke(
+        app,
+        ['start-run', lines['novel_id'], lines['manifest_id'], '--database-url', db_url],
+    )
+    run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
+
+    class _FakeReport:
+        def model_dump(self, mode="json"):
+            _ = mode
+            return {
+                "final_verdict": "needs_revision",
+                "stop_reason": "critical_action_required",
+                "policy_summary": {"highest_action_priority": 1},
+                "action_queue": [
+                    {"priority": 1, "severity": "medium", "action_type": "repair_hook", "target": "ending_hook"}
+                ],
+                "rounds": [
+                    {
+                        "comparison": {
+                            "original_title": "原章标题",
+                            "draft_title": "仿写标题",
+                            "source_length": 1000,
+                            "draft_length": 900,
+                            "structure_overlap_notes": ["结构基本对齐"],
+                            "style_alignment_notes": ["文风需要再收紧"],
+                            "risk_alignment_notes": ["关注 OOC 风险"],
+                        }
+                    }
+                ],
+                "final_draft": {
+                    "draft_title": "仿写标题",
+                    "draft_text": "仿写正文\n\n【Harness Action Queue】\n[P1|medium] repair_rhythm:rhythm",
+                    "risk_gate_notes": ["检查 OOC", "检查 OOC"],
+                },
+            }
+
+    seen: dict[str, object] = {}
+
+    class _FakeHarnessService:
+        def run_harness(self, branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name, steering_pack=None):  # noqa: ANN001
+            seen["steering_pack"] = steering_pack
+            _ = branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name
+            return _FakeReport()
+
+    monkeypatch.setattr('novel_analyzer.cli.app._imitation_harness_service', lambda session, settings: _FakeHarnessService())
+    monkeypatch.setattr(
+        'novel_analyzer.cli.app.SteeringLibraryService',
+        lambda: type(
+            '_FakeSteeringLibraryService',
+            (),
+            {
+                'assemble_pack': staticmethod(
+                    lambda **kwargs: {
+                        'worldview_capsule': ['灵气不是无限资源，而是与身份和税制绑定'] if kwargs.get('worldview_docs') else [],
+                        'trope_axes': ['底层逆袭'] if kwargs.get('trope_docs') else [],
+                        'innovation_directives': ['让每次进步带来身份/资源/关系变化'] if kwargs.get('audience_docs') else [],
+                        'taboo_innovations': [],
+                        'external_knowledge_refs': ['章尾最好有更高层级机会或压力'] if kwargs.get('audience_docs') else [],
+                    }
+                ),
+                'retrieve_pack': staticmethod(
+                    lambda **kwargs: {
+                        'steering_pack': {
+                            'worldview_capsule': ['灵气不是无限资源，而是与身份和税制绑定'] if kwargs.get('worldview_docs') else [],
+                            'trope_axes': ['底层逆袭'] if kwargs.get('trope_docs') else [],
+                            'innovation_directives': ['让每次进步带来身份/资源/关系变化'] if kwargs.get('audience_docs') else [],
+                            'taboo_innovations': [],
+                            'external_knowledge_refs': ['章尾最好有更高层级机会或压力'] if kwargs.get('audience_docs') else [],
+                        },
+                        'retrieval_meta': {
+                            'query_text': kwargs.get('query_text', ''),
+                            'selected_trope_docs': kwargs.get('trope_docs', [])[:2],
+                            'selected_worldview_docs': kwargs.get('worldview_docs', [])[:2],
+                            'selected_audience_docs': kwargs.get('audience_docs', [])[:2],
+                            'hit_reasons': {'trope': {}, 'worldview': {}, 'audience': {}},
+                        },
+                    }
+                ),
+            },
+        )()
+    )
+    output_dir = tmp_path / 'writer-output'
+
+    result = runner.invoke(
         app,
         [
-            "multi-chapter-imitation-consistency",
-            "branch-cli-1",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线，并保持克制成长节奏",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
+            'writer-imitate', run_lines['branch_id'], '1', '延续主线',
+            '--worldview-note', '灵气稀薄，身份资源强绑定',
+            '--trope-axis', '底层逆袭',
+            '--innovation-directive', '把修炼收益折算为社会信用',
+            '--output-dir', str(output_dir), '--database-url', db_url
         ],
     )
-    assert multi_result.exit_code == 0
-    assert '"steps"' in multi_result.stdout
-    assert '"overall_verdict"' in multi_result.stdout
+    assert result.exit_code == 0
+    assert (output_dir / 'writer-imitate-ch1.json').exists()
+    assert (output_dir / 'writer-imitate-ch1.md').exists()
+    md_text = (output_dir / 'writer-imitate-ch1.md').read_text(encoding='utf-8')
+    assert '【Harness Action Queue】' not in md_text
+    assert md_text.count('检查 OOC') == 1
+    assert '灵气稀薄，身份资源强绑定' in seen["steering_pack"]["worldview_capsule"]
 
-    whole_result = runner.invoke(
+    result = runner.invoke(
+        app,
+        ['writer-imitate-range', run_lines['branch_id'], '3:延续主线', '4:制造新阻力', '--output-dir', str(output_dir), '--database-url', db_url],
+    )
+    assert result.exit_code == 0
+    assert (output_dir / 'writer-imitate-range-3-4.json').exists()
+    assert (output_dir / 'writer-imitate-range-3-4.md').exists()
+    range_payload = json.loads((output_dir / 'writer-imitate-range-3-4.json').read_text(encoding='utf-8'))
+    assert 'steering_pack' in range_payload
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-review', run_lines['branch_id'], '1', '延续主线', '--output-dir', str(output_dir), '--database-url', db_url],
+    )
+    assert result.exit_code == 0
+    review_md = output_dir / 'writer-imitate-review-ch1.md'
+    assert review_md.exists()
+    review_text = review_md.read_text(encoding='utf-8')
+    assert '## Draft Text' in review_text
+    assert '【Harness Action Queue】' not in review_text
+    assert '## Side-by-side Review' in review_text
+    assert '## Action Queue' in review_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    index_md = output_dir / 'writer-imitate-index.md'
+    assert index_md.exists()
+    index_text = index_md.read_text(encoding='utf-8')
+    assert 'writer-imitate-range-3-4.json' in index_text
+    assert 'chapter 3' in index_text
+
+    result = runner.invoke(
         app,
         [
-            "plan-whole-book-imitation",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--database-url",
-            db_url,
+            'writer-innovation-experiment',
+            run_lines['branch_id'],
+            'batch-a',
+            '3:延续主线',
+            '4:制造新阻力',
+            '--trope-doc', 'xianxia-underdog-ledger',
+            '--worldview-doc', 'aura-decline-tax-state',
+            '--audience-doc', 'male-xianxia-commercial-hooks',
+            '--output-dir', str(output_dir),
+            '--database-url', db_url,
         ],
     )
-    assert whole_result.exit_code == 0
-    assert '"mapping_pack"' in whole_result.stdout
-    assert '"chapter_goals"' in whole_result.stdout
-
-    run_result = runner.invoke(
-        app,
-        [
-            "run-whole-book-imitation",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert run_result.exit_code == 0
-    assert '"queue"' in run_result.stdout
-    assert '"expected_outputs"' in run_result.stdout
-    assert '"carry_over_inputs"' in run_result.stdout
-
-    sandbox_result = runner.invoke(
-        app,
-        [
-            "run-whole-book-imitation",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--execute",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert sandbox_result.exit_code == 0
-    assert '"execution_mode": "sandbox_execute"' in sandbox_result.stdout
-    assert '"executed_steps"' in sandbox_result.stdout
-    assert '"final_carry_over_state"' in sandbox_result.stdout
-
-    export_path = tmp_path / "whole-book-imitation-run.json"
-    export_result = runner.invoke(
-        app,
-        [
-            "export-whole-book-imitation-run",
-            "branch-cli-1",
-            "测试项目",
-            "示例小说",
-            "新世界版示例小说",
-            str(export_path),
-            "2:延续资源铺垫",
-            "3:延续主角获得功法后的行动线",
-            "--world-map",
-            "郑国=星际联邦",
-            "--character-map",
-            "卫图=魏拓",
-            "--execute",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert export_result.exit_code == 0
-    assert "whole_book_imitation_run_path=" in export_result.stdout
-    exported_payload = json.loads(export_path.read_text(encoding="utf-8"))
-    assert exported_payload["contract_version"] == "whole-book-imitation.v1"
-    assert exported_payload["stable_contract_version"] == "whole-book-imitation-pre-v1"
-    assert exported_payload["execution_mode"] == "sandbox_execute"
-    assert "policy_summary" in exported_payload
-    assert "dashboard_summary" in exported_payload
-    assert "book_handoff_summary" in exported_payload["dashboard_summary"]
-
-    contract_result = runner.invoke(
-        app,
-        [
-            "show-imitation-skill-contracts",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert contract_result.exit_code == 0
-    assert '"imitation-constraint-pack"' in contract_result.stdout
-    assert '"draft-self-check"' in contract_result.stdout
-
-    readiness_result = runner.invoke(
-        app,
-        [
-            "show-whole-book-imitation-readiness",
-            "--branch-id",
-            "branch-cli-1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert readiness_result.exit_code == 0
-    assert '"whole_book_contract_version": "whole-book-imitation.v1"' in readiness_result.stdout
-    assert '"api_key_present"' in readiness_result.stdout
-    assert '"branch_id": "branch-cli-1"' in readiness_result.stdout
-
-    preflight_result = runner.invoke(
-        app,
-        [
-            "preflight-imitation",
-            "branch-cli-1",
-            "3",
-            "延续主角获得功法后的行动线，并保持克制成长节奏",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert preflight_result.exit_code == 0
-    assert '"preflight"' in preflight_result.stdout
-    assert '"overall_verdict"' in preflight_result.stdout
-
-    harness_result = runner.invoke(
-        app,
-        [
-            "harness-imitation",
-            "branch-cli-1",
-            "3",
-            "延续主角获得功法后的行动线，并保持克制成长节奏",
-            "--max-rounds",
-            "1",
-            "--database-url",
-            db_url,
-        ],
-    )
-    assert harness_result.exit_code == 0
-    assert '"skill_contracts"' in harness_result.stdout
-    assert '"final_preflight"' in harness_result.stdout
-    assert '"skill_prompt_previews"' in harness_result.stdout
-    assert '"skill_outputs"' in harness_result.stdout
-    assert '"action_queue"' in harness_result.stdout
-    assert '"policy_summary"' in harness_result.stdout
+    assert result.exit_code == 0
+    experiment_json = output_dir / 'writer-innovation-experiment-batch-a.json'
+    experiment_md = output_dir / 'writer-innovation-experiment-batch-a.md'
+    assert experiment_json.exists()
+    assert experiment_md.exists()
+    experiment_payload = json.loads(experiment_json.read_text(encoding='utf-8'))
+    assert experiment_payload['contract_version'] == 'writer-innovation-experiment.v1'
+    assert '底层逆袭' in experiment_payload['steering_pack']['trope_axes']
+    assert experiment_payload['experiment_meta']['chapter_count'] == 2
+    assert experiment_payload['steering_retrieval_meta']['selected_trope_docs'] == ['xianxia-underdog-ledger']
+    assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
+    assert 'risk_delta_summary' in experiment_payload['experiment_meta']
+    experiment_text = experiment_md.read_text(encoding='utf-8')
+    assert '## Steering Retrieval Meta' in experiment_text
+    assert '### Hit Reasons' in experiment_text

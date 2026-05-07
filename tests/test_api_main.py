@@ -125,6 +125,76 @@ def test_mock_import_endpoint_uses_profile_query() -> None:
     assert b'"pipeline_profile": "manual"' in body
 
 
+def test_import_endpoint_accepts_json_chapter_list(monkeypatch, tmp_path: Path) -> None:
+    from apps.api.app import main as api_main
+
+    captured: dict[str, object] = {}
+
+    class _DummyIngestService:
+        def __init__(self, session, runtime) -> None:  # noqa: ANN001
+            _ = session
+            _ = runtime
+
+        def persist_chapter_list_file(self, chapters, *, source_name="chapter-list-import"):  # noqa: ANN001
+            captured["chapter_count"] = len(chapters)
+            path = tmp_path / f"{source_name}.txt"
+            path.write_text("第1章 青华\n正文\n", encoding="utf-8")
+            return str(path)
+
+    monkeypatch.setattr(api_main, "IngestService", _DummyIngestService)
+    class _DummySessionContext:
+        def __enter__(self):  # noqa: ANN204
+            return None
+
+        def __exit__(self, exc_type, exc, tb):  # noqa: ANN001, ANN204
+            _ = exc_type
+            _ = exc
+            _ = tb
+            return False
+
+    monkeypatch.setattr(
+        api_main,
+        "create_session_factory",
+        lambda settings=None: (lambda: _DummySessionContext()),
+    )
+
+    def _fake_ingest_and_start_pipeline(**kwargs):  # noqa: ANN003
+        captured["path"] = kwargs["path"]
+        return AutoRunResult(
+            novel_id="novel-1",
+            manifest_id="manifest-1",
+            chapter_count=2,
+            run_id="run-1",
+            branch_id="branch-1",
+            processed_chapters=0,
+            next_chapter=1,
+            pipeline_profile="auto-lite",
+            pipeline_state="idle",
+            setup_status="ready",
+            existing=False,
+        )
+
+    monkeypatch.setattr(api_main, "ingest_and_start_pipeline", _fake_ingest_and_start_pipeline)
+    monkeypatch.setattr(api_main, "get_run_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(api_main, "get_branch_snapshot", lambda **kwargs: None)
+
+    status, body = _call_post_json(
+        "/api/import",
+        {
+            "title": "章节导入样例",
+            "chapters": [
+                {"title": "青华", "content": "布衣少年捡到黑牌。"},
+                {"title": "厌物丽人同行", "content": "青旒与小六子互动。"},
+            ],
+        },
+    )
+    assert status == "200 OK"
+    payload = json.loads(body)
+    assert payload["import_result"]["chapter_count"] == 2
+    assert captured["chapter_count"] == 2
+    assert str(captured["path"]).endswith("api-chapter-list-import.txt")
+
+
 def test_run_snapshot_requires_query_params() -> None:
     status, body = _call("/api/run-snapshot")
     assert status == "400 Bad Request"
@@ -211,6 +281,118 @@ def test_docs_readme_numbered_sections_are_sequential() -> None:
         if nums:
             assert nums == list(range(1, len(nums) + 1))
 
+
+
+
+def test_manual_eval_docs_and_template_are_linked() -> None:
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "./novel-assistant-manual-eval-handbook-20260505.md" in readme
+    assert "./manual-eval-record-template.md" in readme
+    assert "../runs/manual_eval/_template/README.md" in readme
+    assert "bootstrap_manual_eval_workspace.py" in readme
+
+    handbook = Path("docs/novel-assistant-manual-eval-handbook-20260505.md").read_text(encoding="utf-8")
+    assert "bootstrap_manual_eval_workspace.py" in handbook
+
+    template_readme = Path("runs/manual_eval/_template/README.md").read_text(encoding="utf-8")
+    assert "bootstrap_manual_eval_workspace.py" in template_readme
+
+
+def test_manual_eval_workspace_template_and_bootstrap_script(tmp_path: Path) -> None:
+    from scripts import bootstrap_manual_eval_workspace as bootstrap
+
+    template_root = Path("runs/manual_eval/_template")
+    required = [
+        template_root / "README.md",
+        template_root / "artifacts",
+        template_root / "exports",
+        template_root / "notes",
+        template_root / "notes/manual-review-notes.md",
+        template_root / "notes/problem-trace.md",
+        template_root / "notes/next-actions.md",
+    ]
+    for item in required:
+        assert item.exists(), item
+
+    target_root = tmp_path / "manual_eval"
+    target_root.mkdir(parents=True, exist_ok=True)
+
+    original_template = bootstrap.TEMPLATE_DIR
+    original_target = bootstrap.TARGET_ROOT
+    original_parse_args = bootstrap.parse_args
+    try:
+        bootstrap.TEMPLATE_DIR = template_root.resolve()
+        bootstrap.TARGET_ROOT = target_root.resolve()
+        bootstrap.parse_args = lambda: type(
+            "Args",
+            (),
+            {"novel_slug": "demo-slug", "force": False},
+        )()
+        assert bootstrap.main() == 0
+        generated = target_root / "demo-slug"
+        for rel in [
+            "README.md",
+            "artifacts",
+            "exports",
+            "notes/manual-review-notes.md",
+            "notes/problem-trace.md",
+            "notes/next-actions.md",
+        ]:
+            assert (generated / rel).exists(), rel
+    finally:
+        bootstrap.TEMPLATE_DIR = original_template
+        bootstrap.TARGET_ROOT = original_target
+        bootstrap.parse_args = original_parse_args
+
+
+
+def test_manual_eval_bootstrap_script_rejects_invalid_slug() -> None:
+    from scripts import bootstrap_manual_eval_workspace as bootstrap
+
+    original_parse_args = bootstrap.parse_args
+    try:
+        bootstrap.parse_args = lambda: type(
+            "Args",
+            (),
+            {"novel_slug": "_template", "force": False},
+        )()
+        try:
+            bootstrap.main()
+            raise AssertionError("expected SystemExit for reserved slug")
+        except SystemExit as exc:
+            assert "must not be _template" in str(exc)
+    finally:
+        bootstrap.parse_args = original_parse_args
+
+
+def test_manual_eval_bootstrap_script_force_replaces_existing_workspace(tmp_path: Path) -> None:
+    from scripts import bootstrap_manual_eval_workspace as bootstrap
+
+    template_root = Path("runs/manual_eval/_template")
+    target_root = tmp_path / "manual_eval"
+    target_root.mkdir(parents=True, exist_ok=True)
+    existing = target_root / "demo-slug"
+    existing.mkdir(parents=True, exist_ok=True)
+    (existing / "stale.txt").write_text("stale", encoding="utf-8")
+
+    original_template = bootstrap.TEMPLATE_DIR
+    original_target = bootstrap.TARGET_ROOT
+    original_parse_args = bootstrap.parse_args
+    try:
+        bootstrap.TEMPLATE_DIR = template_root.resolve()
+        bootstrap.TARGET_ROOT = target_root.resolve()
+        bootstrap.parse_args = lambda: type(
+            "Args",
+            (),
+            {"novel_slug": "demo-slug", "force": True},
+        )()
+        assert bootstrap.main() == 0
+        assert not (existing / "stale.txt").exists()
+        assert (existing / "notes/manual-review-notes.md").exists()
+    finally:
+        bootstrap.TEMPLATE_DIR = original_template
+        bootstrap.TARGET_ROOT = original_target
+        bootstrap.parse_args = original_parse_args
 
 def test_maintainer_and_risk_audit_docs_point_to_current_api_surface_doc() -> None:
     checks = {
@@ -323,6 +505,7 @@ def test_docs_index_points_to_fresh10_and_chapter_planning_docs() -> None:
     assert "./examples/sample-branch-report.post-migration-20260504.sample.md" in readme
     assert "./examples/sample-branch-search-diagnostics-20260505.sample.json" in readme
     assert "./examples/sample-branch-author-knowledge-20260505.sample.json" in readme
+    assert "./examples/sample-branch-novel-assistant-20260505.sample.json" in readme
     assert "./chapter-planning-capability-proposal.md" in readme
     assert "risk-audit-fresh10-verification-20260502.md" in risk_index
     assert "sample-branch-report.post-migration-20260504.sample.md" in risk_index
@@ -354,16 +537,21 @@ def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> N
         "./features/architecture-mainline-checkout-20260504.md",
         "./product/ai-novel-product-strategy.md",
         "./product/ai-novel-capability-scorecard.md",
+        "./product/ai-novel-capability-map.md",
         "./strategy/ai-novel-system-benchmark.md",
         "./strategy/docs-faq-and-consolidation-guide.md",
         "./whitepaper/ai-novel-system-whitepaper.md",
         "./whitepaper/ai-novel-system-whitepaper-v2.md",
         "./architecture/ai-novel-system-blueprint.md",
+        "./architecture/novel-assistant-system-architecture.md",
+        "./architecture/novel-assistant-business-architecture.md",
+        "./process/README.md",
     ]:
         assert needle in readme
 
     assert "ai-novel-product-strategy.md" in product
     assert "ai-novel-capability-scorecard.md" in product
+    assert "ai-novel-capability-map.md" in product
     assert "ai-novel-system-benchmark.md" in product
     assert "ai-novel-system-whitepaper.md" in product
     assert "ai-novel-system-whitepaper-v2.md" in product

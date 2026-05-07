@@ -1,0 +1,172 @@
+# Writer Imitation Workflow / 小说仿写实战流程
+
+本流程面向真实仿写实战，默认工作目录为：
+- `output/`
+
+约束：
+- `output/` 只作为工作目录
+- 不提交进 Git
+- 最终沉淀到仓库的应是：代码、流程文档、评估结论，而不是每次仿写草稿
+
+---
+
+## 1. 当前建议入口
+
+### 1.1 单章仿写
+```bash
+./.venv/bin/novel-analyzer writer-imitate <branch_id> <source_chapter_index> "<target_goal>" --output-dir output
+```
+
+输出：
+- `output/writer-imitate-ch<idx>.json`
+- `output/writer-imitate-ch<idx>.md`
+
+### 1.2 多章批量仿写
+```bash
+./.venv/bin/novel-analyzer writer-imitate-range <branch_id> '3:目标A' '4:目标B' --output-dir output
+```
+
+输出：
+- `output/writer-imitate-range-3-4.json`
+- `output/writer-imitate-range-3-4.md`
+
+---
+
+## 2. 推荐实战顺序
+1. 先完成拆书 / facts / graph / risk 主链
+2. 用 `show-author-knowledge` / `export-author-knowledge` 确认人物、关系、规则、线程
+3. 先跑 `writer-imitate` 拿结构化 draft
+4. 看 `risk_gate_notes / policy_summary / final_verdict`
+5. 如果要连续多章，再跑 `writer-imitate-range`
+6. 必要时上：
+   - `preflight-imitation`
+   - `harness-imitation`
+   - `iterate-imitation`
+   - `run-whole-book-imitation`
+
+## 2.1 仿写执行流程图
+
+```mermaid
+flowchart TD
+    A[Source Chapter / 已拆书章节] --> B[Author Knowledge / Facts / Graph / Rules]
+    B --> C[Imitation Plan]
+    C --> D[Constraint Pack]
+    D --> E[Skeleton / LLM Draft]
+    E --> F[Draft Self Check]
+    F --> G[Harness Controller]
+    G --> H[Reader Sim / Rhythm / Style / Dialogue / Research]
+    H --> I[Preflight]
+    I --> J[Risk Gate / Quality Gate]
+    J --> K{Pass?}
+    K -- Yes --> L[Writer Output JSON / Markdown]
+    K -- No --> M[Targeted Revise Queue]
+    M --> G
+```
+
+说明：
+- 左半边解决“写什么、不能怎么写”
+- 中间解决“如何起草、如何修”
+- 右半边解决“读者是否愿意看、风险是否可过、最后输出什么”
+
+---
+
+## 3. 当前仿写链路包含什么
+
+### 已有能力
+- source chapter intake
+- fact extraction
+- imitation constraint pack
+- skeleton / llm draft
+- draft self-check
+- style calibration
+- rhythm analysis
+- reader-sim review
+- dialogue review
+- targeted revise queue
+- risk gate notes
+- policy summary
+- multi-round harness
+- whole-book queue / sandbox execute
+
+### 新增：外置世界观 / 套路 steering pack
+当前仿写不应只“贴着原章走”，还可以显式接入外置创新导向：
+- `--worldview-note`：补世界观外置胶囊
+- `--trope-axis`：补题材套路轴
+- `--innovation-directive`：补本轮创新导向
+- `--taboo-innovation`：补禁止创新越界项
+- `--knowledge-ref`：补外部知识/读者预期参考
+
+这层能力的意义不是直接替代 source context，而是把“新的底座和内涵创新”显式注入 imitation plan / constraint pack / harness。
+
+示例：
+```bash
+./.venv/bin/novel-analyzer writer-imitate <branch_id> 24 "压住成绩爽点，但拉高阶层跃迁冲击" \
+  --worldview-note "灵气衰败时代，资源与身份强绑定" \
+  --trope-axis "底层逆袭" \
+  --trope-axis "账本修仙" \
+  --innovation-directive "把修炼收益折算为社会信用与家族博弈" \
+  --taboo-innovation "不要突然引入无代价系统外挂" \
+  --knowledge-ref "男频修仙读者期待先压后扬、收益可见" \
+  --output-dir output
+```
+
+### 当前 writer-facing 包装层补齐了什么
+- 更适合写手直接用的统一入口
+- 自动把结果写到 `output/`
+- 自动产出 `json + markdown`
+- 不需要每次手工拼 CLI 组合
+
+---
+
+## 4. 实战时重点关注字段
+
+### 单章仿写
+重点看：
+- `final_draft.draft_title`
+- `final_draft.draft_text`
+- `final_draft.risk_gate_notes`
+- `final_verdict`
+- `stop_reason`
+- `policy_summary`
+
+### 多章仿写
+重点看：
+- 每章 `final_verdict`
+- 每章 `stop_reason`
+- 每章 `final_draft`
+- 是否出现连续性的 carry-over 问题
+
+---
+
+## 5. 当前最重要的仿写实战原则
+1. **先保连续性，再追求表面文风像**
+2. **先保人物/规则/线程不崩，再追求“写得像”**
+3. **把 risk gate 当硬门，而不是装饰信息**
+4. **output 只是工作区，不是最终知识库**
+5. **发现真实问题就修流程/代码，不要只改一份草稿了事**
+
+---
+
+## 6. 与你给的 writer-imitate 参考的对齐点
+当前我们已经覆盖或接近覆盖：
+- 章节窗口化上下文
+- story bible / author knowledge 约束注入
+- imitation constraint pack
+- draft + self-check + revise queue
+- 风险门控
+- reader-sim / style / rhythm / dialogue repair lanes
+- whole-book carry-over 与 consistency
+
+当前仍值得继续补强的点：
+- 更明确的 writer-facing continuation notes
+- 更直接的“这一章为什么这么写”的编剧式说明
+- output 目录下更标准化的批量实验记录
+- source / target / repaired draft 的并排对照产物
+
+---
+
+## 7. 推荐下一步实战增强
+1. 把外置世界观 / 套路 steering pack 与真实 trope/worldview 资料做成可检索 RAG surface
+2. 补一个 `writer-imitate-session`，把同一轮多章实验的 notes / artifacts 聚合进 output 子目录
+3. 对真实仿写章节做一次“边写边修”的长链实验，持续发现问题并优化
+4. 在 reader-sim / risk / style 之外，再引入更强的“创新收益 vs 越界风险”平衡检查

@@ -319,6 +319,74 @@ class AnalysisService:
         return ChapterAnalysisOutput.model_validate(raw)
 
     @staticmethod
+    def _is_provider_unavailable_error(exc: Exception) -> bool:
+        text = str(exc)
+        markers = [
+            "Insufficient Balance",
+            "SUBSCRIPTION_NOT_FOUND",
+            "Your request was blocked",
+            "Error code: 402",
+            "Error code: 403",
+        ]
+        return any(marker in text for marker in markers)
+
+    @staticmethod
+    def _heuristic_entities(chapter_content: str, limit: int = 5) -> list[str]:
+        candidates = re.findall(r"[一-龥]{2,4}", chapter_content)
+        stop_words = {"第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个", "没有", "可以", "自己", "什么", "这样"}
+        seen: set[str] = set()
+        results: list[str] = []
+        for item in candidates:
+            if item in stop_words or item in seen:
+                continue
+            seen.add(item)
+            results.append(item)
+            if len(results) >= limit:
+                break
+        return results
+
+    @classmethod
+    def _build_local_heuristic_analysis(
+        cls,
+        chapter_index: int,
+        normalized_title: str,
+        chapter_content: str,
+    ) -> ChapterAnalysisOutput:
+        content = chapter_content.strip()
+        summary_source = re.split(r"[。！？\n]", content, maxsplit=1)[0].strip()
+        chapter_summary = summary_source[:120] if summary_source else f"本章围绕《{normalized_title}》展开。"
+        key_entities = cls._heuristic_entities(content)
+        key_events = [chapter_summary] if chapter_summary else []
+        continuity_notes = [
+            "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+            "建议后续在 provider 恢复后对该章补做完整 LLM 分析。",
+        ]
+        writer_learning_notes = [
+            "当前为保底分析结果，重点先保证章节不断档，再在后续补足风格与细节层判断。"
+        ]
+        quality_gate_notes = [
+            "provider unavailable -> local heuristic fallback"
+        ]
+        return ChapterAnalysisOutput(
+            chapter_index=chapter_index,
+            normalized_title=normalized_title,
+            dimensions=[],
+            chapter_summary=chapter_summary,
+            key_entities=key_entities,
+            key_events=key_events,
+            continuity_notes=continuity_notes,
+            writer_learning_notes=writer_learning_notes,
+            unsupported_inferences=[],
+            ambiguous_points=["启发式保底输出，细粒度事实与风格判断有限。"],
+            needs_human_review=True,
+            quality_gate_notes=quality_gate_notes,
+            hook_score=2.5,
+            state_transition_notes=[],
+            evidence_backed_resolutions=[],
+            unresolved_threads=[],
+        )
+
+    @staticmethod
     def _is_sparse_result(result: ChapterAnalysisOutput) -> bool:
         return (
             not result.chapter_summary.strip()
@@ -770,13 +838,27 @@ class AnalysisService:
                         progress_percent=55,
                         emit_event=True,
                     )
-                    result = self._invoke_monolithic_analysis(
-                        fallback_model,
-                        segment.chapter_index,
-                        segment.normalized_title,
-                        chapter_content,
-                    )
-                    stage_payload = {'stage_error': str(stage_exc), 'fallback': 'monolithic'}
+                    try:
+                        result = self._invoke_monolithic_analysis(
+                            fallback_model,
+                            segment.chapter_index,
+                            segment.normalized_title,
+                            chapter_content,
+                        )
+                        stage_payload = {'stage_error': str(stage_exc), 'fallback': 'monolithic'}
+                    except Exception as fallback_exc:
+                        if not self._is_provider_unavailable_error(fallback_exc):
+                            raise
+                        result = self._build_local_heuristic_analysis(
+                            segment.chapter_index,
+                            segment.normalized_title,
+                            chapter_content,
+                        )
+                        stage_payload = {
+                            'stage_error': str(stage_exc),
+                            'fallback_error': str(fallback_exc),
+                            'fallback': 'local-heuristic',
+                        }
 
                 response_text = json.dumps(stage_payload, ensure_ascii=False, indent=2)
                 raw_result = result.model_dump(mode='json')

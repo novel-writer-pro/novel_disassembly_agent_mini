@@ -323,6 +323,10 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
             "docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json"
         ).read_text(encoding="utf-8")
     )
+
+    deepseek_success_sample = json.loads(
+        Path("docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json").read_text(encoding="utf-8")
+    )
     sample = json.loads(
         Path("docs/examples/whole-book-imitation-run.sample.json").read_text(encoding="utf-8")
     )
@@ -355,6 +359,7 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "whole-book-imitation-run.request.sample.json" in track_readme
     assert "whole-book-imitation-run.error.provider-billing.sample.json" in track_readme
     assert "whole-book-imitation-run.provider-success-20260504.sample.json" in docs_index_doc
+    assert "whole-book-imitation-run.provider-success-20260505.deepseek.sample.json" in docs_index_doc
     assert "whole-book-imitation-integration-quickstart.md" in track_readme
     assert "whole-book-imitation-docs-index.md" in track_readme
     assert "whole-book-imitation-provider-recovery-checklist.md" in track_readme
@@ -402,6 +407,8 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert len(request_sample["chapter_specs"]) >= 2
     assert provider_success_sample["execution_mode"] == "sandbox_execute"
     assert provider_success_sample["contract_version"] == "whole-book-imitation.v1"
+    assert deepseek_success_sample["contract_version"] == "whole-book-imitation.v1"
+    assert deepseek_success_sample["execution_mode"] == "sandbox_execute"
     assert error_sample["error_code"] == "provider_billing_limited"
     assert error_sample["retryable"] is False
     assert error_sample["upstream_status"] == 403

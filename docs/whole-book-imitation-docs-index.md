@@ -29,6 +29,7 @@
 - `docs/examples/whole-book-imitation-run.request.sample.json`
 - `docs/examples/whole-book-imitation-run.sample.json`
 - `docs/examples/whole-book-imitation-run.provider-success-20260504.sample.json`
+- `docs/examples/whole-book-imitation-run.provider-success-20260505.deepseek.sample.json`
 - `docs/examples/whole-book-imitation-run.error.provider-billing.sample.json`
 - `docs/examples/whole-book-imitation-readiness.sample.json`
 - `docs/whole-book-imitation-sample-coverage-matrix.md`

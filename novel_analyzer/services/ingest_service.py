@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from hashlib import sha256
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import ChapterManifest, ChapterSegment, NovelSource
 from novel_analyzer.preprocessing.chapter_splitter import inspect_text, split_text_into_chapters
+from novel_analyzer.runtime.storage import runtime_cache_root
 
 
 class IngestService:
@@ -82,3 +84,61 @@ class IngestService:
         self.session.refresh(novel)
         self.session.refresh(manifest)
         return novel, manifest
+
+    @staticmethod
+    def _chapter_heading(item: dict[str, object], index: int) -> str:
+        raw_heading = str(item.get("raw_heading") or "").strip()
+        if raw_heading:
+            return raw_heading
+
+        title = str(
+            item.get("title")
+            or item.get("chapter_title")
+            or item.get("normalized_title")
+            or ""
+        ).strip()
+        if title.startswith("第") and ("章" in title or "节" in title):
+            return title
+        return f"第{index}章 {title}".strip()
+
+    @staticmethod
+    def _chapter_content(item: dict[str, object]) -> str:
+        return str(
+            item.get("content")
+            or item.get("text")
+            or item.get("body")
+            or ""
+        ).strip()
+
+    def persist_chapter_list_file(
+        self,
+        chapters: list[dict[str, object]],
+        *,
+        source_name: str = "chapter-list-import",
+    ) -> str:
+        normalized_blocks: list[str] = []
+        for index, item in enumerate(chapters, start=1):
+            heading = self._chapter_heading(item, index)
+            content = self._chapter_content(item)
+            if not content:
+                continue
+            normalized_blocks.append(f"{heading}\n{content}".strip())
+
+        if not normalized_blocks:
+            raise ValueError("chapter list import requires at least one non-empty chapter content item")
+
+        target_dir = runtime_cache_root(self.settings) / "uploads"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / f"{uuid4().hex}-{source_name}.txt"
+        target_path.write_text("\n\n".join(normalized_blocks).strip() + "\n", encoding="utf-8")
+        return str(target_path)
+
+    def ingest_chapter_list(
+        self,
+        chapters: list[dict[str, object]],
+        *,
+        title: str | None = None,
+        source_name: str = "chapter-list-import",
+    ) -> tuple[NovelSource, ChapterManifest]:
+        path = self.persist_chapter_list_file(chapters, source_name=source_name)
+        return self.ingest_text_file(path, title)

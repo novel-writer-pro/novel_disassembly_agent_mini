@@ -4,9 +4,11 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
+from novel_analyzer.embedding.service import get_embedding_provider
 from novel_analyzer.config.settings import Settings
 from novel_analyzer.database.models import ChunkEmbedding, RetrievalChunk, RetrievalDocument
 from novel_analyzer.database.session import create_schema
+from novel_analyzer.rerank.service import get_rerank_provider
 from novel_analyzer.services.ingest_service import IngestService
 from novel_analyzer.services.retrieval_service import (
     RetrievalHit,
@@ -84,6 +86,17 @@ def test_repeated_materialization_replaces_chunks_without_orphans(tmp_path: Path
         assert session.query(ChunkEmbedding).count() == first_embedding_count
 
 
+def test_embedding_and_rerank_providers_are_cached() -> None:
+    settings = Settings(embedding_backend="stub", rerank_model_name="")
+    first_embedding = get_embedding_provider(settings)
+    second_embedding = get_embedding_provider(settings)
+    assert first_embedding is second_embedding
+
+    first_rerank = get_rerank_provider(settings)
+    second_rerank = get_rerank_provider(settings)
+    assert first_rerank is second_rerank
+
+
 def test_search_branch_requires_postgresql_runtime(tmp_path: Path) -> None:
     novel_path = tmp_path / "novel.txt"
     novel_path.write_text("第1章 一\n正文\n", encoding="utf-8")
@@ -111,15 +124,19 @@ def test_default_fts_config_remains_simple_without_pg_jieba(tmp_path: Path) -> N
 
 def test_apply_rerank_reorders_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeRerankProvider:
+        seen_docs: list[str] | None = None
+
         def rerank(self, query: str, documents: list[str]) -> list[float]:
-            _ = query, documents
+            _ = query
+            self.seen_docs = documents
             return [0.2, 0.9]
 
     with _session() as session:
+        provider = _FakeRerankProvider()
         service = RetrievalService(session, Settings(rerank_model_name="fake-model"))
         monkeypatch.setattr(
             "novel_analyzer.services.retrieval_service.get_rerank_provider",
-            lambda settings=None: _FakeRerankProvider(),
+            lambda settings=None: provider,
         )
         hits = [
             RetrievalHit(
@@ -134,6 +151,54 @@ def test_apply_rerank_reorders_hits(monkeypatch: pytest.MonkeyPatch) -> None:
         assert [hit.chapter_index for hit in reranked] == [2, 1]
         assert reranked[0].score == pytest.approx(0.9)
         assert reranked[1].score == pytest.approx(0.2)
+        assert provider.seen_docs is not None
+        assert len(provider.seen_docs) == 2
+
+
+def test_apply_rerank_caps_candidate_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _FakeRerankProvider:
+        seen_docs: list[str] | None = None
+
+        def rerank(self, query: str, documents: list[str]) -> list[float]:
+            _ = query
+            self.seen_docs = documents
+            return [float(index) for index, _ in enumerate(documents, start=1)]
+
+    with _session() as session:
+        provider = _FakeRerankProvider()
+        service = RetrievalService(session, Settings(rerank_model_name="fake-model"))
+        monkeypatch.setattr(
+            "novel_analyzer.services.retrieval_service.get_rerank_provider",
+            lambda settings=None: provider,
+        )
+        hits = [
+            RetrievalHit(
+                chapter_index=index,
+                title=f"第{index}章",
+                summary_text=f"正文{index}",
+                score=1.0 / index,
+                keyword_list=[],
+            )
+            for index in range(1, 21)
+        ]
+        reranked, rerank_applied = service._apply_rerank("命格", hits, limit=5)
+        assert rerank_applied is True
+        assert provider.seen_docs is not None
+        assert len(provider.seen_docs) == service.MAX_RERANK_CANDIDATES
+        assert len(reranked) == 5
+
+
+def test_hit_rerank_text_is_capped() -> None:
+    hit = RetrievalHit(
+        chapter_index=1,
+        title="标题",
+        summary_text="很长的正文" * 200,
+        score=1.0,
+        keyword_list=["关键词A", "关键词B"],
+    )
+    text = RetrievalService._hit_rerank_text(hit)
+    assert len(text) <= RetrievalService.RERANK_TEXT_CHAR_LIMIT + 1
+    assert text.endswith("…")
 
 
 def test_apply_rerank_falls_back_when_provider_errors(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -273,6 +338,84 @@ def test_search_branch_with_diagnostics_preserves_raw_and_reranked_views(
         assert diagnostics.rerank_latency_ms >= 0.0
         assert diagnostics.raw_hits == raw_hits
         assert diagnostics.reranked_hits == reranked_hits
+
+
+def test_search_branch_with_diagnostics_can_skip_rerank_when_lexical_top_is_stable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _session() as session:
+        service = RetrievalService(session, Settings(embedding_backend="stub"))
+        fts_hits = [
+            RetrievalHit(chapter_index=1, title="一", summary_text="强相关", score=1.0, keyword_list=[]),
+        ]
+        like_hits = [
+            RetrievalHit(chapter_index=1, title="一", summary_text="强相关", score=1.0, keyword_list=[]),
+            RetrievalHit(chapter_index=2, title="二", summary_text="次相关", score=0.8, keyword_list=[]),
+        ]
+
+        monkeypatch.setattr(
+            service,
+            "_search_branch_routes",
+            lambda branch_id, query, limit: [("fts", fts_hits), ("like", like_hits)],
+        )
+
+        def _fail_rerank(*args, **kwargs):  # noqa: ANN002, ANN003
+            raise AssertionError("_apply_rerank should be skipped")
+
+        monkeypatch.setattr(service, "_apply_rerank", _fail_rerank)
+        diagnostics = service.search_branch_with_diagnostics("branch-1", "命格", limit=2)
+        assert diagnostics.rerank_applied is False
+        assert diagnostics.rerank_latency_ms == 0.0
+        assert [hit.chapter_index for hit in diagnostics.reranked_hits] == [1, 2]
+
+
+def test_search_branch_routes_skip_vector_when_lexical_coverage_is_enough(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _session() as session:
+        service = RetrievalService(session, Settings(rerank_backend="disabled"))
+        monkeypatch.setattr(service.session.bind.dialect, "name", "postgresql", raising=False)
+        lexical_rows = [
+            {
+                "chapter_index": index,
+                "title": f"第{index}章",
+                "summary_text": f"正文{index}",
+                "keyword_list": [],
+                "score": 1.0 / index,
+            }
+            for index in range(1, 6)
+        ]
+
+        monkeypatch.setattr(service, "_fts_config_name", lambda: "simple")
+
+        def _fake_execute(stmt, params=None):  # noqa: ANN001
+            sql = str(stmt)
+            class _Result:
+                def __init__(self, rows):
+                    self._rows = rows
+                def mappings(self):
+                    return self
+                def all(self):
+                    return self._rows
+            if "bm25_vector @@" in sql:
+                return _Result(lexical_rows[:1])
+            if "similarity(title || ' ' || bm25_text" in sql:
+                return _Result(lexical_rows)
+            if "ILIKE" in sql:
+                return _Result(lexical_rows)
+            return _Result([])
+
+        monkeypatch.setattr(service.session, "execute", _fake_execute)
+        monkeypatch.setattr(service, "_keyword_overlap_fallback", lambda branch_id, query, limit: [])
+        monkeypatch.setattr(service, "_entity_exact_route", lambda branch_id, query, limit: [])
+
+        def _fail_vector(*args, **kwargs):  # noqa: ANN002, ANN003
+            raise AssertionError("vector route should be skipped")
+
+        monkeypatch.setattr(service, "_vector_route", _fail_vector)
+        routes, diagnostics = service._search_branch_routes_with_diagnostics("branch-x", "命格", limit=5)
+        assert routes
+        assert any(item.route == "vector" and item.hit_count == 0 for item in diagnostics)
 
 
 def test_rrf_fusion_prioritizes_consensus_hits_without_changing_single_lane() -> None:

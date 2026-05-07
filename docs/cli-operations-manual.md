@@ -124,7 +124,35 @@ poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0
 
 当 `--max-chapters > 0` 时，它还会继续自动推进指定数量的章节。
 
-### 2.1 导入文本
+
+### 2.1 导入前先做切章预检
+```bash
+poetry run novel-analyzer inspect-novel /path/to/novel.txt
+```
+
+重点看：
+- `raw_heading_count`
+- `normalized_chapter_count`
+- `duplicate_heading_count`
+
+如果 `normalized_chapter_count=0`，说明当前标题格式没有被识别；这时建议先看：
+- `docs/novel-ingest-chapter-standard.md`
+- 或改用 `ingest-chapter-list` / API `chapters` list 方式导入
+
+### 2.1b chapter list 导入（逐章 / 多章）
+```bash
+poetry run novel-analyzer ingest-chapter-list /path/to/chapters.json --title '样例小说'
+```
+
+支持：
+- JSON list
+- `{ "chapters": [...] }` object
+
+每章兼容字段：
+- 标题：`raw_heading` / `title` / `chapter_title` / `normalized_title`
+- 正文：`content` / `text` / `body`
+
+### 2.2 导入文本
 ```bash
 poetry run novel-analyzer ingest /path/to/novel.txt --title '样例小说'
 ```
@@ -134,7 +162,7 @@ poetry run novel-analyzer ingest /path/to/novel.txt --title '样例小说'
 - `manifest_id`
 - `chapter_count`
 
-### 2.2 创建 run / branch
+### 2.3 创建 run / branch
 ```bash
 poetry run novel-analyzer start-run <novel_id> <manifest_id>
 ```
