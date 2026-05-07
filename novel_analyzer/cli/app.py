@@ -2377,6 +2377,23 @@ def _write_writer_imitation_outputs(
                 lines.append(f"- {key}: {joined}")
             else:
                 lines.append(f"- {key}: {value}")
+    steering_retrieval_meta = payload.get("steering_retrieval_meta", {})
+    if isinstance(steering_retrieval_meta, dict) and steering_retrieval_meta:
+        lines.append("\n## Steering Retrieval Meta")
+        for key in ["selected_trope_docs", "selected_worldview_docs", "selected_audience_docs"]:
+            value = steering_retrieval_meta.get(key, [])
+            if isinstance(value, list) and value:
+                lines.append(f"- {key}: {'；'.join(str(item) for item in value)}")
+        hit_reasons = steering_retrieval_meta.get("hit_reasons", {})
+        if isinstance(hit_reasons, dict) and hit_reasons:
+            lines.append("\n### Hit Reasons")
+            for bucket, mapping in hit_reasons.items():
+                if not isinstance(mapping, dict) or not mapping:
+                    continue
+                lines.append(f"- {bucket}:")
+                for slug, reasons in mapping.items():
+                    joined = "；".join(str(item) for item in reasons if str(item).strip())
+                    lines.append(f"  - {slug}: {joined}")
     final_draft = payload.get("final_draft", {})
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
@@ -2437,7 +2454,12 @@ def _write_writer_imitation_outputs(
     if isinstance(experiment_meta, dict) and experiment_meta:
         lines.append("\n## Experiment Meta")
         for key, value in experiment_meta.items():
-            lines.append(f"- {key}: {value}")
+            if isinstance(value, dict):
+                lines.append(f"- {key}:")
+                for sub_key, sub_value in value.items():
+                    lines.append(f"  - {sub_key}: {sub_value}")
+            else:
+                lines.append(f"- {key}: {value}")
     md_path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
     return json_path, md_path
 

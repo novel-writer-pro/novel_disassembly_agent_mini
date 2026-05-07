@@ -25,3 +25,16 @@ def test_steering_library_service_retrieves_docs_with_hit_reasons() -> None:
     assert payload["steering_pack"]["trope_axes"]
     assert payload["retrieval_meta"]["selected_trope_docs"] == ["xianxia-underdog-ledger"]
     assert payload["retrieval_meta"]["hit_reasons"]["trope"]["xianxia-underdog-ledger"]
+
+
+def test_steering_library_service_can_rank_multiple_candidates() -> None:
+    service = SteeringLibraryService()
+    payload = service.retrieve_pack(
+        query_text="sect credit feudal order 克制成长型读者预期 阶层跃迁 家族 官府 宗门 认证 税制化王朝 克制成长",
+        trope_docs=["xianxia-underdog-ledger", "clan-bureaucracy-power-climb"],
+        worldview_docs=["aura-decline-tax-state", "sect-credit-feudal-order"],
+        audience_docs=["male-xianxia-commercial-hooks", "cautious-growth-reader-signals"],
+    )
+    assert payload["retrieval_meta"]["selected_trope_docs"]
+    assert payload["retrieval_meta"]["selected_worldview_docs"]
+    assert payload["retrieval_meta"]["selected_audience_docs"]

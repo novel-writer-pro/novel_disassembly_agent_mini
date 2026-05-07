@@ -118,10 +118,21 @@ class SteeringLibraryService:
                 score += 2
                 reasons.append(f"label_match:{label}")
         for item in doc.worldview_capsule[:2] + doc.trope_axes[:2] + doc.innovation_directives[:2]:
-            token = item[:8].lower()
-            if token and token in lowered:
-                score += 1
-                reasons.append(f"content_hint:{item}")
+            candidate = item.lower()
+            matched = False
+            for token in [candidate[:4], candidate[:6], candidate[:8]]:
+                if token and token in lowered:
+                    score += 1
+                    reasons.append(f"content_hint:{item}")
+                    matched = True
+                    break
+            if not matched:
+                for word in [part.strip() for part in item.replace("：", " ").replace("/", " ").split() if part.strip()]:
+                    sub = word.lower()[:4]
+                    if sub and sub in lowered:
+                        score += 1
+                        reasons.append(f"content_hint:{item}")
+                        break
         return score, reasons
 
     def retrieve_pack(

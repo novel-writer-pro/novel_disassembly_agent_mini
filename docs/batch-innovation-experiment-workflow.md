@@ -63,6 +63,7 @@
    - 是否破坏 continuity
    - 是否提高 reader-sim / hook / novelty 感
    - 命中的 trope/worldview/audience 文档是否合理
+   - innovation/risk delta 是否在预期范围
 
 ---
 
@@ -73,6 +74,8 @@
 - chapter_range
 - steering_pack
 - steering_retrieval_meta
+- innovation_delta_summary
+- risk_delta_summary
 - 最满意章节
 - 最失真章节
 - continuity 风险

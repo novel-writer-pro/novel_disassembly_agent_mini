@@ -457,3 +457,6 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert experiment_payload['steering_retrieval_meta']['selected_trope_docs'] == ['xianxia-underdog-ledger']
     assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
     assert 'risk_delta_summary' in experiment_payload['experiment_meta']
+    experiment_text = experiment_md.read_text(encoding='utf-8')
+    assert '## Steering Retrieval Meta' in experiment_text
+    assert '### Hit Reasons' in experiment_text

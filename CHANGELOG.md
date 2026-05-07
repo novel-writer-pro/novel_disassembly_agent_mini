@@ -333,6 +333,21 @@
   - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
   - `28 passed`
 
+### 命中文档摘要 + 样例库扩充
+- 在 writer-facing markdown 输出中新增：
+  - `## Steering Retrieval Meta`
+  - `### Hit Reasons`
+- 扩充本地样例库：
+  - `rag/trope-library/clan-bureaucracy-power-climb.md`
+  - `rag/worldview-dossiers/sect-credit-feudal-order.md`
+  - `rag/audience-expectation-notes/cautious-growth-reader-signals.md`
+- 价值：
+  - 让人工复盘能直接看到“命中了哪些文档、为什么命中”
+  - 让本地文档库不再只有单条样例，更接近最小可用实验库
+- 验证：
+  - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
+  - `29 passed`
+
 ### 长分支推进到 30 章并锁定 fresh evidence
 - 继续推进真实中文修仙长分支 `62e636f0-c901-4167-aa1c-aff3da9c83ef`
 - fresh evidence：
