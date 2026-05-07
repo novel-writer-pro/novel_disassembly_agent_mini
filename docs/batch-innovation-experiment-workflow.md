@@ -31,6 +31,12 @@
 - `writer-innovation-experiment-<name>.json`
 - `writer-innovation-experiment-<name>.md`
 
+其中建议重点看：
+- `steering_pack`
+- `steering_retrieval_meta`
+- `experiment_meta.innovation_delta_summary`
+- `experiment_meta.risk_delta_summary`
+
 ---
 
 ## 推荐实验步骤
@@ -56,6 +62,7 @@
    - 是否更有内涵创新
    - 是否破坏 continuity
    - 是否提高 reader-sim / hook / novelty 感
+   - 命中的 trope/worldview/audience 文档是否合理
 
 ---
 
@@ -65,6 +72,7 @@
 - experiment_name
 - chapter_range
 - steering_pack
+- steering_retrieval_meta
 - 最满意章节
 - 最失真章节
 - continuity 风险
@@ -98,4 +106,3 @@
 - continuity memory
 - risk gate
 - reader sim
-

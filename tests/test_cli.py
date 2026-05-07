@@ -340,6 +340,42 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
             return _FakeReport()
 
     monkeypatch.setattr('novel_analyzer.cli.app._imitation_harness_service', lambda session, settings: _FakeHarnessService())
+    monkeypatch.setattr(
+        'novel_analyzer.cli.app.SteeringLibraryService',
+        lambda: type(
+            '_FakeSteeringLibraryService',
+            (),
+            {
+                'assemble_pack': staticmethod(
+                    lambda **kwargs: {
+                        'worldview_capsule': ['灵气不是无限资源，而是与身份和税制绑定'] if kwargs.get('worldview_docs') else [],
+                        'trope_axes': ['底层逆袭'] if kwargs.get('trope_docs') else [],
+                        'innovation_directives': ['让每次进步带来身份/资源/关系变化'] if kwargs.get('audience_docs') else [],
+                        'taboo_innovations': [],
+                        'external_knowledge_refs': ['章尾最好有更高层级机会或压力'] if kwargs.get('audience_docs') else [],
+                    }
+                ),
+                'retrieve_pack': staticmethod(
+                    lambda **kwargs: {
+                        'steering_pack': {
+                            'worldview_capsule': ['灵气不是无限资源，而是与身份和税制绑定'] if kwargs.get('worldview_docs') else [],
+                            'trope_axes': ['底层逆袭'] if kwargs.get('trope_docs') else [],
+                            'innovation_directives': ['让每次进步带来身份/资源/关系变化'] if kwargs.get('audience_docs') else [],
+                            'taboo_innovations': [],
+                            'external_knowledge_refs': ['章尾最好有更高层级机会或压力'] if kwargs.get('audience_docs') else [],
+                        },
+                        'retrieval_meta': {
+                            'query_text': kwargs.get('query_text', ''),
+                            'selected_trope_docs': kwargs.get('trope_docs', [])[:2],
+                            'selected_worldview_docs': kwargs.get('worldview_docs', [])[:2],
+                            'selected_audience_docs': kwargs.get('audience_docs', [])[:2],
+                            'hit_reasons': {'trope': {}, 'worldview': {}, 'audience': {}},
+                        },
+                    }
+                ),
+            },
+        )()
+    )
     output_dir = tmp_path / 'writer-output'
 
     result = runner.invoke(
@@ -358,7 +394,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     md_text = (output_dir / 'writer-imitate-ch1.md').read_text(encoding='utf-8')
     assert '【Harness Action Queue】' not in md_text
     assert md_text.count('检查 OOC') == 1
-    assert seen["steering_pack"]["worldview_capsule"] == ['灵气稀薄，身份资源强绑定']
+    assert '灵气稀薄，身份资源强绑定' in seen["steering_pack"]["worldview_capsule"]
 
     result = runner.invoke(
         app,
@@ -418,3 +454,6 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert experiment_payload['contract_version'] == 'writer-innovation-experiment.v1'
     assert '底层逆袭' in experiment_payload['steering_pack']['trope_axes']
     assert experiment_payload['experiment_meta']['chapter_count'] == 2
+    assert experiment_payload['steering_retrieval_meta']['selected_trope_docs'] == ['xianxia-underdog-ledger']
+    assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
+    assert 'risk_delta_summary' in experiment_payload['experiment_meta']

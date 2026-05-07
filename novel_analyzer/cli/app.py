@@ -109,18 +109,22 @@ def _steering_pack(
     trope_doc: list[str] | None = None,
     worldview_doc: list[str] | None = None,
     audience_doc: list[str] | None = None,
-) -> dict[str, list[str]]:
-    pack = SteeringLibraryService().assemble_pack(
+) -> tuple[dict[str, list[str]], dict[str, object]]:
+    retrieval = SteeringLibraryService().retrieve_pack(
+        query_text=" ".join(
+            worldview_note + trope_axis + innovation_directive + taboo_innovation + knowledge_ref + (trope_doc or []) + (worldview_doc or []) + (audience_doc or [])
+        ),
         trope_docs=trope_doc or [],
         worldview_docs=worldview_doc or [],
         audience_docs=audience_doc or [],
     )
+    pack = retrieval["steering_pack"]
     pack["worldview_capsule"].extend(item for item in worldview_note if item.strip())
     pack["trope_axes"].extend(item for item in trope_axis if item.strip())
     pack["innovation_directives"].extend(item for item in innovation_directive if item.strip())
     pack["taboo_innovations"].extend(item for item in taboo_innovation if item.strip())
     pack["external_knowledge_refs"].extend(item for item in knowledge_ref if item.strip())
-    return pack
+    return pack, retrieval["retrieval_meta"]
 
 
 def _build_story_mapping_pack(
@@ -2579,26 +2583,7 @@ def writer_imitate(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        report = _imitation_harness_service(session, settings).run_harness(
-            branch_id,
-            source_chapter_index=source_chapter_index,
-            target_goal=target_goal,
-            max_rounds=max_rounds,
-            use_llm=use_llm,
-            model_name=model_name or None,
-            steering_pack=_steering_pack(
-                worldview_note,
-                trope_axis,
-                innovation_directive,
-                taboo_innovation,
-                knowledge_ref,
-                trope_doc,
-                worldview_doc,
-                audience_doc,
-            ),
-        )
-        payload = report.model_dump(mode="json")
-        payload["steering_pack"] = _steering_pack(
+        steering, retrieval_meta = _steering_pack(
             worldview_note,
             trope_axis,
             innovation_directive,
@@ -2608,6 +2593,18 @@ def writer_imitate(
             worldview_doc,
             audience_doc,
         )
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+            steering_pack=steering,
+        )
+        payload = report.model_dump(mode="json")
+        payload["steering_pack"] = steering
+        payload["steering_retrieval_meta"] = retrieval_meta
         stem = f"writer-imitate-ch{source_chapter_index}"
         json_path, md_path = _write_writer_imitation_outputs(output_dir, stem, payload)
         echo(f"writer_imitate_json={json_path}")
@@ -2640,7 +2637,7 @@ def writer_imitate_range(
     with factory() as session:
         service = _imitation_harness_service(session, settings)
         outputs: list[dict[str, object]] = []
-        steering = _steering_pack(
+        steering, retrieval_meta = _steering_pack(
             worldview_note,
             trope_axis,
             innovation_directive,
@@ -2675,7 +2672,7 @@ def writer_imitate_range(
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
             stem,
-            {"items": outputs, "branch_id": branch_id, "steering_pack": steering},
+            {"items": outputs, "branch_id": branch_id, "steering_pack": steering, "steering_retrieval_meta": retrieval_meta},
         )
         echo(f"writer_imitate_range_json={json_path}")
         echo(f"writer_imitate_range_markdown={md_path}")
@@ -2705,26 +2702,7 @@ def writer_imitate_review(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
-        report = _imitation_harness_service(session, settings).run_harness(
-            branch_id,
-            source_chapter_index=source_chapter_index,
-            target_goal=target_goal,
-            max_rounds=max_rounds,
-            use_llm=use_llm,
-            model_name=model_name or None,
-            steering_pack=_steering_pack(
-                worldview_note,
-                trope_axis,
-                innovation_directive,
-                taboo_innovation,
-                knowledge_ref,
-                trope_doc,
-                worldview_doc,
-                audience_doc,
-            ),
-        )
-        payload = report.model_dump(mode="json")
-        payload["steering_pack"] = _steering_pack(
+        steering, retrieval_meta = _steering_pack(
             worldview_note,
             trope_axis,
             innovation_directive,
@@ -2734,6 +2712,18 @@ def writer_imitate_review(
             worldview_doc,
             audience_doc,
         )
+        report = _imitation_harness_service(session, settings).run_harness(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+            steering_pack=steering,
+        )
+        payload = report.model_dump(mode="json")
+        payload["steering_pack"] = steering
+        payload["steering_retrieval_meta"] = retrieval_meta
         output_dir.mkdir(parents=True, exist_ok=True)
         md_path = output_dir / f"writer-imitate-review-ch{source_chapter_index}.md"
         md_path.write_text(
@@ -2783,7 +2773,7 @@ def writer_innovation_experiment(
     parsed = _parse_chapter_goal_spec(chapter_spec)
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
-    steering = _steering_pack(
+    steering, retrieval_meta = _steering_pack(
         worldview_note,
         trope_axis,
         innovation_directive,
@@ -2827,12 +2817,22 @@ def writer_innovation_experiment(
                 "experiment_name": experiment_name,
                 "branch_id": branch_id,
                 "steering_pack": steering,
+                "steering_retrieval_meta": retrieval_meta,
                 "items": outputs,
                 "experiment_meta": {
                     "chapter_count": len(outputs),
                     "use_llm": use_llm,
                     "max_rounds": max_rounds,
                     "model_name": model_name or settings.llm_model_name,
+                    "innovation_delta_summary": {
+                        "worldview_note_count": len(steering.get("worldview_capsule", [])),
+                        "trope_axis_count": len(steering.get("trope_axes", [])),
+                        "innovation_directive_count": len(steering.get("innovation_directives", [])),
+                    },
+                    "risk_delta_summary": {
+                        "taboo_innovation_count": len(steering.get("taboo_innovations", [])),
+                        "external_knowledge_ref_count": len(steering.get("external_knowledge_refs", [])),
+                    },
                 },
             },
         )
@@ -2878,7 +2878,7 @@ def preflight_imitation(
                     trope_doc,
                     worldview_doc,
                     audience_doc,
-                ),
+                )[0],
             )
             if use_llm
             else chapter_service.build_skeleton_draft(
@@ -2894,7 +2894,7 @@ def preflight_imitation(
                     trope_doc,
                     worldview_doc,
                     audience_doc,
-                ),
+                )[0],
             )
         )
         comparison = chapter_service.compare_with_source(
@@ -2944,6 +2944,16 @@ def harness_imitation(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
+        steering, _retrieval_meta = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
+        )
         report = _imitation_harness_service(session, settings).run_harness(
             branch_id,
             source_chapter_index=source_chapter_index,
@@ -2951,16 +2961,7 @@ def harness_imitation(
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
-            steering_pack=_steering_pack(
-                worldview_note,
-                trope_axis,
-                innovation_directive,
-                taboo_innovation,
-                knowledge_ref,
-                trope_doc,
-                worldview_doc,
-                audience_doc,
-            ),
+            steering_pack=steering,
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 

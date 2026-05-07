@@ -318,6 +318,21 @@
   - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
   - `27 passed`
 
+### steering 最小检索器 + 命中原因 + innovation/risk delta
+- 为 `SteeringLibraryService` 新增最小 retrieval/ranking：
+  - 基于 slug / label / section 内容做轻量匹配
+  - 输出 `retrieval_meta.hit_reasons`
+- 为 experiment / writer 输出新增：
+  - `steering_retrieval_meta`
+  - `experiment_meta.innovation_delta_summary`
+  - `experiment_meta.risk_delta_summary`
+- 价值：
+  - 不再只是“装配到哪些文档”，而是知道“为什么命中这些文档”
+  - 让实验结果可复盘“创新增量”和“越界风险增量”
+- 验证：
+  - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
+  - `28 passed`
+
 ### 长分支推进到 30 章并锁定 fresh evidence
 - 继续推进真实中文修仙长分支 `62e636f0-c901-4167-aa1c-aff3da9c83ef`
 - fresh evidence：
