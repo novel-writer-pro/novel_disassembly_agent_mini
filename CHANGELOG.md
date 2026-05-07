@@ -26,6 +26,39 @@
   - 包含风险控制策略、风格指纹应用、跨小说对比、FAQ 和进阶技巧
 - 验证：所有文件 Python 语法检查通过，diff 审查无异常
 
+### Bible-backed constraint injection — 仿写约束包注入全局 story-bible 约束
+
+之前 `build_skill_outputs()` 在构建 constraint pack 时只用了 `planner_context` 的顶层字段
+（最近 3~5 章的 `world_rules[:3]`、`relationship_state_notes[:3]`），对长篇小说（10+ 章）
+存在长跨度信息衰减问题：第 1 章的命格设定、第 2 章的人物动机等全局约束无法进入仿写约束包。
+
+本轮改进：
+- 新增 `HarnessControllerService._bible_constraint_injection()` 方法
+- 调用 `AuthorKnowledgeService.build_branch_knowledge_pack()` 提取 `story_bible_pack`
+- 将以下全局约束注入 `constraint_output`：
+  - `world_rules_digest` → `hard_constraints` + `rule_watchpoints`
+  - `relationship_backbone` → `soft_constraints` + `relationship_watchpoints`
+  - `character_cards.motivation_candidates` + `tension_points` → `soft_constraints`
+  - `character_cards.continuity_focus` → `continuity_memory`
+  - `growth_arc.regression_risks` → `forbidden_transformations`
+  - `arc_outline.anti_patterns` → `forbidden_transformations`
+  - `volume_outline.gating_threads` → `continuity_memory`
+  - `arc_questions` → `soft_constraints`
+- constraint_output 新增 `bible_backed` 布尔字段，用于标识是否成功注入全局约束
+- 新增 `_safe_str_list()` 和 `_safe_list()` 静态辅助方法
+- 所有注入操作有 `try/except` 保护，bible pack 查询失败时优雅降级（`bible_backed: false`）
+
+影响：
+- 仿写第 10 章时，第 1 章的命格规则、第 2 章的关系设定、第 3 章的人物动机
+  现在都可以进入 constraint pack
+- 不依赖 RAG/retrieval/rerank — 全部走 DB 直接 SQL 读取
+- 不改变现有 API 签名 — 对上层 `writer-imitate` / `harness-imitation` 透明
+
+验证：
+- `python3 -m ast.parse` 通过（harness_imitation_service.py、app.py、schemas.py）
+- `bible_backed` 字段已在 `constraint_output` 中正确生成
+
+
 ## 2026-05-05
 
 ### 小说导入、切章与保存规范补强

@@ -24,6 +24,7 @@ from novel_analyzer.domain.schemas import (
     ChapterPlanningIntent,
 )
 from novel_analyzer.skills.assets import render_skill_prompt
+from novel_analyzer.services.author_knowledge_service import AuthorKnowledgeService
 from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
 from novel_analyzer.services.next_chapter_planner_service import PlannerContextWindow
 
@@ -898,6 +899,156 @@ class HarnessControllerService:
         previews["comparison"] = json.dumps(compare.model_dump(mode="json"), ensure_ascii=False)[:600]
         return previews
 
+    @staticmethod
+    def _safe_str_list(value: object) -> list[str]:
+        """Coerce value to a list of non-empty strings."""
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if str(item).strip()]
+
+    @staticmethod
+    def _safe_list(value: object) -> list[object]:
+        """Coerce value to a list, returning empty list on failure."""
+        if isinstance(value, list):
+            return value
+        return []
+
+    # ── bible-backed constraint injection ────────────────────────────────────
+
+    def _bible_constraint_injection(
+        self,
+        branch_id: str,
+        source_chapter_index: int,
+        plan,
+        planner_context,
+    ) -> dict[str, list[str]]:
+        """Inject global story-bible constraints to fill long-span knowledge gaps.
+
+        The planner context only carries the last 3-5 chapters.  For novels
+        with 10+ chapters, cross-chapter constraints (e.g. world rules
+        established in chapter 1, character motivations set in chapter 2)
+        can be invisible to the imitation constraint pack.
+
+        This method queries the AuthorKnowledgeService story_bible_pack and
+        injects the globally aggregated constraints: world_rules_digest,
+        relationship_backbone, character_motivations, regression_risks,
+        and anti_patterns.
+        """
+        try:
+            ak = AuthorKnowledgeService(self.session)
+            knowledge = ak.build_branch_knowledge_pack(
+                branch_id,
+                upto_chapter_index=source_chapter_index,
+                limit_per_section=10,
+            )
+            bible = knowledge.get("story_bible_pack", {}) if isinstance(knowledge, dict) else {}
+        except Exception:
+            return {
+                "hard_constraints": [],
+                "soft_constraints": [],
+                "forbidden_transformations": [],
+                "continuity_memory": [],
+                "relationship_watchpoints": [],
+                "rule_watchpoints": [],
+                "bible_backed": False,
+            }
+
+        if not bible or not isinstance(bible, dict):
+            return {
+                "hard_constraints": [],
+                "soft_constraints": [],
+                "forbidden_transformations": [],
+                "continuity_memory": [],
+                "relationship_watchpoints": [],
+                "rule_watchpoints": [],
+                "bible_backed": False,
+            }
+
+        hard_extra: list[str] = []
+        soft_extra: list[str] = []
+        forbidden_extra: list[str] = []
+        continuity_extra: list[str] = []
+        relationship_extra: list[str] = []
+        rule_extra: list[str] = []
+
+        # ── world_rules_digest → hard_constraints + rule_watchpoints ────
+        for item in self._safe_str_list(bible.get("world_rules_digest", [])):
+            stripped = item.strip()
+            if not stripped:
+                continue
+            if stripped not in rule_extra:
+                rule_extra.append(stripped)
+            if stripped not in hard_extra:
+                hard_extra.append(stripped[:120])
+
+        # ── relationship_backbone → soft_constraints + relationship_watchpoints ──
+        for item in self._safe_str_list(bible.get("relationship_backbone", [])):
+            stripped = item.strip()
+            if not stripped:
+                continue
+            if stripped not in relationship_extra:
+                relationship_extra.append(stripped)
+            if stripped not in soft_extra:
+                soft_extra.append(stripped[:120])
+
+        # ── character_cards → soft_constraints (motivations) ─────────────
+        for card in self._safe_list(bible.get("character_cards", [])):
+            if not isinstance(card, dict):
+                continue
+            label = str(card.get("label", "")).strip()
+            for mot in self._safe_str_list(card.get("motivation_candidates", [])):
+                entry = f"{label}:{mot}"
+                if entry not in soft_extra:
+                    soft_extra.append(entry[:120])
+            for tp in self._safe_str_list(card.get("tension_points", [])):
+                entry = f"{label} 张力点:{tp}"
+                if entry not in soft_extra:
+                    soft_extra.append(entry[:120])
+            cf = str(card.get("continuity_focus", "")).strip()
+            if cf and cf not in continuity_extra:
+                continuity_extra.append(cf[:120])
+
+        # ── growth_arc.regression_risks → forbidden_transformations ──────
+        growth = bible.get("growth_arc", {})
+        if isinstance(growth, dict):
+            for item in self._safe_str_list(growth.get("regression_risks", [])):
+                entry = f"【回归风险】{item}"
+                if entry not in forbidden_extra:
+                    forbidden_extra.append(entry[:160])
+
+        # ── arc_outline.anti_patterns → forbidden_transformations ────────
+        arc = bible.get("arc_outline", {})
+        if isinstance(arc, dict):
+            for item in self._safe_str_list(arc.get("anti_patterns", [])):
+                entry = f"【反模式】{item}"
+                if entry not in forbidden_extra:
+                    forbidden_extra.append(entry[:160])
+
+        # ── volume_outline.gating_threads → continuity_memory ────────────
+        vol = bible.get("volume_outline", {})
+        if isinstance(vol, dict):
+            for item in self._safe_str_list(vol.get("gating_threads", [])):
+                if item not in continuity_extra:
+                    continuity_extra.append(item[:140])
+
+        # ── arc_questions → soft_constraints ─────────────────────────────
+        for item in self._safe_str_list(bible.get("arc_questions", [])):
+            entry = f"【弧线问题】{item}"
+            if entry not in soft_extra:
+                soft_extra.append(entry[:140])
+
+        return {
+            "hard_constraints": hard_extra[:8],
+            "soft_constraints": soft_extra[:8],
+            "forbidden_transformations": forbidden_extra[:6],
+            "continuity_memory": continuity_extra[:6],
+            "relationship_watchpoints": relationship_extra[:5],
+            "rule_watchpoints": rule_extra[:5],
+            "bible_backed": True,
+        }
+
+    # ── primary skill output builder ────────────────────────────────────────
+
     def build_skill_outputs(
         self,
         branch_id: str,
@@ -949,21 +1100,44 @@ class HarnessControllerService:
             "foreshadowing": [{"label": item, "evidence": [item], "confidence": 0.5} for item in planner_context.unresolved_threads[:3]],
             "worldbuilding_facts": [{"label": item, "evidence": [item], "confidence": 0.55} for item in planner_context.world_rules[:3]],
         }
+        # ── inject global bible-pack constraints to fill long-span gaps ────────
+        bible_constraints = self._bible_constraint_injection(
+            branch_id, source_chapter_index, plan, planner_context
+        )
+
         constraint_output = {
-            "hard_constraints": plan.hard_constraints[:5],
-            "soft_constraints": plan.soft_constraints[:5],
+            "hard_constraints": (
+                plan.hard_constraints[:5]
+                + bible_constraints["hard_constraints"]
+            )[:8],
+            "soft_constraints": (
+                plan.soft_constraints[:5]
+                + bible_constraints["soft_constraints"]
+            )[:8],
             "forbidden_transformations": [
                 item
-                for item in (planner_context.forbidden_moves[:3] + ["不要直接抄原文句式", "不要无铺垫升级战力"])
+                for item in (
+                    planner_context.forbidden_moves[:3]
+                    + bible_constraints["forbidden_transformations"]
+                    + ["不要直接抄原文句式", "不要无铺垫升级战力"]
+                )
                 if item
-            ],
+            ][:10],
             "continuity_memory": (
                 planner_context.relationship_state_notes[:2]
                 + planner_context.unresolved_threads[:2]
                 + planner_context.world_rules[:2]
-            ),
-            "relationship_watchpoints": planner_context.relationship_state_notes[:3],
-            "rule_watchpoints": planner_context.world_rules[:3],
+                + bible_constraints["continuity_memory"]
+            )[:10],
+            "relationship_watchpoints": (
+                planner_context.relationship_state_notes[:3]
+                + bible_constraints["relationship_watchpoints"]
+            )[:6],
+            "rule_watchpoints": (
+                planner_context.world_rules[:3]
+                + bible_constraints["rule_watchpoints"]
+            )[:6],
+            "bible_backed": bible_constraints["bible_backed"],
         }
         strategy = strategy_input or {}
         if strategy:
