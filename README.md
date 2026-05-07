@@ -53,6 +53,7 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 - 想看读者体验能力规划：[`./docs/reader-experience-capability.md`](./docs/reader-experience-capability.md)
 - 想看仿写/续写方法：[`./docs/chapter-imitation-method.md`](./docs/chapter-imitation-method.md)
 - 想做拆书→仿写一站式写作：[`./skills_dir/writer-imitate/SKILL.md`](./skills_dir/writer-imitate/SKILL.md)
+- 想看写手最佳实践（含真实示例）：[`./docs/writer-best-practices.md`](./docs/writer-best-practices.md)
 - 想浏览全部文档：[`./docs/README.md`](./docs/README.md)
 
 ## 当前工作台入口

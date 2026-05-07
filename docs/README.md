@@ -85,6 +85,7 @@
 - 第 6 步：用人工测试记录模板沉淀结论与薄弱点
 - 第 7 步：试跑后用模板做复盘
 - 第 8+ 步：使用 `writer-imitate` 做拆书→仿写一站式写作辅助
+- 第 9 步：阅读 [写手最佳实践](./writer-best-practices.md) — 基于真实示例小说的完整操作指南
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 

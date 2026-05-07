@@ -16,10 +16,14 @@
 - 所有新模型均带有 `contract_version` 字段，支持后续平滑演进
 - 默认生成 skeleton draft（不消耗 LLM 额度），加 `--use-llm` 才调用 LLM 生成正文
 - 文档入口同步更新：
-  - `docs/README.md` 使用者路径补入 writer-imitate 工作流文档
+  - `docs/README.md` 使用者路径补入 writer-imitate 工作流文档和最佳实践
   - `docs/interface-manifest.md` 新增第 12 节：Writer-Facing Imitation Models
-  - 根 `README.md` Newcomer Path 补入仿写/续写入口
+  - 根 `README.md` Newcomer Path 补入仿写/续写入口和最佳实践
   - `skills_dir/writer-imitate/prompts/main.md` 新增主 prompt 资产
+- 新增 `docs/writer-best-practices.md` — 基于真实示例小说《大器晚成》的写手最佳实践文档
+  - 涵盖完整工作流：拆书 → 了解源章 → 查看风格指纹 → 单章仿写 → 续写笔记理解 → 多章连续仿写
+  - 基于真实前 10 章数据提供具体示例（章节脉络、写作特点、风险关注点）
+  - 包含风险控制策略、风格指纹应用、跨小说对比、FAQ 和进阶技巧
 - 验证：所有文件 Python 语法检查通过，diff 审查无异常
 
 ## 2026-05-05
