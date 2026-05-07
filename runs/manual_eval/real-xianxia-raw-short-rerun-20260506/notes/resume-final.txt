@@ -1,2 +1,0 @@
-processed_chapters=2
-next_chapter=None

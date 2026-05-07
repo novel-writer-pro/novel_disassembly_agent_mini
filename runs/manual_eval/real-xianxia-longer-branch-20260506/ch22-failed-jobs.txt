@@ -1,2 +1,0 @@
-failed_job_count=1
-failed=chapter:22|attempts:1|error:Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}
