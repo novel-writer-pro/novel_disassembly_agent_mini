@@ -20,3 +20,4 @@ apps/web/.next/
 apps/web/tsconfig.tsbuildinfo
 **/__pycache__/
 *.py[cod]
+output/
