@@ -623,3 +623,83 @@ phase-2 聚合增强字段：
 
 稳定样例：
 - `docs/examples/whole-book-imitation-readiness.sample.json`
+
+## 12. Writer-Facing Imitation Models
+
+本节描述面向写手的新型仿写契约模型。
+
+### 12.1 WriterImitationReport
+
+来源：
+- `novel-analyzer writer-imitate <branch_id> <chapter_index> "<goal>"`
+- `WriterImitationService.imitate_chapter(...)`
+
+顶层字段：
+- `contract_version` — 固定 `writer-imitation.v1`
+- `branch_id` / `source_chapter_index` / `target_goal` / `source_title`
+- `overall_score` / `overall_risk_level` / `final_verdict` / `stop_reason`
+- `draft_title` / `draft_text`
+- `rhythm` — 节奏分析（pace_label / hook_strength / tension_curve）
+- `reader_engagement` — 读者模拟（engagement_score / concerns）
+- `dialogue_quality` — 对话诊断（issues / speaker_hints / efficiency_notes）
+- `style_calibration` — 风格校准（style_axes / prose_density_label）
+- `risk_level` / `top_risks` / `coverage_gaps`
+- `blocking_issues` / `recommended_actions` / `revision_directions`
+- `writer_learning_notes`
+- `continuation_notes` — 见 12.2
+- `harness_report` — 完整 harness 原始数据
+
+### 12.2 ContinuationNotes
+
+结构化续写笔记，位于 `WriterImitationReport.continuation_notes`。
+
+字段：
+- `source_chapter_index` / `next_chapter_index`
+- `chapter_summary` / `ending_hook`
+- `active_characters` — 当前活跃人物列表
+- `relationship_state` — 关系状态快照
+- `unresolved_threads` — 未解伏笔/线程
+- `world_rules` — 当前生效的世界规则
+- `hard_constraints` — 不可违反的硬约束
+- `soft_constraints` — 建议遵守的软约束
+- `forbidden_moves` — 明确禁止的动作
+- `risk_focus` — 下一章重点关注的 risk
+- `continuity_risks` — 连续性风险点
+- `quality_reminders` — 质量提醒
+- `recommended_next_questions`
+- `writer_notes`
+
+### 12.3 WriterStyleFingerprint
+
+来源：
+- `novel-analyzer writer-style-fingerprint <branch_id>`
+- `WriterImitationService.build_style_fingerprint(...)`
+
+顶层字段：
+- `contract_version` — 固定 `style-fingerprint.v1`
+- `branch_id` / `chapter_range`
+- `prose_density` — sparse / balanced / dense
+- `avg_paragraph_length` / `dialogue_ratio` / `action_ratio`
+- `narrative_distance` — close / mid / distant
+- `sentence_complexity` / `emotional_restraint` / `hook_pattern`
+- `chapter_profiles` — 逐章风格档案
+- `style_drift_flags` / `voice_consistency_notes`
+- `recommended_style_axes` / `imitation_pitfalls`
+
+### 12.4 CrossNovelComparisonReport
+
+来源：
+- `novel-analyzer writer-compare-novels <src_branch> <ref_branch>`
+- `WriterImitationService.compare_novels(...)`
+
+顶层字段：
+- `contract_version` — 固定 `cross-novel-comparison.v1`
+- `source_branch_id` / `reference_branch_id`
+- `source_chapter_count` / `reference_chapter_count`
+- `avg_chapter_length_source` / `avg_chapter_length_reference`
+- `source_hook_strength_avg` / `reference_hook_strength_avg`
+- `source_conflict_density` / `reference_conflict_density`
+- `source_character_count` / `reference_character_count`
+- `common_themes` / `divergent_themes`
+- `source_risk_profile` / `reference_risk_profile`
+- `key_differences` / `imitation_opportunities` / `writer_recommendations`

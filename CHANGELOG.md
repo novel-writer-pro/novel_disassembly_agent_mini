@@ -15,6 +15,11 @@
 - 新增 `skills_dir/writer-imitate/SKILL.md` — 写手仿写工作流完整文档
 - 所有新模型均带有 `contract_version` 字段，支持后续平滑演进
 - 默认生成 skeleton draft（不消耗 LLM 额度），加 `--use-llm` 才调用 LLM 生成正文
+- 文档入口同步更新：
+  - `docs/README.md` 使用者路径补入 writer-imitate 工作流文档
+  - `docs/interface-manifest.md` 新增第 12 节：Writer-Facing Imitation Models
+  - 根 `README.md` Newcomer Path 补入仿写/续写入口
+  - `skills_dir/writer-imitate/prompts/main.md` 新增主 prompt 资产
 - 验证：所有文件 Python 语法检查通过，diff 审查无异常
 
 ## 2026-05-05

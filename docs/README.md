@@ -74,6 +74,7 @@
 6. [`./manual-eval-record-template.md`](./manual-eval-record-template.md)
 7. [`./review-template.md`](./review-template.md)
 8. [`./session-handoff-manual.md`](./session-handoff-manual.md)
+9. [`../skills_dir/writer-imitate/SKILL.md`](../skills_dir/writer-imitate/SKILL.md) — 写手仿写工作流
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
@@ -83,6 +84,7 @@
 - 第 5 步：按全能力手册做拆书 / 检索 / 风险 / 仿写 / 治理人工测试
 - 第 6 步：用人工测试记录模板沉淀结论与薄弱点
 - 第 7 步：试跑后用模板做复盘
+- 第 8+ 步：使用 `writer-imitate` 做拆书→仿写一站式写作辅助
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 
