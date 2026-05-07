@@ -278,6 +278,21 @@
   - `26 passed`
   - `python3 -m py_compile ...` 通过
 
+### steering pack 持久化与批量创新实验流程补齐
+- 将 `steering_pack` 持久化到 writer-facing 输出：
+  - `writer-imitate*.json`
+  - `writer-imitate*.md`
+  - `writer-innovation-experiment-*.json/.md`
+- 新增批量实验 CLI：
+  - `writer-innovation-experiment`
+- 新增文档：
+  - `docs/trope-worldview-rag-library-format.md`
+  - `docs/batch-innovation-experiment-workflow.md`
+- 价值：
+  - 让世界观/套路/创新导向不只在执行时存在，而是能被落盘复盘
+  - 给后续 trope/worldview RAG 文档库一个可执行的文档格式
+  - 给连续章节提供一条统一底座的创新实验工作流
+
 ### 长分支推进到 30 章并锁定 fresh evidence
 - 继续推进真实中文修仙长分支 `62e636f0-c901-4167-aa1c-aff3da9c83ef`
 - fresh evidence：

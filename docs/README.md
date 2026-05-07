@@ -78,6 +78,8 @@
 10. `../output/novel-imitation-21-30/README.md`（本地仿写正文评审入口，不提交）
 11. [`./reader-sim-review-usage.md`](./reader-sim-review-usage.md)
 12. [`./imitation-innovation-and-steering.md`](./imitation-innovation-and-steering.md)
+13. [`./trope-worldview-rag-library-format.md`](./trope-worldview-rag-library-format.md)
+14. [`./batch-innovation-experiment-workflow.md`](./batch-innovation-experiment-workflow.md)
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
@@ -91,6 +93,8 @@
 - 第 9 步：若已进入真实仿写补写，可直接查看 `output/novel-imitation-21-30/combined.md` 做连续人工审稿
 - 第 10 步：若想确认“模拟读者阅读 / reader sim”怎么用，直接看 `reader-sim-review-usage.md`
 - 第 11 步：若想让仿写不只保守贴原章，而是显式引入新世界观/套路/创新导向，直接看 `imitation-innovation-and-steering.md`
+- 第 12 步：若想建设 trope/worldview 文档库并准备 RAG，直接看 `trope-worldview-rag-library-format.md`
+- 第 13 步：若想对一批章节统一做创新导向实验，直接看 `batch-innovation-experiment-workflow.md`
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 

@@ -367,6 +367,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert result.exit_code == 0
     assert (output_dir / 'writer-imitate-range-3-4.json').exists()
     assert (output_dir / 'writer-imitate-range-3-4.md').exists()
+    range_payload = json.loads((output_dir / 'writer-imitate-range-3-4.json').read_text(encoding='utf-8'))
+    assert 'steering_pack' in range_payload
 
     result = runner.invoke(
         app,
@@ -391,3 +393,27 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     index_text = index_md.read_text(encoding='utf-8')
     assert 'writer-imitate-range-3-4.json' in index_text
     assert 'chapter 3' in index_text
+
+    result = runner.invoke(
+        app,
+        [
+            'writer-innovation-experiment',
+            run_lines['branch_id'],
+            'batch-a',
+            '3:延续主线',
+            '4:制造新阻力',
+            '--worldview-note', '灵气稀薄，身份资源强绑定',
+            '--trope-axis', '底层逆袭',
+            '--output-dir', str(output_dir),
+            '--database-url', db_url,
+        ],
+    )
+    assert result.exit_code == 0
+    experiment_json = output_dir / 'writer-innovation-experiment-batch-a.json'
+    experiment_md = output_dir / 'writer-innovation-experiment-batch-a.md'
+    assert experiment_json.exists()
+    assert experiment_md.exists()
+    experiment_payload = json.loads(experiment_json.read_text(encoding='utf-8'))
+    assert experiment_payload['contract_version'] == 'writer-innovation-experiment.v1'
+    assert experiment_payload['steering_pack']['worldview_capsule'] == ['灵气稀薄，身份资源强绑定']
+    assert experiment_payload['experiment_meta']['chapter_count'] == 2

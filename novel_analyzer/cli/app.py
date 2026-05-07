@@ -2356,6 +2356,15 @@ def _write_writer_imitation_outputs(
     json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     lines: list[str] = [f"# {stem}"]
+    steering_pack = payload.get("steering_pack", {})
+    if isinstance(steering_pack, dict) and steering_pack:
+        lines.append("\n## Steering Pack")
+        for key, value in steering_pack.items():
+            if isinstance(value, list):
+                joined = "；".join(str(item) for item in value if str(item).strip())
+                lines.append(f"- {key}: {joined}")
+            else:
+                lines.append(f"- {key}: {value}")
     final_draft = payload.get("final_draft", {})
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
@@ -2412,6 +2421,11 @@ def _write_writer_imitation_outputs(
                 if visible_draft_text:
                     lines.append("")
                     lines.append(visible_draft_text)
+    experiment_meta = payload.get("experiment_meta", {})
+    if isinstance(experiment_meta, dict) and experiment_meta:
+        lines.append("\n## Experiment Meta")
+        for key, value in experiment_meta.items():
+            lines.append(f"- {key}: {value}")
     md_path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
     return json_path, md_path
 
@@ -2570,6 +2584,13 @@ def writer_imitate(
             ),
         )
         payload = report.model_dump(mode="json")
+        payload["steering_pack"] = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+        )
         stem = f"writer-imitate-ch{source_chapter_index}"
         json_path, md_path = _write_writer_imitation_outputs(output_dir, stem, payload)
         echo(f"writer_imitate_json={json_path}")
@@ -2625,7 +2646,7 @@ def writer_imitate_range(
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
             stem,
-            {"items": outputs, "branch_id": branch_id},
+            {"items": outputs, "branch_id": branch_id, "steering_pack": steering},
         )
         echo(f"writer_imitate_range_json={json_path}")
         echo(f"writer_imitate_range_markdown={md_path}")
@@ -2668,6 +2689,13 @@ def writer_imitate_review(
             ),
         )
         payload = report.model_dump(mode="json")
+        payload["steering_pack"] = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+        )
         output_dir.mkdir(parents=True, exist_ok=True)
         md_path = output_dir / f"writer-imitate-review-ch{source_chapter_index}.md"
         md_path.write_text(
@@ -2691,6 +2719,75 @@ def writer_imitate_index(
     md_path = output_dir / "writer-imitate-index.md"
     md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
     echo(f"writer_imitate_index_markdown={md_path}")
+
+
+@app.command()
+def writer_innovation_experiment(
+    branch_id: str,
+    experiment_name: str,
+    chapter_spec: list[str] = typer.Argument(..., help="Pairs like 24:强化阶层冲击 25:强化回乡情绪"),
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    database_url: str | None = None,
+) -> None:
+    """Run a batch innovation-steered imitation experiment and persist a reusable bundle."""
+
+    parsed = _parse_chapter_goal_spec(chapter_spec)
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    steering = _steering_pack(worldview_note, trope_axis, innovation_directive, taboo_innovation, knowledge_ref)
+    with factory() as session:
+        service = _imitation_harness_service(session, settings)
+        outputs: list[dict[str, object]] = []
+        for source_chapter_index, target_goal in parsed:
+            report = service.run_harness(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+                steering_pack=steering,
+            )
+            payload = report.model_dump(mode="json")
+            outputs.append(
+                {
+                    "source_chapter_index": source_chapter_index,
+                    "target_goal": target_goal,
+                    "final_verdict": payload.get("final_verdict"),
+                    "stop_reason": payload.get("stop_reason"),
+                    "final_draft": payload.get("final_draft", {}),
+                    "policy_summary": payload.get("policy_summary", {}),
+                    "steering_summary": steering,
+                }
+            )
+        stem = f"writer-innovation-experiment-{experiment_name}"
+        json_path, md_path = _write_writer_imitation_outputs(
+            output_dir,
+            stem,
+            {
+                "contract_version": "writer-innovation-experiment.v1",
+                "experiment_name": experiment_name,
+                "branch_id": branch_id,
+                "steering_pack": steering,
+                "items": outputs,
+                "experiment_meta": {
+                    "chapter_count": len(outputs),
+                    "use_llm": use_llm,
+                    "max_rounds": max_rounds,
+                    "model_name": model_name or settings.llm_model_name,
+                },
+            },
+        )
+        echo(f"writer_innovation_experiment_json={json_path}")
+        echo(f"writer_innovation_experiment_markdown={md_path}")
 
 
 @app.command()
