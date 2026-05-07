@@ -1,0 +1,47 @@
+{
+  "chapter_index": 25,
+  "job_attempt": 1,
+  "parse_status": "parsed",
+  "parse_error": null,
+  "invocation_metadata": {
+    "model_name": "gpt-5.4-mini",
+    "base_url": "https://api.vip1129.cc/v1",
+    "pipeline": "small-model-skills-v1"
+  },
+  "parsed_json": {
+    "chapter_index": 25,
+    "normalized_title": "近乡情怯（求收藏，求追读）",
+    "dimensions": [],
+    "chapter_summary": "第25章 近乡情怯（求收藏，求追读）",
+    "key_entities": [
+      "近乡情怯",
+      "不多时",
+      "李耀祖夫",
+      "妇和卫图",
+      "这一个外"
+    ],
+    "key_events": [
+      "第25章 近乡情怯（求收藏，求追读）"
+    ],
+    "continuity_notes": [
+      "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+      "建议后续在 provider 恢复后对该章补做完整 LLM 分析。"
+    ],
+    "state_transition_notes": [],
+    "evidence_backed_resolutions": [],
+    "unresolved_threads": [],
+    "writer_learning_notes": [
+      "当前为保底分析结果，重点先保证章节不断档，再在后续补足风格与细节层判断。"
+    ],
+    "unsupported_inferences": [],
+    "ambiguous_points": [
+      "启发式保底输出，细粒度事实与风格判断有限。"
+    ],
+    "needs_human_review": true,
+    "quality_gate_notes": [
+      "provider unavailable -> local heuristic fallback"
+    ],
+    "hook_score": 2.5
+  },
+  "raw_response_text": "{\n  \"stage_error\": \"Error code: 403 - {'code': 'SUBSCRIPTION_NOT_FOUND', 'message': 'No active subscription found for this group'}\",\n  \"fallback_error\": \"Error code: 403 - {'code': 'SUBSCRIPTION_NOT_FOUND', 'message': 'No active subscription found for this group'}\",\n  \"fallback\": \"local-heuristic\"\n}"
+}

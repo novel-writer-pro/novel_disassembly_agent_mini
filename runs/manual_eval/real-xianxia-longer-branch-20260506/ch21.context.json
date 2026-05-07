@@ -1,0 +1,1011 @@
+{
+  "chapter_index": 21,
+  "previous_summary": "卫图观察命格，单武举解释真气、先天、宗师三境界，提及师祖为突破先天远走暴毙，卫图得知先天境可活二百寿后大受震撼但叹息养生功进度。",
+  "fact_context": {
+    "facts": [
+      {
+        "chapter_index": 19,
+        "fact_type": "continuity",
+        "label": "本章新增一个明确规则/目标：道试舞刀乙等可获武秀才功名，为后续武举备考提供方向。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 19,
+        "fact_type": "continuity",
+        "label": "卫图的弓射技艺提升（证据显示“极大提升”）延续了前几章的练习成果，但本章并未展示具体训练过程。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "卫图推测命格暖流的作用是改造身体以适应功法",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "卫图演练虎鹤双形拳后命格显示进度1/100，预计三年练成",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "单武举回忆师祖为突破先天远走庆丰府后暴毙",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "单武举提及先天境外练武师可练髓入骨养出先天气",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "entity",
+        "label": "单武举的师祖",
+        "confidence": 0.6
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "entity",
+        "label": "单武举",
+        "confidence": 0.6
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "单武举说明真气境武师可附着真气于武器",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "entity",
+        "label": "卫图",
+        "confidence": 0.6
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "continuity",
+        "label": "关系层面：单武举主动向卫图透露师祖往事及武道核心信息，表明信任加深，但证据中未出现正式收徒或传授功法，因此师徒关系尚未正式确立。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "continuity",
+        "label": "角色信息掌握状态显著变化：卫图对内练武师修行路径（真气、先天、宗师）及先天境寿命延长（二百寿）有了系统认知，但自身仍处于感气前阶段，形成‘蓝图远大 vs 现实缓慢’的认知落差。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "卫图得出自己没有资质门槛、资质可变的结论",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "卫图查看龟息养气功进度(83/100)，推测两年内可大成",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "单武举向内练武师卫图解释感气境后的三大境界",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "continuity",
+        "label": "冲突状态：未引入新冲突，已有冲突（卫图贫苦处境、五年修炼周期）未在本章升级，仍延续。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "continuity",
+        "label": "世界规则得到巩固：本章确认武道境界划分以及各境界基础特征（真气附着武器、先天外练养气），并暗示突破先天存在高风险（师祖暴毙）。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "continuity",
+        "label": "本章结尾悬念较弱，但卫图对养生功进度的叹气暗示其对修炼速度的紧迫感，下一章可能驱动卫图寻求加速修炼或更多武道资源。",
+        "confidence": 0.55
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "event",
+        "label": "卫图得知先天境武师可活二百寿",
+        "confidence": 0.7
+      },
+      {
+        "chapter_index": 20,
+        "fact_type": "continuity",
+        "label": "前情状态摘要中大量未回收伏笔（白阳县灾荒、杏关系、单闵氏等）本章未涉及，本章属于独立的信息揭示与情感铺陈。",
+        "confidence": 0.55
+      }
+    ]
+  },
+  "graph_context": {
+    "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+    "upto_chapter": 20,
+    "overview": {
+      "node_count": 594,
+      "edge_count": 34401,
+      "node_type_counts": {
+        "conflict": 40,
+        "continuity": 119,
+        "entity": 42,
+        "event": 175,
+        "foreshadow": 48,
+        "relation": 61,
+        "world_rule": 109
+      },
+      "edge_type_counts": {
+        "carries_forward": 16324,
+        "co_occurs": 179,
+        "conflict_centers_on": 2411,
+        "conflict_involves": 81,
+        "constrains": 1099,
+        "contextualizes": 3670,
+        "hints_at": 4053,
+        "participates_in": 922,
+        "pressured_by": 81,
+        "relates_to": 151,
+        "advances_to": 943,
+        "escalates_to": 198,
+        "evolves_to": 316,
+        "follows": 165,
+        "pays_off_as": 3530,
+        "persists_into": 278
+      }
+    },
+    "central_nodes": [
+      {
+        "label": "卫图",
+        "node_type": "entity",
+        "degree": 578,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 21
+      },
+      {
+        "label": "卫图怀疑自己所在世界可能存在仙人修行",
+        "node_type": "foreshadow",
+        "degree": 330,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "黄宅可能存在可供卫图利用的人脉或资源",
+        "node_type": "foreshadow",
+        "degree": 324,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "卫图计划从二姑处寻找养生功线索",
+        "node_type": "foreshadow",
+        "degree": 318,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1
+      },
+      {
+        "label": "卫图接下来可能继续准备武举相关练习",
+        "node_type": "foreshadow",
+        "degree": 312,
+        "chapter_first_seen": 7,
+        "chapter_last_seen": 7
+      },
+      {
+        "label": "卫图可能继续依靠龟息养气功修炼",
+        "node_type": "foreshadow",
+        "degree": 310,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "二姑卫荭可能会帮卫图解决事情",
+        "node_type": "foreshadow",
+        "degree": 309,
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2
+      },
+      {
+        "label": "卫图可能在五年后验证命格和功法效果",
+        "node_type": "foreshadow",
+        "degree": 306,
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3
+      },
+      {
+        "label": "卫图在一年多后会参加庆丰府武举考核",
+        "node_type": "foreshadow",
+        "degree": 303,
+        "chapter_first_seen": 8,
+        "chapter_last_seen": 8
+      },
+      {
+        "label": "关系层面：单武举主动向卫图透露师祖往事及武道核心信息，表明信任加深，但证据中未出现正式收徒或传授功法，因此师徒关系尚未正式确立。",
+        "node_type": "continuity",
+        "degree": 303,
+        "chapter_first_seen": 20,
+        "chapter_last_seen": 20
+      },
+      {
+        "label": "卫图将为脱籍和武举继续筹钱",
+        "node_type": "foreshadow",
+        "degree": 302,
+        "chapter_first_seen": 8,
+        "chapter_last_seen": 8
+      },
+      {
+        "label": "卫图接下来会优先练好弓射以备武举",
+        "node_type": "foreshadow",
+        "degree": 301,
+        "chapter_first_seen": 8,
+        "chapter_last_seen": 8
+      }
+    ],
+    "recent_timeline": [
+      "卫图前往镇上购买拜师礼 -[advances_to]-> 单武举向内练武师卫图解释感气境后的三大境界",
+      "卫图向单宅众人说明补送拜师礼的缘由 -[advances_to]-> 单武举向内练武师卫图解释感气境后的三大境界",
+      "单武举收下拜师礼并称赞杏 -[advances_to]-> 单武举向内练武师卫图解释感气境后的三大境界",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 单武举向内练武师卫图解释感气境后的三大境界",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 卫图查看龟息养气功进度(83/100)，推测两年内可大成",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 卫图得知先天境武师可活二百寿",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 卫图推测命格暖流的作用是改造身体以适应功法",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 卫图得出自己没有资质门槛、资质可变的结论",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 单武举提及先天境外练武师可练髓入骨养出先天气",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 单武举说明真气境武师可附着真气于武器",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 卫图演练虎鹤双形拳后命格显示进度1/100，预计三年练成",
+      "单武举说明道试舞刀乙等可获武秀才功名 -[follows]-> 单武举回忆师祖为突破先天远走庆丰府后暴毙"
+    ],
+    "reasoning_paths": [
+      "卫图给自己洗漱并发现容貌异常老态 -[advances_to]-> 卫图掐了杏的屁股",
+      "卫图给自己洗漱并发现容貌异常老态 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图在水中看到自己容貌不断变老 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图发现脑海中的命格“大器晚成” -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图判断命格属性为坚韧不拔、必有所成 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图产生修炼养生功并求仙的计划 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图准备明天去找二姑打听养生功 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图次日继续在李宅做杂役和马倌工作 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图从佃奴升为李宅新的马倌 -[advances_to]-> 卫图在黄宅前院厢房等待二姑卫荭",
+      "卫图给自己洗漱并发现容貌异常老态 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图在水中看到自己容貌不断变老 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图发现脑海中的命格“大器晚成” -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图判断命格属性为坚韧不拔、必有所成 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图产生修炼养生功并求仙的计划 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图准备明天去找二姑打听养生功 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图次日继续在李宅做杂役和马倌工作 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图从佃奴升为李宅新的马倌 -[advances_to]-> 二姑卫荭接见卫图",
+      "卫图给自己洗漱并发现容貌异常老态 -[advances_to]-> 卫图说明自己是来求二姑帮忙的",
+      "卫图在水中看到自己容貌不断变老 -[advances_to]-> 卫图说明自己是来求二姑帮忙的",
+      "卫图发现脑海中的命格“大器晚成” -[advances_to]-> 卫图说明自己是来求二姑帮忙的"
+    ],
+    "active_conflicts": [
+      "卫图担心养马失误会遭李老爷责罚",
+      "卫图的贫苦处境与求道愿望之间的现实落差",
+      "卫图家贫，只能买便宜胭脂去见二姑",
+      "卫图担心空手上门会遭二姑白眼",
+      "卫荭对卫图的来意先表现出明显防备",
+      "李宅饮食资源有限，肉食并不常见",
+      "卫图发现修炼龟息养气功需要五年",
+      "卫图在黄宅受到冷眼和轻视",
+      "卫图提出学武被卫荭拒绝为独门武功，只能转为养生功",
+      "卫荭对卫图的请求只提供有限帮助",
+      "黄家少爷对卫图身份表示嫌弃",
+      "卫图和杏的回乡路线面临山匪与野兽风险"
+    ],
+    "open_foreshadowing": [
+      "白阳县灾荒和赈灾账目异常暗示局势将乱",
+      "单闵氏可能近日回到单家",
+      "单武举的师祖之死可能另有隐情",
+      "卫图养生功两年后达感气境",
+      "卫图向往长生久视的仙道",
+      "卫图虎鹤双形拳三年可成"
+    ],
+    "world_rules": [
+      "命格以金紫之色呈现，且可在脑海中显化为玺印",
+      "庆丰府存在武者与武道传承",
+      "庆丰府武者常兼具刀客、农人或匪徒身份",
+      "本章确认存在“命格”设定",
+      "李宅主仆在饮食上存在明显等级差异",
+      "李宅仆役有佃奴与马倌的分化，待遇不同",
+      "李宅的马需要三更天加喂夜草",
+      "武功秘法中存在养生功，可用于延年益寿",
+      "武者多靠血勇好斗，但年老后容易因暗伤暴毙",
+      "武道搏杀能力有限，十人敌已算强者"
+    ],
+    "state_machine": {
+      "foreshadow": [
+        {
+          "label": "“大器晚成”命格可能在晚年显效",
+          "status": "paid_off",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图怀疑自己所在世界可能存在仙人修行",
+          "status": "paid_off",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图计划从二姑处寻找养生功线索",
+          "status": "paid_off",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "黄宅可能存在武师和武功资源",
+          "status": "paid_off",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "二姑卫荭可能会帮卫图解决事情",
+          "status": "paid_off",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图此次上门的真正请求尚未说出",
+          "status": "paid_off",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "黄宅可能存在可供卫图利用的人脉或资源",
+          "status": "paid_off",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图下次不要再来找卫荭",
+          "status": "paid_off",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图可能在五年后验证命格和功法效果",
+          "status": "paid_off",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图可能继续依靠龟息养气功修炼",
+          "status": "paid_off",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "龟息养气功修成后可进入感气之境",
+          "status": "paid_off",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图看到郑国官兵与刀客厮杀，暗示官道附近有剿匪行动",
+          "status": "paid_off",
+          "chapter_first_seen": 6,
+          "chapter_last_seen": 6
+        }
+      ],
+      "conflict": [
+        {
+          "label": "卫图担心养马失误会遭李老爷责罚",
+          "status": "escalated",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图的贫苦处境与求道愿望之间的现实落差",
+          "status": "escalated",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图家贫，只能买便宜胭脂去见二姑",
+          "status": "escalated",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图担心空手上门会遭二姑白眼",
+          "status": "escalated",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫荭对卫图的来意先表现出明显防备",
+          "status": "escalated",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "李宅饮食资源有限，肉食并不常见",
+          "status": "escalated",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图发现修炼龟息养气功需要五年",
+          "status": "escalated",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图在黄宅受到冷眼和轻视",
+          "status": "escalated",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图提出学武被卫荭拒绝为独门武功，只能转为养生功",
+          "status": "escalated",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫荭对卫图的请求只提供有限帮助",
+          "status": "escalated",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "黄家少爷对卫图身份表示嫌弃",
+          "status": "escalated",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图和杏的回乡路线面临山匪与野兽风险",
+          "status": "escalated",
+          "chapter_first_seen": 6,
+          "chapter_last_seen": 6
+        }
+      ],
+      "relation": [
+        {
+          "label": "二姑与黄老爷存在偏房关系",
+          "status": "evolved",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图与李宅主家的雇佣从属关系",
+          "status": "evolved",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图受老刘头传授养马技艺",
+          "status": "evolved",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "卫图与二姑卫荭是亲属关系",
+          "status": "evolved",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图与杏存在暧昧关系",
+          "status": "evolved",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图与黄宅之间存在外亲通行关系",
+          "status": "evolved",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫荭已嫁入黄家，身份更接近黄家妇而非卫家人",
+          "status": "evolved",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "杏对李家主母的偷吃行为被默许",
+          "status": "stable",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "卫图与卫荭是亲属关系",
+          "status": "evolved",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图与阮武师发生接触",
+          "status": "evolved",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫图与黄宅护院存在上下资源关系",
+          "status": "evolved",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        },
+        {
+          "label": "卫荭已嫁入黄家",
+          "status": "stable",
+          "chapter_first_seen": 3,
+          "chapter_last_seen": 3
+        }
+      ],
+      "world_rule": [
+        {
+          "label": "命格以金紫之色呈现，且可在脑海中显化为玺印",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "庆丰府存在武者与武道传承",
+          "status": "observed",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "庆丰府武者常兼具刀客、农人或匪徒身份",
+          "status": "observed",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "本章确认存在“命格”设定",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "李宅主仆在饮食上存在明显等级差异",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "李宅仆役有佃奴与马倌的分化，待遇不同",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "李宅的马需要三更天加喂夜草",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "武功秘法中存在养生功，可用于延年益寿",
+          "status": "constraining",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "武者多靠血勇好斗，但年老后容易因暗伤暴毙",
+          "status": "observed",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "武道搏杀能力有限，十人敌已算强者",
+          "status": "observed",
+          "chapter_first_seen": 1,
+          "chapter_last_seen": 1
+        },
+        {
+          "label": "厨娘偷吃在李家属于默认存在的现象",
+          "status": "constraining",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        },
+        {
+          "label": "古代普通家庭吃肉是奢侈事",
+          "status": "observed",
+          "chapter_first_seen": 2,
+          "chapter_last_seen": 2
+        }
+      ]
+    },
+    "nodes": [
+      {
+        "node_type": "entity",
+        "label": "卫图",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 21,
+        "occurrence_count": 21,
+        "metadata": {
+          "confidence": 0.98,
+          "evidence": [
+            "三更天，卫图掐准生物钟，揉了揉惺忪的睡眼，从土炕上翻身而起",
+            "卫图眉心亦开始金光闪烁",
+            "庆安十五年，也就是六年前的时候，他爹卫豹将他卖到了李宅为仆",
+            "灶台焰火旺盛，卫图挪了一下屁股底下的马扎，向后退了几步，停止了添柴",
+            "卫图将碗放在案上，好奇的问起了厨娘杏",
+            "离开李宅，卫图没有着急直接前往黄家，而是取出自己这些年攒的工钱，跑到了胭脂铺",
+            "“侄儿这次前来，是打算拜托二姑，从黄宅护院手上学几手武功，好养健身体。”",
+            "卫图抱紧了怀里的图册，加紧步伐，朝李宅走去。",
+            "此刻的他，只是十七岁，再过五年时间，也仅仅二十二岁。",
+            "卫图",
+            "卫图和杏在成婚的第二天，就重新归职",
+            "卫图听完杏的转述，安慰道",
+            "卫图惊讶。",
+            "第二天，回到乡下家里后，在与卫豹的交谈中，卫图这才了解到了那些刀客的由来",
+            "“爹对不住你，这是我这些年攒下的一些钱，你拿着”",
+            "卫图放下石锁，思考起了自己人生的下一步规划",
+            "“在李宅这么多年人吃马嚼，又学了养马技艺，想要赎买我的身契，市价至少在十两银子以上……”",
+            "“我……打算脱籍，去考武举，手上的钱差得多……”",
+            "“只要练好弓射，去武举考个武秀才应该没多大问题。”",
+            "跟计划中的差不多，经过一年多的省吃俭用，他手上的钱距离十两赎身银已经差不了多少了",
+            "以我现在的武力，搏取武举功名即便不是板上钉钉，也是相差不远",
+            "他已经受够了唯唯诺诺。",
+            "两年过去。当初离开黄家时，表弟黄元山的话，还时不时在卫图脑海里回响。",
+            "卫图自不会因为这点意气之争，就不提自己唯一可以依赖的后台背景了。",
+            "卫图再次弯腰致谢。",
+            "在堂屋内正收拾行李的卫图，便收到了老爷李耀祖给他写的另一封信。",
+            "卫图犹豫了一小会，终于下定了决心，决定按信中所说，去三源乡单纪家里当长工",
+            "卫图叹了一口气。"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图怀疑自己所在世界可能存在仙人修行",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.88,
+          "evidence": [
+            "是不是还有传说中的仙人？长生不死，朝游北海而暮苍梧"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "黄宅可能存在可供卫图利用的人脉或资源",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.78,
+          "evidence": [
+            "黄宅都是青木县达官贵人的居所",
+            "卫图心中一动，想起了那个年少的玩伴"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图计划从二姑处寻找养生功线索",
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.93,
+          "evidence": [
+            "明天先去找二姑",
+            "家里说不定有养生功"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图接下来可能继续准备武举相关练习",
+        "chapter_first_seen": 7,
+        "chapter_last_seen": 7,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.96,
+          "evidence": [
+            "“练习弓射的同时，积攒银钱，想办法先脱奴籍……”",
+            "武举考核除了举石之外，还有舞刀、拉硬弓、马步射、兵策这几门考试",
+            "眼下。凭他自身的条件，想要跨越阶级，最快、最好的捷径便是参加郑国三年一次的武举考核"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图可能继续依靠龟息养气功修炼",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.9,
+          "evidence": [
+            "“有了养生功，坚持下去，迟早也能成为人上人。”",
+            "他已经迫不及待，想要修炼这龟息养气功了。"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "二姑卫荭可能会帮卫图解决事情",
+        "chapter_first_seen": 2,
+        "chapter_last_seen": 2,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.82,
+          "evidence": [
+            "\"要是能帮上忙，二姑会尽可能帮伱，要是帮不上……\"",
+            "\"有什么事？\""
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图可能在五年后验证命格和功法效果",
+        "chapter_first_seen": 3,
+        "chapter_last_seen": 3,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.88,
+          "evidence": [
+            "“五年时间，并不漫长，等到了五年后，这个金手指和我的猜测是否相符，便一目了然了。”"
+          ]
+        }
+      },
+      {
+        "node_type": "continuity",
+        "label": "关系层面：单武举主动向卫图透露师祖往事及武道核心信息，表明信任加深，但证据中未出现正式收徒或传授功法，因此师徒关系尚未正式确立。",
+        "chapter_first_seen": 20,
+        "chapter_last_seen": 20,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.5,
+          "evidence": [
+            "关系层面：单武举主动向卫图透露师祖往事及武道核心信息，表明信任加深，但证据中未出现正式收徒或传授功法，因此师徒关系尚未正式确立。"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图在一年多后会参加庆丰府武举考核",
+        "chapter_first_seen": 8,
+        "chapter_last_seen": 8,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.91,
+          "evidence": [
+            "距离庆丰府的武举考核，还有一年多的时间",
+            "“去武举考个武秀才应该没多大问题。”"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图将为脱籍和武举继续筹钱",
+        "chapter_first_seen": 8,
+        "chapter_last_seen": 8,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "“手上的钱差得多……”",
+            "“距离十两，还差三两三钱……”",
+            "“加上咱俩今后的工钱，距离缺额应该不会太大。”"
+          ]
+        }
+      },
+      {
+        "node_type": "foreshadow",
+        "label": "卫图接下来会优先练好弓射以备武举",
+        "chapter_first_seen": 8,
+        "chapter_last_seen": 8,
+        "occurrence_count": 1,
+        "metadata": {
+          "confidence": 0.95,
+          "evidence": [
+            "“只要练好弓射，去武举考个武秀才应该没多大问题。”",
+            "距离庆丰府的武举考核，还有一年多的时间"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "edge_type": "carries_forward",
+        "source": "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。",
+        "target": "卫图计划从二姑处寻找养生功线索",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。",
+        "target": "卫图怀疑自己所在世界可能存在仙人修行",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "卫图的社会位置并未在本章发生跃迁，仍是依靠养马技艺维持生计，但回顾其从佃奴升为马倌的经历，强化了“靠技艺改变命运”的主线方向，符合章节标题所指向的晚成意味。",
+        "target": "卫图",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "卫图的社会位置并未在本章发生跃迁，仍是依靠养马技艺维持生计，但回顾其从佃奴升为马倌的经历，强化了“靠技艺改变命运”的主线方向，符合章节标题所指向的晚成意味。",
+        "target": "卫图计划从二姑处寻找养生功线索",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "卫图的社会位置并未在本章发生跃迁，仍是依靠养马技艺维持生计，但回顾其从佃奴升为马倌的经历，强化了“靠技艺改变命运”的主线方向，符合章节标题所指向的晚成意味。",
+        "target": "卫图怀疑自己所在世界可能存在仙人修行",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "与二姑、黄老爷、黄宅武师相关的信息为后续行动提供了明确入口，但目前仍停留在计划层面，属于轻度钩子而非强悬念；下一章驱动因素很可能是卫图去找二姑后获得新的关系资源或信息。",
+        "target": "卫图",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "与二姑、黄老爷、黄宅武师相关的信息为后续行动提供了明确入口，但目前仍停留在计划层面，属于轻度钩子而非强悬念；下一章驱动因素很可能是卫图去找二姑后获得新的关系资源或信息。",
+        "target": "卫图计划从二姑处寻找养生功线索",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "与二姑、黄老爷、黄宅武师相关的信息为后续行动提供了明确入口，但目前仍停留在计划层面，属于轻度钩子而非强悬念；下一章驱动因素很可能是卫图去找二姑后获得新的关系资源或信息。",
+        "target": "卫图怀疑自己所在世界可能存在仙人修行",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "hook评分：中等偏弱。结尾没有爆发式冲突或反转，但“眉心金光闪烁”与“明天先去找二姑”构成了足够明确的继续阅读动机，更多是以人物状态变化和行动计划来承接后文。",
+        "target": "卫图计划从二姑处寻找养生功线索",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "本章对角色状态的变化主要是“延续中带推进”：卫图仍处于李宅马倌的低位劳动场景，但其眉心金光闪烁提示他身上可能出现了新的异常或能力变化；这一点属于状态层面的重要增量，后续大概率会继续展开。",
+        "target": "卫图",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "若按前情状态看，本章没有看到已知冲突的正面升级或伏笔回收，更像是对既有困境的延续与对新线索的局部铺垫；整体节奏保守，重点在于把卫图的生存处境、成长履历和未来行动方向稳固下来。",
+        "target": "卫图",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      },
+      {
+        "edge_type": "carries_forward",
+        "source": "若按前情状态看，本章没有看到已知冲突的正面升级或伏笔回收，更像是对既有困境的延续与对新线索的局部铺垫；整体节奏保守，重点在于把卫图的生存处境、成长履历和未来行动方向稳固下来。",
+        "target": "卫图怀疑自己所在世界可能存在仙人修行",
+        "weight": 1.0,
+        "chapter_first_seen": 1,
+        "chapter_last_seen": 1,
+        "metadata": {
+          "provenance": "heuristic-label-match"
+        }
+      }
+    ]
+  },
+  "state_summary": {
+    "new_foreshadowing": [],
+    "paid_off_foreshadowing": [
+      "“大器晚成”命格可能在晚年显效",
+      "卫图怀疑自己所在世界可能存在仙人修行",
+      "卫图计划从二姑处寻找养生功线索",
+      "黄宅可能存在武师和武功资源",
+      "二姑卫荭可能会帮卫图解决事情",
+      "卫图此次上门的真正请求尚未说出",
+      "黄宅可能存在可供卫图利用的人脉或资源",
+      "卫图下次不要再来找卫荭",
+      "卫图可能在五年后验证命格和功法效果",
+      "卫图可能继续依靠龟息养气功修炼",
+      "龟息养气功修成后可进入感气之境",
+      "卫图看到郑国官兵与刀客厮杀，暗示官道附近有剿匪行动"
+    ],
+    "new_conflicts": [],
+    "escalated_conflicts": [
+      "卫图担心养马失误会遭李老爷责罚",
+      "卫图的贫苦处境与求道愿望之间的现实落差",
+      "卫图家贫，只能买便宜胭脂去见二姑",
+      "卫图担心空手上门会遭二姑白眼",
+      "卫荭对卫图的来意先表现出明显防备",
+      "李宅饮食资源有限，肉食并不常见",
+      "卫图发现修炼龟息养气功需要五年",
+      "卫图在黄宅受到冷眼和轻视",
+      "卫图提出学武被卫荭拒绝为独门武功，只能转为养生功",
+      "卫荭对卫图的请求只提供有限帮助",
+      "黄家少爷对卫图身份表示嫌弃",
+      "卫图和杏的回乡路线面临山匪与野兽风险"
+    ],
+    "stable_relations": [
+      "杏对李家主母的偷吃行为被默许",
+      "卫荭已嫁入黄家"
+    ],
+    "evolved_relations": [
+      "二姑与黄老爷存在偏房关系",
+      "卫图与李宅主家的雇佣从属关系",
+      "卫图受老刘头传授养马技艺",
+      "卫图与二姑卫荭是亲属关系",
+      "卫图与杏存在暧昧关系",
+      "卫图与黄宅之间存在外亲通行关系",
+      "卫荭已嫁入黄家，身份更接近黄家妇而非卫家人",
+      "卫图与卫荭是亲属关系",
+      "卫图与阮武师发生接触",
+      "卫图与黄宅护院存在上下资源关系"
+    ],
+    "observed_world_rules": [
+      "庆丰府存在武者与武道传承",
+      "庆丰府武者常兼具刀客、农人或匪徒身份",
+      "武者多靠血勇好斗，但年老后容易因暗伤暴毙",
+      "武道搏杀能力有限，十人敌已算强者",
+      "古代普通家庭吃肉是奢侈事"
+    ],
+    "constraining_world_rules": [
+      "命格以金紫之色呈现，且可在脑海中显化为玺印",
+      "本章确认存在“命格”设定",
+      "李宅主仆在饮食上存在明显等级差异",
+      "李宅仆役有佃奴与马倌的分化，待遇不同",
+      "李宅的马需要三更天加喂夜草",
+      "武功秘法中存在养生功，可用于延年益寿",
+      "厨娘偷吃在李家属于默认存在的现象"
+    ]
+  },
+  "window_summary": "第16章：卫图凭借扎实的养生功桩功消除了单武举的怀疑，成功拜师，地位从长工升为弟子。 第17章：卫图行拜师礼，正式拜单武举为师；请辞内院后获单高氏交付二进院门钥匙；丫鬟已知消息，改口称‘少爷’，卫图欣喜回味。 第18章：杏寄来冬衣与银豆子，卫图剪线取出后骑马出行，单武举绷脸但此前赞誉杏，邓安羡慕卫图地位变化。 第19章：单武举传授虎鹤双形拳拳谱，解释感气之境与内外功区别，设定一个月练成虎形拳的目标，并指出道试舞刀乙等可获武秀才功名。 第20章：卫图观察命格，单武举解释真气、先天、宗师三境界，提及师祖为突破先天远走暴毙，卫图得知先天境可活二百寿后大受震撼但叹息养生功进度。"
+}

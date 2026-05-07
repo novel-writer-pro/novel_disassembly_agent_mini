@@ -44,6 +44,30 @@
    - `iterate-imitation`
    - `run-whole-book-imitation`
 
+## 2.1 仿写执行流程图
+
+```mermaid
+flowchart TD
+    A[Source Chapter / 已拆书章节] --> B[Author Knowledge / Facts / Graph / Rules]
+    B --> C[Imitation Plan]
+    C --> D[Constraint Pack]
+    D --> E[Skeleton / LLM Draft]
+    E --> F[Draft Self Check]
+    F --> G[Harness Controller]
+    G --> H[Reader Sim / Rhythm / Style / Dialogue / Research]
+    H --> I[Preflight]
+    I --> J[Risk Gate / Quality Gate]
+    J --> K{Pass?}
+    K -- Yes --> L[Writer Output JSON / Markdown]
+    K -- No --> M[Targeted Revise Queue]
+    M --> G
+```
+
+说明：
+- 左半边解决“写什么、不能怎么写”
+- 中间解决“如何起草、如何修”
+- 右半边解决“读者是否愿意看、风险是否可过、最后输出什么”
+
 ---
 
 ## 3. 当前仿写链路包含什么

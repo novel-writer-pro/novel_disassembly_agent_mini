@@ -1,0 +1,6 @@
+chapter_index=22
+job_attempt=1
+parse_status=failed
+parse_error=Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}
+invocation_metadata={'model_name': 'deepseek-v4-flash', 'base_url': 'https://api.deepseek.com/v1', 'pipeline': 'small-model-skills-v1'}
+

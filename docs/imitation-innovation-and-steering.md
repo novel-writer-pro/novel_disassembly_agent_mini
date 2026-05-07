@@ -32,6 +32,26 @@
 - harness prompt previews
 - reader/rhythm/style 等辅助判断链
 
+## 创新 steering 流程图
+
+```mermaid
+flowchart LR
+    A[Source Chapter / Branch Context] --> B[Base Imitation Plan]
+    C[Worldview Notes / Trope Docs / Audience Docs] --> D[Steering Library / Retrieval]
+    D --> E[Steering Pack]
+    B --> F[Augmented Imitation Plan]
+    E --> F
+    F --> G[Constraint Pack / Prompt Preview]
+    G --> H[Draft / Revise / Experiment]
+    H --> I[Reader Sim / Risk / Delta Summary]
+```
+
+说明：
+- `Base Imitation Plan` 保 continuity
+- `Steering Pack` 保创新方向
+- 两者合并后才进入 draft / revise / experiment
+- 这样做的目的是：创新不脱底座，底座不吞掉创新
+
 ---
 
 ## 这层能力解决什么问题
@@ -146,4 +166,3 @@
 ### P3
 - 创新收益 / 越界风险双评分
 - multi-reader persona 对创新接受度评估
-

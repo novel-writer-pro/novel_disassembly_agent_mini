@@ -142,3 +142,57 @@
 - 在完成分支上，当高置信 lexical route 已覆盖足够章节时，diagnostics 链允许跳过 rerank。
 - fresh evidence：service 级 diagnostics 约 0.031s；CLI diagnostics 5s 内成功；CLI benchmark 10s 内成功。
 - 这说明当前 operator-facing retrieval 导出已经恢复到短窗口内稳定可用。
+
+## 长分支推进到 30 章（2026-05-07 补充）
+- 长分支：`branch_id=62e636f0-c901-4167-aa1c-aff3da9c83ef`
+- 运行：`run_id=ac9449b9-7326-474f-bb72-4416375a7491`
+- fresh evidence：
+  - `completed_chapters=30`
+  - `failed_jobs=0`
+  - `running_jobs=0`
+  - `next_chapter=31`
+  - `fact_count=491`
+  - `graph_node_count=679`
+  - `graph_edge_count=37602`
+- 对应落盘证据：
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/status-after-30.txt`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/chapters-after-30.txt`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch21.bundle.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch22.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch23.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch24.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch25.raw.json`
+
+## provider fallback 边界（2026-05-07 补充）
+- chapter 22~25 的 raw output 明确记录了 provider 不可用：
+  - `402 Insufficient Balance`
+  - `403 SUBSCRIPTION_NOT_FOUND`
+- 当前系统行为已调整为：
+  1. 优先保章节不断档；
+  2. provider 失效时落到 `local-heuristic fallback`；
+  3. 允许后续再补完整 LLM 分析。
+- 新结论：对真实长分支而言，当前主链已经具备“上游 provider 波动时仍能推进到 30 章”的保底能力，但 chapter 22~25 的细粒度语义质量仍应在 provider 恢复后补跑。
+
+## 新小说仿写 21~30 正文补写（2026-05-07 补充）
+- 由于 chapter 22~25 的 source analysis 有 fallback 痕迹，本轮没有把 skeleton 误报成成品，而是基于：
+  - branch context
+  - chapter bundle
+  - raw output
+  - 已完成章节连续状态
+  进行人工实战补写。
+- 产物位置：
+  - `output/novel-imitation-21-30/combined.md`
+  - `output/novel-imitation-21-30/ch21-周家子女.md`
+  - `output/novel-imitation-21-30/ch22-林岳的回绝.md`
+  - `output/novel-imitation-21-30/ch23-报考武举.md`
+  - `output/novel-imitation-21-30/ch24-县试第七.md`
+  - `output/novel-imitation-21-30/ch25-近乡情怯.md`
+  - `output/novel-imitation-21-30/ch26-武举考试.md`
+  - `output/novel-imitation-21-30/ch27-山深亲亦来.md`
+  - `output/novel-imitation-21-30/ch28-逐利之心.md`
+  - `output/novel-imitation-21-30/ch29-我师举人.md`
+  - `output/novel-imitation-21-30/ch30-料峭春风.md`
+  - `output/novel-imitation-21-30/eval-notes.md`
+- 当前判断：
+  - 已达到“可连续阅读、可人工审稿、可继续扩到 31+”的状态；
+  - 仍建议优先二修 `ch22 / ch24 / ch26`，并继续顺着 `ch30` 的补试提前钩子推进 31~40。
