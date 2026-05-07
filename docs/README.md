@@ -95,6 +95,7 @@
 - 第 11 步：若想让仿写不只保守贴原章，而是显式引入新世界观/套路/创新导向，直接看 `imitation-innovation-and-steering.md`
 - 第 12 步：若想建设 trope/worldview 文档库并准备 RAG，直接看 `trope-worldview-rag-library-format.md`
 - 第 13 步：若想对一批章节统一做创新导向实验，直接看 `batch-innovation-experiment-workflow.md`
+- 第 14 步：若想直接从本地 trope/worldview/audience 文档装配 steering pack，先准备 `rag/` 目录再走 innovation experiment
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 

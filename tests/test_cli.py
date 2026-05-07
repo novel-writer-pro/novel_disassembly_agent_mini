@@ -402,8 +402,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
             'batch-a',
             '3:延续主线',
             '4:制造新阻力',
-            '--worldview-note', '灵气稀薄，身份资源强绑定',
-            '--trope-axis', '底层逆袭',
+            '--trope-doc', 'xianxia-underdog-ledger',
+            '--worldview-doc', 'aura-decline-tax-state',
+            '--audience-doc', 'male-xianxia-commercial-hooks',
             '--output-dir', str(output_dir),
             '--database-url', db_url,
         ],
@@ -415,5 +416,5 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert experiment_md.exists()
     experiment_payload = json.loads(experiment_json.read_text(encoding='utf-8'))
     assert experiment_payload['contract_version'] == 'writer-innovation-experiment.v1'
-    assert experiment_payload['steering_pack']['worldview_capsule'] == ['灵气稀薄，身份资源强绑定']
+    assert '底层逆袭' in experiment_payload['steering_pack']['trope_axes']
     assert experiment_payload['experiment_meta']['chapter_count'] == 2

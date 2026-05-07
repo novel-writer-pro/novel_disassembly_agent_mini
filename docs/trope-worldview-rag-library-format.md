@@ -144,5 +144,12 @@ rag/
 - 统一 frontmatter / section naming
 - 一层简单检索
 
-等格式稳定后，再做真正的 RAG / embedding / retrieval surface。
+当前最小可用状态已经支持：
+- `--trope-doc`
+- `--worldview-doc`
+- `--audience-doc`
 
+也就是说，现在已经可以先用**本地 markdown 文档库装配 steering pack**，
+后续再升级成真正的 RAG / embedding / retrieval surface。
+
+等格式稳定后，再做真正的 RAG / embedding / retrieval surface。

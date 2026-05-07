@@ -35,6 +35,7 @@ from novel_analyzer.runtime.cluster_review_state import (
     read_cluster_review_state,
     write_cluster_review_state,
 )
+from novel_analyzer.services.steering_library_service import SteeringLibraryService
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -105,14 +106,21 @@ def _steering_pack(
     innovation_directive: list[str],
     taboo_innovation: list[str],
     knowledge_ref: list[str],
+    trope_doc: list[str] | None = None,
+    worldview_doc: list[str] | None = None,
+    audience_doc: list[str] | None = None,
 ) -> dict[str, list[str]]:
-    return {
-        "worldview_capsule": [item for item in worldview_note if item.strip()],
-        "trope_axes": [item for item in trope_axis if item.strip()],
-        "innovation_directives": [item for item in innovation_directive if item.strip()],
-        "taboo_innovations": [item for item in taboo_innovation if item.strip()],
-        "external_knowledge_refs": [item for item in knowledge_ref if item.strip()],
-    }
+    pack = SteeringLibraryService().assemble_pack(
+        trope_docs=trope_doc or [],
+        worldview_docs=worldview_doc or [],
+        audience_docs=audience_doc or [],
+    )
+    pack["worldview_capsule"].extend(item for item in worldview_note if item.strip())
+    pack["trope_axes"].extend(item for item in trope_axis if item.strip())
+    pack["innovation_directives"].extend(item for item in innovation_directive if item.strip())
+    pack["taboo_innovations"].extend(item for item in taboo_innovation if item.strip())
+    pack["external_knowledge_refs"].extend(item for item in knowledge_ref if item.strip())
+    return pack
 
 
 def _build_story_mapping_pack(
@@ -2561,6 +2569,9 @@ def writer_imitate(
     innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
     taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
     knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Writer-facing imitation entrypoint that writes artifacts into output/."""
@@ -2581,6 +2592,9 @@ def writer_imitate(
                 innovation_directive,
                 taboo_innovation,
                 knowledge_ref,
+                trope_doc,
+                worldview_doc,
+                audience_doc,
             ),
         )
         payload = report.model_dump(mode="json")
@@ -2590,6 +2604,9 @@ def writer_imitate(
             innovation_directive,
             taboo_innovation,
             knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
         )
         stem = f"writer-imitate-ch{source_chapter_index}"
         json_path, md_path = _write_writer_imitation_outputs(output_dir, stem, payload)
@@ -2610,6 +2627,9 @@ def writer_imitate_range(
     innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
     taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
     knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Batch writer-facing imitation entrypoint for multiple source chapters."""
@@ -2620,7 +2640,16 @@ def writer_imitate_range(
     with factory() as session:
         service = _imitation_harness_service(session, settings)
         outputs: list[dict[str, object]] = []
-        steering = _steering_pack(worldview_note, trope_axis, innovation_directive, taboo_innovation, knowledge_ref)
+        steering = _steering_pack(
+            worldview_note,
+            trope_axis,
+            innovation_directive,
+            taboo_innovation,
+            knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
+        )
         for source_chapter_index, target_goal in parsed:
             report = service.run_harness(
                 branch_id,
@@ -2666,6 +2695,9 @@ def writer_imitate_review(
     innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
     taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
     knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Writer-facing single-chapter imitation review markdown export."""
@@ -2686,6 +2718,9 @@ def writer_imitate_review(
                 innovation_directive,
                 taboo_innovation,
                 knowledge_ref,
+                trope_doc,
+                worldview_doc,
+                audience_doc,
             ),
         )
         payload = report.model_dump(mode="json")
@@ -2695,6 +2730,9 @@ def writer_imitate_review(
             innovation_directive,
             taboo_innovation,
             knowledge_ref,
+            trope_doc,
+            worldview_doc,
+            audience_doc,
         )
         output_dir.mkdir(parents=True, exist_ok=True)
         md_path = output_dir / f"writer-imitate-review-ch{source_chapter_index}.md"
@@ -2735,6 +2773,9 @@ def writer_innovation_experiment(
     innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
     taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
     knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Run a batch innovation-steered imitation experiment and persist a reusable bundle."""
@@ -2742,7 +2783,16 @@ def writer_innovation_experiment(
     parsed = _parse_chapter_goal_spec(chapter_spec)
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
-    steering = _steering_pack(worldview_note, trope_axis, innovation_directive, taboo_innovation, knowledge_ref)
+    steering = _steering_pack(
+        worldview_note,
+        trope_axis,
+        innovation_directive,
+        taboo_innovation,
+        knowledge_ref,
+        trope_doc,
+        worldview_doc,
+        audience_doc,
+    )
     with factory() as session:
         service = _imitation_harness_service(session, settings)
         outputs: list[dict[str, object]] = []
@@ -2802,6 +2852,9 @@ def preflight_imitation(
     innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
     taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
     knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Run deterministic preflight checks before formal imitation gate/risk review."""
@@ -2822,6 +2875,9 @@ def preflight_imitation(
                     innovation_directive,
                     taboo_innovation,
                     knowledge_ref,
+                    trope_doc,
+                    worldview_doc,
+                    audience_doc,
                 ),
             )
             if use_llm
@@ -2835,6 +2891,9 @@ def preflight_imitation(
                     innovation_directive,
                     taboo_innovation,
                     knowledge_ref,
+                    trope_doc,
+                    worldview_doc,
+                    audience_doc,
                 ),
             )
         )
@@ -2875,6 +2934,9 @@ def harness_imitation(
     innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
     taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
     knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
+    trope_doc: list[str] = typer.Option([], "--trope-doc"),
+    worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
+    audience_doc: list[str] = typer.Option([], "--audience-doc"),
     database_url: str | None = None,
 ) -> None:
     """Run the first controlled imitation harness with skill contracts and preflight routing."""
@@ -2895,6 +2957,9 @@ def harness_imitation(
                 innovation_directive,
                 taboo_innovation,
                 knowledge_ref,
+                trope_doc,
+                worldview_doc,
+                audience_doc,
             ),
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))

@@ -293,6 +293,31 @@
   - 给后续 trope/worldview RAG 文档库一个可执行的文档格式
   - 给连续章节提供一条统一底座的创新实验工作流
 
+### 本地 steering 文档库装配器落地
+- 新增：
+  - `novel_analyzer/services/steering_library_service.py`
+  - `rag/trope-library/xianxia-underdog-ledger.md`
+  - `rag/worldview-dossiers/aura-decline-tax-state.md`
+  - `rag/audience-expectation-notes/male-xianxia-commercial-hooks.md`
+- 新能力：
+  - 通过 `--trope-doc`
+  - `--worldview-doc`
+  - `--audience-doc`
+  从本地 markdown 文档库装配 steering pack
+- 接入点：
+  - `writer-imitate`
+  - `writer-imitate-range`
+  - `writer-imitate-review`
+  - `preflight-imitation`
+  - `harness-imitation`
+  - `writer-innovation-experiment`
+- 价值：
+  - 不必直接上复杂 RAG，也能先把 trope/worldview/audience 文档库接入仿写链
+  - 后续真正做检索层时，可复用同一 steering pack contract
+- 验证：
+  - `./.venv/bin/pytest tests/test_steering_library_service.py tests/test_cli.py tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py -q`
+  - `27 passed`
+
 ### 长分支推进到 30 章并锁定 fresh evidence
 - 继续推进真实中文修仙长分支 `62e636f0-c901-4167-aa1c-aff3da9c83ef`
 - fresh evidence：
