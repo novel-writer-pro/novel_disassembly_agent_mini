@@ -99,6 +99,22 @@ def _parse_chapter_goal_spec(chapter_spec: list[str]) -> list[tuple[int, str]]:
     return chapter_goals
 
 
+def _steering_pack(
+    worldview_note: list[str],
+    trope_axis: list[str],
+    innovation_directive: list[str],
+    taboo_innovation: list[str],
+    knowledge_ref: list[str],
+) -> dict[str, list[str]]:
+    return {
+        "worldview_capsule": [item for item in worldview_note if item.strip()],
+        "trope_axes": [item for item in trope_axis if item.strip()],
+        "innovation_directives": [item for item in innovation_directive if item.strip()],
+        "taboo_innovations": [item for item in taboo_innovation if item.strip()],
+        "external_knowledge_refs": [item for item in knowledge_ref if item.strip()],
+    }
+
+
 def _build_story_mapping_pack(
     project_title: str,
     source_work_name: str,
@@ -2417,6 +2433,29 @@ def _writer_review_markdown(
     if stop_reason:
         lines.append(f"- stop_reason: {stop_reason}")
 
+    rounds = report_payload.get("rounds", [])
+    first_round = rounds[0] if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict) else {}
+    if isinstance(first_round, dict):
+        comparison = first_round.get("comparison", {})
+        if isinstance(comparison, dict):
+            lines.append("\n## Side-by-side Review")
+            lines.append(f"- source_title: {comparison.get('original_title', '')}")
+            lines.append(f"- draft_title: {comparison.get('draft_title', '')}")
+            lines.append(f"- source_length: {comparison.get('source_length', '')}")
+            lines.append(f"- draft_length: {comparison.get('draft_length', '')}")
+            structure_notes = comparison.get("structure_overlap_notes", [])
+            if isinstance(structure_notes, list) and structure_notes:
+                lines.append("\n### Structure Notes")
+                lines.extend(f"- {str(item)}" for item in structure_notes[:8])
+            style_notes = comparison.get("style_alignment_notes", [])
+            if isinstance(style_notes, list) and style_notes:
+                lines.append("\n### Style Notes")
+                lines.extend(f"- {str(item)}" for item in style_notes[:8])
+            risk_notes = comparison.get("risk_alignment_notes", [])
+            if isinstance(risk_notes, list) and risk_notes:
+                lines.append("\n### Risk Alignment Notes")
+                lines.extend(f"- {str(item)}" for item in risk_notes[:8])
+
     final_draft = report_payload.get("final_draft", {})
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
@@ -2441,6 +2480,56 @@ def _writer_review_markdown(
         lines.append("\n## Policy Summary")
         for key, value in policy_summary.items():
             lines.append(f"- {key}: {value}")
+
+    action_queue = report_payload.get("action_queue", [])
+    if isinstance(action_queue, list) and action_queue:
+        lines.append("\n## Action Queue")
+        for item in action_queue[:12]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                f"- P{item.get('priority')} | {item.get('severity')} | "
+                f"{item.get('action_type')} -> {item.get('target')}"
+            )
+    return "\n".join(lines).strip() + "\n"
+
+
+def _writer_output_index_markdown(output_dir: Path) -> str:
+    lines: list[str] = ["# Writer Imitation Output Index"]
+    json_files = sorted(output_dir.glob("writer-imitate-range-*.json"))
+    if not json_files:
+        return "# Writer Imitation Output Index\n\n- no writer-imitate-range json files found\n"
+
+    for path in json_files:
+        lines.append(f"\n## {path.name}")
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            lines.append(f"- parse_error: {exc}")
+            continue
+        items = payload.get("items", [])
+        if not isinstance(items, list):
+            lines.append("- items: unavailable")
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            chapter_index = item.get("source_chapter_index")
+            target_goal = item.get("target_goal")
+            final_verdict = item.get("final_verdict")
+            stop_reason = item.get("stop_reason")
+            final_draft = item.get("final_draft", {})
+            draft_title = ""
+            draft_len = 0
+            if isinstance(final_draft, dict):
+                draft_title = str(final_draft.get("draft_title", "")).strip()
+                draft_len = len(str(final_draft.get("draft_text", "")))
+            lines.append(
+                f"- chapter {chapter_index}: verdict={final_verdict} | stop={stop_reason} | "
+                f"title={draft_title} | draft_len={draft_len}"
+            )
+            if target_goal:
+                lines.append(f"  - target_goal: {target_goal}")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -2453,6 +2542,11 @@ def writer_imitate(
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
     max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
     database_url: str | None = None,
 ) -> None:
     """Writer-facing imitation entrypoint that writes artifacts into output/."""
@@ -2467,6 +2561,13 @@ def writer_imitate(
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
+            steering_pack=_steering_pack(
+                worldview_note,
+                trope_axis,
+                innovation_directive,
+                taboo_innovation,
+                knowledge_ref,
+            ),
         )
         payload = report.model_dump(mode="json")
         stem = f"writer-imitate-ch{source_chapter_index}"
@@ -2483,6 +2584,11 @@ def writer_imitate_range(
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
     max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
     database_url: str | None = None,
 ) -> None:
     """Batch writer-facing imitation entrypoint for multiple source chapters."""
@@ -2493,6 +2599,7 @@ def writer_imitate_range(
     with factory() as session:
         service = _imitation_harness_service(session, settings)
         outputs: list[dict[str, object]] = []
+        steering = _steering_pack(worldview_note, trope_axis, innovation_directive, taboo_innovation, knowledge_ref)
         for source_chapter_index, target_goal in parsed:
             report = service.run_harness(
                 branch_id,
@@ -2501,6 +2608,7 @@ def writer_imitate_range(
                 max_rounds=max_rounds,
                 use_llm=use_llm,
                 model_name=model_name or None,
+                steering_pack=steering,
             )
             payload = report.model_dump(mode="json")
             outputs.append(
@@ -2532,6 +2640,11 @@ def writer_imitate_review(
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
     max_rounds: int = typer.Option(2, "--max-rounds"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
     database_url: str | None = None,
 ) -> None:
     """Writer-facing single-chapter imitation review markdown export."""
@@ -2546,6 +2659,13 @@ def writer_imitate_review(
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
+            steering_pack=_steering_pack(
+                worldview_note,
+                trope_axis,
+                innovation_directive,
+                taboo_innovation,
+                knowledge_ref,
+            ),
         )
         payload = report.model_dump(mode="json")
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -2562,12 +2682,29 @@ def writer_imitate_review(
 
 
 @app.command()
+def writer_imitate_index(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Generate a writer-facing index page for output/ imitation artifacts."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    md_path = output_dir / "writer-imitate-index.md"
+    md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
+    echo(f"writer_imitate_index_markdown={md_path}")
+
+
+@app.command()
 def preflight_imitation(
     branch_id: str,
     source_chapter_index: int,
     target_goal: str,
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
     database_url: str | None = None,
 ) -> None:
     """Run deterministic preflight checks before formal imitation gate/risk review."""
@@ -2582,12 +2719,26 @@ def preflight_imitation(
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name or None,
+                steering_pack=_steering_pack(
+                    worldview_note,
+                    trope_axis,
+                    innovation_directive,
+                    taboo_innovation,
+                    knowledge_ref,
+                ),
             )
             if use_llm
             else chapter_service.build_skeleton_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
+                steering_pack=_steering_pack(
+                    worldview_note,
+                    trope_axis,
+                    innovation_directive,
+                    taboo_innovation,
+                    knowledge_ref,
+                ),
             )
         )
         comparison = chapter_service.compare_with_source(
@@ -2622,6 +2773,11 @@ def harness_imitation(
     max_rounds: int = typer.Option(2, "--max-rounds"),
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    worldview_note: list[str] = typer.Option([], "--worldview-note"),
+    trope_axis: list[str] = typer.Option([], "--trope-axis"),
+    innovation_directive: list[str] = typer.Option([], "--innovation-directive"),
+    taboo_innovation: list[str] = typer.Option([], "--taboo-innovation"),
+    knowledge_ref: list[str] = typer.Option([], "--knowledge-ref"),
     database_url: str | None = None,
 ) -> None:
     """Run the first controlled imitation harness with skill contracts and preflight routing."""
@@ -2636,6 +2792,13 @@ def harness_imitation(
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
+            steering_pack=_steering_pack(
+                worldview_note,
+                trope_axis,
+                innovation_directive,
+                taboo_innovation,
+                knowledge_ref,
+            ),
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 

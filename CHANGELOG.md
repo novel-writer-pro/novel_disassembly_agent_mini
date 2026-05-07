@@ -238,6 +238,109 @@
 - 目的：把“我们有没有考虑这些能力、哪些已经利用充分、哪些还没做强”收口为结构化文档，方便后续持续建设
 
 ### 对话设计器与 research pack 本地 skill 资产补齐
+
+## 2026-05-07
+
+### 仿写创新 steering pack 落地
+- 为仿写链新增外置 steering pack 入口，可显式注入：
+  - `worldview_capsule`
+  - `trope_axes`
+  - `innovation_directives`
+  - `taboo_innovations`
+  - `external_knowledge_refs`
+- 代码接入点：
+  - `ChapterImitationPlan` 新增对应字段
+  - `ChapterImitationService.build_imitation_plan(...)`
+  - `build_skeleton_draft(...)`
+  - `build_llm_draft(...)`
+  - `HarnessControllerService.build_skill_outputs(...)`
+  - `build_skill_prompt_previews(...)`
+  - `run_harness(...)`
+  - CLI:
+    - `writer-imitate`
+    - `writer-imitate-range`
+    - `writer-imitate-review`
+    - `preflight-imitation`
+    - `harness-imitation`
+- 目的：
+  - 让仿写不只贴着 source chapter 走
+  - 允许显式注入新的世界观底座、题材套路轴与创新导向
+  - 同时保留 taboo list 防止越界创新
+- 新增文档：
+  - `docs/imitation-innovation-and-steering.md`
+  - `docs/writer-imitation-workflow.md` 补 steering pack 用法
+- 新增回归：
+  - `tests/test_chapter_imitation_service.py`
+  - `tests/test_imitation_harness_service.py`
+  - `tests/test_cli.py`
+- 验证：
+  - `./.venv/bin/pytest tests/test_chapter_imitation_service.py tests/test_imitation_harness_service.py tests/test_cli.py -q`
+  - `26 passed`
+  - `python3 -m py_compile ...` 通过
+
+### 长分支推进到 30 章并锁定 fresh evidence
+- 继续推进真实中文修仙长分支 `62e636f0-c901-4167-aa1c-aff3da9c83ef`
+- fresh evidence：
+  - `completed_chapters=30`
+  - `failed_jobs=0`
+  - `running_jobs=0`
+  - `next_chapter=31`
+  - `fact_count=491`
+  - `graph_node_count=679`
+  - `graph_edge_count=37602`
+- 新增落盘证据：
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/status-after-30.txt`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/chapters-after-30.txt`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch21.bundle.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch22.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch23.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch24.raw.json`
+  - `runs/manual_eval/real-xianxia-longer-branch-20260506/ch25.raw.json`
+- 价值：把“真实长分支是否已推进到 30 章”从口头状态升级为可复查证据
+
+### provider 波动下的 22~25 章 fallback 边界补证
+- 对 chapter 22~25 导出 raw output，确认存在：
+  - `402 Insufficient Balance`
+  - `403 SUBSCRIPTION_NOT_FOUND`
+- 与已落地的 `analysis_service` 本地 heuristic fallback 一起，形成新的主链判断：
+  - provider 不可用时仍可保章节不断档
+  - 但 chapter 22~25 的细粒度语义质量仍需后续 provider 恢复后补跑
+- 价值：避免把 fallback 章误当成完整语义分析章，减少后续仿写/评估误判
+
+### 新小说仿写 21~30 正文补写落到 output/
+- 在 `output/novel-imitation-21-30/` 下新增：
+  - `combined.md`
+  - `eval-notes.md`
+  - `README.md`
+  - `ch21-周家子女.md` ~ `ch30-料峭春风.md`
+- 本轮不是继续输出 skeleton，而是基于：
+  - branch context
+  - chapter bundle
+  - raw output
+  - 已完成章节连续状态
+  进行人工实战补写
+- 当前状态：21~30 已达到“可连续阅读、可人工审稿、可顺着写 31+”的水平
+- 价值：把用户要的“根据示例小说仿写新的小说”从结构稿推进到可读正文稿
+
+### 文档入口补充本地仿写正文评审路径
+- 更新 `docs/real-xianxia-manual-eval-20260506.md`
+  - 补入长分支推进到 30 章
+  - 补入 provider fallback 边界
+  - 补入 `output/novel-imitation-21-30/` 的正文评审入口
+- 更新 `docs/README.md`
+  - 在使用者阅读顺序中补充本地 `output` 仿写正文入口说明
+- 价值：减少后续接手时只看到流程文档、却找不到最新正文样稿的问题
+
+### targeted regression 继续通过
+- 验证：
+  - `./.venv/bin/pytest tests/test_analysis_service.py tests/test_cli.py -q`
+- 结果：
+  - `24 passed`
+- 说明：
+  - provider unavailable fallback
+  - writer review markdown 增强
+  - writer index CLI
+  当前回归仍稳定
 - 新增：
   - `skills_dir/dialogue-designer/`
   - `skills_dir/research-pack/`

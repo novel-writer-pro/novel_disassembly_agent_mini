@@ -64,6 +64,28 @@
 - multi-round harness
 - whole-book queue / sandbox execute
 
+### 新增：外置世界观 / 套路 steering pack
+当前仿写不应只“贴着原章走”，还可以显式接入外置创新导向：
+- `--worldview-note`：补世界观外置胶囊
+- `--trope-axis`：补题材套路轴
+- `--innovation-directive`：补本轮创新导向
+- `--taboo-innovation`：补禁止创新越界项
+- `--knowledge-ref`：补外部知识/读者预期参考
+
+这层能力的意义不是直接替代 source context，而是把“新的底座和内涵创新”显式注入 imitation plan / constraint pack / harness。
+
+示例：
+```bash
+./.venv/bin/novel-analyzer writer-imitate <branch_id> 24 "压住成绩爽点，但拉高阶层跃迁冲击" \
+  --worldview-note "灵气衰败时代，资源与身份强绑定" \
+  --trope-axis "底层逆袭" \
+  --trope-axis "账本修仙" \
+  --innovation-directive "把修炼收益折算为社会信用与家族博弈" \
+  --taboo-innovation "不要突然引入无代价系统外挂" \
+  --knowledge-ref "男频修仙读者期待先压后扬、收益可见" \
+  --output-dir output
+```
+
 ### 当前 writer-facing 包装层补齐了什么
 - 更适合写手直接用的统一入口
 - 自动把结果写到 `output/`
@@ -120,6 +142,7 @@
 ---
 
 ## 7. 推荐下一步实战增强
-1. 补一个 `writer-imitate-review` 导出，把 source / draft / risk / verdict 汇总到一份 markdown
+1. 把外置世界观 / 套路 steering pack 与真实 trope/worldview 资料做成可检索 RAG surface
 2. 补一个 `writer-imitate-session`，把同一轮多章实验的 notes / artifacts 聚合进 output 子目录
 3. 对真实仿写章节做一次“边写边修”的长链实验，持续发现问题并优化
+4. 在 reader-sim / risk / style 之外，再引入更强的“创新收益 vs 越界风险”平衡检查

@@ -290,6 +290,37 @@ def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) ->
         assert any("research 敏感" in item for item in research_output["caution_points"])
 
 
+def test_harness_steering_pack_flows_into_constraint_outputs(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = HarnessControllerService(session)
+        draft = service.chapter_imitation.build_skeleton_draft(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+            steering_pack={"worldview_capsule": ["宗门税制化"], "trope_axes": ["账本修仙"]},
+        )
+        outputs = service.build_skill_outputs(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+            draft=draft,
+            steering_pack={
+                "worldview_capsule": ["宗门税制化"],
+                "trope_axes": ["账本修仙"],
+                "innovation_directives": ["把功法收益折算成地位博弈"],
+                "external_knowledge_refs": ["读者期待阶层跃迁的可见账本"],
+            },
+        )
+        constraint_output = outputs["imitation-constraint-pack"]
+        assert "宗门税制化" in constraint_output["worldview_capsule"]
+        assert "账本修仙" in constraint_output["trope_axes"]
+        assert any("trope:" in item for item in constraint_output["continuity_memory"])
+
+
 def test_harness_actions_include_constraint_and_memory_repairs(tmp_path: Path) -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)

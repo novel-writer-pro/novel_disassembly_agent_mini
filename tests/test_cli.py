@@ -308,6 +308,22 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
                 "final_verdict": "needs_revision",
                 "stop_reason": "critical_action_required",
                 "policy_summary": {"highest_action_priority": 1},
+                "action_queue": [
+                    {"priority": 1, "severity": "medium", "action_type": "repair_hook", "target": "ending_hook"}
+                ],
+                "rounds": [
+                    {
+                        "comparison": {
+                            "original_title": "原章标题",
+                            "draft_title": "仿写标题",
+                            "source_length": 1000,
+                            "draft_length": 900,
+                            "structure_overlap_notes": ["结构基本对齐"],
+                            "style_alignment_notes": ["文风需要再收紧"],
+                            "risk_alignment_notes": ["关注 OOC 风险"],
+                        }
+                    }
+                ],
                 "final_draft": {
                     "draft_title": "仿写标题",
                     "draft_text": "仿写正文\n\n【Harness Action Queue】\n[P1|medium] repair_rhythm:rhythm",
@@ -315,8 +331,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
                 },
             }
 
+    seen: dict[str, object] = {}
+
     class _FakeHarnessService:
-        def run_harness(self, branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name):  # noqa: ANN001
+        def run_harness(self, branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name, steering_pack=None):  # noqa: ANN001
+            seen["steering_pack"] = steering_pack
             _ = branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name
             return _FakeReport()
 
@@ -325,7 +344,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
 
     result = runner.invoke(
         app,
-        ['writer-imitate', run_lines['branch_id'], '1', '延续主线', '--output-dir', str(output_dir), '--database-url', db_url],
+        [
+            'writer-imitate', run_lines['branch_id'], '1', '延续主线',
+            '--worldview-note', '灵气稀薄，身份资源强绑定',
+            '--trope-axis', '底层逆袭',
+            '--innovation-directive', '把修炼收益折算为社会信用',
+            '--output-dir', str(output_dir), '--database-url', db_url
+        ],
     )
     assert result.exit_code == 0
     assert (output_dir / 'writer-imitate-ch1.json').exists()
@@ -333,6 +358,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     md_text = (output_dir / 'writer-imitate-ch1.md').read_text(encoding='utf-8')
     assert '【Harness Action Queue】' not in md_text
     assert md_text.count('检查 OOC') == 1
+    assert seen["steering_pack"]["worldview_capsule"] == ['灵气稀薄，身份资源强绑定']
 
     result = runner.invoke(
         app,
@@ -352,3 +378,16 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     review_text = review_md.read_text(encoding='utf-8')
     assert '## Draft Text' in review_text
     assert '【Harness Action Queue】' not in review_text
+    assert '## Side-by-side Review' in review_text
+    assert '## Action Queue' in review_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    index_md = output_dir / 'writer-imitate-index.md'
+    assert index_md.exists()
+    index_text = index_md.read_text(encoding='utf-8')
+    assert 'writer-imitate-range-3-4.json' in index_text
+    assert 'chapter 3' in index_text

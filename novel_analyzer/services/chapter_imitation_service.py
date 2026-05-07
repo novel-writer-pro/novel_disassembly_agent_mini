@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -54,6 +55,22 @@ class ChapterImitationService:
         self.run_service = RunService(session)
         self.next_chapter_planner = NextChapterPlannerService(session)
 
+    @staticmethod
+    def _normalize_steering_pack(steering_pack: dict[str, object] | None) -> dict[str, list[str]]:
+        pack = steering_pack or {}
+        def _string_list(key: str) -> list[str]:
+            value = pack.get(key, [])
+            if not isinstance(value, list):
+                return []
+            return [str(item).strip() for item in value if str(item).strip()]
+        return {
+            "worldview_capsule": _string_list("worldview_capsule"),
+            "trope_axes": _string_list("trope_axes"),
+            "innovation_directives": _string_list("innovation_directives"),
+            "taboo_innovations": _string_list("taboo_innovations"),
+            "external_knowledge_refs": _string_list("external_knowledge_refs"),
+        }
+
     def build_imitation_plan(
         self,
         branch_id: str,
@@ -61,8 +78,10 @@ class ChapterImitationService:
         source_chapter_index: int,
         target_goal: str,
         method: ChapterImitationMethod | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationPlan:
         effective = method or ChapterImitationMethod()
+        steering = self._normalize_steering_pack(steering_pack)
         intent = ChapterPlanningIntent(
             primary_goal=target_goal,
             emphasis=["保持人物连续性", "保持冲突推进", "保持风格约束"],
@@ -87,15 +106,34 @@ class ChapterImitationService:
             "让主角给出克制但更坚定的行动回应",
             "章尾给出下一步可执行钩子",
         ]
+        if steering["innovation_directives"]:
+            scene_beats.extend(f"创新导向：{item}" for item in steering["innovation_directives"][:2])
+        if steering["trope_axes"]:
+            style_axes.extend(f"题材套路轴：{item}" for item in steering["trope_axes"][:3])
+        if steering["worldview_capsule"]:
+            style_axes.extend(f"世界观外置胶囊：{item}" for item in steering["worldview_capsule"][:3])
 
         return ChapterImitationPlan(
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
             style_axes=style_axes,
             scene_beats=scene_beats,
-            hard_constraints=context.world_rules[:5] + context.forbidden_moves[:3],
-            soft_constraints=context.relationship_state_notes[:3] + context.unresolved_threads[:3],
-            risk_focus=context.recent_risk_signals[:3],
+            hard_constraints=(
+                context.world_rules[:5]
+                + context.forbidden_moves[:3]
+                + [f"禁止创新越界：{item}" for item in steering["taboo_innovations"][:3]]
+            ),
+            soft_constraints=(
+                context.relationship_state_notes[:3]
+                + context.unresolved_threads[:3]
+                + [f"外置知识参考：{item}" for item in steering["external_knowledge_refs"][:3]]
+            ),
+            risk_focus=context.recent_risk_signals[:3] + [f"创新关注点：{item}" for item in steering["innovation_directives"][:2]],
+            worldview_capsule=steering["worldview_capsule"],
+            trope_axes=steering["trope_axes"],
+            innovation_directives=steering["innovation_directives"],
+            taboo_innovations=steering["taboo_innovations"],
+            external_knowledge_refs=steering["external_knowledge_refs"],
         )
 
     def build_skeleton_draft(
@@ -105,12 +143,14 @@ class ChapterImitationService:
         source_chapter_index: int,
         target_goal: str,
         method: ChapterImitationMethod | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationDraft:
         plan = self.build_imitation_plan(
             branch_id,
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
             method=method,
+            steering_pack=steering_pack,
         )
         title, source_text = self._source_chapter_text(branch_id, source_chapter_index)
         draft_title = title
@@ -142,12 +182,14 @@ class ChapterImitationService:
         target_goal: str,
         method: ChapterImitationMethod | None = None,
         model_name: str | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationDraft:
         plan = self.build_imitation_plan(
             branch_id,
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
             method=method,
+            steering_pack=steering_pack,
         )
         title, source_text = self._source_chapter_text(branch_id, source_chapter_index)
         prompt = build_chapter_imitation_prompt(
@@ -156,9 +198,9 @@ class ChapterImitationService:
             source_excerpt=source_text[:2500],
             target_goal=target_goal,
             style_axes=plan.style_axes,
-            scene_beats=plan.scene_beats,
-            hard_constraints=plan.hard_constraints,
-            soft_constraints=plan.soft_constraints,
+            scene_beats=plan.scene_beats + [f"世界观胶囊：{item}" for item in plan.worldview_capsule[:2]],
+            hard_constraints=plan.hard_constraints + [f"禁止创新越界：{item}" for item in plan.taboo_innovations[:2]],
+            soft_constraints=plan.soft_constraints + [f"题材套路：{item}" for item in plan.trope_axes[:2]] + [f"创新导向：{item}" for item in plan.innovation_directives[:2]],
         )
         model = build_chat_model(self.settings, model_name=model_name)
         response = model.invoke(prompt)

@@ -699,6 +699,11 @@ class ChapterImitationPlan(BaseModel):
     hard_constraints: list[str] = Field(default_factory=list)
     soft_constraints: list[str] = Field(default_factory=list)
     risk_focus: list[str] = Field(default_factory=list)
+    worldview_capsule: list[str] = Field(default_factory=list)
+    trope_axes: list[str] = Field(default_factory=list)
+    innovation_directives: list[str] = Field(default_factory=list)
+    taboo_innovations: list[str] = Field(default_factory=list)
+    external_knowledge_refs: list[str] = Field(default_factory=list)
 
 
 class ChapterImitationDraft(BaseModel):
