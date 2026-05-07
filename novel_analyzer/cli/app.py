@@ -2344,14 +2344,23 @@ def _write_writer_imitation_outputs(
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
         draft_text = str(final_draft.get("draft_text", "")).strip()
+        visible_draft_text = draft_text.split("【Harness Action Queue】", 1)[0].rstrip()
         if draft_title:
             lines.append(f"\n## Draft Title\n{draft_title}")
-        if draft_text:
-            lines.append(f"\n## Draft Text\n{draft_text}")
+        if visible_draft_text:
+            lines.append(f"\n## Draft Text\n{visible_draft_text}")
         risk_gate_notes = final_draft.get("risk_gate_notes", [])
         if isinstance(risk_gate_notes, list) and risk_gate_notes:
+            deduped_notes: list[str] = []
+            seen_notes: set[str] = set()
+            for item in risk_gate_notes:
+                note = str(item).strip()
+                if not note or note in seen_notes:
+                    continue
+                seen_notes.add(note)
+                deduped_notes.append(note)
             lines.append("\n## Risk Gate Notes")
-            lines.extend(f"- {str(item)}" for item in risk_gate_notes[:12])
+            lines.extend(f"- {item}" for item in deduped_notes[:12])
     final_verdict = str(payload.get("final_verdict", "")).strip()
     if final_verdict:
         lines.append(f"\n## Final Verdict\n- {final_verdict}")
@@ -2381,11 +2390,12 @@ def _write_writer_imitation_outputs(
             if isinstance(final_draft, dict):
                 draft_title = str(final_draft.get("draft_title", "")).strip()
                 draft_text = str(final_draft.get("draft_text", "")).strip()
+                visible_draft_text = draft_text.split("【Harness Action Queue】", 1)[0].rstrip()
                 if draft_title:
                     lines.append(f"- draft_title: {draft_title}")
-                if draft_text:
+                if visible_draft_text:
                     lines.append("")
-                    lines.append(draft_text)
+                    lines.append(visible_draft_text)
     md_path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
     return json_path, md_path
 

@@ -310,8 +310,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
                 "policy_summary": {"highest_action_priority": 1},
                 "final_draft": {
                     "draft_title": "仿写标题",
-                    "draft_text": "仿写正文",
-                    "risk_gate_notes": ["检查 OOC"],
+                    "draft_text": "仿写正文\n\n【Harness Action Queue】\n[P1|medium] repair_rhythm:rhythm",
+                    "risk_gate_notes": ["检查 OOC", "检查 OOC"],
                 },
             }
 
@@ -330,6 +330,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert result.exit_code == 0
     assert (output_dir / 'writer-imitate-ch1.json').exists()
     assert (output_dir / 'writer-imitate-ch1.md').exists()
+    md_text = (output_dir / 'writer-imitate-ch1.md').read_text(encoding='utf-8')
+    assert '【Harness Action Queue】' not in md_text
+    assert md_text.count('检查 OOC') == 1
 
     result = runner.invoke(
         app,

@@ -4,6 +4,7 @@
 - 新增 `writer-imitate` 与 `writer-imitate-range` CLI，统一把仿写结果输出到 `output/`。
 - `output/` 已加入 `.gitignore`，明确只作为仿写工作目录，不纳入版本管理。
 - 新增 `docs/writer-imitation-workflow.md`，把仿写实战流程、关键字段、工作目录约束和后续增强方向写清楚。
+- writer-facing `writer-imitate` / `writer-imitate-range` markdown 导出现在会移除 `Harness Action Queue` 正文污染，并对重复 `risk_gate_notes` 做去重，方便直接在 `output/` 下阅读和实战。
 
 
 ### 小说导入、切章与保存规范补强
