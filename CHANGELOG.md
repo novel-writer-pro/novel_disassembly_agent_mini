@@ -1,3 +1,22 @@
+## 2026-05-05 (continued)
+
+### 写手仿写能力扩展 — writer-imitate 一站式链路
+- 新增 4 个 Pydantic schema 模型：
+  - `ContinuationNotes` — 结构化续写笔记（章尾钩子、活跃人物、关系状态、未解线程、世界规则、硬/软约束、禁止动作、风险关注点、写作建议，共 16 字段）
+  - `WriterImitationReport` — 统一写手报告（草稿 + 六维质量信号 + 风险评估 + 修订指导 + 续写笔记，共 23 字段）
+  - `WriterStyleFingerprint` — 写作风格指纹（文风密度、叙事距离、对话占比、风格漂移警告、仿写陷阱，共 15 字段）
+  - `CrossNovelComparisonReport` — 跨小说对比（结构/节奏/冲突/人物/主题五维对比 + 仿写机会 + 写作建议，共 19 字段）
+- 新增 `novel_analyzer/services/writer_imitation_service.py`（308 行），编排现有 `HarnessControllerService` + `ChapterImitationService`，产出写手友好报告
+- 新增 4 条 CLI 命令：
+  - `writer-imitate` — 拆书→仿写一站式命令，输出草稿/风险评估/续写笔记
+  - `writer-imitate-range` — 多章连续仿写，自动传递续写笔记到下一章
+  - `writer-style-fingerprint` — 生成写作风格指纹
+  - `writer-compare-novels` — 跨小说对比分析
+- 新增 `skills_dir/writer-imitate/SKILL.md` — 写手仿写工作流完整文档
+- 所有新模型均带有 `contract_version` 字段，支持后续平滑演进
+- 默认生成 skeleton draft（不消耗 LLM 额度），加 `--use-llm` 才调用 LLM 生成正文
+- 验证：所有文件 Python 语法检查通过，diff 审查无异常
+
 ## 2026-05-05
 
 ### 小说导入、切章与保存规范补强

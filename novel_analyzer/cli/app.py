@@ -2449,5 +2449,297 @@ def latest_manifest(novel_id: str, database_url: str | None = None) -> None:
         echo(f"chapter_count={manifest.chapter_count}")
 
 
+def _writer_imitation_service(session: Session, settings: Settings) -> Any:
+    from novel_analyzer.services.writer_imitation_service import WriterImitationService
+
+    return WriterImitationService(session, settings)
+
+
+@app.command()
+def writer_imitate(
+    branch_id: str,
+    source_chapter_index: int,
+    target_goal: str,
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    output_path: Path | None = typer.Option(None, "--output"),
+    database_url: str | None = None,
+) -> None:
+    """拆书→仿写 一站式命令。输出写手友好的仿写报告，含草稿、风险评估、续写笔记。
+
+    示例::
+
+        novel-analyzer writer-imitate <branch_id> 3 "延续主角获得功法后的克制成长"
+    """
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _writer_imitation_service(session, settings).imitate_chapter(
+            branch_id,
+            source_chapter_index=source_chapter_index,
+            target_goal=target_goal,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+            model_name=model_name or None,
+        )
+
+        # Print a writer-friendly summary to stdout
+        echo("")
+        echo("═══════════════════════════════════════════════════════════")
+        echo(f"  仿写报告 — 第{report.source_chapter_index}章 → 第{report.source_chapter_index + 1}章")
+        echo("═══════════════════════════════════════════════════════════")
+        echo(f"  源章节: {report.source_title}")
+        echo(f"  仿写目标: {report.target_goal}")
+        echo(f"  综合评分: {report.overall_score}/100")
+        echo(f"  风险等级: {report.overall_risk_level}")
+        echo(f"  最终判定: {report.final_verdict}")
+        echo(f"  停止原因: {report.stop_reason}")
+        echo("───────────────────────────────────────────────────────────")
+
+        if report.draft_text:
+            echo("  【仿写草稿】")
+            echo(f"  标题: {report.draft_title}")
+            preview = report.draft_text[:300].replace("\n", "\n  ")
+            echo(f"  正文预览:\n  {preview}...")
+            echo("")
+
+        if report.blocking_issues:
+            echo("  【阻塞问题】")
+            for item in report.blocking_issues:
+                echo(f"  ✗ {item}")
+            echo("")
+
+        if report.recommended_actions:
+            echo("  【建议修复】")
+            for item in report.recommended_actions:
+                echo(f"  → {item}")
+            echo("")
+
+        if report.continuation_notes:
+            cn = report.continuation_notes
+            echo("  【续写笔记 — 下一章注意事项】")
+            if cn.ending_hook:
+                echo(f"  章尾钩子: {cn.ending_hook[:120]}")
+            if cn.active_characters:
+                echo(f"  活跃人物: {', '.join(cn.active_characters[:5])}")
+            if cn.relationship_state:
+                echo(f"  关系状态: {', '.join(cn.relationship_state[:3])}")
+            if cn.unresolved_threads:
+                echo(f"  未解线程: {', '.join(cn.unresolved_threads[:3])}")
+            if cn.world_rules:
+                echo(f"  世界规则: {', '.join(cn.world_rules[:3])}")
+            if cn.hard_constraints:
+                echo(f"  硬约束: {', '.join(cn.hard_constraints[:3])}")
+            if cn.forbidden_moves:
+                echo(f"  禁止动作: {', '.join(cn.forbidden_moves[:3])}")
+            if cn.risk_focus:
+                echo(f"  风险关注: {', '.join(cn.risk_focus[:3])}")
+            if cn.writer_notes:
+                echo(f"  写作建议: {', '.join(cn.writer_notes[:3])}")
+            echo("")
+
+        echo("───────────────────────────────────────────────────────────")
+
+        if output_path:
+            output_path.write_text(
+                report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            echo(f"  JSON 报告已导出: {output_path}")
+        else:
+            echo("  (使用 --output <path> 可将完整 JSON 报告导出到文件)")
+
+        echo("═══════════════════════════════════════════════════════════")
+
+
+@app.command()
+def writer_imitate_range(
+    branch_id: str,
+    chapter_spec: list[str] = typer.Argument(..., help="章节目标对，如 3:延续资源铺垫 4:延续成长线"),
+    max_rounds: int = typer.Option(2, "--max-rounds"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    output_path: Path | None = typer.Option(None, "--output"),
+    database_url: str | None = None,
+) -> None:
+    """多章连续仿写，每章自动传递续写笔记到下一章。
+
+    示例::
+
+        novel-analyzer writer-imitate-range <branch_id> "3:延续资源铺垫" "4:延续成长线"
+    """
+
+    parsed: list[tuple[int, str]] = []
+    for item in chapter_spec:
+        chapter_text, _, goal = item.partition(":")
+        if not chapter_text or not goal:
+            echo(f"invalid chapter spec: {item}")
+            raise typer.Exit(code=1)
+        parsed.append((int(chapter_text), goal))
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        reports = _writer_imitation_service(session, settings).imitate_chapter_range(
+            branch_id,
+            start_chapter=parsed[0][0],
+            chapter_goals=parsed,
+            max_rounds=max_rounds,
+            use_llm=use_llm,
+        )
+
+        echo("")
+        echo("═══════════════════════════════════════════════════════════")
+        echo(f"  多章仿写报告 — {len(reports)} 章")
+        echo("═══════════════════════════════════════════════════════════")
+
+        for report in reports:
+            cn = report.continuation_notes
+            carry_summary = (
+                f"下一章续写钩子: {cn.ending_hook[:60]}..."
+                if cn and cn.ending_hook
+                else "(无明确钩子)"
+            )
+            echo(
+                f"  第{report.source_chapter_index}章 | "
+                f"评分:{report.overall_score} | "
+                f"风险:{report.overall_risk_level} | "
+                f"判定:{report.final_verdict} | "
+                f"{carry_summary}"
+            )
+
+        echo("───────────────────────────────────────────────────────────")
+
+        if output_path:
+            output_path.write_text(
+                json.dumps(
+                    [r.model_dump(mode="json") for r in reports],
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            echo(f"  JSON 报告已导出: {output_path}")
+        else:
+            echo("  (使用 --output <path> 可将完整 JSON 报告导出到文件)")
+
+        echo("═══════════════════════════════════════════════════════════")
+
+
+@app.command()
+def writer_style_fingerprint(
+    branch_id: str,
+    output_path: Path | None = typer.Option(None, "--output"),
+    database_url: str | None = None,
+) -> None:
+    """生成写作风格指纹 — 分析当前 branch 的文风密度、叙事距离、对话占比等。
+
+    示例::
+
+        novel-analyzer writer-style-fingerprint <branch_id>
+    """
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        fp = _writer_imitation_service(session, settings).build_style_fingerprint(branch_id)
+
+        echo("")
+        echo("═══════════════════════════════════════════════════════════")
+        echo(f"  写作风格指纹 — branch={branch_id}")
+        echo("═══════════════════════════════════════════════════════════")
+        echo(f"  分析章节数: {len(fp.chapter_range)}")
+        echo(f"  文风密度: {fp.prose_density}")
+        echo(f"  叙事距离: {fp.narrative_distance}")
+        echo(f"  对话占比: {fp.dialogue_ratio:.2f}")
+        echo(f"  平均段落长: {fp.avg_paragraph_length:.0f}")
+
+        if fp.recommended_style_axes:
+            echo("  推荐风格轴:")
+            for axis in fp.recommended_style_axes:
+                echo(f"    - {axis}")
+
+        if fp.imitation_pitfalls:
+            echo("  仿写陷阱:")
+            for pit in fp.imitation_pitfalls:
+                echo(f"    ✗ {pit}")
+
+        if fp.style_drift_flags:
+            echo("  风格漂移警告:")
+            for flag in fp.style_drift_flags:
+                echo(f"    ! {flag}")
+
+        echo("───────────────────────────────────────────────────────────")
+
+        if output_path:
+            output_path.write_text(
+                fp.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            echo(f"  JSON 报告已导出: {output_path}")
+        else:
+            echo("  (使用 --output <path> 可将完整 JSON 报告导出到文件)")
+
+        echo("═══════════════════════════════════════════════════════════")
+
+
+@app.command()
+def writer_compare_novels(
+    source_branch_id: str,
+    reference_branch_id: str,
+    output_path: Path | None = typer.Option(None, "--output"),
+    database_url: str | None = None,
+) -> None:
+    """跨小说对比分析 — 对比你的作品与参考作品的结构、节奏、对话密度等维度。
+
+    示例::
+
+        novel-analyzer writer-compare-novels <your_branch_id> <reference_branch_id>
+    """
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        report = _writer_imitation_service(session, settings).compare_novels(
+            source_branch_id,
+            reference_branch_id,
+        )
+
+        echo("")
+        echo("═══════════════════════════════════════════════════════════")
+        echo("  跨小说对比分析")
+        echo("═══════════════════════════════════════════════════════════")
+        echo(f"  你的作品章节数: {report.source_chapter_count}")
+        echo(f"  参考作品章节数: {report.reference_chapter_count}")
+        echo(f"  你的平均章长: {report.avg_chapter_length_source} 字符")
+        echo(f"  参考平均章长: {report.avg_chapter_length_reference} 字符")
+
+        if report.key_differences:
+            echo("  关键差异:")
+            for diff in report.key_differences:
+                echo(f"    - {diff}")
+
+        if report.imitation_opportunities:
+            echo("  仿写机会:")
+            for opp in report.imitation_opportunities:
+                echo(f"    → {opp}")
+
+        if report.writer_recommendations:
+            echo("  写作建议:")
+            for rec in report.writer_recommendations:
+                echo(f"    → {rec}")
+
+        echo("───────────────────────────────────────────────────────────")
+
+        if output_path:
+            output_path.write_text(
+                report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            echo(f"  JSON 报告已导出: {output_path}")
+        else:
+            echo("  (使用 --output <path> 可将完整 JSON 报告导出到文件)")
+
+        echo("═══════════════════════════════════════════════════════════")
+
+
 if __name__ == "__main__":
     app()

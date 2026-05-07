@@ -985,3 +985,171 @@ class WholeBookImitationRunReport(BaseModel):
     policy_summary: dict[str, object] = Field(default_factory=dict)
     dashboard_summary: dict[str, object] = Field(default_factory=dict)
     run_notes: list[str] = Field(default_factory=list)
+
+
+# ── Writer-facing imitation models ──────────────────────────────────────────
+
+
+class ContinuationNotes(BaseModel):
+    """Structured writer-facing notes for what to carry forward to the next chapter.
+
+    Generated after each imitation run so the writer knows exactly what state,
+    constraints, and risks need attention when writing the following chapter.
+    """
+
+    source_chapter_index: int = Field(ge=1)
+    next_chapter_index: int = Field(ge=2)
+
+    # ── what the current chapter established ──
+    chapter_summary: str = Field(default="")
+    ending_hook: str = Field(default="")
+
+    # ── state to carry forward ──
+    active_characters: list[str] = Field(default_factory=list)
+    relationship_state: list[str] = Field(default_factory=list)
+    unresolved_threads: list[str] = Field(default_factory=list)
+    world_rules: list[str] = Field(default_factory=list)
+
+    # ── constraints for the next chapter ──
+    hard_constraints: list[str] = Field(default_factory=list)
+    soft_constraints: list[str] = Field(default_factory=list)
+    forbidden_moves: list[str] = Field(default_factory=list)
+
+    # ── risk watchpoints ──
+    risk_focus: list[str] = Field(default_factory=list)
+    continuity_risks: list[str] = Field(default_factory=list)
+    quality_reminders: list[str] = Field(default_factory=list)
+
+    # ── meta ──
+    recommended_next_questions: list[str] = Field(default_factory=list)
+    writer_notes: list[str] = Field(default_factory=list)
+
+
+class WriterImitationReport(BaseModel):
+    """Writer-facing unified imitation report.
+
+    Combines the full harness pipeline output into a single human-readable
+    report with clear sections for the writer to review.
+    """
+
+    contract_version: str = Field(default="writer-imitation.v1")
+    branch_id: str
+    source_chapter_index: int = Field(ge=1)
+    target_goal: str
+    source_title: str = Field(default="")
+
+    # ── summary ──
+    overall_score: int = Field(ge=0, le=100)
+    overall_risk_level: str = Field(default="low")
+    final_verdict: str = Field(default="needs_revision")
+    stop_reason: str = Field(default="")
+
+    # ── draft ──
+    draft_title: str = Field(default="")
+    draft_text: str = Field(default="")
+
+    # ── quality signals ──
+    rhythm: dict[str, object] = Field(default_factory=dict)
+    reader_engagement: dict[str, object] = Field(default_factory=dict)
+    dialogue_quality: dict[str, object] = Field(default_factory=dict)
+    style_calibration: dict[str, object] = Field(default_factory=dict)
+
+    # ── risk review ──
+    risk_level: str = Field(default="low")
+    top_risks: list[str] = Field(default_factory=list)
+    coverage_gaps: list[str] = Field(default_factory=list)
+
+    # ── revision guidance ──
+    blocking_issues: list[str] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+    revision_directions: list[str] = Field(default_factory=list)
+
+    # ── learning ──
+    writer_learning_notes: list[str] = Field(default_factory=list)
+
+    # ── carry-over ──
+    continuation_notes: ContinuationNotes | None = Field(default=None)
+
+    # ── raw harness (for tooling) ──
+    harness_report: dict[str, object] = Field(default_factory=dict)
+
+
+class WriterStyleFingerprint(BaseModel):
+    """Writer style fingerprint derived from multiple chapter analyses.
+
+    Aggregates style-calibrator outputs across chapters to build a
+    persistent style profile for the writer.
+    """
+
+    contract_version: str = Field(default="style-fingerprint.v1")
+    branch_id: str
+    chapter_range: list[int] = Field(default_factory=list)
+
+    # ── global axes ──
+    prose_density: str = Field(default="balanced")
+    avg_paragraph_length: float = Field(default=0.0)
+    dialogue_ratio: float = Field(default=0.0)
+    action_ratio: float = Field(default=0.0)
+
+    # ── style signatures ──
+    narrative_distance: str = Field(default="mid")
+    sentence_complexity: str = Field(default="moderate")
+    emotional_restraint: str = Field(default="moderate")
+    hook_pattern: str = Field(default="steady")
+
+    # ── chapter-level breakdown ──
+    chapter_profiles: list[dict[str, object]] = Field(default_factory=list)
+
+    # ── consistency warnings ──
+    style_drift_flags: list[str] = Field(default_factory=list)
+    voice_consistency_notes: list[str] = Field(default_factory=list)
+
+    # ── imitation guidance ──
+    recommended_style_axes: list[str] = Field(default_factory=list)
+    imitation_pitfalls: list[str] = Field(default_factory=list)
+
+
+class CrossNovelComparisonReport(BaseModel):
+    """Comparison between two novel branches across key writing dimensions.
+
+    Designed for writers who want to compare their work against a reference
+    novel (e.g., a bestselling work in the same genre).
+    """
+
+    contract_version: str = Field(default="cross-novel-comparison.v1")
+    source_branch_id: str
+    reference_branch_id: str
+
+    # ── structural ──
+    source_chapter_count: int = Field(ge=0)
+    reference_chapter_count: int = Field(ge=0)
+    avg_chapter_length_source: int = Field(ge=0)
+    avg_chapter_length_reference: int = Field(ge=0)
+
+    # ── pacing ──
+    source_hook_strength_avg: float = Field(default=0.0)
+    reference_hook_strength_avg: float = Field(default=0.0)
+    pacing_alignment_notes: list[str] = Field(default_factory=list)
+
+    # ── conflict ──
+    source_conflict_density: float = Field(default=0.0)
+    reference_conflict_density: float = Field(default=0.0)
+    conflict_structure_notes: list[str] = Field(default_factory=list)
+
+    # ── character ──
+    source_character_count: int = Field(ge=0)
+    reference_character_count: int = Field(ge=0)
+    character_arc_notes: list[str] = Field(default_factory=list)
+
+    # ── themes ──
+    common_themes: list[str] = Field(default_factory=list)
+    divergent_themes: list[str] = Field(default_factory=list)
+
+    # ── risk profile ──
+    source_risk_profile: dict[str, object] = Field(default_factory=dict)
+    reference_risk_profile: dict[str, object] = Field(default_factory=dict)
+
+    # ── writer takeaways ──
+    key_differences: list[str] = Field(default_factory=list)
+    imitation_opportunities: list[str] = Field(default_factory=list)
+    writer_recommendations: list[str] = Field(default_factory=list)
