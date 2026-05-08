@@ -4116,6 +4116,30 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"risk={risk_register}",
             f"confidence={decision_confidence or 'unknown'}",
         ]
+        session_governance_mesh = [
+            f"authority={len(session_authority_map)}",
+            f"attestors={len(session_policy_attestors)}",
+            f"quorum={len(session_review_quorum)}",
+        ]
+        session_attestation_budget = [
+            "允许 1 次附加 attestation 复核",
+            "允许 1 次 checkpoint 证书补签",
+        ]
+        session_policy_fallbacks = [
+            "promote 失败 -> 回退到 pilot policy",
+            "high-risk -> 回退到 guarded policy",
+            "blocked ship -> 回退到 evidence policy",
+        ]
+        session_recovery_routing = [
+            "reader regression -> writer-operator",
+            "high-risk -> risk-approver",
+            "blocked ship -> business-owner",
+        ]
+        session_runtime_verdict = [
+            f"execution={session_execution_mode}",
+            f"ship={session_ship_decision}",
+            f"confidence={decision_confidence or 'unknown'}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4244,6 +4268,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_escalation_authority: {'；'.join(session_escalation_authority)}")
         lines.append(f"- session_assurance_digest: {'；'.join(session_assurance_digest)}")
         lines.append(f"- session_governance_verdict: {'；'.join(session_governance_verdict)}")
+        lines.append(f"- session_governance_mesh: {'；'.join(session_governance_mesh)}")
+        lines.append(f"- session_attestation_budget: {'；'.join(session_attestation_budget)}")
+        lines.append(f"- session_policy_fallbacks: {'；'.join(session_policy_fallbacks)}")
+        lines.append(f"- session_recovery_routing: {'；'.join(session_recovery_routing)}")
+        lines.append(f"- session_runtime_verdict: {'；'.join(session_runtime_verdict)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")

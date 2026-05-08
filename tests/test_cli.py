@@ -702,6 +702,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_escalation_authority:' in index_text
     assert 'session_assurance_digest:' in index_text
     assert 'session_governance_verdict:' in index_text
+    assert 'session_governance_mesh:' in index_text
+    assert 'session_attestation_budget:' in index_text
+    assert 'session_policy_fallbacks:' in index_text
+    assert 'session_recovery_routing:' in index_text
+    assert 'session_runtime_verdict:' in index_text
     assert 'session_control_kernel:' in index_text
     assert 'session_safety_circuit_breakers:' in index_text
     assert 'session_override_channels:' in index_text
