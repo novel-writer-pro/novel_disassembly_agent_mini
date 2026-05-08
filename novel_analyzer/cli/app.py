@@ -3403,6 +3403,26 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "允许 business-owner 人工改写 promotion_verdict",
             "允许 risk-approver 人工冻结扩区或切回 de-risk lane",
         ]
+        session_guard_conditions = [
+            "risk_register 不能为 high-risk 才允许进入 ship-ready",
+            "reader_acceptance_not_improved 时禁止进入 scale 模式",
+        ]
+        session_entry_criteria = [
+            "至少存在 1 个 innovation experiment artifact",
+            "baseline_vs_steering 与 reader_sim_acceptance evidence 已生成",
+        ]
+        session_exit_criteria = [
+            "session_priority_queue 已执行完或被重新分派",
+            "session_required_review 已完成或升级路径已确认",
+        ]
+        session_auto_escalations = [
+            "high-risk -> risk approver",
+            "needs-review + blocked -> business owner",
+        ]
+        session_override_audit = [
+            "记录 promotion_verdict 的人工覆盖原因",
+            "记录 lane/queue 人工改写的责任人与时间",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3416,6 +3436,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_transition_rules: {'；'.join(session_transition_rules)}")
         lines.append(f"- session_auto_actions: {'；'.join(session_auto_actions)}")
         lines.append(f"- session_manual_overrides: {'；'.join(session_manual_overrides)}")
+        lines.append(f"- session_guard_conditions: {'；'.join(session_guard_conditions)}")
+        lines.append(f"- session_entry_criteria: {'；'.join(session_entry_criteria)}")
+        lines.append(f"- session_exit_criteria: {'；'.join(session_exit_criteria)}")
+        lines.append(f"- session_auto_escalations: {'；'.join(session_auto_escalations)}")
+        lines.append(f"- session_override_audit: {'；'.join(session_override_audit)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
