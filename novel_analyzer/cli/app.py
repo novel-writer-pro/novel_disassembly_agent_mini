@@ -3552,6 +3552,29 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"readiness={session_release_readiness}",
             f"quorum={len(session_review_quorum)}",
         ]
+        session_compliance_pack = [
+            "review quorum 满足后才允许进入 promote/ship-ready",
+            "所有 override 必须落入 override audit",
+            "高风险 lane 必须存在 risk-approver 责任链",
+        ]
+        session_failure_budget = [
+            "允许 0 个 unresolved high-risk blocker",
+            "允许 1 次以内 reader_acceptance 明显回落后立即回滚",
+        ]
+        session_override_budget = [
+            "允许 1 次 business-owner promotion override",
+            "允许 1 次 risk-approver lane freeze override",
+        ]
+        session_reliability_digest = [
+            f"ship_decision={session_ship_decision}",
+            f"blocked_queue={len(session_blocked_queue)}",
+            f"ready_queue={len(session_ready_queue)}",
+        ]
+        session_governance_checksum = [
+            f"policy_versions={len(session_policy_versions)}",
+            f"quorum={len(session_review_quorum)}",
+            f"audit_items={len(session_override_audit)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3595,6 +3618,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_latency_budget: {'；'.join(session_latency_budget)}")
         lines.append(f"- session_review_quorum: {'；'.join(session_review_quorum)}")
         lines.append(f"- session_contract_digest: {'；'.join(session_contract_digest)}")
+        lines.append(f"- session_compliance_pack: {'；'.join(session_compliance_pack)}")
+        lines.append(f"- session_failure_budget: {'；'.join(session_failure_budget)}")
+        lines.append(f"- session_override_budget: {'；'.join(session_override_budget)}")
+        lines.append(f"- session_reliability_digest: {'；'.join(session_reliability_digest)}")
+        lines.append(f"- session_governance_checksum: {'；'.join(session_governance_checksum)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:

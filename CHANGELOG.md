@@ -47,6 +47,8 @@
 
 - imitation: writer-imitate-index now includes contract-plane session fields (`session_policy_versions`, `session_safety_budget`, `session_latency_budget`, `session_review_quorum`, `session_contract_digest`) so the control surface gets closer to an enterprise commercial agent contract plane.
 
+- imitation: writer-imitate-index now includes compliance-plane session fields (`session_compliance_pack`, `session_failure_budget`, `session_override_budget`, `session_reliability_digest`, `session_governance_checksum`) so the control plane gets closer to an enterprise commercial agent governance OS.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -90,6 +92,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 
