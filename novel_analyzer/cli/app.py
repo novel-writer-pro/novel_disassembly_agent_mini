@@ -3844,6 +3844,29 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"signals={len(session_signal_registry)}",
             f"contracts={len(session_action_contract)}",
         ]
+        session_supervisory_contract = [
+            "每轮 session 必须产生 promotion/risk/handoff 三类摘要",
+            "每轮 blocked_queue 变化必须可追踪到 escalation_path 或 remediation_contract",
+        ]
+        session_recovery_matrix = [
+            "reader regression -> de-risk -> pilot",
+            "high-risk blocker -> freeze -> remediation -> review",
+            "ship not ready -> escalation -> re-evaluate readiness",
+        ]
+        session_signal_budget = [
+            "允许 5 类核心信号参与 governor 决策",
+            "允许 3 条以内关键优先级信号进入 command brief",
+        ]
+        session_checkpoint_policy = [
+            "每轮 session 至少写入一次 state checkpoint",
+            "promotion/risk/ship 任一变化都必须刷新 checkpoint",
+        ]
+        session_operating_ledger = [
+            f"artifacts={len(ledger_entries)}",
+            f"ready_queue={len(session_ready_queue)}",
+            f"blocked_queue={len(session_blocked_queue)}",
+            f"escalations={len(session_escalation_path)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3917,6 +3940,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_action_contract: {'；'.join(session_action_contract)}")
         lines.append(f"- session_backpressure_rules: {'；'.join(session_backpressure_rules)}")
         lines.append(f"- session_runtime_proof: {'；'.join(session_runtime_proof)}")
+        lines.append(f"- session_supervisory_contract: {'；'.join(session_supervisory_contract)}")
+        lines.append(f"- session_recovery_matrix: {'；'.join(session_recovery_matrix)}")
+        lines.append(f"- session_signal_budget: {'；'.join(session_signal_budget)}")
+        lines.append(f"- session_checkpoint_policy: {'；'.join(session_checkpoint_policy)}")
+        lines.append(f"- session_operating_ledger: {'；'.join(session_operating_ledger)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
