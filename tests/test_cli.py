@@ -532,6 +532,17 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '### Baseline vs Steering' in experiment_text
     assert 'xianxia-underdog-ledger: 标签：底层逆袭；套路轴：底层逆袭' in experiment_text
 
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    index_text = index_md.read_text(encoding='utf-8')
+    assert '## Innovation Experiments' in index_text
+    assert 'writer-innovation-experiment-batch-a.json' in index_text
+    assert 'reader_acceptance: improved=' in index_text
+    assert 'baseline_vs_steering:' in index_text
+
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:
     from novel_analyzer.cli.app import _write_writer_imitation_outputs

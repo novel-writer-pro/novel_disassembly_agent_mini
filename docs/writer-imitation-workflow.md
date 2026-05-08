@@ -167,6 +167,7 @@ flowchart TD
 - `writer_innovation_explanation.summary`
 - `writer_innovation_explanation.focus`
 - markdown 中的 `Writer Innovation Explanation` 区块
+- `writer-imitate-index.md` 中的 experiment 汇总入口
 
 ---
 

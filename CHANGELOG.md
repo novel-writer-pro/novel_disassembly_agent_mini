@@ -13,6 +13,8 @@
 
 - imitation: experiment outputs now include `writer_innovation_explanation`, turning steering, hit docs, delta summaries, and reader acceptance signals into a concise writer-facing explanation block.
 
+- imitation: writer-imitate-index now summarizes innovation experiment artifacts, making output workdirs easier to scan across multiple experiment batches.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -56,6 +58,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 
