@@ -2636,6 +2636,50 @@ def _build_experiment_decision_note(
         promotion_gate = "至少补齐新的 pilot 证据再决定"
         rollback_trigger = "下一轮仍无正向 reader-sim 改善"
 
+    ship_blockers: list[str] = []
+    required_human_review: list[str] = []
+    confidence_level = "medium"
+    business_risk_label = "controlled"
+    go_live_checklist = [
+        "确认 baseline_vs_steering_report 已更新",
+        "确认 delta_visual_summary 与 reader_sim_acceptance_summary 已复核",
+        "确认最新 steering 命中文档与禁区边界仍适用",
+    ]
+    if risk_level == "high":
+        ship_blockers.append("high_risk_level")
+        required_human_review.append("风险/连续性人工复核")
+        confidence_level = "low"
+        business_risk_label = "high-risk"
+    elif risk_level == "medium":
+        required_human_review.append("中风险实验人工抽查")
+        confidence_level = "medium"
+        business_risk_label = "guarded"
+    else:
+        confidence_level = "high" if recommendation == "promote" else "medium"
+        business_risk_label = "controlled"
+    if improved_count <= 0:
+        ship_blockers.append("reader_acceptance_not_improved")
+        required_human_review.append("读者接受度无改善原因复盘")
+        confidence_level = "low"
+    if verdict_shift_count > max(1, comparison_chapters // 2):
+        ship_blockers.append("verdict_shift_too_high")
+        required_human_review.append("gate/verdict 变化过大复核")
+        business_risk_label = "guarded"
+    if recommendation == "promote":
+        go_live_checklist.extend(
+            [
+                "确认真实读者反馈采集窗口已准备",
+                "确认扩大批次的 rollback trigger 已预先登记",
+            ]
+        )
+    else:
+        go_live_checklist.extend(
+            [
+                "确认 pilot_scope 与 evidence_required 已被执行负责人接受",
+                "确认下一轮复跑窗口与评审人已明确",
+            ]
+        )
+
     return {
         "recommendation": recommendation,
         "reason": reason,
@@ -2651,6 +2695,11 @@ def _build_experiment_decision_note(
         "promotion_gate": promotion_gate,
         "rollback_trigger": rollback_trigger,
         "evidence_required": evidence_required,
+        "ship_blockers": ship_blockers,
+        "required_human_review": required_human_review,
+        "confidence_level": confidence_level,
+        "business_risk_label": business_risk_label,
+        "go_live_checklist": go_live_checklist,
     }
 
 
@@ -2851,12 +2900,15 @@ def _write_writer_imitation_outputs(
             "pilot_scope",
             "promotion_gate",
             "rollback_trigger",
+            "confidence_level",
+            "business_risk_label",
         ]:
             if key in experiment_decision_note:
                 lines.append(f"- {key}: {experiment_decision_note[key]}")
-        evidence_required = experiment_decision_note.get("evidence_required", [])
-        if isinstance(evidence_required, list) and evidence_required:
-            lines.append(f"- evidence_required: {'；'.join(str(item) for item in evidence_required if str(item).strip())}")
+        for list_key in ["evidence_required", "ship_blockers", "required_human_review", "go_live_checklist"]:
+            value = experiment_decision_note.get(list_key, [])
+            if isinstance(value, list) and value:
+                lines.append(f"- {list_key}: {'；'.join(str(item) for item in value if str(item).strip())}")
     delta_visual_summary = payload.get("delta_visual_summary", {})
     if isinstance(delta_visual_summary, dict) and delta_visual_summary:
         lines.append("\n## Delta Visual Summary")
@@ -3140,16 +3192,20 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         decision_recommendation = ""
         decision_next_action = ""
         decision_pilot_scope = ""
+        decision_confidence = ""
         if isinstance(decision_note, dict):
             decision_recommendation = str(decision_note.get("recommendation", "")).strip()
             decision_next_action = str(decision_note.get("next_action", "")).strip()
             decision_pilot_scope = str(decision_note.get("pilot_scope", "")).strip()
+            decision_confidence = str(decision_note.get("confidence_level", "")).strip()
             if decision_recommendation:
                 lines.append(f"- recommendation: {decision_recommendation}")
             if decision_next_action:
                 lines.append(f"- next_action: {decision_next_action}")
             if decision_pilot_scope:
                 lines.append(f"- pilot_scope: {decision_pilot_scope}")
+            if decision_confidence:
+                lines.append(f"- confidence_level: {decision_confidence}")
         acceptance = payload.get("reader_sim_acceptance_summary", {})
         reader_acceptance = ""
         if isinstance(acceptance, dict):
@@ -3176,6 +3232,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 "recommendation": decision_recommendation,
                 "next_action": decision_next_action,
                 "pilot_scope": decision_pilot_scope,
+                "confidence_level": decision_confidence,
                 "baseline": baseline_summary,
             }
         )
@@ -3192,6 +3249,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             lines.append(f"- recommendation: {entry['recommendation']}")
             lines.append(f"- next_action: {entry['next_action']}")
             lines.append(f"- pilot_scope: {entry['pilot_scope']}")
+            lines.append(f"- confidence_level: {entry['confidence_level']}")
             lines.append(f"- baseline_vs_steering: {entry['baseline']}")
     return "\n".join(lines).strip() + "\n"
 

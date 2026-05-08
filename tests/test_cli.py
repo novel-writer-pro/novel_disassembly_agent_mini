@@ -523,6 +523,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert experiment_decision_note['promotion_gate']
     assert experiment_decision_note['rollback_trigger']
     assert experiment_decision_note['evidence_required']
+    assert 'confidence_level' in experiment_decision_note
+    assert 'business_risk_label' in experiment_decision_note
+    assert 'go_live_checklist' in experiment_decision_note
     assert len(experiment_payload['baseline_items']) == 2
     assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
     assert 'risk_delta_summary' in experiment_payload['experiment_meta']
@@ -539,6 +542,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Experiment Decision Note' in experiment_text
     assert 'pilot_scope:' in experiment_text
     assert 'rollback_trigger:' in experiment_text
+    assert 'confidence_level:' in experiment_text
+    assert 'go_live_checklist:' in experiment_text
     assert '### Baseline vs Steering' in experiment_text
     assert 'xianxia-underdog-ledger: 标签：底层逆袭；套路轴：底层逆袭' in experiment_text
 
@@ -558,6 +563,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'recommendation:' in index_text
     assert 'next_action:' in index_text
     assert 'pilot_scope:' in index_text
+    assert 'confidence_level:' in index_text
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:
