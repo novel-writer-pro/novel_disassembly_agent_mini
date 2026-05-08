@@ -111,6 +111,7 @@
 - session_policy_mesh / session_enforcement_bus / session_runtime_sentry / session_checkpoint_audit_chain / session_operating_posture 是否足以形成 policy kernel / sentry 层
 - session_attestation_chain / session_trust_zones / session_policy_attestors / session_recovery_posture / session_control_verdict 是否足以形成信任/证明/姿态控制层
 - session_protocol_stack / session_trust_contract / session_recovery_authority / session_audit_checkpoint_map / session_runtime_certificate 是否足以形成协议栈与运行证书层
+- session_governance_topology / session_protocol_budget / session_certificate_chain / session_recovery_authorizations / session_control_attestation 是否足以形成拓扑/证书链/授权证明层
 
 ---
 
