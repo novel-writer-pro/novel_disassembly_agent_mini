@@ -198,6 +198,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_executive_contract / session_governance_checksum_v2 / session_supervision_certificate / session_override_liability / session_operating_authority
 - `writer-imitate-index.md` 中的 session_authority_certificate / session_policy_envelope / session_escalation_authority / session_assurance_digest / session_governance_verdict
 - `writer-imitate-index.md` 中的 session_governance_mesh / session_attestation_budget / session_policy_fallbacks / session_recovery_routing / session_runtime_verdict
+- `writer-imitate-index.md` 中的 session_control_plane_closure / session_exec_fabric / session_authority_routes / session_assurance_chain / session_runtime_seal
 - `writer-imitate-index.md` 中的 session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论

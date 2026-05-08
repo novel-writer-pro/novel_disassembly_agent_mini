@@ -116,6 +116,7 @@
 - session_executive_contract / session_governance_checksum_v2 / session_supervision_certificate / session_override_liability / session_operating_authority 是否足以形成 executive governance 层
 - session_authority_certificate / session_policy_envelope / session_escalation_authority / session_assurance_digest / session_governance_verdict 是否足以形成 authority / assurance / verdict OS 层
 - session_governance_mesh / session_attestation_budget / session_policy_fallbacks / session_recovery_routing / session_runtime_verdict 是否足以形成最终治理网格层
+- session_control_plane_closure / session_exec_fabric / session_authority_routes / session_assurance_chain / session_runtime_seal 是否足以形成控制面闭环与执行织面
 - session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence 是否足以形成 meta-governance / control-integrity 层
 
 ---
