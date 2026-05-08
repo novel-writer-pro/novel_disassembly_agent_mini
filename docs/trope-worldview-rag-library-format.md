@@ -38,6 +38,11 @@ rag/
 ## label
 底层逆袭 / 账本修仙
 
+## tags
+- 男频
+- 账本修仙
+- 收益可见
+
 ## use_when
 - 主角处于资源匮乏阶段
 - 需要把收益写得可见、可算、可追
@@ -142,7 +147,7 @@ rag/
 先做：
 - markdown 文档库
 - 统一 frontmatter / section naming
-- 一层简单检索
+- 一层简单检索（至少覆盖 tag / label / query 三条命中线）
 
 当前最小可用状态已经支持：
 - `--trope-doc`

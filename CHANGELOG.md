@@ -1,6 +1,7 @@
 ## Unreleased
 
 - imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
+- imitation: local steering retrieval now understands `tags` and scores tag / label / query overlap separately, making trope/worldview/audience doc selection more stable and explainable.
 
 ## 2026-05-05
 

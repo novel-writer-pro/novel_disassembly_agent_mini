@@ -45,3 +45,25 @@ def test_steering_library_service_can_rank_multiple_candidates() -> None:
     assert payload["retrieval_meta"]["selected_trope_docs"]
     assert payload["retrieval_meta"]["selected_worldview_docs"]
     assert payload["retrieval_meta"]["selected_audience_docs"]
+
+
+def test_steering_library_service_tags_improve_query_matching() -> None:
+    service = SteeringLibraryService()
+    payload: SteeringRetrievalPayload = service.retrieve_pack(
+        query_text="认证体系 制度压迫 信用秩序",
+        worldview_docs=["aura-decline-tax-state", "sect-credit-feudal-order"],
+    )
+    assert payload["retrieval_meta"]["selected_worldview_docs"][0] == "sect-credit-feudal-order"
+    hit_reasons = payload["retrieval_meta"]["hit_reasons"]["worldview"]["sect-credit-feudal-order"]
+    assert any(reason.startswith("tag_") for reason in hit_reasons)
+
+
+def test_steering_library_service_doc_summaries_include_tags() -> None:
+    service = SteeringLibraryService()
+    payload: SteeringRetrievalPayload = service.retrieve_pack(
+        query_text="账本修仙 收益可见",
+        trope_docs=["xianxia-underdog-ledger"],
+    )
+    summary = payload["retrieval_meta"]["selected_doc_summaries"]["trope"][0]
+    assert "tags" in summary
+    assert "账本修仙" in summary["tags"]

@@ -12,6 +12,7 @@ from typing import TypeAlias, TypedDict
 class SteeringDocSummary(TypedDict):
     slug: str
     labels: list[str]
+    tags: list[str]
     summary: str
     worldview_capsule: list[str]
     trope_axes: list[str]
@@ -57,6 +58,7 @@ class SteeringLibraryDoc:
     taboo_innovations: list[str]
     external_knowledge_refs: list[str]
     labels: list[str]
+    tags: list[str]
 
     def compact_summary(self) -> SteeringDocSummary:
         """Return a retrieval-facing summary payload for experiment outputs."""
@@ -64,6 +66,8 @@ class SteeringLibraryDoc:
         summary_parts: list[str] = []
         if self.labels:
             summary_parts.append(f"标签：{' / '.join(self.labels[:2])}")
+        if self.tags:
+            summary_parts.append(f"tags：{' / '.join(self.tags[:2])}")
         if self.worldview_capsule:
             summary_parts.append(f"世界观：{self.worldview_capsule[0]}")
         if self.trope_axes:
@@ -76,6 +80,7 @@ class SteeringLibraryDoc:
         return {
             "slug": self.slug,
             "labels": self.labels,
+            "tags": self.tags,
             "summary": summary,
             "worldview_capsule": self.worldview_capsule[:2],
             "trope_axes": self.trope_axes[:2],
@@ -126,7 +131,33 @@ class SteeringLibraryService:
                 + self._section_items(text, "useful_for_imitation")
             ),
             labels=self._section_items(text, "label"),
+            tags=self._section_items(text, "tags") + self._section_items(text, "tag"),
         )
+
+    @staticmethod
+    def _query_terms(text: str) -> list[str]:
+        normalized = (
+            text.lower()
+            .replace("：", " ")
+            .replace(":", " ")
+            .replace("/", " ")
+            .replace("-", " ")
+            .replace("_", " ")
+            .replace("，", " ")
+            .replace(",", " ")
+            .replace("；", " ")
+            .replace(";", " ")
+            .replace("（", " ")
+            .replace("）", " ")
+            .replace("(", " ")
+            .replace(")", " ")
+        )
+        return [item.strip() for item in normalized.split() if item.strip()]
+
+    @classmethod
+    def _term_overlap(cls, query_terms: set[str], text: str) -> list[str]:
+        candidate_terms = {item for item in cls._query_terms(text) if item}
+        return sorted(query_terms & candidate_terms)
 
     @staticmethod
     def _merge_unique(base: list[str], extra: list[str]) -> list[str]:
@@ -171,9 +202,10 @@ class SteeringLibraryService:
             pack["innovation_directives"] = self._merge_unique(pack["innovation_directives"], doc.innovation_directives)
         return pack
 
-    @staticmethod
-    def _score_doc(doc: SteeringLibraryDoc, query_text: str) -> tuple[int, list[str]]:
+    @classmethod
+    def _score_doc(cls, doc: SteeringLibraryDoc, query_text: str) -> tuple[int, list[str]]:
         lowered = query_text.lower()
+        query_terms = {item for item in cls._query_terms(query_text) if item}
         score = 0
         reasons: list[str] = []
         if doc.slug.replace("-", " ").lower() in lowered:
@@ -183,22 +215,31 @@ class SteeringLibraryService:
             if label.lower() in lowered:
                 score += 2
                 reasons.append(f"label_match:{label}")
-        for item in doc.worldview_capsule[:2] + doc.trope_axes[:2] + doc.innovation_directives[:2]:
-            candidate = item.lower()
-            matched = False
-            for token in [candidate[:4], candidate[:6], candidate[:8]]:
-                if token and token in lowered:
-                    score += 1
-                    reasons.append(f"content_hint:{item}")
-                    matched = True
-                    break
-            if not matched:
-                for word in [part.strip() for part in item.replace("：", " ").replace("/", " ").split() if part.strip()]:
-                    sub = word.lower()[:4]
-                    if sub and sub in lowered:
-                        score += 1
-                        reasons.append(f"content_hint:{item}")
-                        break
+                continue
+            overlap = cls._term_overlap(query_terms, label)
+            if overlap:
+                score += 1
+                reasons.append(f"label_query_overlap:{label}")
+        for tag in doc.tags:
+            if tag.lower() in lowered:
+                score += 3
+                reasons.append(f"tag_match:{tag}")
+                continue
+            overlap = cls._term_overlap(query_terms, tag)
+            if overlap:
+                score += 2
+                reasons.append(f"tag_query_overlap:{tag}")
+        content_candidates = (
+            doc.worldview_capsule[:2]
+            + doc.trope_axes[:2]
+            + doc.innovation_directives[:2]
+            + doc.external_knowledge_refs[:2]
+        )
+        for item in content_candidates:
+            overlap = cls._term_overlap(query_terms, item)
+            if overlap:
+                score += min(2, len(overlap))
+                reasons.append(f"query_overlap:{item}")
         return score, reasons
 
     def retrieve_pack(
