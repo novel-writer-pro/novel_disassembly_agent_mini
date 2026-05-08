@@ -104,6 +104,7 @@
 - session_control_memory / session_constraint_register / session_safety_invariants / session_repair_budget / session_runtime_digest 是否足以形成核心约束面
 - session_control_fabric / session_guardrail_matrix / session_override_protocol / session_failure_isolation / session_runtime_manifest 是否足以形成控制织面
 - session_control_bus / session_event_channels / session_runtime_priorities / session_alert_routes / session_state_checkpoint 是否足以形成控制总线与状态快照
+- session_execution_graph / session_signal_registry / session_action_contract / session_backpressure_rules / session_runtime_proof 是否足以形成有状态执行合同
 
 ---
 

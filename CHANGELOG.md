@@ -61,6 +61,8 @@
 
 - imitation: writer-imitate-index now includes control-bus session fields (`session_control_bus`, `session_event_channels`, `session_runtime_priorities`, `session_alert_routes`, `session_state_checkpoint`) so the control plane gets closer to a commercial runtime bus/checkpoint layer.
 
+- imitation: writer-imitate-index now includes stateful-execution session fields (`session_execution_graph`, `session_signal_registry`, `session_action_contract`, `session_backpressure_rules`, `session_runtime_proof`) so the control plane gets closer to a stateful commercial agent execution contract.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -104,6 +106,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 
