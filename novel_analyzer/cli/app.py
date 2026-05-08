@@ -3867,6 +3867,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"blocked_queue={len(session_blocked_queue)}",
             f"escalations={len(session_escalation_path)}",
         ]
+        session_governance_fabric = [
+            f"governor={session_governor_mode}",
+            f"quorum={len(session_review_quorum)}",
+            f"authority={len(session_authority_map)}",
+        ]
+        session_checkpoint_contract = [
+            "promotion/risk/ship 变化必须刷新 state checkpoint",
+            "blocked_queue 变化必须刷新 session-state artifact",
+            "ship-ready 前必须重新核验 checkpoint contract",
+        ]
+        session_supervision_priorities = [
+            "P0: ship blockers / risk",
+            "P1: required review / escalation",
+            "P2: rollout readiness / queue execution",
+        ]
+        session_ledger_consistency_rules = [
+            "ledger 与 session-state 必须共享同一 promotion_verdict",
+            "ledger 与 decision note 必须共享同一 next_action",
+            "ledger 与 risk register 必须共享同一 business_risk_label",
+        ]
+        session_runtime_attestation = [
+            f"state_artifacts={len(ledger_entries)}",
+            f"checkpoints={len(session_state_checkpoint)}",
+            f"contracts={len(session_contract_digest)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3945,6 +3970,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_signal_budget: {'；'.join(session_signal_budget)}")
         lines.append(f"- session_checkpoint_policy: {'；'.join(session_checkpoint_policy)}")
         lines.append(f"- session_operating_ledger: {'；'.join(session_operating_ledger)}")
+        lines.append(f"- session_governance_fabric: {'；'.join(session_governance_fabric)}")
+        lines.append(f"- session_checkpoint_contract: {'；'.join(session_checkpoint_contract)}")
+        lines.append(f"- session_supervision_priorities: {'；'.join(session_supervision_priorities)}")
+        lines.append(f"- session_ledger_consistency_rules: {'；'.join(session_ledger_consistency_rules)}")
+        lines.append(f"- session_runtime_attestation: {'；'.join(session_runtime_attestation)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")

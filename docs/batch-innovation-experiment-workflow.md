@@ -106,6 +106,7 @@
 - session_control_bus / session_event_channels / session_runtime_priorities / session_alert_routes / session_state_checkpoint 是否足以形成控制总线与状态快照
 - session_execution_graph / session_signal_registry / session_action_contract / session_backpressure_rules / session_runtime_proof 是否足以形成有状态执行合同
 - session_supervisory_contract / session_recovery_matrix / session_signal_budget / session_checkpoint_policy / session_operating_ledger 是否足以形成监督与账本层
+- session_governance_fabric / session_checkpoint_contract / session_supervision_priorities / session_ledger_consistency_rules / session_runtime_attestation 是否足以形成治理织面与检查点合同
 
 ---
 
