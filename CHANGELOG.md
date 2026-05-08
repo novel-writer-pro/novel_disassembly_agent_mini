@@ -7,6 +7,8 @@
 
 - imitation: writer innovation experiment now emits a baseline-vs-steering comparison report, so each batch can directly compare baseline and steering verdict/title drift without a second manual pass.
 
+- imitation: experiment outputs now include `delta_visual_summary`, making innovation/risk pressure easier to scan in markdown and JSON without a separate dashboard.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -52,6 +54,8 @@
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
 
 
+
+- imitation: experiment outputs now include `delta_visual_summary`, making innovation/risk pressure easier to scan in markdown and JSON without a separate dashboard.
 
 ## 2026-05-05
 

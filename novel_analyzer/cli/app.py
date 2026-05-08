@@ -2448,6 +2448,55 @@ def _build_baseline_vs_steering_report(
     }
 
 
+def _build_delta_visual_summary(
+    steering_pack: SteeringPack,
+    retrieval_meta: SteeringRetrievalMeta,
+) -> dict[str, object]:
+    worldview_count = len(steering_pack["worldview_capsule"])
+    trope_count = len(steering_pack["trope_axes"])
+    innovation_count = len(steering_pack["innovation_directives"])
+    taboo_count = len(steering_pack["taboo_innovations"])
+    knowledge_count = len(steering_pack["external_knowledge_refs"])
+    selected_doc_count = 0
+    for key in ["selected_trope_docs", "selected_worldview_docs", "selected_audience_docs"]:
+        value = retrieval_meta.get(key, [])
+        if isinstance(value, list):
+            selected_doc_count += len(value)
+    innovation_pressure = innovation_count + trope_count + worldview_count
+    risk_pressure = taboo_count + max(0, selected_doc_count - innovation_count)
+    innovation_level = "light"
+    if innovation_pressure >= 8:
+        innovation_level = "high"
+    elif innovation_pressure >= 4:
+        innovation_level = "medium"
+    risk_level = "low"
+    if risk_pressure >= 6:
+        risk_level = "high"
+    elif risk_pressure >= 3:
+        risk_level = "medium"
+    return {
+        "innovation_card": {
+            "level": innovation_level,
+            "worldview_count": worldview_count,
+            "trope_count": trope_count,
+            "innovation_directive_count": innovation_count,
+            "summary": f"创新压力={innovation_pressure}（worldview={worldview_count}, trope={trope_count}, directive={innovation_count}）",
+        },
+        "risk_card": {
+            "level": risk_level,
+            "taboo_count": taboo_count,
+            "knowledge_ref_count": knowledge_count,
+            "selected_doc_count": selected_doc_count,
+            "summary": f"风险压力={risk_pressure}（taboo={taboo_count}, refs={knowledge_count}, hits={selected_doc_count}）",
+        },
+        "operator_hint": (
+            "创新已偏高，优先检查 continuity 与 reader-sim 反馈。"
+            if innovation_level == "high"
+            else "当前创新增量可控，可继续观察 baseline vs steering 差异。"
+        ),
+    }
+
+
 def _write_writer_imitation_outputs(
     output_dir: Path,
     stem: str,
@@ -2506,6 +2555,19 @@ def _write_writer_imitation_outputs(
                     ) if isinstance(labels, list) else ""
                     detail = summary or label_text or "(no summary)"
                     lines.append(f"  - {slug}: {detail}")
+    delta_visual_summary = payload.get("delta_visual_summary", {})
+    if isinstance(delta_visual_summary, dict) and delta_visual_summary:
+        lines.append("\n## Delta Visual Summary")
+        for card_key in ["innovation_card", "risk_card"]:
+            card = delta_visual_summary.get(card_key, {})
+            if not isinstance(card, dict) or not card:
+                continue
+            lines.append(f"\n### {card_key}")
+            for key, value in card.items():
+                lines.append(f"- {key}: {value}")
+        operator_hint = str(delta_visual_summary.get("operator_hint", "")).strip()
+        if operator_hint:
+            lines.append(f"\n### Operator Hint\n- {operator_hint}")
     final_draft = payload.get("final_draft", {})
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
@@ -2985,6 +3047,7 @@ def writer_innovation_experiment(
                 }
             )
         baseline_vs_steering_report = _build_baseline_vs_steering_report(baseline_outputs, outputs)
+        delta_visual_summary = _build_delta_visual_summary(steering, retrieval_meta)
         stem = f"writer-innovation-experiment-{experiment_name}"
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
@@ -2995,6 +3058,7 @@ def writer_innovation_experiment(
                 "branch_id": branch_id,
                 "steering_pack": steering,
                 "steering_retrieval_meta": retrieval_meta,
+                "delta_visual_summary": delta_visual_summary,
                 "baseline_items": baseline_outputs,
                 "items": outputs,
                 "experiment_meta": {
