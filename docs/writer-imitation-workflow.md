@@ -182,6 +182,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_policy_versions / session_safety_budget / session_latency_budget / session_review_quorum / session_contract_digest
 - `writer-imitate-index.md` 中的 session_compliance_pack / session_failure_budget / session_override_budget / session_reliability_digest / session_governance_checksum
 - `writer-imitate-index.md` 中的 session_authority_map / session_escalation_budget / session_remediation_contract / session_consensus_rules / session_integrity_digest
+- `writer-imitate-index.md` 中的 session_control_memory / session_constraint_register / session_safety_invariants / session_repair_budget / session_runtime_digest
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环

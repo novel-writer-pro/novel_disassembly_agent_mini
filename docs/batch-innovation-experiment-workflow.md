@@ -100,6 +100,7 @@
 - pilot_scope / promotion_gate / rollback_trigger / evidence_required 是否足以形成真实 rollout 方案
 - ship_blockers / required_human_review / confidence_level / business_risk_label / go_live_checklist 是否足以形成上线 gate
 - success_kpi_targets / failure_kpi_triggers / observation_window / owner_roles / handoff_packet 是否足以形成上线后运营合同
+- session_control_memory / session_constraint_register / session_safety_invariants / session_repair_budget / session_runtime_digest 是否足以形成核心约束面
 
 ---
 

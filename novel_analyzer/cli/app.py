@@ -3625,6 +3625,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"circuit_breakers={len(session_safety_circuit_breakers)}",
             f"override_channels={len(session_override_channels)}",
         ]
+        session_control_memory = [
+            f"last_promotion_verdict={promotion_verdict}",
+            f"last_risk_register={risk_register}",
+            f"last_ship_decision={session_ship_decision}",
+        ]
+        session_constraint_register = [
+            "ship-ready 受 risk_register 和 required_review 约束",
+            "scale 受 reader_acceptance 与 blocked_queue 约束",
+            "override 受 override_budget 与 override_audit 约束",
+        ]
+        session_safety_invariants = [
+            "high-risk 与 ship-ready 不可同时成立",
+            "session_blocked_queue 非空时不可直接 promote",
+            "required_review 未清零前不可进入 autonomous-scale",
+        ]
+        session_repair_budget = [
+            "允许 1 次 lane freeze 后重试",
+            "允许 1 次 reader_acceptance 修复回路后再评估 promote",
+        ]
+        session_runtime_digest = [
+            f"mode={session_execution_mode}",
+            f"lane={session_lane_status}",
+            f"ready={len(session_ready_queue)}",
+            f"blocked={len(session_blocked_queue)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3678,6 +3703,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_remediation_contract: {'；'.join(session_remediation_contract)}")
         lines.append(f"- session_consensus_rules: {'；'.join(session_consensus_rules)}")
         lines.append(f"- session_integrity_digest: {'；'.join(session_integrity_digest)}")
+        lines.append(f"- session_control_memory: {'；'.join(session_control_memory)}")
+        lines.append(f"- session_constraint_register: {'；'.join(session_constraint_register)}")
+        lines.append(f"- session_safety_invariants: {'；'.join(session_safety_invariants)}")
+        lines.append(f"- session_repair_budget: {'；'.join(session_repair_budget)}")
+        lines.append(f"- session_runtime_digest: {'；'.join(session_runtime_digest)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
