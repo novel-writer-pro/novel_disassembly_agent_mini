@@ -572,6 +572,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_required_review:' in index_text
     assert 'session_owner_handoff:' in index_text
     assert 'session_priority_queue:' in index_text
+    assert 'session_lane_status:' in index_text
+    assert 'session_escalation_path:' in index_text
+    assert 'session_release_readiness:' in index_text
+    assert 'session_recovery_plan:' in index_text
+    assert 'session_command_brief:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text

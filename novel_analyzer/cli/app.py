@@ -3338,15 +3338,47 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         if risk_register in {"guarded", "high-risk"}:
             session_owner_handoff.append("reader-feedback-owner -> risk-approver")
         session_priority_queue = session_next_actions[:3] if session_next_actions else ["补更多证据后再推进。"]
+        session_lane_status = (
+            "expansion-lane"
+            if promotion_verdict == "promote"
+            else "risk-mitigation-lane" if promotion_verdict == "de-risk" else "pilot-lane" if promotion_verdict == "pilot" else "evidence-lane"
+        )
+        session_escalation_path = [
+            "writer-operator -> continuity-reviewer",
+            "continuity-reviewer -> reader-feedback-owner",
+        ]
+        if risk_register in {"guarded", "high-risk"}:
+            session_escalation_path.append("reader-feedback-owner -> risk-approver")
+        if session_ship_decision == "needs-review":
+            session_escalation_path.append("risk-approver -> business-owner")
+        session_release_readiness = (
+            "ready-for-managed-pilot"
+            if session_ship_decision == "ship-ready"
+            else "blocked-pending-review"
+        )
+        session_recovery_plan = [
+            "若 reader_acceptance 转负，回退到上一版 steering 组合",
+            "若 risk_register 升级，切换到 de-risk lane 并压缩 pilot_scope",
+        ]
+        session_command_brief = [
+            f"当前 lane: {session_lane_status}",
+            f"当前 ship decision: {session_ship_decision}",
+            f"优先动作: {session_priority_queue[0]}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
         lines.append(f"- session_ship_decision: {session_ship_decision}")
+        lines.append(f"- session_lane_status: {session_lane_status}")
+        lines.append(f"- session_release_readiness: {session_release_readiness}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         lines.append(f"- session_required_review: {'；'.join(session_required_review)}")
         lines.append(f"- session_owner_handoff: {'；'.join(session_owner_handoff)}")
+        lines.append(f"- session_escalation_path: {'；'.join(session_escalation_path)}")
         lines.append(f"- session_priority_queue: {'；'.join(session_priority_queue)}")
+        lines.append(f"- session_recovery_plan: {'；'.join(session_recovery_plan)}")
+        lines.append(f"- session_command_brief: {'；'.join(session_command_brief)}")
         if session_focuses:
             lines.append(f"- session_focuses: {'；'.join(session_focuses[:3])}")
 
