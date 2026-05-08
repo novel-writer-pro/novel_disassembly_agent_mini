@@ -2987,6 +2987,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             if target_goal:
                 lines.append(f"  - target_goal: {target_goal}")
 
+    ledger_entries: list[dict[str, str]] = []
     if experiment_files:
         lines.append("\n## Innovation Experiments")
     for path in experiment_files:
@@ -3000,36 +3001,69 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         if experiment_name:
             lines.append(f"- experiment_name: {experiment_name}")
         delta_visual_summary = payload.get("delta_visual_summary", {})
+        innovation_level = ""
+        risk_level = ""
         if isinstance(delta_visual_summary, dict):
             innovation_card = delta_visual_summary.get("innovation_card", {})
             risk_card = delta_visual_summary.get("risk_card", {})
             if isinstance(innovation_card, dict):
+                innovation_level = str(innovation_card.get("level", "")).strip()
                 lines.append(
-                    f"- innovation_level: {innovation_card.get('level', '')} | summary={innovation_card.get('summary', '')}"
+                    f"- innovation_level: {innovation_level} | summary={innovation_card.get('summary', '')}"
                 )
             if isinstance(risk_card, dict):
+                risk_level = str(risk_card.get("level", "")).strip()
                 lines.append(
-                    f"- risk_level: {risk_card.get('level', '')} | summary={risk_card.get('summary', '')}"
+                    f"- risk_level: {risk_level} | summary={risk_card.get('summary', '')}"
                 )
         explanation = payload.get("writer_innovation_explanation", {})
+        explanation_focus = ""
         if isinstance(explanation, dict):
             summary = str(explanation.get("summary", "")).strip()
-            focus = str(explanation.get("focus", "")).strip()
+            explanation_focus = str(explanation.get("focus", "")).strip()
             if summary:
                 lines.append(f"- explanation_summary: {summary}")
-            if focus:
-                lines.append(f"- explanation_focus: {focus}")
+            if explanation_focus:
+                lines.append(f"- explanation_focus: {explanation_focus}")
         acceptance = payload.get("reader_sim_acceptance_summary", {})
+        reader_acceptance = ""
         if isinstance(acceptance, dict):
-            lines.append(
-                f"- reader_acceptance: improved={acceptance.get('improved_count', 0)}/{acceptance.get('chapter_count', 0)} | avg_delta={acceptance.get('average_score_delta', 0)}"
+            reader_acceptance = (
+                f"improved={acceptance.get('improved_count', 0)}/{acceptance.get('chapter_count', 0)} | "
+                f"avg_delta={acceptance.get('average_score_delta', 0)}"
             )
+            lines.append(f"- reader_acceptance: {reader_acceptance}")
         experiment_meta = payload.get("experiment_meta", {})
+        baseline_summary = ""
         if isinstance(experiment_meta, dict):
             comparison = experiment_meta.get("baseline_vs_steering_report", {})
             if isinstance(comparison, dict):
-                lines.append(f"- baseline_vs_steering: {comparison.get('summary', '')}")
+                baseline_summary = str(comparison.get("summary", "")).strip()
+                lines.append(f"- baseline_vs_steering: {baseline_summary}")
+        ledger_entries.append(
+            {
+                "experiment_name": experiment_name or path.stem,
+                "artifact": path.name,
+                "innovation_level": innovation_level,
+                "risk_level": risk_level,
+                "reader_acceptance": reader_acceptance,
+                "focus": explanation_focus,
+                "baseline": baseline_summary,
+            }
+        )
+
+    if ledger_entries:
+        lines.append("\n## Experiment Ledger")
+        for entry in ledger_entries:
+            lines.append(f"\n### {entry['experiment_name']}")
+            lines.append(f"- artifact: {entry['artifact']}")
+            lines.append(f"- innovation_level: {entry['innovation_level']}")
+            lines.append(f"- risk_level: {entry['risk_level']}")
+            lines.append(f"- reader_acceptance: {entry['reader_acceptance']}")
+            lines.append(f"- focus: {entry['focus']}")
+            lines.append(f"- baseline_vs_steering: {entry['baseline']}")
     return "\n".join(lines).strip() + "\n"
+
 
 @app.command()
 def writer_imitate(
