@@ -2565,6 +2565,68 @@ def _build_reader_sim_acceptance_summary(
     }
 
 
+def _build_experiment_decision_note(
+    baseline_vs_steering_report: dict[str, object],
+    delta_visual_summary: dict[str, object],
+    reader_sim_acceptance_summary: dict[str, object],
+) -> dict[str, object]:
+    comparison_chapters_raw = baseline_vs_steering_report.get("chapter_count", 0)
+    comparison_chapters = comparison_chapters_raw if isinstance(comparison_chapters_raw, int) else 0
+    verdict_shift_raw = baseline_vs_steering_report.get("verdict_shift_count", 0)
+    verdict_shift_count = verdict_shift_raw if isinstance(verdict_shift_raw, int) else 0
+    innovation_card = delta_visual_summary.get("innovation_card", {})
+    risk_card = delta_visual_summary.get("risk_card", {})
+    innovation_level = (
+        str(innovation_card.get("level", "light")).strip()
+        if isinstance(innovation_card, dict)
+        else "light"
+    )
+    risk_level = (
+        str(risk_card.get("level", "low")).strip()
+        if isinstance(risk_card, dict)
+        else "low"
+    )
+    improved_count_raw = reader_sim_acceptance_summary.get("improved_count", 0)
+    improved_count = improved_count_raw if isinstance(improved_count_raw, int) else 0
+    acceptance_chapters_raw = reader_sim_acceptance_summary.get("chapter_count", 0)
+    acceptance_chapters = (
+        acceptance_chapters_raw if isinstance(acceptance_chapters_raw, int) else 0
+    )
+    average_score_delta_raw = reader_sim_acceptance_summary.get("average_score_delta", 0)
+    average_score_delta = (
+        float(average_score_delta_raw)
+        if isinstance(average_score_delta_raw, (int, float))
+        else 0.0
+    )
+    recommendation = "hold"
+    reason = "当前信号不足以支持推广，先继续补实验或修正风险。"
+    next_action = "补更多连续章节实验，并先消化当前风险/读者卡点。"
+    if comparison_chapters > 0 and improved_count == acceptance_chapters and risk_level == "low":
+        recommendation = "promote"
+        reason = "reader-sim 与风险信号都支持继续放大，本轮可进入更长区间推广验证。"
+        next_action = "把同主题 steering 推广到更长章节区间，并继续收集真实读者反馈。"
+    elif improved_count > 0 and risk_level in {"low", "medium"}:
+        recommendation = "pilot"
+        reason = "已有部分正向接受度信号，但仍需更长区间与 continuity 复核。"
+        next_action = "保留当前 steering 方向，先做 1 个更长批次的 pilot run。"
+    elif innovation_level == "high" and risk_level in {"medium", "high"}:
+        recommendation = "de-risk"
+        reason = "创新强度已经上来，但风险与稳定性仍不够，先降风险再推广。"
+        next_action = "收缩 directive 或 taboo 边界后重跑，再决定是否扩大。"
+    return {
+        "recommendation": recommendation,
+        "reason": reason,
+        "next_action": next_action,
+        "comparison_chapter_count": comparison_chapters,
+        "verdict_shift_count": verdict_shift_count,
+        "reader_improved_count": improved_count,
+        "reader_chapter_count": acceptance_chapters,
+        "average_score_delta": average_score_delta,
+        "innovation_level": innovation_level,
+        "risk_level": risk_level,
+    }
+
+
 def _build_writer_innovation_explanation(
     steering_pack: SteeringPack,
     retrieval_meta: SteeringRetrievalMeta,
@@ -2746,6 +2808,22 @@ def _write_writer_imitation_outputs(
             value = writer_innovation_explanation.get(key, [])
             if isinstance(value, list) and value:
                 lines.append(f"- {key}: {'；'.join(str(item) for item in value if str(item).strip())}")
+    experiment_decision_note = payload.get("experiment_decision_note", {})
+    if isinstance(experiment_decision_note, dict) and experiment_decision_note:
+        lines.append("\n## Experiment Decision Note")
+        for key in [
+            "recommendation",
+            "reason",
+            "next_action",
+            "comparison_chapter_count",
+            "reader_improved_count",
+            "reader_chapter_count",
+            "average_score_delta",
+            "innovation_level",
+            "risk_level",
+        ]:
+            if key in experiment_decision_note:
+                lines.append(f"- {key}: {experiment_decision_note[key]}")
     delta_visual_summary = payload.get("delta_visual_summary", {})
     if isinstance(delta_visual_summary, dict) and delta_visual_summary:
         lines.append("\n## Delta Visual Summary")
@@ -3025,6 +3103,16 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 lines.append(f"- explanation_summary: {summary}")
             if explanation_focus:
                 lines.append(f"- explanation_focus: {explanation_focus}")
+        decision_note = payload.get("experiment_decision_note", {})
+        decision_recommendation = ""
+        decision_next_action = ""
+        if isinstance(decision_note, dict):
+            decision_recommendation = str(decision_note.get("recommendation", "")).strip()
+            decision_next_action = str(decision_note.get("next_action", "")).strip()
+            if decision_recommendation:
+                lines.append(f"- recommendation: {decision_recommendation}")
+            if decision_next_action:
+                lines.append(f"- next_action: {decision_next_action}")
         acceptance = payload.get("reader_sim_acceptance_summary", {})
         reader_acceptance = ""
         if isinstance(acceptance, dict):
@@ -3048,6 +3136,8 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 "risk_level": risk_level,
                 "reader_acceptance": reader_acceptance,
                 "focus": explanation_focus,
+                "recommendation": decision_recommendation,
+                "next_action": decision_next_action,
                 "baseline": baseline_summary,
             }
         )
@@ -3061,6 +3151,8 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             lines.append(f"- risk_level: {entry['risk_level']}")
             lines.append(f"- reader_acceptance: {entry['reader_acceptance']}")
             lines.append(f"- focus: {entry['focus']}")
+            lines.append(f"- recommendation: {entry['recommendation']}")
+            lines.append(f"- next_action: {entry['next_action']}")
             lines.append(f"- baseline_vs_steering: {entry['baseline']}")
     return "\n".join(lines).strip() + "\n"
 
@@ -3348,6 +3440,11 @@ def writer_innovation_experiment(
             delta_visual_summary,
             reader_sim_acceptance_summary,
         )
+        experiment_decision_note = _build_experiment_decision_note(
+            baseline_vs_steering_report,
+            delta_visual_summary,
+            reader_sim_acceptance_summary,
+        )
         stem = f"writer-innovation-experiment-{experiment_name}"
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
@@ -3361,6 +3458,7 @@ def writer_innovation_experiment(
                 "delta_visual_summary": delta_visual_summary,
                 "reader_sim_acceptance_summary": reader_sim_acceptance_summary,
                 "writer_innovation_explanation": writer_innovation_explanation,
+                "experiment_decision_note": experiment_decision_note,
                 "baseline_items": baseline_outputs,
                 "items": outputs,
                 "experiment_meta": {

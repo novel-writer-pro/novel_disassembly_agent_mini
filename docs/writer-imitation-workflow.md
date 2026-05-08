@@ -169,6 +169,7 @@ flowchart TD
 - markdown 中的 `Writer Innovation Explanation` 区块
 - `writer-imitate-index.md` 中的 experiment 汇总入口
 - `writer-imitate-index.md` 中的 Experiment Ledger 连续复盘视图
+- `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 
 ---
 

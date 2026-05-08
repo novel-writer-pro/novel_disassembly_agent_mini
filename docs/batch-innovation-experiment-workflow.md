@@ -35,6 +35,8 @@
 - `baseline_items`
 - `delta_visual_summary`
 - `reader_sim_acceptance_summary`
+- `writer_innovation_explanation`
+- `experiment_decision_note`
 - `experiment_meta.baseline_vs_steering_report`
 
 其中建议重点看：
@@ -43,6 +45,8 @@
 - `steering_retrieval_meta.selected_doc_summaries`
 - `delta_visual_summary`
 - `reader_sim_acceptance_summary`
+- `writer_innovation_explanation`
+- `experiment_decision_note`
 - `experiment_meta.baseline_vs_steering_report`
 - `experiment_meta.innovation_delta_summary`
 - `experiment_meta.risk_delta_summary`
@@ -92,6 +96,7 @@
 - continuity 风险
 - reader-sim 变化
 - 是否值得推广到更长区间
+- recommendation / next_action 是否支持商业化推广决策
 
 ---
 
