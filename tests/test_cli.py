@@ -605,6 +605,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_watchdog_rules:' in index_text
     assert 'session_contingency_routes:' in index_text
     assert 'session_operating_envelope:' in index_text
+    assert 'session_control_objectives:' in index_text
+    assert 'session_enforcement_rules:' in index_text
+    assert 'session_decision_priorities:' in index_text
+    assert 'session_supervision_hooks:' in index_text
+    assert 'session_telemetry_digest:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text

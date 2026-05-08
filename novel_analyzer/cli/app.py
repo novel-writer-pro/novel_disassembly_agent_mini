@@ -3502,6 +3502,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"window={session_action_window}",
             f"governor={session_governor_mode}",
         ]
+        session_control_objectives = [
+            "最大化 reader acceptance 的正向变化",
+            "最小化 risk_register 与 ship_blockers 的暴露",
+            "保证 session_priority_queue 在当前窗口内可执行",
+        ]
+        session_enforcement_rules = [
+            "risk_register=high-risk 时禁止 promote",
+            "required_review 未完成时禁止 ship-ready",
+            "session_blocked_queue 非空时禁止进入 scale",
+        ]
+        session_decision_priorities = [
+            "1. continuity / risk",
+            "2. reader acceptance",
+            "3. rollout velocity",
+        ]
+        session_supervision_hooks = [
+            "review gate hook",
+            "risk escalation hook",
+            "reader-acceptance regression hook",
+        ]
+        session_telemetry_digest = [
+            f"recommendations={len(session_recommendations)}",
+            f"risk_labels={len(session_risk_labels)}",
+            f"queue_size={len(session_priority_queue)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3535,6 +3560,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_watchdog_rules: {'；'.join(session_watchdog_rules)}")
         lines.append(f"- session_contingency_routes: {'；'.join(session_contingency_routes)}")
         lines.append(f"- session_operating_envelope: {'；'.join(session_operating_envelope)}")
+        lines.append(f"- session_control_objectives: {'；'.join(session_control_objectives)}")
+        lines.append(f"- session_enforcement_rules: {'；'.join(session_enforcement_rules)}")
+        lines.append(f"- session_decision_priorities: {'；'.join(session_decision_priorities)}")
+        lines.append(f"- session_supervision_hooks: {'；'.join(session_supervision_hooks)}")
+        lines.append(f"- session_telemetry_digest: {'；'.join(session_telemetry_digest)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
