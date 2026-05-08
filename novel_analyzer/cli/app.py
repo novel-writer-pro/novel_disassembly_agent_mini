@@ -3575,6 +3575,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"quorum={len(session_review_quorum)}",
             f"audit_items={len(session_override_audit)}",
         ]
+        session_authority_map = [
+            "writer-operator=lane owner",
+            "continuity-reviewer=continuity gate",
+            "reader-feedback-owner=acceptance gate",
+            "risk-approver=high-risk override",
+            "business-owner=final escalation",
+        ]
+        session_escalation_budget = [
+            "允许 1 次 risk-approver escalation",
+            "允许 1 次 business-owner final escalation",
+        ]
+        session_remediation_contract = [
+            "reader_acceptance 转负 -> 立即切回 de-risk lane",
+            "high-risk blocker 出现 -> freeze rollout + 指派 remediation owner",
+        ]
+        session_consensus_rules = [
+            "promote 需要 review quorum 无阻断",
+            "ship-ready 需要 risk_register != high-risk",
+            "override 必须记录到 override audit",
+        ]
+        session_integrity_digest = [
+            f"blockers={len(session_blockers)}",
+            f"ready={len(session_ready_queue)}",
+            f"blocked={len(session_blocked_queue)}",
+            f"quorum={len(session_review_quorum)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3623,6 +3649,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_override_budget: {'；'.join(session_override_budget)}")
         lines.append(f"- session_reliability_digest: {'；'.join(session_reliability_digest)}")
         lines.append(f"- session_governance_checksum: {'；'.join(session_governance_checksum)}")
+        lines.append(f"- session_authority_map: {'；'.join(session_authority_map)}")
+        lines.append(f"- session_escalation_budget: {'；'.join(session_escalation_budget)}")
+        lines.append(f"- session_remediation_contract: {'；'.join(session_remediation_contract)}")
+        lines.append(f"- session_consensus_rules: {'；'.join(session_consensus_rules)}")
+        lines.append(f"- session_integrity_digest: {'；'.join(session_integrity_digest)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
