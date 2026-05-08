@@ -4188,6 +4188,29 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"readiness={session_release_readiness}",
             f"authority={session_ship_decision}",
         ]
+        session_operating_charter = [
+            "当前 session 必须保持 promotion/risk/ship 三元结论可追踪",
+            "当前 session 必须保证 ready/blocked queue 与 remediation 合同一致",
+        ]
+        session_control_charter = [
+            "control plane 负责收束 decision/bus/checkpoint/runtime 结论",
+            "session-state 与 index 必须共享同一控制结论",
+        ]
+        session_governance_charter = [
+            "governance verdict 必须通过 attestation 与 checksum 双重校验",
+            "executive-governance 负责最终 ship authority 约束",
+        ]
+        session_runtime_authority_digest = [
+            "lane_owner=writer-operator",
+            f"risk_owner={session_recovery_owner}",
+            f"ship_authority={session_ship_decision}",
+        ]
+        session_final_control_verdict = [
+            f"promotion={promotion_verdict}",
+            f"risk={risk_register}",
+            f"ship={session_ship_decision}",
+            f"governor={session_governor_mode}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4331,6 +4354,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_control_closure_audit: {'；'.join(session_control_closure_audit)}")
         lines.append(f"- session_runtime_witness: {'；'.join(session_runtime_witness)}")
         lines.append(f"- session_governance_posture: {'；'.join(session_governance_posture)}")
+        lines.append(f"- session_operating_charter: {'；'.join(session_operating_charter)}")
+        lines.append(f"- session_control_charter: {'；'.join(session_control_charter)}")
+        lines.append(f"- session_governance_charter: {'；'.join(session_governance_charter)}")
+        lines.append(f"- session_runtime_authority_digest: {'；'.join(session_runtime_authority_digest)}")
+        lines.append(f"- session_final_control_verdict: {'；'.join(session_final_control_verdict)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")

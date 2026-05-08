@@ -717,6 +717,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_control_closure_audit:' in index_text
     assert 'session_runtime_witness:' in index_text
     assert 'session_governance_posture:' in index_text
+    assert 'session_operating_charter:' in index_text
+    assert 'session_control_charter:' in index_text
+    assert 'session_governance_charter:' in index_text
+    assert 'session_runtime_authority_digest:' in index_text
+    assert 'session_final_control_verdict:' in index_text
     assert 'session_control_kernel:' in index_text
     assert 'session_safety_circuit_breakers:' in index_text
     assert 'session_override_channels:' in index_text
