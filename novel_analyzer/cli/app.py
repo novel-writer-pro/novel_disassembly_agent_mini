@@ -2613,6 +2613,29 @@ def _build_experiment_decision_note(
         recommendation = "de-risk"
         reason = "创新强度已经上来，但风险与稳定性仍不够，先降风险再推广。"
         next_action = "收缩 directive 或 taboo 边界后重跑，再决定是否扩大。"
+
+    pilot_scope = "2-4 章连续 pilot"
+    promotion_gate = "reader_improved_count > 0 且 risk_level != high"
+    rollback_trigger = "reader_acceptance 转负或 risk_level 升到 high"
+    evidence_required = [
+        "baseline_vs_steering_report",
+        "delta_visual_summary",
+        "reader_sim_acceptance_summary",
+    ]
+    if recommendation == "promote":
+        pilot_scope = "5-8 章扩区验证"
+        promotion_gate = "reader_improved_count == reader_chapter_count 且 risk_level == low"
+        rollback_trigger = "连续章节出现 verdict_shift_count 上升或读者接受度回落"
+        evidence_required.append("真实读者反馈")
+    elif recommendation == "de-risk":
+        pilot_scope = "1-2 章降风险复跑"
+        promotion_gate = "先把 risk_level 压回 low/medium 再讨论扩大"
+        rollback_trigger = "继续出现高风险 + 读者接受度无改善"
+    elif recommendation == "hold":
+        pilot_scope = "暂停扩大，仅补证据"
+        promotion_gate = "至少补齐新的 pilot 证据再决定"
+        rollback_trigger = "下一轮仍无正向 reader-sim 改善"
+
     return {
         "recommendation": recommendation,
         "reason": reason,
@@ -2624,6 +2647,10 @@ def _build_experiment_decision_note(
         "average_score_delta": average_score_delta,
         "innovation_level": innovation_level,
         "risk_level": risk_level,
+        "pilot_scope": pilot_scope,
+        "promotion_gate": promotion_gate,
+        "rollback_trigger": rollback_trigger,
+        "evidence_required": evidence_required,
     }
 
 
@@ -2821,9 +2848,15 @@ def _write_writer_imitation_outputs(
             "average_score_delta",
             "innovation_level",
             "risk_level",
+            "pilot_scope",
+            "promotion_gate",
+            "rollback_trigger",
         ]:
             if key in experiment_decision_note:
                 lines.append(f"- {key}: {experiment_decision_note[key]}")
+        evidence_required = experiment_decision_note.get("evidence_required", [])
+        if isinstance(evidence_required, list) and evidence_required:
+            lines.append(f"- evidence_required: {'；'.join(str(item) for item in evidence_required if str(item).strip())}")
     delta_visual_summary = payload.get("delta_visual_summary", {})
     if isinstance(delta_visual_summary, dict) and delta_visual_summary:
         lines.append("\n## Delta Visual Summary")
@@ -3106,13 +3139,17 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         decision_note = payload.get("experiment_decision_note", {})
         decision_recommendation = ""
         decision_next_action = ""
+        decision_pilot_scope = ""
         if isinstance(decision_note, dict):
             decision_recommendation = str(decision_note.get("recommendation", "")).strip()
             decision_next_action = str(decision_note.get("next_action", "")).strip()
+            decision_pilot_scope = str(decision_note.get("pilot_scope", "")).strip()
             if decision_recommendation:
                 lines.append(f"- recommendation: {decision_recommendation}")
             if decision_next_action:
                 lines.append(f"- next_action: {decision_next_action}")
+            if decision_pilot_scope:
+                lines.append(f"- pilot_scope: {decision_pilot_scope}")
         acceptance = payload.get("reader_sim_acceptance_summary", {})
         reader_acceptance = ""
         if isinstance(acceptance, dict):
@@ -3138,6 +3175,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 "focus": explanation_focus,
                 "recommendation": decision_recommendation,
                 "next_action": decision_next_action,
+                "pilot_scope": decision_pilot_scope,
                 "baseline": baseline_summary,
             }
         )
@@ -3153,6 +3191,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             lines.append(f"- focus: {entry['focus']}")
             lines.append(f"- recommendation: {entry['recommendation']}")
             lines.append(f"- next_action: {entry['next_action']}")
+            lines.append(f"- pilot_scope: {entry['pilot_scope']}")
             lines.append(f"- baseline_vs_steering: {entry['baseline']}")
     return "\n".join(lines).strip() + "\n"
 

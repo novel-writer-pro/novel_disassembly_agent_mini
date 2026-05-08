@@ -97,6 +97,7 @@
 - reader-sim 变化
 - 是否值得推广到更长区间
 - recommendation / next_action 是否支持商业化推广决策
+- pilot_scope / promotion_gate / rollback_trigger / evidence_required 是否足以形成真实 rollout 方案
 
 ---
 
