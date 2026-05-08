@@ -3790,6 +3790,33 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"release_readiness={session_release_readiness}",
             f"governor_mode={session_governor_mode}",
         ]
+        session_control_bus = [
+            f"promotion={promotion_verdict}",
+            f"risk={risk_register}",
+            f"ship={session_ship_decision}",
+            f"lane={session_lane_status}",
+        ]
+        session_event_channels = [
+            "reader-acceptance-events",
+            "risk-escalation-events",
+            "review-completion-events",
+        ]
+        session_runtime_priorities = [
+            "P0: ship blockers",
+            "P1: required review",
+            "P2: ready queue rollout",
+        ]
+        session_alert_routes = [
+            "high-risk -> risk-approver",
+            "blocked ship -> business-owner",
+            "reader regression -> writer-operator",
+        ]
+        session_state_checkpoint = [
+            f"promotion_verdict={promotion_verdict}",
+            f"risk_register={risk_register}",
+            f"ship_decision={session_ship_decision}",
+            f"execution_mode={session_execution_mode}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3853,6 +3880,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_override_protocol: {'；'.join(session_override_protocol)}")
         lines.append(f"- session_failure_isolation: {'；'.join(session_failure_isolation)}")
         lines.append(f"- session_runtime_manifest: {'；'.join(session_runtime_manifest)}")
+        lines.append(f"- session_control_bus: {'；'.join(session_control_bus)}")
+        lines.append(f"- session_event_channels: {'；'.join(session_event_channels)}")
+        lines.append(f"- session_runtime_priorities: {'；'.join(session_runtime_priorities)}")
+        lines.append(f"- session_alert_routes: {'；'.join(session_alert_routes)}")
+        lines.append(f"- session_state_checkpoint: {'；'.join(session_state_checkpoint)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
