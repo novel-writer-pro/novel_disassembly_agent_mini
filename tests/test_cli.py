@@ -513,6 +513,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     reader_sim_acceptance_summary = experiment_payload['reader_sim_acceptance_summary']
     assert reader_sim_acceptance_summary['chapter_count'] == 2
     assert 'average_score_delta' in reader_sim_acceptance_summary
+    writer_innovation_explanation = experiment_payload['writer_innovation_explanation']
+    assert writer_innovation_explanation['summary']
+    assert writer_innovation_explanation['focus']
     assert len(experiment_payload['baseline_items']) == 2
     assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
     assert 'risk_delta_summary' in experiment_payload['experiment_meta']
@@ -525,6 +528,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '### risk_card' in experiment_text
     assert '## Reader Sim Acceptance Summary' in experiment_text
     assert '### Reader Sim Acceptance' in experiment_text
+    assert '## Writer Innovation Explanation' in experiment_text
     assert '### Baseline vs Steering' in experiment_text
     assert 'xianxia-underdog-ledger: 标签：底层逆袭；套路轴：底层逆袭' in experiment_text
 

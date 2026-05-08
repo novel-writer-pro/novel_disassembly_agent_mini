@@ -2565,6 +2565,67 @@ def _build_reader_sim_acceptance_summary(
     }
 
 
+def _build_writer_innovation_explanation(
+    steering_pack: SteeringPack,
+    retrieval_meta: SteeringRetrievalMeta,
+    baseline_vs_steering_report: dict[str, object],
+    delta_visual_summary: dict[str, object],
+    reader_sim_acceptance_summary: dict[str, object],
+) -> dict[str, object]:
+    worldview = steering_pack.get("worldview_capsule", [])[:2]
+    tropes = steering_pack.get("trope_axes", [])[:3]
+    directives = steering_pack.get("innovation_directives", [])[:3]
+    taboo = steering_pack.get("taboo_innovations", [])[:2]
+    top_hits: list[str] = []
+    selected_doc_summaries = retrieval_meta.get("selected_doc_summaries", {})
+    for bucket in ["trope", "worldview", "audience"]:
+        docs = selected_doc_summaries.get(bucket, [])
+        for item in docs[:1]:
+            slug = str(item.get("slug", "")).strip()
+            summary = str(item.get("summary", "")).strip()
+            if slug:
+                top_hits.append(f"{bucket}:{slug}")
+            if summary and len(top_hits) >= 3:
+                break
+    comparison_summary = str(baseline_vs_steering_report.get("summary", "")).strip()
+    innovation_card = delta_visual_summary.get("innovation_card", {})
+    risk_card = delta_visual_summary.get("risk_card", {})
+    innovation_level = str(innovation_card.get("level", "light")).strip() if isinstance(innovation_card, dict) else "light"
+    risk_level = str(risk_card.get("level", "low")).strip() if isinstance(risk_card, dict) else "low"
+    reader_summary = str(reader_sim_acceptance_summary.get("summary", "")).strip()
+    explanation_lines = []
+    if worldview:
+        explanation_lines.append(f"本轮世界观底座：{'；'.join(worldview)}")
+    if tropes:
+        explanation_lines.append(f"本轮套路轴：{'；'.join(tropes)}")
+    if directives:
+        explanation_lines.append(f"本轮创新动作：{'；'.join(directives)}")
+    if top_hits:
+        explanation_lines.append(f"主要参考命中：{'；'.join(top_hits[:3])}")
+    if comparison_summary:
+        explanation_lines.append(f"baseline 对照：{comparison_summary}")
+    if reader_summary:
+        explanation_lines.append(f"reader-sim：{reader_summary}")
+    if taboo:
+        explanation_lines.append(f"本轮禁区：{'；'.join(taboo)}")
+    focus = "先保 continuity，再放大创新收益。"
+    if innovation_level == "high" and risk_level in {"medium", "high"}:
+        focus = "创新偏强且风险升高，优先压住越界与 continuity 破口。"
+    elif innovation_level in {"medium", "high"}:
+        focus = "创新已进入发力区，优先检查收益兑现是否足够具体。"
+    elif risk_level in {"medium", "high"}:
+        focus = "风险提示偏高，优先处理禁区与读者卡点。"
+    return {
+        "summary": " | ".join(explanation_lines),
+        "focus": focus,
+        "top_worldview": worldview,
+        "top_tropes": tropes,
+        "top_directives": directives,
+        "top_hits": top_hits[:3],
+        "taboo_reminders": taboo,
+    }
+
+
 def _build_delta_visual_summary(
     steering_pack: SteeringPack,
     retrieval_meta: SteeringRetrievalMeta,
@@ -2672,6 +2733,19 @@ def _write_writer_imitation_outputs(
                     ) if isinstance(labels, list) else ""
                     detail = summary or label_text or "(no summary)"
                     lines.append(f"  - {slug}: {detail}")
+    writer_innovation_explanation = payload.get("writer_innovation_explanation", {})
+    if isinstance(writer_innovation_explanation, dict) and writer_innovation_explanation:
+        lines.append("\n## Writer Innovation Explanation")
+        summary = str(writer_innovation_explanation.get("summary", "")).strip()
+        focus = str(writer_innovation_explanation.get("focus", "")).strip()
+        if summary:
+            lines.append(f"- summary: {summary}")
+        if focus:
+            lines.append(f"- focus: {focus}")
+        for key in ["top_worldview", "top_tropes", "top_directives", "top_hits", "taboo_reminders"]:
+            value = writer_innovation_explanation.get(key, [])
+            if isinstance(value, list) and value:
+                lines.append(f"- {key}: {'；'.join(str(item) for item in value if str(item).strip())}")
     delta_visual_summary = payload.get("delta_visual_summary", {})
     if isinstance(delta_visual_summary, dict) and delta_visual_summary:
         lines.append("\n## Delta Visual Summary")
@@ -3188,6 +3262,13 @@ def writer_innovation_experiment(
         baseline_vs_steering_report = _build_baseline_vs_steering_report(baseline_outputs, outputs)
         delta_visual_summary = _build_delta_visual_summary(steering, retrieval_meta)
         reader_sim_acceptance_summary = _build_reader_sim_acceptance_summary(baseline_outputs, outputs)
+        writer_innovation_explanation = _build_writer_innovation_explanation(
+            steering,
+            retrieval_meta,
+            baseline_vs_steering_report,
+            delta_visual_summary,
+            reader_sim_acceptance_summary,
+        )
         stem = f"writer-innovation-experiment-{experiment_name}"
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
@@ -3200,6 +3281,7 @@ def writer_innovation_experiment(
                 "steering_retrieval_meta": retrieval_meta,
                 "delta_visual_summary": delta_visual_summary,
                 "reader_sim_acceptance_summary": reader_sim_acceptance_summary,
+                "writer_innovation_explanation": writer_innovation_explanation,
                 "baseline_items": baseline_outputs,
                 "items": outputs,
                 "experiment_meta": {

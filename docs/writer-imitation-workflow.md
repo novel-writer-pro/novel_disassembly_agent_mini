@@ -163,6 +163,11 @@ flowchart TD
 - output 目录下更标准化的批量实验记录
 - source / target / repaired draft 的并排对照产物
 
+当前 innovation experiment 已开始补这层说明：
+- `writer_innovation_explanation.summary`
+- `writer_innovation_explanation.focus`
+- markdown 中的 `Writer Innovation Explanation` 区块
+
 ---
 
 ## 7. 推荐下一步实战增强
