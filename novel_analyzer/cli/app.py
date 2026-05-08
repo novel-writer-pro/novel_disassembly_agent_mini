@@ -4067,6 +4067,30 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"quorum={len(session_review_quorum)}",
             f"attestation={len(session_control_attestation)}",
         ]
+        session_executive_contract = [
+            "promote 必须满足 review quorum + control verdict + runtime certificate",
+            "blocked ship 必须进入 executive review",
+            "override 必须绑定 accountable authority",
+        ]
+        session_governance_checksum_v2 = [
+            f"checksum={len(session_governance_checksum)}",
+            f"integrity={len(session_integrity_digest)}",
+            f"policy={len(session_policy_checksum)}",
+        ]
+        session_supervision_certificate = [
+            f"supervision_hooks={len(session_supervision_hooks)}",
+            f"review_quorum={len(session_review_quorum)}",
+            f"audit_stream={len(session_audit_stream)}",
+        ]
+        session_override_liability = [
+            "business-owner override 对最终 ship 结果负责",
+            "risk-approver freeze override 对风险控制负责",
+        ]
+        session_operating_authority = [
+            "lane_owner=writer-operator",
+            f"risk_owner={session_recovery_owner}",
+            f"ship_authority={session_ship_decision}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4185,6 +4209,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_runtime_consistency: {'；'.join(session_runtime_consistency)}")
         lines.append(f"- session_override_accountability: {'；'.join(session_override_accountability)}")
         lines.append(f"- session_control_confidence: {'；'.join(session_control_confidence)}")
+        lines.append(f"- session_executive_contract: {'；'.join(session_executive_contract)}")
+        lines.append(f"- session_governance_checksum_v2: {'；'.join(session_governance_checksum_v2)}")
+        lines.append(f"- session_supervision_certificate: {'；'.join(session_supervision_certificate)}")
+        lines.append(f"- session_override_liability: {'；'.join(session_override_liability)}")
+        lines.append(f"- session_operating_authority: {'；'.join(session_operating_authority)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")

@@ -113,6 +113,7 @@
 - session_protocol_stack / session_trust_contract / session_recovery_authority / session_audit_checkpoint_map / session_runtime_certificate 是否足以形成协议栈与运行证书层
 - session_governance_topology / session_protocol_budget / session_certificate_chain / session_recovery_authorizations / session_control_attestation 是否足以形成拓扑/证书链/授权证明层
 - session_assurance_contract / session_policy_checksum / session_runtime_alignment / session_recovery_certainty / session_operator_assurance 是否足以形成 assurance/alignment/checksum 层
+- session_executive_contract / session_governance_checksum_v2 / session_supervision_certificate / session_override_liability / session_operating_authority 是否足以形成 executive governance 层
 - session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence 是否足以形成 meta-governance / control-integrity 层
 
 ---
