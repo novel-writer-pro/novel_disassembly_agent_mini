@@ -20,12 +20,18 @@ rag/
   trope-library/
     xianxia-underdog-ledger.md
     clan-bureaucracy-power-climb.md
+    exile-return-face-reversal.md
+    mercantile-alliance-resource-gamble.md
   worldview-dossiers/
     aura-decline-tax-state.md
     sect-credit-feudal-order.md
+    frontier-garrison-spirit-market.md
+    ancestral-contract-cultivation-law.md
   audience-expectation-notes/
     male-xianxia-commercial-hooks.md
     cautious-growth-reader-signals.md
+    revenge-payoff-commercial-rhythm.md
+    faction-intrigue-reader-signals.md
 ```
 
 ---

@@ -67,3 +67,40 @@ def test_steering_library_service_doc_summaries_include_tags() -> None:
     summary = payload["retrieval_meta"]["selected_doc_summaries"]["trope"][0]
     assert "tags" in summary
     assert "账本修仙" in summary["tags"]
+
+
+def test_steering_library_service_new_samples_are_retrievable() -> None:
+    service = SteeringLibraryService()
+
+    trope_payload: SteeringRetrievalPayload = service.retrieve_pack(
+        query_text="回乡 打脸 旧账翻盘 门第反差",
+        trope_docs=[
+            "xianxia-underdog-ledger",
+            "clan-bureaucracy-power-climb",
+            "exile-return-face-reversal",
+            "mercantile-alliance-resource-gamble",
+        ],
+    )
+    assert trope_payload["retrieval_meta"]["selected_trope_docs"][0] == "exile-return-face-reversal"
+
+    worldview_payload: SteeringRetrievalPayload = service.retrieve_pack(
+        query_text="边军 灵市 军功兑换 黑市交换",
+        worldview_docs=[
+            "aura-decline-tax-state",
+            "sect-credit-feudal-order",
+            "frontier-garrison-spirit-market",
+            "ancestral-contract-cultivation-law",
+        ],
+    )
+    assert worldview_payload["retrieval_meta"]["selected_worldview_docs"][0] == "frontier-garrison-spirit-market"
+
+    audience_payload: SteeringRetrievalPayload = service.retrieve_pack(
+        query_text="多方算计 站队代价 情报反转",
+        audience_docs=[
+            "male-xianxia-commercial-hooks",
+            "cautious-growth-reader-signals",
+            "revenge-payoff-commercial-rhythm",
+            "faction-intrigue-reader-signals",
+        ],
+    )
+    assert audience_payload["retrieval_meta"]["selected_audience_docs"][0] == "faction-intrigue-reader-signals"
