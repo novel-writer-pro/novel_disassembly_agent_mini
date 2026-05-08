@@ -2369,6 +2369,85 @@ def show_whole_book_imitation_readiness(
         echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
+def _coerce_chapter_index(value: object) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _build_baseline_vs_steering_report(
+    baseline_items: list[dict[str, object]],
+    steering_items: list[dict[str, object]],
+) -> dict[str, object]:
+    baseline_by_chapter: dict[int, dict[str, object]] = {}
+    for item in baseline_items:
+        chapter_index = _coerce_chapter_index(item.get("source_chapter_index"))
+        if chapter_index is None:
+            continue
+        baseline_by_chapter[chapter_index] = item
+    steering_by_chapter: dict[int, dict[str, object]] = {}
+    for item in steering_items:
+        chapter_index = _coerce_chapter_index(item.get("source_chapter_index"))
+        if chapter_index is None:
+            continue
+        steering_by_chapter[chapter_index] = item
+    compared_chapters = sorted(set(baseline_by_chapter) & set(steering_by_chapter))
+    comparisons: list[dict[str, object]] = []
+    steering_changed_count = 0
+    verdict_shift_count = 0
+    for chapter_index in compared_chapters:
+        baseline_item = baseline_by_chapter[chapter_index]
+        steering_item = steering_by_chapter[chapter_index]
+        baseline_verdict = str(baseline_item.get("final_verdict", "")).strip()
+        steering_verdict = str(steering_item.get("final_verdict", "")).strip()
+        baseline_stop_reason = str(baseline_item.get("stop_reason", "")).strip()
+        steering_stop_reason = str(steering_item.get("stop_reason", "")).strip()
+        baseline_draft = baseline_item.get("final_draft", {})
+        steering_draft = steering_item.get("final_draft", {})
+        baseline_title = ""
+        steering_title = ""
+        if isinstance(baseline_draft, dict):
+            baseline_title = str(baseline_draft.get("draft_title", "")).strip()
+        if isinstance(steering_draft, dict):
+            steering_title = str(steering_draft.get("draft_title", "")).strip()
+        title_changed = baseline_title != steering_title
+        verdict_changed = baseline_verdict != steering_verdict or baseline_stop_reason != steering_stop_reason
+        if title_changed:
+            steering_changed_count += 1
+        if verdict_changed:
+            verdict_shift_count += 1
+        comparisons.append(
+            {
+                "source_chapter_index": chapter_index,
+                "baseline_final_verdict": baseline_verdict,
+                "steering_final_verdict": steering_verdict,
+                "baseline_stop_reason": baseline_stop_reason,
+                "steering_stop_reason": steering_stop_reason,
+                "baseline_draft_title": baseline_title,
+                "steering_draft_title": steering_title,
+                "title_changed": title_changed,
+                "verdict_changed": verdict_changed,
+            }
+        )
+    summary_lines = [
+        f"对照章节数={len(compared_chapters)}",
+        f"标题变化章节数={steering_changed_count}",
+        f"verdict/stop_reason 变化章节数={verdict_shift_count}",
+    ]
+    return {
+        "chapter_count": len(compared_chapters),
+        "title_changed_count": steering_changed_count,
+        "verdict_shift_count": verdict_shift_count,
+        "summary": "；".join(summary_lines),
+        "items": comparisons,
+    }
+
+
 def _write_writer_imitation_outputs(
     output_dir: Path,
     stem: str,
@@ -2487,6 +2566,26 @@ def _write_writer_imitation_outputs(
     if isinstance(experiment_meta, dict) and experiment_meta:
         lines.append("\n## Experiment Meta")
         for key, value in experiment_meta.items():
+            if key == "baseline_vs_steering_report" and isinstance(value, dict):
+                lines.append(f"- {key}:")
+                for sub_key in ["chapter_count", "title_changed_count", "verdict_shift_count", "summary"]:
+                    if sub_key in value:
+                        lines.append(f"  - {sub_key}: {value[sub_key]}")
+                report_items = value.get("items", [])
+                if isinstance(report_items, list) and report_items:
+                    lines.append("\n### Baseline vs Steering")
+                    for item in report_items:
+                        if not isinstance(item, dict):
+                            continue
+                        lines.append(f"- chapter {item.get('source_chapter_index')}:")
+                        lines.append(
+                            f"  - baseline: {item.get('baseline_final_verdict')} / {item.get('baseline_stop_reason')}"
+                        )
+                        lines.append(
+                            f"  - steering: {item.get('steering_final_verdict')} / {item.get('steering_stop_reason')}"
+                        )
+                        lines.append(f"  - title_changed: {item.get('title_changed')}")
+                continue
             if isinstance(value, dict):
                 lines.append(f"- {key}:")
                 for sub_key, sub_value in value.items():
@@ -2840,8 +2939,30 @@ def writer_innovation_experiment(
     )
     with factory() as session:
         service = _imitation_harness_service(session, settings)
+        baseline_outputs: list[dict[str, object]] = []
         outputs: list[dict[str, object]] = []
         for source_chapter_index, target_goal in parsed:
+            baseline_report = service.run_harness(
+                branch_id,
+                source_chapter_index=source_chapter_index,
+                target_goal=target_goal,
+                max_rounds=max_rounds,
+                use_llm=use_llm,
+                model_name=model_name or None,
+                steering_pack=None,
+            )
+            baseline_payload = baseline_report.model_dump(mode="json")
+            baseline_outputs.append(
+                {
+                    "source_chapter_index": source_chapter_index,
+                    "target_goal": target_goal,
+                    "final_verdict": baseline_payload.get("final_verdict"),
+                    "stop_reason": baseline_payload.get("stop_reason"),
+                    "final_draft": baseline_payload.get("final_draft", {}),
+                    "policy_summary": baseline_payload.get("policy_summary", {}),
+                    "steering_summary": {},
+                }
+            )
             report = service.run_harness(
                 branch_id,
                 source_chapter_index=source_chapter_index,
@@ -2863,6 +2984,7 @@ def writer_innovation_experiment(
                     "steering_summary": steering,
                 }
             )
+        baseline_vs_steering_report = _build_baseline_vs_steering_report(baseline_outputs, outputs)
         stem = f"writer-innovation-experiment-{experiment_name}"
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
@@ -2873,12 +2995,14 @@ def writer_innovation_experiment(
                 "branch_id": branch_id,
                 "steering_pack": steering,
                 "steering_retrieval_meta": retrieval_meta,
+                "baseline_items": baseline_outputs,
                 "items": outputs,
                 "experiment_meta": {
                     "chapter_count": len(outputs),
                     "use_llm": use_llm,
                     "max_rounds": max_rounds,
                     "model_name": model_name or settings.llm_model_name,
+                    "baseline_vs_steering_report": baseline_vs_steering_report,
                     "innovation_delta_summary": {
                         "worldview_note_count": len(steering.get("worldview_capsule", [])),
                         "trope_axis_count": len(steering.get("trope_axes", [])),

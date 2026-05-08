@@ -5,6 +5,8 @@
 
 - imitation: expanded the local trope/worldview/audience sample corpus with return-home payoff, mercantile resource play, frontier spirit-market, ancestral-contract, revenge rhythm, and faction-intrigue variants so the new retrieval rules have a broader P1 seed library.
 
+- imitation: writer innovation experiment now emits a baseline-vs-steering comparison report, so each batch can directly compare baseline and steering verdict/title drift without a second manual pass.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -48,6 +50,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 ## 2026-05-05

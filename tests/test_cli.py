@@ -497,12 +497,16 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     trope_doc_summaries = experiment_payload['steering_retrieval_meta']['selected_doc_summaries']['trope']
     assert trope_doc_summaries[0]['slug'] == 'xianxia-underdog-ledger'
     assert trope_doc_summaries[0]['summary']
+    baseline_vs_steering_report = experiment_payload['experiment_meta']['baseline_vs_steering_report']
+    assert baseline_vs_steering_report['chapter_count'] == 2
+    assert len(experiment_payload['baseline_items']) == 2
     assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
     assert 'risk_delta_summary' in experiment_payload['experiment_meta']
     experiment_text = experiment_md.read_text(encoding='utf-8')
     assert '## Steering Retrieval Meta' in experiment_text
     assert '### Hit Reasons' in experiment_text
     assert '### Hit Doc Summaries' in experiment_text
+    assert '### Baseline vs Steering' in experiment_text
     assert 'xianxia-underdog-ledger: 标签：底层逆袭；套路轴：底层逆袭' in experiment_text
 
 

@@ -31,10 +31,15 @@
 - `writer-innovation-experiment-<name>.json`
 - `writer-innovation-experiment-<name>.md`
 
+现在同一份 experiment 里也会附带：
+- `baseline_items`
+- `experiment_meta.baseline_vs_steering_report`
+
 其中建议重点看：
 - `steering_pack`
 - `steering_retrieval_meta`
 - `steering_retrieval_meta.selected_doc_summaries`
+- `experiment_meta.baseline_vs_steering_report`
 - `experiment_meta.innovation_delta_summary`
 - `experiment_meta.risk_delta_summary`
 
