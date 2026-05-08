@@ -564,6 +564,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'writer-innovation-experiment-batch-a.json' in index_text
     assert 'reader_acceptance: improved=' in index_text
     assert 'baseline_vs_steering:' in index_text
+    assert '## Experiment Session Control Plane' in index_text
+    assert 'promotion_verdict:' in index_text
+    assert 'risk_register:' in index_text
+    assert 'handoff_summary:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text
@@ -572,6 +576,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'pilot_scope:' in index_text
     assert 'confidence_level:' in index_text
     assert 'observation_window:' in index_text
+    assert 'business_risk_label:' in index_text
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:

@@ -3195,6 +3195,10 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 lines.append(f"  - target_goal: {target_goal}")
 
     ledger_entries: list[dict[str, str]] = []
+    session_recommendations: list[str] = []
+    session_risk_labels: list[str] = []
+    session_focuses: list[str] = []
+    session_next_actions: list[str] = []
     if experiment_files:
         lines.append("\n## Innovation Experiments")
     for path in experiment_files:
@@ -3238,12 +3242,14 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         decision_pilot_scope = ""
         decision_confidence = ""
         decision_observation_window = ""
+        decision_business_risk = ""
         if isinstance(decision_note, dict):
             decision_recommendation = str(decision_note.get("recommendation", "")).strip()
             decision_next_action = str(decision_note.get("next_action", "")).strip()
             decision_pilot_scope = str(decision_note.get("pilot_scope", "")).strip()
             decision_confidence = str(decision_note.get("confidence_level", "")).strip()
             decision_observation_window = str(decision_note.get("observation_window", "")).strip()
+            decision_business_risk = str(decision_note.get("business_risk_label", "")).strip()
             if decision_recommendation:
                 lines.append(f"- recommendation: {decision_recommendation}")
             if decision_next_action:
@@ -3282,17 +3288,49 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 "pilot_scope": decision_pilot_scope,
                 "confidence_level": decision_confidence,
                 "observation_window": decision_observation_window,
+                "business_risk_label": decision_business_risk,
                 "baseline": baseline_summary,
             }
         )
+        if decision_recommendation:
+            session_recommendations.append(decision_recommendation)
+        if decision_business_risk:
+            session_risk_labels.append(decision_business_risk)
+        if explanation_focus:
+            session_focuses.append(explanation_focus)
+        if decision_next_action:
+            session_next_actions.append(decision_next_action)
 
     if ledger_entries:
+        lines.append("\n## Experiment Session Control Plane")
+        if all(item == "promote" for item in session_recommendations):
+            promotion_verdict = "promote"
+        elif any(item == "de-risk" for item in session_recommendations):
+            promotion_verdict = "de-risk"
+        elif any(item == "pilot" for item in session_recommendations):
+            promotion_verdict = "pilot"
+        else:
+            promotion_verdict = "hold"
+        if any(item == "high-risk" for item in session_risk_labels):
+            risk_register = "high-risk"
+        elif any(item == "guarded" for item in session_risk_labels):
+            risk_register = "guarded"
+        else:
+            risk_register = "controlled"
+        handoff_summary = "；".join(session_next_actions[:3]) if session_next_actions else "补更多证据后再推进。"
+        lines.append(f"- promotion_verdict: {promotion_verdict}")
+        lines.append(f"- risk_register: {risk_register}")
+        lines.append(f"- handoff_summary: {handoff_summary}")
+        if session_focuses:
+            lines.append(f"- session_focuses: {'；'.join(session_focuses[:3])}")
+
         lines.append("\n## Experiment Ledger")
         for entry in ledger_entries:
             lines.append(f"\n### {entry['experiment_name']}")
             lines.append(f"- artifact: {entry['artifact']}")
             lines.append(f"- innovation_level: {entry['innovation_level']}")
             lines.append(f"- risk_level: {entry['risk_level']}")
+            lines.append(f"- business_risk_label: {entry['business_risk_label']}")
             lines.append(f"- reader_acceptance: {entry['reader_acceptance']}")
             lines.append(f"- focus: {entry['focus']}")
             lines.append(f"- recommendation: {entry['recommendation']}")

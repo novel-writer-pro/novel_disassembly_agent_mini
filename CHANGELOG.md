@@ -25,6 +25,8 @@
 
 - imitation: experiment_decision_note now includes post-launch operations fields (`success_kpi_targets`, `failure_kpi_triggers`, `observation_window`, `owner_roles`, `handoff_packet`) so the artifact can govern post-launch operation instead of stopping at go-live review.
 
+- imitation: writer-imitate-index now emits a session-level control plane (`promotion_verdict`, `risk_register`, `handoff_summary`) so multiple experiment artifacts can be operated as one commercial lane instead of isolated reports.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -68,6 +70,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 
