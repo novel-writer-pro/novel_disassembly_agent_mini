@@ -3423,6 +3423,34 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "记录 promotion_verdict 的人工覆盖原因",
             "记录 lane/queue 人工改写的责任人与时间",
         ]
+        session_state_machine = [
+            "evidence-lane -> pilot-lane",
+            "pilot-lane -> expansion-lane",
+            "pilot-lane -> risk-mitigation-lane",
+            "risk-mitigation-lane -> pilot-lane",
+        ]
+        session_allowed_transitions = [
+            "hold -> pilot",
+            "pilot -> promote",
+            "pilot -> de-risk",
+            "de-risk -> pilot",
+        ]
+        session_trigger_matrix = [
+            "reader_improved_count 上升 -> 扩大 pilot_scope",
+            "risk_register 升级 -> 触发 risk approver escalation",
+            "session_blockers 非空 -> 阻断 ship-ready",
+        ]
+        session_reconciliation_steps = [
+            "比对 baseline_vs_steering 与 reader_acceptance 是否一致",
+            "比对 risk_register 与 ship_blockers 是否一致",
+            "比对 next_action 与 session_priority_queue 是否一致",
+        ]
+        session_operator_commands = [
+            "review ledger",
+            "promote lane",
+            "switch to de-risk",
+            "freeze rollout",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3441,6 +3469,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_exit_criteria: {'；'.join(session_exit_criteria)}")
         lines.append(f"- session_auto_escalations: {'；'.join(session_auto_escalations)}")
         lines.append(f"- session_override_audit: {'；'.join(session_override_audit)}")
+        lines.append(f"- session_state_machine: {'；'.join(session_state_machine)}")
+        lines.append(f"- session_allowed_transitions: {'；'.join(session_allowed_transitions)}")
+        lines.append(f"- session_trigger_matrix: {'；'.join(session_trigger_matrix)}")
+        lines.append(f"- session_reconciliation_steps: {'；'.join(session_reconciliation_steps)}")
+        lines.append(f"- session_operator_commands: {'；'.join(session_operator_commands)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
