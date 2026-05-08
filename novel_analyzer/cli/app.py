@@ -3601,6 +3601,30 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"blocked={len(session_blocked_queue)}",
             f"quorum={len(session_review_quorum)}",
         ]
+        session_control_kernel = [
+            f"governor={session_governor_mode}",
+            f"runtime={session_execution_mode}",
+            f"lane={session_lane_status}",
+        ]
+        session_safety_circuit_breakers = [
+            "high-risk blocker -> stop scale",
+            "reader_acceptance 连续转负 -> force de-risk",
+            "required_review 缺失 -> block ship-ready",
+        ]
+        session_override_channels = [
+            "business-owner override channel",
+            "risk-approver freeze channel",
+            "writer-operator remediation channel",
+        ]
+        session_repair_loops = [
+            "reader regression -> de-risk -> pilot",
+            "risk escalation -> freeze -> remediation -> pilot",
+        ]
+        session_operating_checksum = [
+            f"kernel={len(session_control_kernel)}",
+            f"circuit_breakers={len(session_safety_circuit_breakers)}",
+            f"override_channels={len(session_override_channels)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3654,6 +3678,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_remediation_contract: {'；'.join(session_remediation_contract)}")
         lines.append(f"- session_consensus_rules: {'；'.join(session_consensus_rules)}")
         lines.append(f"- session_integrity_digest: {'；'.join(session_integrity_digest)}")
+        lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
+        lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
+        lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
+        lines.append(f"- session_repair_loops: {'；'.join(session_repair_loops)}")
+        lines.append(f"- session_operating_checksum: {'；'.join(session_operating_checksum)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
