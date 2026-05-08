@@ -189,6 +189,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_execution_graph / session_signal_registry / session_action_contract / session_backpressure_rules / session_runtime_proof
 - `writer-imitate-index.md` 中的 session_supervisory_contract / session_recovery_matrix / session_signal_budget / session_checkpoint_policy / session_operating_ledger
 - `writer-imitate-index.md` 中的 session_governance_fabric / session_checkpoint_contract / session_supervision_priorities / session_ledger_consistency_rules / session_runtime_attestation
+- `writer-imitate-index.md` 中的 session_runtime_mesh / session_policy_router / session_checkpoint_ring / session_audit_stream / session_operating_signature
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环

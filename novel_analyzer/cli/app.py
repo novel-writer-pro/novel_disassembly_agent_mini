@@ -3892,6 +3892,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"checkpoints={len(session_state_checkpoint)}",
             f"contracts={len(session_contract_digest)}",
         ]
+        session_runtime_mesh = [
+            f"governor={session_governor_mode}",
+            f"bus={len(session_control_bus)}-signals",
+            f"fabric={len(session_governance_fabric)}-signals",
+        ]
+        session_policy_router = [
+            "risk_register -> compliance_pack",
+            "promotion_verdict -> rollout/ship lane",
+            "blocked_queue -> remediation/escalation lane",
+        ]
+        session_checkpoint_ring = [
+            "state_checkpoint",
+            "runtime_manifest",
+            "contract_digest",
+            "runtime_attestation",
+        ]
+        session_audit_stream = [
+            "override_audit",
+            "audit_digest",
+            "governance_checksum",
+        ]
+        session_operating_signature = [
+            f"mesh={len(session_runtime_mesh)}",
+            f"router={len(session_policy_router)}",
+            f"ring={len(session_checkpoint_ring)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3975,6 +4001,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_supervision_priorities: {'；'.join(session_supervision_priorities)}")
         lines.append(f"- session_ledger_consistency_rules: {'；'.join(session_ledger_consistency_rules)}")
         lines.append(f"- session_runtime_attestation: {'；'.join(session_runtime_attestation)}")
+        lines.append(f"- session_runtime_mesh: {'；'.join(session_runtime_mesh)}")
+        lines.append(f"- session_policy_router: {'；'.join(session_policy_router)}")
+        lines.append(f"- session_checkpoint_ring: {'；'.join(session_checkpoint_ring)}")
+        lines.append(f"- session_audit_stream: {'；'.join(session_audit_stream)}")
+        lines.append(f"- session_operating_signature: {'；'.join(session_operating_signature)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
