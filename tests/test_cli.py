@@ -595,6 +595,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_trigger_matrix:' in index_text
     assert 'session_reconciliation_steps:' in index_text
     assert 'session_operator_commands:' in index_text
+    assert 'session_policy_pack:' in index_text
+    assert 'session_slo_contract:' in index_text
+    assert 'session_failure_domains:' in index_text
+    assert 'session_intervention_matrix:' in index_text
+    assert 'session_audit_digest:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text

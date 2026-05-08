@@ -39,6 +39,8 @@
 
 - imitation: writer-imitate-index now includes session state-machine and reconciliation fields (`session_state_machine`, `session_allowed_transitions`, `session_trigger_matrix`, `session_reconciliation_steps`, `session_operator_commands`) so the control plane gets closer to a commercial agent execution surface.
 
+- imitation: writer-imitate-index now includes enterprise control fields (`session_policy_pack`, `session_slo_contract`, `session_failure_domains`, `session_intervention_matrix`, `session_audit_digest`) so the control plane moves closer to a commercial agent operations layer.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -82,6 +84,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 

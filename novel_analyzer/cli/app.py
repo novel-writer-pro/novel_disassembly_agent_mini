@@ -3451,6 +3451,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "switch to de-risk",
             "freeze rollout",
         ]
+        session_policy_pack = [
+            "优先保证 continuity 与 risk_register 对齐",
+            "promotion_verdict 只能在 evidence 完整时进入 promote",
+            "高风险 lane 必须经过 risk approver 才能放量",
+        ]
+        session_slo_contract = [
+            "关键 artifact 生成成功率 >= 95%",
+            "session_priority_queue 的首项必须可执行",
+            "需要 review 的 lane 必须在当前窗口内指派 owner",
+        ]
+        session_failure_domains = [
+            "reader-acceptance-domain",
+            "continuity-risk-domain",
+            "operator-handoff-domain",
+        ]
+        session_intervention_matrix = [
+            "reader_acceptance 下降 -> 切到 de-risk lane",
+            "risk_register 升级 -> 触发 risk approver + freeze rollout",
+            "handoff_summary 不清晰 -> 强制补 operator note",
+        ]
+        session_audit_digest = [
+            f"promotion={promotion_verdict}",
+            f"risk={risk_register}",
+            f"ship={session_ship_decision}",
+            f"lane={session_lane_status}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3474,6 +3500,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_trigger_matrix: {'；'.join(session_trigger_matrix)}")
         lines.append(f"- session_reconciliation_steps: {'；'.join(session_reconciliation_steps)}")
         lines.append(f"- session_operator_commands: {'；'.join(session_operator_commands)}")
+        lines.append(f"- session_policy_pack: {'；'.join(session_policy_pack)}")
+        lines.append(f"- session_slo_contract: {'；'.join(session_slo_contract)}")
+        lines.append(f"- session_failure_domains: {'；'.join(session_failure_domains)}")
+        lines.append(f"- session_intervention_matrix: {'；'.join(session_intervention_matrix)}")
+        lines.append(f"- session_audit_digest: {'；'.join(session_audit_digest)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
