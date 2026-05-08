@@ -3527,6 +3527,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"risk_labels={len(session_risk_labels)}",
             f"queue_size={len(session_priority_queue)}",
         ]
+        session_policy_versions = [
+            "control-plane.v1",
+            "decision-contract.v1",
+            "session-governor.v1",
+        ]
+        session_safety_budget = [
+            "允许 0 个未解释的 high-risk blocker",
+            "允许 1 次以内人工 override 未闭环",
+        ]
+        session_latency_budget = [
+            "当前 action window 内优先处理前 2 项 ready queue",
+            "需要 review 的 lane 应在本轮 session 内完成指派",
+        ]
+        session_review_quorum = [
+            "writer-operator",
+            "continuity-reviewer",
+            "reader-feedback-owner",
+        ]
+        if risk_register in {"guarded", "high-risk"}:
+            session_review_quorum.append("risk-approver")
+        session_contract_digest = [
+            f"governor={session_governor_mode}",
+            f"readiness={session_release_readiness}",
+            f"quorum={len(session_review_quorum)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3565,6 +3590,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_decision_priorities: {'；'.join(session_decision_priorities)}")
         lines.append(f"- session_supervision_hooks: {'；'.join(session_supervision_hooks)}")
         lines.append(f"- session_telemetry_digest: {'；'.join(session_telemetry_digest)}")
+        lines.append(f"- session_policy_versions: {'；'.join(session_policy_versions)}")
+        lines.append(f"- session_safety_budget: {'；'.join(session_safety_budget)}")
+        lines.append(f"- session_latency_budget: {'；'.join(session_latency_budget)}")
+        lines.append(f"- session_review_quorum: {'；'.join(session_review_quorum)}")
+        lines.append(f"- session_contract_digest: {'；'.join(session_contract_digest)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:

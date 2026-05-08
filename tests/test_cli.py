@@ -610,6 +610,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_decision_priorities:' in index_text
     assert 'session_supervision_hooks:' in index_text
     assert 'session_telemetry_digest:' in index_text
+    assert 'session_policy_versions:' in index_text
+    assert 'session_safety_budget:' in index_text
+    assert 'session_latency_budget:' in index_text
+    assert 'session_review_quorum:' in index_text
+    assert 'session_contract_digest:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text
