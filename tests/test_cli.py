@@ -667,6 +667,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_runtime_sentry:' in index_text
     assert 'session_checkpoint_audit_chain:' in index_text
     assert 'session_operating_posture:' in index_text
+    assert 'session_attestation_chain:' in index_text
+    assert 'session_trust_zones:' in index_text
+    assert 'session_policy_attestors:' in index_text
+    assert 'session_recovery_posture:' in index_text
+    assert 'session_control_verdict:' in index_text
     assert 'session_control_kernel:' in index_text
     assert 'session_safety_circuit_breakers:' in index_text
     assert 'session_override_channels:' in index_text

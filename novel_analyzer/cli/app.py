@@ -3943,6 +3943,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"execution={session_execution_mode}",
             f"readiness={session_release_readiness}",
         ]
+        session_attestation_chain = [
+            "state_checkpoint -> runtime_attestation",
+            "runtime_attestation -> checkpoint_audit_chain",
+            "checkpoint_audit_chain -> control_verdict",
+        ]
+        session_trust_zones = [
+            "operator-zone",
+            "review-zone",
+            "risk-zone",
+            "business-zone",
+        ]
+        session_policy_attestors = [
+            "writer-operator",
+            "continuity-reviewer",
+            "risk-approver",
+        ]
+        session_recovery_posture = [
+            "风险升高时进入 guarded recovery",
+            "reader regression 时进入 de-risk recovery",
+            "blocked ship 时进入 escalation recovery",
+        ]
+        session_control_verdict = [
+            f"ship={session_ship_decision}",
+            f"risk={risk_register}",
+            f"governor={session_governor_mode}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4036,6 +4062,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_runtime_sentry: {'；'.join(session_runtime_sentry)}")
         lines.append(f"- session_checkpoint_audit_chain: {'；'.join(session_checkpoint_audit_chain)}")
         lines.append(f"- session_operating_posture: {'；'.join(session_operating_posture)}")
+        lines.append(f"- session_attestation_chain: {'；'.join(session_attestation_chain)}")
+        lines.append(f"- session_trust_zones: {'；'.join(session_trust_zones)}")
+        lines.append(f"- session_policy_attestors: {'；'.join(session_policy_attestors)}")
+        lines.append(f"- session_recovery_posture: {'；'.join(session_recovery_posture)}")
+        lines.append(f"- session_control_verdict: {'；'.join(session_control_verdict)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
