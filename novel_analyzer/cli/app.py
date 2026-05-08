@@ -4019,6 +4019,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"trust_zones={len(session_trust_zones)}",
             f"certificate_chain={len(session_certificate_chain)}",
         ]
+        session_assurance_contract = [
+            "control verdict 必须与 governance checksum 对齐",
+            "runtime certificate 必须可追溯到 attestation chain",
+            "recovery posture 必须与 recovery authority 一致",
+        ]
+        session_policy_checksum = [
+            f"policy_mesh={len(session_policy_mesh)}",
+            f"policy_versions={len(session_policy_versions)}",
+            f"compliance_pack={len(session_compliance_pack)}",
+        ]
+        session_runtime_alignment = [
+            f"lane={session_lane_status} 与 mode={session_execution_mode} 对齐",
+            f"governor={session_governor_mode} 与 readiness={session_release_readiness} 对齐",
+            f"ship={session_ship_decision} 与 risk={risk_register} 对齐",
+        ]
+        session_recovery_certainty = [
+            f"recovery_owner={session_recovery_owner}",
+            f"recovery_routes={len(session_recovery_plan)}",
+            f"remediation_contracts={len(session_remediation_contract)}",
+        ]
+        session_operator_assurance = [
+            "operator 可以从 index 读取 promotion/risk/queue/checkpoint 全量信号",
+            "operator 可以从 session-state.json 读取机读状态快照",
+            "operator 可依据 control verdict 与 runtime certificate 执行推广或冻结",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4127,6 +4152,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_certificate_chain: {'；'.join(session_certificate_chain)}")
         lines.append(f"- session_recovery_authorizations: {'；'.join(session_recovery_authorizations)}")
         lines.append(f"- session_control_attestation: {'；'.join(session_control_attestation)}")
+        lines.append(f"- session_assurance_contract: {'；'.join(session_assurance_contract)}")
+        lines.append(f"- session_policy_checksum: {'；'.join(session_policy_checksum)}")
+        lines.append(f"- session_runtime_alignment: {'；'.join(session_runtime_alignment)}")
+        lines.append(f"- session_recovery_certainty: {'；'.join(session_recovery_certainty)}")
+        lines.append(f"- session_operator_assurance: {'；'.join(session_operator_assurance)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
