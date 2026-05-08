@@ -2448,6 +2448,123 @@ def _build_baseline_vs_steering_report(
     }
 
 
+def _extract_reader_sim_snapshot(payload: dict[str, object]) -> dict[str, object]:
+    rounds = payload.get("rounds", [])
+    if not isinstance(rounds, list) or not rounds:
+        return {
+            "engagement_score": 0,
+            "concerns": [],
+            "recommended_actions": [],
+            "reader_profile": "",
+        }
+    last_round = rounds[-1]
+    if not isinstance(last_round, dict):
+        return {
+            "engagement_score": 0,
+            "concerns": [],
+            "recommended_actions": [],
+            "reader_profile": "",
+        }
+    skill_outputs = last_round.get("skill_outputs", {})
+    if not isinstance(skill_outputs, dict):
+        return {
+            "engagement_score": 0,
+            "concerns": [],
+            "recommended_actions": [],
+            "reader_profile": "",
+        }
+    reader_output = skill_outputs.get("reader-sim-review", {})
+    if not isinstance(reader_output, dict):
+        return {
+            "engagement_score": 0,
+            "concerns": [],
+            "recommended_actions": [],
+            "reader_profile": "",
+        }
+    concerns = [str(item).strip() for item in reader_output.get("concerns", []) if str(item).strip()]
+    recommended_actions = [
+        str(item).strip()
+        for item in reader_output.get("recommended_actions", [])
+        if str(item).strip()
+    ]
+    score_raw = reader_output.get("engagement_score", 0)
+    engagement_score = int(score_raw) if isinstance(score_raw, int) else 0
+    return {
+        "engagement_score": engagement_score,
+        "concerns": concerns,
+        "recommended_actions": recommended_actions,
+        "reader_profile": str(reader_output.get("reader_profile", "")).strip(),
+    }
+
+
+def _build_reader_sim_acceptance_summary(
+    baseline_items: list[dict[str, object]],
+    steering_items: list[dict[str, object]],
+) -> dict[str, object]:
+    baseline_by_chapter: dict[int, dict[str, object]] = {}
+    for item in baseline_items:
+        chapter_index = _coerce_chapter_index(item.get("source_chapter_index"))
+        if chapter_index is None:
+            continue
+        baseline_by_chapter[chapter_index] = item
+    steering_by_chapter: dict[int, dict[str, object]] = {}
+    for item in steering_items:
+        chapter_index = _coerce_chapter_index(item.get("source_chapter_index"))
+        if chapter_index is None:
+            continue
+        steering_by_chapter[chapter_index] = item
+    compared_chapters = sorted(set(baseline_by_chapter) & set(steering_by_chapter))
+    items: list[dict[str, object]] = []
+    improved_count = 0
+    for chapter_index in compared_chapters:
+        baseline_snapshot = _extract_reader_sim_snapshot(baseline_by_chapter[chapter_index])
+        steering_snapshot = _extract_reader_sim_snapshot(steering_by_chapter[chapter_index])
+        baseline_score_raw = baseline_snapshot.get("engagement_score", 0)
+        steering_score_raw = steering_snapshot.get("engagement_score", 0)
+        baseline_score = baseline_score_raw if isinstance(baseline_score_raw, int) else 0
+        steering_score = steering_score_raw if isinstance(steering_score_raw, int) else 0
+        score_delta = steering_score - baseline_score
+        baseline_concerns_raw = baseline_snapshot.get("concerns", [])
+        steering_concerns_raw = steering_snapshot.get("concerns", [])
+        baseline_concerns = baseline_concerns_raw if isinstance(baseline_concerns_raw, list) else []
+        steering_concerns = steering_concerns_raw if isinstance(steering_concerns_raw, list) else []
+        concern_delta = len(steering_concerns) - len(baseline_concerns)
+        improved = score_delta > 0 or concern_delta < 0
+        if improved:
+            improved_count += 1
+        items.append(
+            {
+                "source_chapter_index": chapter_index,
+                "baseline_engagement_score": baseline_score,
+                "steering_engagement_score": steering_score,
+                "score_delta": score_delta,
+                "baseline_concern_count": len(baseline_concerns),
+                "steering_concern_count": len(steering_concerns),
+                "concern_delta": concern_delta,
+                "steering_top_concerns": steering_concerns[:3],
+                "improved": improved,
+            }
+        )
+    score_delta_total = 0
+    for item in items:
+        score_delta_value = item.get("score_delta")
+        if isinstance(score_delta_value, int):
+            score_delta_total += score_delta_value
+    average_delta = round(score_delta_total / len(items), 2) if items else 0.0
+    summary = (
+        f"reader-sim 改善章节数={improved_count}/{len(items)}；平均 engagement delta={average_delta}"
+        if items
+        else "当前缺少 reader-sim round evidence。"
+    )
+    return {
+        "chapter_count": len(items),
+        "improved_count": improved_count,
+        "average_score_delta": average_delta,
+        "summary": summary,
+        "items": items,
+    }
+
+
 def _build_delta_visual_summary(
     steering_pack: SteeringPack,
     retrieval_meta: SteeringRetrievalMeta,
@@ -2568,6 +2685,26 @@ def _write_writer_imitation_outputs(
         operator_hint = str(delta_visual_summary.get("operator_hint", "")).strip()
         if operator_hint:
             lines.append(f"\n### Operator Hint\n- {operator_hint}")
+    reader_sim_acceptance_summary = payload.get("reader_sim_acceptance_summary", {})
+    if isinstance(reader_sim_acceptance_summary, dict) and reader_sim_acceptance_summary:
+        lines.append("\n## Reader Sim Acceptance Summary")
+        for key in ["chapter_count", "improved_count", "average_score_delta", "summary"]:
+            if key in reader_sim_acceptance_summary:
+                lines.append(f"- {key}: {reader_sim_acceptance_summary[key]}")
+        acceptance_items = reader_sim_acceptance_summary.get("items", [])
+        if isinstance(acceptance_items, list) and acceptance_items:
+            lines.append("\n### Reader Sim Acceptance")
+            for item in acceptance_items:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(f"- chapter {item.get('source_chapter_index')}:")
+                lines.append(
+                    f"  - engagement: {item.get('baseline_engagement_score')} -> {item.get('steering_engagement_score')}"
+                )
+                lines.append(
+                    f"  - concerns: {item.get('baseline_concern_count')} -> {item.get('steering_concern_count')}"
+                )
+                lines.append(f"  - improved: {item.get('improved')}")
     final_draft = payload.get("final_draft", {})
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
@@ -3022,6 +3159,7 @@ def writer_innovation_experiment(
                     "stop_reason": baseline_payload.get("stop_reason"),
                     "final_draft": baseline_payload.get("final_draft", {}),
                     "policy_summary": baseline_payload.get("policy_summary", {}),
+                    "rounds": baseline_payload.get("rounds", []),
                     "steering_summary": {},
                 }
             )
@@ -3043,11 +3181,13 @@ def writer_innovation_experiment(
                     "stop_reason": payload.get("stop_reason"),
                     "final_draft": payload.get("final_draft", {}),
                     "policy_summary": payload.get("policy_summary", {}),
+                    "rounds": payload.get("rounds", []),
                     "steering_summary": steering,
                 }
             )
         baseline_vs_steering_report = _build_baseline_vs_steering_report(baseline_outputs, outputs)
         delta_visual_summary = _build_delta_visual_summary(steering, retrieval_meta)
+        reader_sim_acceptance_summary = _build_reader_sim_acceptance_summary(baseline_outputs, outputs)
         stem = f"writer-innovation-experiment-{experiment_name}"
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
@@ -3059,6 +3199,7 @@ def writer_innovation_experiment(
                 "steering_pack": steering,
                 "steering_retrieval_meta": retrieval_meta,
                 "delta_visual_summary": delta_visual_summary,
+                "reader_sim_acceptance_summary": reader_sim_acceptance_summary,
                 "baseline_items": baseline_outputs,
                 "items": outputs,
                 "experiment_meta": {

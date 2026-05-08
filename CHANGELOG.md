@@ -9,6 +9,8 @@
 
 - imitation: experiment outputs now include `delta_visual_summary`, making innovation/risk pressure easier to scan in markdown and JSON without a separate dashboard.
 
+- imitation: experiment outputs now include `reader_sim_acceptance_summary`, so innovation batches can compare baseline/steering engagement and concern drift with existing harness evidence.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -55,7 +57,7 @@
 
 
 
-- imitation: experiment outputs now include `delta_visual_summary`, making innovation/risk pressure easier to scan in markdown and JSON without a separate dashboard.
+
 
 ## 2026-05-05
 
