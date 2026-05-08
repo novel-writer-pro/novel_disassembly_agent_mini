@@ -568,6 +568,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'promotion_verdict:' in index_text
     assert 'risk_register:' in index_text
     assert 'handoff_summary:' in index_text
+    assert 'session_ship_decision:' in index_text
+    assert 'session_required_review:' in index_text
+    assert 'session_owner_handoff:' in index_text
+    assert 'session_priority_queue:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text

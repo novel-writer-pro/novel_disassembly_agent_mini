@@ -3318,9 +3318,35 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         else:
             risk_register = "controlled"
         handoff_summary = "；".join(session_next_actions[:3]) if session_next_actions else "补更多证据后再推进。"
+        session_ship_decision = (
+            "ship-ready"
+            if promotion_verdict == "promote" and risk_register == "controlled"
+            else "needs-review"
+        )
+        session_blockers: list[str] = []
+        if risk_register == "high-risk":
+            session_blockers.append("high-risk experiments still present")
+        if promotion_verdict == "hold":
+            session_blockers.append("insufficient positive evidence across session")
+        session_required_review = ["session operator review"]
+        if risk_register in {"guarded", "high-risk"}:
+            session_required_review.append("risk approver review")
+        session_owner_handoff = [
+            "writer-operator -> continuity-reviewer",
+            "continuity-reviewer -> reader-feedback-owner",
+        ]
+        if risk_register in {"guarded", "high-risk"}:
+            session_owner_handoff.append("reader-feedback-owner -> risk-approver")
+        session_priority_queue = session_next_actions[:3] if session_next_actions else ["补更多证据后再推进。"]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
+        lines.append(f"- session_ship_decision: {session_ship_decision}")
+        if session_blockers:
+            lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
+        lines.append(f"- session_required_review: {'；'.join(session_required_review)}")
+        lines.append(f"- session_owner_handoff: {'；'.join(session_owner_handoff)}")
+        lines.append(f"- session_priority_queue: {'；'.join(session_priority_queue)}")
         if session_focuses:
             lines.append(f"- session_focuses: {'；'.join(session_focuses[:3])}")
 
