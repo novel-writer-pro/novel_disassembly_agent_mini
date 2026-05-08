@@ -580,6 +580,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_execution_mode:' in index_text
     assert 'session_action_window:' in index_text
     assert 'session_recovery_owner:' in index_text
+    assert 'session_runtime_contract:' in index_text
+    assert 'session_state_snapshot:' in index_text
+    assert 'session_transition_rules:' in index_text
+    assert 'session_auto_actions:' in index_text
+    assert 'session_manual_overrides:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text

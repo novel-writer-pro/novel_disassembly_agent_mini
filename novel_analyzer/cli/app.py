@@ -3382,6 +3382,27 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"当前 ship decision: {session_ship_decision}",
             f"优先动作: {session_priority_queue[0]}",
         ]
+        session_runtime_contract = (
+            f"mode={session_execution_mode} | readiness={session_release_readiness} | lane={session_lane_status}"
+        )
+        session_state_snapshot = [
+            f"promotion_verdict={promotion_verdict}",
+            f"risk_register={risk_register}",
+            f"ship_decision={session_ship_decision}",
+        ]
+        session_transition_rules = [
+            "promote + controlled -> scale",
+            "de-risk -> stabilize",
+            "hold/blocked -> evidence-lane",
+        ]
+        session_auto_actions = [
+            f"根据 {promotion_verdict} 自动选择 {session_lane_status}",
+            f"根据 risk_register={risk_register} 自动分配 recovery owner={session_recovery_owner}",
+        ]
+        session_manual_overrides = [
+            "允许 business-owner 人工改写 promotion_verdict",
+            "允许 risk-approver 人工冻结扩区或切回 de-risk lane",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3390,6 +3411,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_release_readiness: {session_release_readiness}")
         lines.append(f"- session_execution_mode: {session_execution_mode}")
         lines.append(f"- session_action_window: {session_action_window}")
+        lines.append(f"- session_runtime_contract: {session_runtime_contract}")
+        lines.append(f"- session_state_snapshot: {'；'.join(session_state_snapshot)}")
+        lines.append(f"- session_transition_rules: {'；'.join(session_transition_rules)}")
+        lines.append(f"- session_auto_actions: {'；'.join(session_auto_actions)}")
+        lines.append(f"- session_manual_overrides: {'；'.join(session_manual_overrides)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:

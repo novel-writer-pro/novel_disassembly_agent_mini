@@ -173,6 +173,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_ship_decision / session_blockers / session_required_review / session_owner_handoff / session_priority_queue
 - `writer-imitate-index.md` 中的 session_lane_status / session_escalation_path / session_release_readiness / session_recovery_plan / session_command_brief
 - `writer-imitate-index.md` 中的 session_execution_mode / session_action_window / session_ready_queue / session_blocked_queue / session_recovery_owner
+- `writer-imitate-index.md` 中的 session_runtime_contract / session_state_snapshot / session_transition_rules / session_auto_actions / session_manual_overrides
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
 - `ship_blockers / required_human_review / confidence_level / business_risk_label / go_live_checklist` 用于 go-live gate

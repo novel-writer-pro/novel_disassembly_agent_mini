@@ -33,6 +33,8 @@
 
 - imitation: writer-imitate-index now includes runtime-facing session fields (`session_execution_mode`, `session_action_window`, `session_ready_queue`, `session_blocked_queue`, `session_recovery_owner`) so the control surface gets closer to a commercial agent orchestration layer.
 
+- imitation: writer-imitate-index now includes runtime-contract session fields (`session_runtime_contract`, `session_state_snapshot`, `session_transition_rules`, `session_auto_actions`, `session_manual_overrides`) so the control layer behaves more like an agent runtime contract than a static operator summary.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -76,6 +78,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 
