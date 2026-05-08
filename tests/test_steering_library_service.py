@@ -1,4 +1,7 @@
-from novel_analyzer.services.steering_library_service import SteeringLibraryService
+from novel_analyzer.services.steering_library_service import (
+    SteeringLibraryService,
+    SteeringRetrievalPayload,
+)
 
 
 def test_steering_library_service_assembles_pack_from_local_docs() -> None:
@@ -16,7 +19,7 @@ def test_steering_library_service_assembles_pack_from_local_docs() -> None:
 
 def test_steering_library_service_retrieves_docs_with_hit_reasons() -> None:
     service = SteeringLibraryService()
-    payload = service.retrieve_pack(
+    payload: SteeringRetrievalPayload = service.retrieve_pack(
         query_text="底层逆袭 账本修仙 灵气衰败 章尾更高层级机会",
         trope_docs=["xianxia-underdog-ledger"],
         worldview_docs=["aura-decline-tax-state"],
@@ -25,11 +28,15 @@ def test_steering_library_service_retrieves_docs_with_hit_reasons() -> None:
     assert payload["steering_pack"]["trope_axes"]
     assert payload["retrieval_meta"]["selected_trope_docs"] == ["xianxia-underdog-ledger"]
     assert payload["retrieval_meta"]["hit_reasons"]["trope"]["xianxia-underdog-ledger"]
+    summaries = payload["retrieval_meta"]["selected_doc_summaries"]["trope"]
+    assert summaries[0]["slug"] == "xianxia-underdog-ledger"
+    assert summaries[0]["summary"]
+    assert summaries[0]["trope_axes"]
 
 
 def test_steering_library_service_can_rank_multiple_candidates() -> None:
     service = SteeringLibraryService()
-    payload = service.retrieve_pack(
+    payload: SteeringRetrievalPayload = service.retrieve_pack(
         query_text="sect credit feudal order 克制成长型读者预期 阶层跃迁 家族 官府 宗门 认证 税制化王朝 克制成长",
         trope_docs=["xianxia-underdog-ledger", "clan-bureaucracy-power-climb"],
         worldview_docs=["aura-decline-tax-state", "sect-credit-feudal-order"],

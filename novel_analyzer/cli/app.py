@@ -35,7 +35,11 @@ from novel_analyzer.runtime.cluster_review_state import (
     read_cluster_review_state,
     write_cluster_review_state,
 )
-from novel_analyzer.services.steering_library_service import SteeringLibraryService
+from novel_analyzer.services.steering_library_service import (
+    SteeringLibraryService,
+    SteeringPack,
+    SteeringRetrievalMeta,
+)
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -109,11 +113,19 @@ def _steering_pack(
     trope_doc: list[str] | None = None,
     worldview_doc: list[str] | None = None,
     audience_doc: list[str] | None = None,
-) -> tuple[dict[str, list[str]], dict[str, object]]:
+) -> tuple[SteeringPack, SteeringRetrievalMeta]:
+    retrieval_query = " ".join(
+        worldview_note
+        + trope_axis
+        + innovation_directive
+        + taboo_innovation
+        + knowledge_ref
+        + (trope_doc or [])
+        + (worldview_doc or [])
+        + (audience_doc or [])
+    )
     retrieval = SteeringLibraryService().retrieve_pack(
-        query_text=" ".join(
-            worldview_note + trope_axis + innovation_directive + taboo_innovation + knowledge_ref + (trope_doc or []) + (worldview_doc or []) + (audience_doc or [])
-        ),
+        query_text=retrieval_query,
         trope_docs=trope_doc or [],
         worldview_docs=worldview_doc or [],
         audience_docs=audience_doc or [],
@@ -1794,7 +1806,7 @@ def set_cluster_status(
     try:
         with factory() as session:
             from novel_analyzer.services.cluster_review_service import ClusterReviewService
-            state = ClusterReviewService(session).write(
+            state: Any = ClusterReviewService(session).write(
                 branch_id=branch_id,
                 cluster_key=cluster_key,
                 cluster_status=cluster_status,
@@ -2394,6 +2406,27 @@ def _write_writer_imitation_outputs(
                 for slug, reasons in mapping.items():
                     joined = "；".join(str(item) for item in reasons if str(item).strip())
                     lines.append(f"  - {slug}: {joined}")
+        selected_doc_summaries = steering_retrieval_meta.get("selected_doc_summaries", {})
+        non_empty_summary_buckets = {
+            bucket: docs
+            for bucket, docs in selected_doc_summaries.items()
+            if isinstance(docs, list) and docs
+        } if isinstance(selected_doc_summaries, dict) else {}
+        if non_empty_summary_buckets:
+            lines.append("\n### Hit Doc Summaries")
+            for bucket, docs in non_empty_summary_buckets.items():
+                lines.append(f"- {bucket}:")
+                for item in docs:
+                    if not isinstance(item, dict):
+                        continue
+                    slug = str(item.get("slug", "")).strip()
+                    summary = str(item.get("summary", "")).strip()
+                    labels = item.get("labels", [])
+                    label_text = " / ".join(
+                        str(label).strip() for label in labels if str(label).strip()
+                    ) if isinstance(labels, list) else ""
+                    detail = summary or label_text or "(no summary)"
+                    lines.append(f"  - {slug}: {detail}")
     final_draft = payload.get("final_draft", {})
     if isinstance(final_draft, dict):
         draft_title = str(final_draft.get("draft_title", "")).strip()
@@ -2434,8 +2467,8 @@ def _write_writer_imitation_outputs(
                 continue
             chapter_index = item.get("source_chapter_index")
             target_goal = item.get("target_goal")
-            final_verdict = item.get("final_verdict")
-            stop_reason = item.get("stop_reason")
+            final_verdict = str(item.get("final_verdict", "")).strip()
+            stop_reason = str(item.get("stop_reason", "")).strip()
             lines.append(f"\n### Chapter {chapter_index}")
             lines.append(f"- target_goal: {target_goal}")
             lines.append(f"- final_verdict: {final_verdict}")
@@ -2564,8 +2597,8 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 continue
             chapter_index = item.get("source_chapter_index")
             target_goal = item.get("target_goal")
-            final_verdict = item.get("final_verdict")
-            stop_reason = item.get("stop_reason")
+            final_verdict = str(item.get("final_verdict", "")).strip()
+            stop_reason = str(item.get("stop_reason", "")).strip()
             final_draft = item.get("final_draft", {})
             draft_title = ""
             draft_len = 0

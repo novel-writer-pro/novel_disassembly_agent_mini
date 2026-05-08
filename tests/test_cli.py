@@ -5,6 +5,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
 from novel_analyzer.cli.app import app
+from typing import Any
 from tests.cli_test_support import patch_cli_sqlite_runtime
 
 runner = CliRunner()
@@ -302,7 +303,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     run_lines = dict(line.split('=', 1) for line in start.stdout.strip().splitlines())
 
     class _FakeReport:
-        def model_dump(self, mode="json"):
+        def model_dump(self, mode: str = "json") -> dict[str, Any]:
             _ = mode
             return {
                 "final_verdict": "needs_revision",
@@ -331,10 +332,19 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
                 },
             }
 
-    seen: dict[str, object] = {}
+    seen: dict[str, Any] = {}
 
     class _FakeHarnessService:
-        def run_harness(self, branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name, steering_pack=None):  # noqa: ANN001
+        def run_harness(
+            self,
+            branch_id: str,
+            source_chapter_index: int,
+            target_goal: str,
+            max_rounds: int,
+            use_llm: bool,
+            model_name: str | None,
+            steering_pack: dict[str, list[str]] | None = None,
+        ) -> _FakeReport:
             seen["steering_pack"] = steering_pack
             _ = branch_id, source_chapter_index, target_goal, max_rounds, use_llm, model_name
             return _FakeReport()
@@ -370,6 +380,35 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
                             'selected_worldview_docs': kwargs.get('worldview_docs', [])[:2],
                             'selected_audience_docs': kwargs.get('audience_docs', [])[:2],
                             'hit_reasons': {'trope': {}, 'worldview': {}, 'audience': {}},
+                            'selected_doc_summaries': {
+                                'trope': [
+                                    {
+                                        'slug': slug,
+                                        'labels': ['底层逆袭'],
+                                        'summary': '标签：底层逆袭；套路轴：底层逆袭',
+                                        'trope_axes': ['底层逆袭'],
+                                    }
+                                    for slug in kwargs.get('trope_docs', [])[:2]
+                                ],
+                                'worldview': [
+                                    {
+                                        'slug': slug,
+                                        'labels': ['税制化世界观'],
+                                        'summary': '标签：税制化世界观；世界观：灵气不是无限资源，而是与身份和税制绑定',
+                                        'worldview_capsule': ['灵气不是无限资源，而是与身份和税制绑定'],
+                                    }
+                                    for slug in kwargs.get('worldview_docs', [])[:2]
+                                ],
+                                'audience': [
+                                    {
+                                        'slug': slug,
+                                        'labels': ['商业钩子'],
+                                        'summary': '标签：商业钩子；读者/应用提示：章尾最好有更高层级机会或压力',
+                                        'external_knowledge_refs': ['章尾最好有更高层级机会或压力'],
+                                    }
+                                    for slug in kwargs.get('audience_docs', [])[:2]
+                                ],
+                            },
                         },
                     }
                 ),
@@ -455,8 +494,32 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '底层逆袭' in experiment_payload['steering_pack']['trope_axes']
     assert experiment_payload['experiment_meta']['chapter_count'] == 2
     assert experiment_payload['steering_retrieval_meta']['selected_trope_docs'] == ['xianxia-underdog-ledger']
+    trope_doc_summaries = experiment_payload['steering_retrieval_meta']['selected_doc_summaries']['trope']
+    assert trope_doc_summaries[0]['slug'] == 'xianxia-underdog-ledger'
+    assert trope_doc_summaries[0]['summary']
     assert 'innovation_delta_summary' in experiment_payload['experiment_meta']
     assert 'risk_delta_summary' in experiment_payload['experiment_meta']
     experiment_text = experiment_md.read_text(encoding='utf-8')
     assert '## Steering Retrieval Meta' in experiment_text
     assert '### Hit Reasons' in experiment_text
+    assert '### Hit Doc Summaries' in experiment_text
+    assert 'xianxia-underdog-ledger: 标签：底层逆袭；套路轴：底层逆袭' in experiment_text
+
+
+def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:
+    from novel_analyzer.cli.app import _write_writer_imitation_outputs
+
+    output_dir = tmp_path / "writer-output-empty-hit-doc-summaries"
+    payload = {
+        "steering_retrieval_meta": {
+            "selected_trope_docs": [],
+            "selected_worldview_docs": [],
+            "selected_audience_docs": [],
+            "hit_reasons": {"trope": {}, "worldview": {}, "audience": {}},
+            "selected_doc_summaries": {"trope": [], "worldview": [], "audience": []},
+        },
+        "final_draft": {"draft_title": "", "draft_text": "", "risk_gate_notes": []},
+    }
+    _json_path, md_path = _write_writer_imitation_outputs(output_dir, "empty-hit-doc-summaries", payload)
+    md_text = md_path.read_text(encoding="utf-8")
+    assert "### Hit Doc Summaries" not in md_text

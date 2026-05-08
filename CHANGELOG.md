@@ -1,3 +1,7 @@
+## Unreleased
+
+- imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
