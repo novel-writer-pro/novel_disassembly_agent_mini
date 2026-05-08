@@ -4044,6 +4044,29 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "operator 可以从 session-state.json 读取机读状态快照",
             "operator 可依据 control verdict 与 runtime certificate 执行推广或冻结",
         ]
+        session_meta_governor = [
+            f"governor_mode={session_governor_mode}",
+            f"control_verdict={session_ship_decision}",
+            f"risk_register={risk_register}",
+        ]
+        session_policy_integrity = [
+            f"policy_versions={len(session_policy_versions)}",
+            f"checksum={len(session_policy_checksum)}",
+            f"attestors={len(session_policy_attestors)}",
+        ]
+        session_runtime_consistency = [
+            f"execution_mode={session_execution_mode} 与 lane={session_lane_status} 对齐",
+            f"release_readiness={session_release_readiness} 与 ship={session_ship_decision} 对齐",
+        ]
+        session_override_accountability = [
+            "所有 override 必须进入 override_audit",
+            "override channel 必须可追溯到 authority_map",
+        ]
+        session_control_confidence = [
+            f"confidence_level={decision_confidence or 'unknown'}",
+            f"quorum={len(session_review_quorum)}",
+            f"attestation={len(session_control_attestation)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4157,6 +4180,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_runtime_alignment: {'；'.join(session_runtime_alignment)}")
         lines.append(f"- session_recovery_certainty: {'；'.join(session_recovery_certainty)}")
         lines.append(f"- session_operator_assurance: {'；'.join(session_operator_assurance)}")
+        lines.append(f"- session_meta_governor: {'；'.join(session_meta_governor)}")
+        lines.append(f"- session_policy_integrity: {'；'.join(session_policy_integrity)}")
+        lines.append(f"- session_runtime_consistency: {'；'.join(session_runtime_consistency)}")
+        lines.append(f"- session_override_accountability: {'；'.join(session_override_accountability)}")
+        lines.append(f"- session_control_confidence: {'；'.join(session_control_confidence)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
