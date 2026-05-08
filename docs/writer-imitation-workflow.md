@@ -177,6 +177,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_guard_conditions / session_entry_criteria / session_exit_criteria / session_auto_escalations / session_override_audit
 - `writer-imitate-index.md` 中的 session_state_machine / session_allowed_transitions / session_trigger_matrix / session_reconciliation_steps / session_operator_commands
 - `writer-imitate-index.md` 中的 session_policy_pack / session_slo_contract / session_failure_domains / session_intervention_matrix / session_audit_digest
+- `writer-imitate-index.md` 中的 session_governor_mode / session_decision_bus / session_watchdog_rules / session_contingency_routes / session_operating_envelope
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
 - `ship_blockers / required_human_review / confidence_level / business_risk_label / go_live_checklist` 用于 go-live gate

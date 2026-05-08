@@ -3477,6 +3477,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"ship={session_ship_decision}",
             f"lane={session_lane_status}",
         ]
+        session_governor_mode = (
+            "autonomous-scale"
+            if session_ship_decision == "ship-ready" and promotion_verdict == "promote"
+            else "guarded-operations" if risk_register in {"guarded", "high-risk"} else "supervised-pilot"
+        )
+        session_decision_bus = [
+            f"promotion_verdict -> {promotion_verdict}",
+            f"risk_register -> {risk_register}",
+            f"ship_decision -> {session_ship_decision}",
+        ]
+        session_watchdog_rules = [
+            "risk_register 升到 high-risk 时自动阻断 ship-ready",
+            "reader_acceptance 连续转负时自动推入 blocked_queue",
+            "required_review 未完成时禁止切到 scale 模式",
+        ]
+        session_contingency_routes = [
+            "scale 失败 -> de-risk lane",
+            "pilot 无改善 -> evidence-lane",
+            "blocked-pending-review -> business-owner escalation",
+        ]
+        session_operating_envelope = [
+            f"mode={session_execution_mode}",
+            f"window={session_action_window}",
+            f"governor={session_governor_mode}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3505,6 +3530,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_failure_domains: {'；'.join(session_failure_domains)}")
         lines.append(f"- session_intervention_matrix: {'；'.join(session_intervention_matrix)}")
         lines.append(f"- session_audit_digest: {'；'.join(session_audit_digest)}")
+        lines.append(f"- session_governor_mode: {session_governor_mode}")
+        lines.append(f"- session_decision_bus: {'；'.join(session_decision_bus)}")
+        lines.append(f"- session_watchdog_rules: {'；'.join(session_watchdog_rules)}")
+        lines.append(f"- session_contingency_routes: {'；'.join(session_contingency_routes)}")
+        lines.append(f"- session_operating_envelope: {'；'.join(session_operating_envelope)}")
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:
