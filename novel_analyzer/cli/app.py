@@ -3969,6 +3969,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"risk={risk_register}",
             f"governor={session_governor_mode}",
         ]
+        session_protocol_stack = [
+            "policy-kernel",
+            "governance-fabric",
+            "runtime-mesh",
+            "execution-kernel",
+        ]
+        session_trust_contract = [
+            "attestation chain 必须闭合",
+            "policy attestors 必须覆盖关键 review 角色",
+            "control verdict 必须可回溯到 runtime attestation",
+        ]
+        session_recovery_authority = [
+            "writer-operator 负责普通 remediation",
+            "risk-approver 负责 high-risk recovery",
+            "business-owner 负责 blocked ship 的最终决断",
+        ]
+        session_audit_checkpoint_map = [
+            "state_checkpoint -> checkpoint_ring",
+            "checkpoint_ring -> audit_stream",
+            "audit_stream -> governance_checksum",
+        ]
+        session_runtime_certificate = [
+            f"governor={session_governor_mode}",
+            f"mesh={len(session_runtime_mesh)}",
+            f"contracts={len(session_contract_digest)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4067,6 +4093,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_policy_attestors: {'；'.join(session_policy_attestors)}")
         lines.append(f"- session_recovery_posture: {'；'.join(session_recovery_posture)}")
         lines.append(f"- session_control_verdict: {'；'.join(session_control_verdict)}")
+        lines.append(f"- session_protocol_stack: {'；'.join(session_protocol_stack)}")
+        lines.append(f"- session_trust_contract: {'；'.join(session_trust_contract)}")
+        lines.append(f"- session_recovery_authority: {'；'.join(session_recovery_authority)}")
+        lines.append(f"- session_audit_checkpoint_map: {'；'.join(session_audit_checkpoint_map)}")
+        lines.append(f"- session_runtime_certificate: {'；'.join(session_runtime_certificate)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")

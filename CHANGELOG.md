@@ -73,6 +73,8 @@
 
 - imitation: writer-imitate-index now includes attestation/trust session fields (`session_attestation_chain`, `session_trust_zones`, `session_policy_attestors`, `session_recovery_posture`, `session_control_verdict`) so the control plane gets closer to a commercial agent trust/attestation layer.
 
+- imitation: writer-imitate-index now includes protocol-stack session fields (`session_protocol_stack`, `session_trust_contract`, `session_recovery_authority`, `session_audit_checkpoint_map`, `session_runtime_certificate`) so the control plane gets closer to a commercial agent protocol/certificate layer.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -116,6 +118,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 

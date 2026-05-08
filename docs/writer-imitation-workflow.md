@@ -192,6 +192,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_runtime_mesh / session_policy_router / session_checkpoint_ring / session_audit_stream / session_operating_signature
 - `writer-imitate-index.md` 中的 session_policy_mesh / session_enforcement_bus / session_runtime_sentry / session_checkpoint_audit_chain / session_operating_posture
 - `writer-imitate-index.md` 中的 session_attestation_chain / session_trust_zones / session_policy_attestors / session_recovery_posture / session_control_verdict
+- `writer-imitate-index.md` 中的 session_protocol_stack / session_trust_contract / session_recovery_authority / session_audit_checkpoint_map / session_runtime_certificate
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
