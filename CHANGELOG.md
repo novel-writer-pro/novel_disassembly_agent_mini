@@ -83,6 +83,8 @@
 
 - imitation: writer-imitate-index now includes executive-governance session fields (`session_executive_contract`, `session_governance_checksum_v2`, `session_supervision_certificate`, `session_override_liability`, `session_operating_authority`) so the control plane gets closer to a commercial executive-governance layer.
 
+- imitation: writer-imitate-index now includes authority/assurance session fields (`session_authority_certificate`, `session_policy_envelope`, `session_escalation_authority`, `session_assurance_digest`, `session_governance_verdict`) so the control plane gets closer to a commercial authority/assurance/verdict OS layer.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -126,6 +128,7 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
 
 
 
