@@ -3918,6 +3918,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"router={len(session_policy_router)}",
             f"ring={len(session_checkpoint_ring)}",
         ]
+        session_policy_mesh = [
+            f"policy_versions={len(session_policy_versions)}",
+            f"compliance_pack={len(session_compliance_pack)}",
+            f"governance_fabric={len(session_governance_fabric)}",
+        ]
+        session_enforcement_bus = [
+            "guard_conditions -> enforcement_rules",
+            "watchdog_rules -> alert_routes",
+            "compliance_pack -> review_quorum",
+        ]
+        session_runtime_sentry = [
+            "watch blocked_queue",
+            "watch risk_register",
+            "watch reader_acceptance deltas",
+        ]
+        session_checkpoint_audit_chain = [
+            "state_checkpoint -> checkpoint_contract",
+            "checkpoint_contract -> runtime_attestation",
+            "runtime_attestation -> audit_stream",
+        ]
+        session_operating_posture = [
+            f"governor={session_governor_mode}",
+            f"execution={session_execution_mode}",
+            f"readiness={session_release_readiness}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4006,6 +4031,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_checkpoint_ring: {'；'.join(session_checkpoint_ring)}")
         lines.append(f"- session_audit_stream: {'；'.join(session_audit_stream)}")
         lines.append(f"- session_operating_signature: {'；'.join(session_operating_signature)}")
+        lines.append(f"- session_policy_mesh: {'；'.join(session_policy_mesh)}")
+        lines.append(f"- session_enforcement_bus: {'；'.join(session_enforcement_bus)}")
+        lines.append(f"- session_runtime_sentry: {'；'.join(session_runtime_sentry)}")
+        lines.append(f"- session_checkpoint_audit_chain: {'；'.join(session_checkpoint_audit_chain)}")
+        lines.append(f"- session_operating_posture: {'；'.join(session_operating_posture)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
