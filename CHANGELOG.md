@@ -55,6 +55,10 @@
 
 - imitation: writer-imitate-index now includes core-constraint session fields (`session_control_memory`, `session_constraint_register`, `session_safety_invariants`, `session_repair_budget`, `session_runtime_digest`) so the control plane gets closer to a commercial agent runtime core.
 
+- imitation: writer-imitate-index now includes control-fabric session fields (`session_control_fabric`, `session_guardrail_matrix`, `session_override_protocol`, `session_failure_isolation`, `session_runtime_manifest`) so the control plane gets closer to a commercial agent control fabric.
+
+- imitation: writer-imitate-index now emits `writer-imitate-session-state.json`, providing a machine-readable session-level state snapshot with ready/blocked/escalation/recovery views alongside the markdown control plane.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -98,6 +102,8 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
+
 
 
 

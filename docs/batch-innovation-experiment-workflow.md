@@ -97,10 +97,12 @@
 - reader-sim 变化
 - 是否值得推广到更长区间
 - recommendation / next_action 是否支持商业化推广决策
+- writer-imitate-session-state.json 是否能提供机读 session-level ready/blocked/escalation/recovery 视图
 - pilot_scope / promotion_gate / rollback_trigger / evidence_required 是否足以形成真实 rollout 方案
 - ship_blockers / required_human_review / confidence_level / business_risk_label / go_live_checklist 是否足以形成上线 gate
 - success_kpi_targets / failure_kpi_triggers / observation_window / owner_roles / handoff_packet 是否足以形成上线后运营合同
 - session_control_memory / session_constraint_register / session_safety_invariants / session_repair_budget / session_runtime_digest 是否足以形成核心约束面
+- session_control_fabric / session_guardrail_matrix / session_override_protocol / session_failure_isolation / session_runtime_manifest 是否足以形成控制织面
 
 ---
 

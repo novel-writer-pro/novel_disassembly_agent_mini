@@ -3154,6 +3154,122 @@ def _writer_review_markdown(
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
+    experiment_files = sorted(output_dir.glob("writer-innovation-experiment-*.json"))
+    ledger_entries: list[dict[str, object]] = []
+    session_recommendations: list[str] = []
+    session_risk_labels: list[str] = []
+    session_next_actions: list[str] = []
+    session_focuses: list[str] = []
+
+    for path in experiment_files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        experiment_name = str(payload.get("experiment_name", "")).strip() or path.stem
+        decision_note = payload.get("experiment_decision_note", {})
+        recommendation = ""
+        next_action = ""
+        pilot_scope = ""
+        confidence_level = ""
+        observation_window = ""
+        business_risk_label = ""
+        if isinstance(decision_note, dict):
+            recommendation = str(decision_note.get("recommendation", "")).strip()
+            next_action = str(decision_note.get("next_action", "")).strip()
+            pilot_scope = str(decision_note.get("pilot_scope", "")).strip()
+            confidence_level = str(decision_note.get("confidence_level", "")).strip()
+            observation_window = str(decision_note.get("observation_window", "")).strip()
+            business_risk_label = str(decision_note.get("business_risk_label", "")).strip()
+        explanation = payload.get("writer_innovation_explanation", {})
+        focus = str(explanation.get("focus", "")).strip() if isinstance(explanation, dict) else ""
+        acceptance = payload.get("reader_sim_acceptance_summary", {})
+        reader_acceptance = {}
+        if isinstance(acceptance, dict):
+            reader_acceptance = {
+                "improved_count": int(acceptance.get("improved_count", 0) or 0),
+                "chapter_count": int(acceptance.get("chapter_count", 0) or 0),
+                "average_score_delta": float(acceptance.get("average_score_delta", 0) or 0),
+            }
+        ledger_entries.append(
+            {
+                "experiment_name": experiment_name,
+                "artifact": path.name,
+                "recommendation": recommendation,
+                "next_action": next_action,
+                "pilot_scope": pilot_scope,
+                "confidence_level": confidence_level,
+                "observation_window": observation_window,
+                "business_risk_label": business_risk_label,
+                "focus": focus,
+                "reader_acceptance": reader_acceptance,
+            }
+        )
+        if recommendation:
+            session_recommendations.append(recommendation)
+        if business_risk_label:
+            session_risk_labels.append(business_risk_label)
+        if next_action:
+            session_next_actions.append(next_action)
+        if focus:
+            session_focuses.append(focus)
+
+    if all(item == "promote" for item in session_recommendations) and session_recommendations:
+        promotion_verdict = "promote"
+    elif any(item == "de-risk" for item in session_recommendations):
+        promotion_verdict = "de-risk"
+    elif any(item == "pilot" for item in session_recommendations):
+        promotion_verdict = "pilot"
+    else:
+        promotion_verdict = "hold"
+
+    if any(item == "high-risk" for item in session_risk_labels):
+        risk_register = "high-risk"
+    elif any(item == "guarded" for item in session_risk_labels):
+        risk_register = "guarded"
+    else:
+        risk_register = "controlled"
+
+    session_ship_decision = (
+        "ship-ready" if promotion_verdict == "promote" and risk_register == "controlled" else "needs-review"
+    )
+    session_ready_queue = session_next_actions[:2] if session_ship_decision == "ship-ready" else []
+    session_blockers: list[str] = []
+    if risk_register == "high-risk":
+        session_blockers.append("high-risk experiments still present")
+    if promotion_verdict == "hold":
+        session_blockers.append("insufficient positive evidence across session")
+    session_blocked_queue = session_blockers[:2]
+    session_escalation_path = [
+        "writer-operator -> continuity-reviewer",
+        "continuity-reviewer -> reader-feedback-owner",
+    ]
+    if risk_register in {"guarded", "high-risk"}:
+        session_escalation_path.append("reader-feedback-owner -> risk-approver")
+    if session_ship_decision == "needs-review":
+        session_escalation_path.append("risk-approver -> business-owner")
+    session_recovery_plan = [
+        "若 reader_acceptance 转负，回退到上一版 steering 组合",
+        "若 risk_register 升级，切换到 de-risk lane 并压缩 pilot_scope",
+    ]
+
+    return {
+        "contract_version": "writer-imitate-session-state.v1",
+        "output_dir": str(output_dir),
+        "experiment_count": len(ledger_entries),
+        "promotion_verdict": promotion_verdict,
+        "risk_register": risk_register,
+        "session_ship_decision": session_ship_decision,
+        "session_ready_queue": session_ready_queue,
+        "session_blocked_queue": session_blocked_queue,
+        "session_escalation_path": session_escalation_path,
+        "session_recovery_plan": session_recovery_plan,
+        "session_focuses": session_focuses[:3],
+        "experiments": ledger_entries,
+    }
+
+
 def _writer_output_index_markdown(output_dir: Path) -> str:
     lines: list[str] = ["# Writer Imitation Output Index"]
     range_files = sorted(output_dir.glob("writer-imitate-range-*.json"))
@@ -3650,6 +3766,30 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"ready={len(session_ready_queue)}",
             f"blocked={len(session_blocked_queue)}",
         ]
+        session_control_fabric = [
+            f"governor={session_governor_mode}",
+            f"contract={len(session_contract_digest)}-signals",
+            f"kernel={len(session_control_kernel)}-signals",
+        ]
+        session_guardrail_matrix = [
+            "risk_register=high-risk -> block promote",
+            "blocked_queue>0 -> block scale",
+            "required_review pending -> block ship-ready",
+        ]
+        session_override_protocol = [
+            "business-owner override 必须进入 override_audit",
+            "risk-approver freeze 后必须登记 remediation_contract",
+        ]
+        session_failure_isolation = [
+            "reader acceptance failure 限制在 pilot lane",
+            "risk escalation failure 限制在 remediation lane",
+            "operator handoff failure 限制在 review queue",
+        ]
+        session_runtime_manifest = [
+            f"execution_mode={session_execution_mode}",
+            f"release_readiness={session_release_readiness}",
+            f"governor_mode={session_governor_mode}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -3708,6 +3848,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_safety_invariants: {'；'.join(session_safety_invariants)}")
         lines.append(f"- session_repair_budget: {'；'.join(session_repair_budget)}")
         lines.append(f"- session_runtime_digest: {'；'.join(session_runtime_digest)}")
+        lines.append(f"- session_control_fabric: {'；'.join(session_control_fabric)}")
+        lines.append(f"- session_guardrail_matrix: {'；'.join(session_guardrail_matrix)}")
+        lines.append(f"- session_override_protocol: {'；'.join(session_override_protocol)}")
+        lines.append(f"- session_failure_isolation: {'；'.join(session_failure_isolation)}")
+        lines.append(f"- session_runtime_manifest: {'；'.join(session_runtime_manifest)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
@@ -3933,8 +4078,14 @@ def writer_imitate_index(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     md_path = output_dir / "writer-imitate-index.md"
+    state_path = output_dir / "writer-imitate-session-state.json"
     md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
+    state_path.write_text(
+        json.dumps(_build_writer_output_session_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     echo(f"writer_imitate_index_markdown={md_path}")
+    echo(f"writer_imitate_session_state_json={state_path}")
 
 
 @app.command()

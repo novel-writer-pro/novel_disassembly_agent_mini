@@ -472,7 +472,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     )
     assert result.exit_code == 0
     index_md = output_dir / 'writer-imitate-index.md'
+    session_state_json = output_dir / 'writer-imitate-session-state.json'
     assert index_md.exists()
+    assert session_state_json.exists()
     index_text = index_md.read_text(encoding='utf-8')
     assert 'writer-imitate-range-3-4.json' in index_text
     assert 'chapter 3' in index_text
@@ -630,6 +632,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_safety_invariants:' in index_text
     assert 'session_repair_budget:' in index_text
     assert 'session_runtime_digest:' in index_text
+    assert 'session_control_fabric:' in index_text
+    assert 'session_guardrail_matrix:' in index_text
+    assert 'session_override_protocol:' in index_text
+    assert 'session_failure_isolation:' in index_text
+    assert 'session_runtime_manifest:' in index_text
     assert 'session_control_kernel:' in index_text
     assert 'session_safety_circuit_breakers:' in index_text
     assert 'session_override_channels:' in index_text
@@ -644,6 +651,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'confidence_level:' in index_text
     assert 'observation_window:' in index_text
     assert 'business_risk_label:' in index_text
+    session_state = json.loads(session_state_json.read_text(encoding='utf-8'))
+    assert session_state['contract_version'] == 'writer-imitate-session-state.v1'
+    assert 'promotion_verdict' in session_state
+    assert 'session_ready_queue' in session_state
+    assert 'session_blocked_queue' in session_state
+    assert 'session_escalation_path' in session_state
+    assert 'session_recovery_plan' in session_state
+    assert session_state['experiments']
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:
