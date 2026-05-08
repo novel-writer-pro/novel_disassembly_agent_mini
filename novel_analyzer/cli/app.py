@@ -2680,6 +2680,35 @@ def _build_experiment_decision_note(
             ]
         )
 
+    success_kpi_targets = [
+        f"reader_improved_count >= {max(1, acceptance_chapters // 2 or 1)}",
+        "business_risk_label != high-risk",
+        "rollback_trigger 未被触发",
+    ]
+    failure_kpi_triggers = [
+        "reader_acceptance_not_improved",
+        "high_risk_level",
+        "verdict_shift_too_high",
+    ]
+    observation_window = (
+        "上线后连续观察 5-8 章"
+        if recommendation == "promote"
+        else "下一轮 pilot 观察 2-4 章"
+    )
+    owner_roles = [
+        "writer-operator",
+        "continuity-reviewer",
+        "reader-feedback-owner",
+    ]
+    if business_risk_label in {"guarded", "high-risk"}:
+        owner_roles.append("risk-approver")
+    handoff_packet = [
+        "writer_innovation_explanation",
+        "experiment_decision_note",
+        "baseline_vs_steering_report",
+        "reader_sim_acceptance_summary",
+    ]
+
     return {
         "recommendation": recommendation,
         "reason": reason,
@@ -2700,6 +2729,11 @@ def _build_experiment_decision_note(
         "confidence_level": confidence_level,
         "business_risk_label": business_risk_label,
         "go_live_checklist": go_live_checklist,
+        "success_kpi_targets": success_kpi_targets,
+        "failure_kpi_triggers": failure_kpi_triggers,
+        "observation_window": observation_window,
+        "owner_roles": owner_roles,
+        "handoff_packet": handoff_packet,
     }
 
 
@@ -2902,10 +2936,20 @@ def _write_writer_imitation_outputs(
             "rollback_trigger",
             "confidence_level",
             "business_risk_label",
+            "observation_window",
         ]:
             if key in experiment_decision_note:
                 lines.append(f"- {key}: {experiment_decision_note[key]}")
-        for list_key in ["evidence_required", "ship_blockers", "required_human_review", "go_live_checklist"]:
+        for list_key in [
+            "evidence_required",
+            "ship_blockers",
+            "required_human_review",
+            "go_live_checklist",
+            "success_kpi_targets",
+            "failure_kpi_triggers",
+            "owner_roles",
+            "handoff_packet",
+        ]:
             value = experiment_decision_note.get(list_key, [])
             if isinstance(value, list) and value:
                 lines.append(f"- {list_key}: {'；'.join(str(item) for item in value if str(item).strip())}")
@@ -3193,11 +3237,13 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         decision_next_action = ""
         decision_pilot_scope = ""
         decision_confidence = ""
+        decision_observation_window = ""
         if isinstance(decision_note, dict):
             decision_recommendation = str(decision_note.get("recommendation", "")).strip()
             decision_next_action = str(decision_note.get("next_action", "")).strip()
             decision_pilot_scope = str(decision_note.get("pilot_scope", "")).strip()
             decision_confidence = str(decision_note.get("confidence_level", "")).strip()
+            decision_observation_window = str(decision_note.get("observation_window", "")).strip()
             if decision_recommendation:
                 lines.append(f"- recommendation: {decision_recommendation}")
             if decision_next_action:
@@ -3206,6 +3252,8 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 lines.append(f"- pilot_scope: {decision_pilot_scope}")
             if decision_confidence:
                 lines.append(f"- confidence_level: {decision_confidence}")
+            if decision_observation_window:
+                lines.append(f"- observation_window: {decision_observation_window}")
         acceptance = payload.get("reader_sim_acceptance_summary", {})
         reader_acceptance = ""
         if isinstance(acceptance, dict):
@@ -3233,6 +3281,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
                 "next_action": decision_next_action,
                 "pilot_scope": decision_pilot_scope,
                 "confidence_level": decision_confidence,
+                "observation_window": decision_observation_window,
                 "baseline": baseline_summary,
             }
         )
@@ -3250,6 +3299,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             lines.append(f"- next_action: {entry['next_action']}")
             lines.append(f"- pilot_scope: {entry['pilot_scope']}")
             lines.append(f"- confidence_level: {entry['confidence_level']}")
+            lines.append(f"- observation_window: {entry['observation_window']}")
             lines.append(f"- baseline_vs_steering: {entry['baseline']}")
     return "\n".join(lines).strip() + "\n"
 
