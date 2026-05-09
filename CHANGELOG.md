@@ -16,6 +16,8 @@
 
 - imitation: 现已额外产出 `writer-imitate-legacy-contract-surface.json/.md`，把 legacy compatibility layer 提升成独立入口产物，避免旧字段家族继续散落在主控制链里。
 
+- imitation: action/execution/replay/apply/resume 以及 operator-surface 等主产物现在也开始统一暴露 `legacy_operator_entrypoint`，让 legacy surface 成为整条控制链显式可发现的次级入口。
+
 - imitation: markdown 第一层现在也会显式提示 legacy verdict/digest 仍作为 compatibility layer 保留，但 primary 层已经是推荐默认入口，进一步把展示层迁移方向固化下来。
 
 - imitation: `Primary Verdicts / Primary Digests` 现在在 operator-surface 与 action/execution/replay/apply/resume 等 markdown 产物中的显示顺序已前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升成默认阅读入口。

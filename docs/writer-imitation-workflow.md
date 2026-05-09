@@ -218,6 +218,7 @@ flowchart TD
 - 现在还额外暴露 `session_primary_contract_hints`，明确告诉消费者：primary verdict/digest 已是推荐入口，而旧字段族仍处于 compatibility layer
 - 现已进一步新增 `session_legacy_contract_layer`，把旧 verdict/digest 家族正式收成独立可机读兼容层对象，而不只是散落在 hints 文本里
 - 现在还额外产出 `writer-imitate-legacy-contract-surface.json/.md`，把 legacy compatibility layer 单独抽成可消费入口，避免旧字段家族长期散落在主控制面
+- 现在 action/execution/replay/apply/resume 等主产物也会统一暴露 `legacy_operator_entrypoint`，让 legacy surface 作为次级入口被显式发现，而不是只存在于新增产物清单里
 - markdown 第一层现在也会显式写出 compatibility note，说明 legacy verdict/digest 字段仍保留，但不再是推荐的一层入口
 - 现在 `Primary Verdicts / Primary Digests` 在这些产物中的展示顺序也已被前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升为默认阅读路径
 - `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物也会显式写出 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，减少“先看哪个文件”的歧义
