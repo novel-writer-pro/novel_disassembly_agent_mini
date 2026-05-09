@@ -2,6 +2,8 @@
 
 - imitation: `writer-imitate-index.md` 现在新增 `Operator-Facing Stable Contract` 小节，先把 operator 第一层真正该看的状态、队列、责任链、迁移与摘要字段单独收口，为后续 P0 展示层瘦身做低风险落地。
 
+- imitation: `writer-imitate-action-queue` 与 `writer-imitate-execution-state` 现在也开始复用 `session_operator_contract`，让多个输出面优先消费同一套第一层合同，而不是继续各自重复拼装 operator 摘要。
+
 - docs: 新增 `docs/imitation-control-plane-glossary.md`，集中解释当前仿写商业 Agent 控制层中的英文术语（如 assurance / alignment / governance / attestation / replay / resume / checkpoint 等），并同步挂到 docs 入口，降低理解与交接成本。
 
 - imitation: `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，在 v2 聚合注册表基础上继续新增 `session_action_backlog`、`session_transition_queue`、`session_checkpoint_mutations`，把“下一步做什么、怎么迁移、要回写什么状态”显式化。

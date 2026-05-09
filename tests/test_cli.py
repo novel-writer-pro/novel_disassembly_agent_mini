@@ -810,6 +810,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['experiments']
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
+    assert action_queue_payload['session_operator_contract']['status']['session_execution_mode']
     assert action_queue_payload['action_backlog']
     assert 'execution_mode' in action_queue_payload['execution_registry']
     assert 'governor_mode' in action_queue_payload['governance_registry']
@@ -817,11 +818,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert action_queue_payload['checkpoint_mutations']
     action_queue_text = action_queue_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Action Queue' in action_queue_text
+    assert '## Operator-Facing Stable Contract' in action_queue_text
     assert '## Action Backlog' in action_queue_text
     assert '## Transition Queue' in action_queue_text
     assert '## Checkpoint Mutations' in action_queue_text
     execution_state_payload = json.loads(execution_state_json.read_text(encoding='utf-8'))
     assert execution_state_payload['contract_version'] == 'writer-imitate-execution-state.v1'
+    assert execution_state_payload['session_operator_contract']['owners']['session_recovery_owner']
     assert execution_state_payload['execution_tickets']
     assert execution_state_payload['transition_history']
     assert execution_state_payload['checkpoint_log']
@@ -829,6 +832,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'recovery_owner' in execution_state_payload['recovery_cursor']
     execution_state_text = execution_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution State' in execution_state_text
+    assert '## Operator-Facing Stable Contract' in execution_state_text
     assert '## Execution Tickets' in execution_state_text
     assert '## Transition History' in execution_state_text
     assert '## Checkpoint Log' in execution_state_text

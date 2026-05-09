@@ -3561,6 +3561,7 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
+        "session_operator_contract": session_state.get("session_operator_contract", {}),
         "action_backlog": backlog,
         "ready_items": ready_items,
         "review_items": review_items,
@@ -3580,6 +3581,27 @@ def _writer_output_action_queue_markdown(output_dir: Path) -> str:
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
     lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
+    operator_contract = payload.get("session_operator_contract", {})
+    if isinstance(operator_contract, dict):
+        status = operator_contract.get("status", {})
+        queues = operator_contract.get("queues", {})
+        owners = operator_contract.get("owners", {})
+        if isinstance(status, dict) and isinstance(queues, dict) and isinstance(owners, dict):
+            lines.append("\n## Operator-Facing Stable Contract")
+            lines.append(
+                f"- status: lane={status.get('session_lane_status', '')} | "
+                f"mode={status.get('session_execution_mode', '')} | "
+                f"ship={status.get('session_ship_decision', '')} | risk={status.get('risk_register', '')}"
+            )
+            lines.append(
+                f"- queues: priority={len(queues.get('priority_queue', [])) if isinstance(queues.get('priority_queue', []), list) else 0} | "
+                f"ready={len(queues.get('ready_queue', [])) if isinstance(queues.get('ready_queue', []), list) else 0} | "
+                f"blocked={len(queues.get('blocked_queue', [])) if isinstance(queues.get('blocked_queue', []), list) else 0}"
+            )
+            lines.append(
+                f"- owner: recovery={owners.get('session_recovery_owner', '')} | "
+                f"reviews={len(owners.get('session_required_review', [])) if isinstance(owners.get('session_required_review', []), list) else 0}"
+            )
 
     execution_registry = payload.get("execution_registry", {})
     if isinstance(execution_registry, dict):
@@ -3730,6 +3752,7 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
+        "session_operator_contract": session_state.get("session_operator_contract", {}),
         "execution_ticket_count": len(execution_tickets),
         "ready_count": ready_count,
         "review_count": review_count,
@@ -3754,6 +3777,20 @@ def _writer_output_execution_state_markdown(output_dir: Path) -> str:
     lines.append(
         f"- counts: ready={payload.get('ready_count', 0)} | review={payload.get('review_count', 0)} | blocked={payload.get('blocked_count', 0)}"
     )
+    operator_contract = payload.get("session_operator_contract", {})
+    if isinstance(operator_contract, dict):
+        status = operator_contract.get("status", {})
+        owners = operator_contract.get("owners", {})
+        if isinstance(status, dict) and isinstance(owners, dict):
+            lines.append("\n## Operator-Facing Stable Contract")
+            lines.append(
+                f"- status: lane={status.get('session_lane_status', '')} | "
+                f"mode={status.get('session_execution_mode', '')} | readiness={status.get('session_release_readiness', '')}"
+            )
+            lines.append(
+                f"- owner: recovery={owners.get('session_recovery_owner', '')} | "
+                f"ship={status.get('session_ship_decision', '')}"
+            )
 
     lines.append("\n## Execution Tickets")
     execution_tickets = payload.get("execution_tickets", [])
