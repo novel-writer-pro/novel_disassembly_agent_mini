@@ -299,6 +299,8 @@ def test_imitation_control_plane_glossary_is_indexed() -> None:
     assert "Phase 1：先做展示层收敛（低风险）" in glossary
     assert "控制面瘦身实施清单（可执行版）" in glossary
     assert "先隐藏，再删除" in glossary
+    assert "控制面字段改造优先级矩阵（第一版）" in glossary
+    assert "P0：高收益 + 低风险，优先改" in glossary
 
     readme = Path("docs/README.md").read_text(encoding="utf-8")
     assert "./imitation-control-plane-glossary.md" in readme
