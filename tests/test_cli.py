@@ -479,6 +479,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_state_md = output_dir / 'writer-imitate-execution-state.md'
     execution_replay_json = output_dir / 'writer-imitate-execution-replay.json'
     execution_replay_md = output_dir / 'writer-imitate-execution-replay.md'
+    execution_apply_json = output_dir / 'writer-imitate-execution-apply.json'
+    execution_apply_md = output_dir / 'writer-imitate-execution-apply.md'
+    execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
+    execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
     assert session_state_json.exists()
     assert action_queue_json.exists()
@@ -579,6 +583,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'reader_acceptance: improved=' in index_text
     assert 'baseline_vs_steering:' in index_text
     assert '## Experiment Session Control Plane' in index_text
+    assert '### Operator-Facing Stable Contract' in index_text
+    assert '### Full Session Field Surface' in index_text
     assert 'promotion_verdict:' in index_text
     assert 'risk_register:' in index_text
     assert 'handoff_summary:' in index_text
@@ -798,6 +804,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_action_backlog']
     assert session_state['session_transition_queue']
     assert session_state['session_checkpoint_mutations']
+    assert session_state['session_operator_contract']['status']['session_lane_status']
+    assert session_state['session_operator_contract']['queues']['priority_queue']
+    assert session_state['session_operator_contract']['owners']['session_recovery_owner']
     assert session_state['experiments']
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
@@ -838,6 +847,39 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Transition Preview' in execution_replay_text
     assert '## Checkpoint Preview' in execution_replay_text
     assert '## Next Recovery Cursor' in execution_replay_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-apply-replay', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert execution_apply_json.exists()
+    assert execution_apply_md.exists()
+    execution_apply_payload = json.loads(execution_apply_json.read_text(encoding='utf-8'))
+    assert execution_apply_payload['contract_version'] == 'writer-imitate-execution-apply.v1'
+    assert 'apply_status' in execution_apply_payload
+    assert 'next_resume_hint' in execution_apply_payload
+    execution_apply_text = execution_apply_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Execution Apply Preview' in execution_apply_text
+    assert '## Applied Tickets' in execution_apply_text
+    assert '## Applied Transitions' in execution_apply_text
+    assert '## Applied Checkpoints' in execution_apply_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-resume-replay', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert execution_resume_json.exists()
+    assert execution_resume_md.exists()
+    execution_resume_payload = json.loads(execution_resume_json.read_text(encoding='utf-8'))
+    assert execution_resume_payload['contract_version'] == 'writer-imitate-execution-resume.v1'
+    assert 'resume_status' in execution_resume_payload
+    assert execution_resume_payload['resume_steps']
+    execution_resume_text = execution_resume_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Execution Resume Plan' in execution_resume_text
+    assert '## Resume Targets' in execution_resume_text
+    assert '## Resume Steps' in execution_resume_text
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:

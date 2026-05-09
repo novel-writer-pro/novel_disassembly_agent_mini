@@ -3484,6 +3484,34 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "reason": "根据 guarded/high-risk 状态自动选择",
         },
     ]
+    session_operator_contract = {
+        "contract_version": "writer-imitate-operator-surface.v1",
+        "status": {
+            "promotion_verdict": promotion_verdict,
+            "risk_register": risk_register,
+            "session_ship_decision": session_ship_decision,
+            "session_lane_status": session_lane_status,
+            "session_execution_mode": session_execution_mode,
+            "session_release_readiness": session_release_readiness,
+        },
+        "queues": {
+            "priority_queue": session_priority_queue,
+            "ready_queue": session_ready_queue,
+            "blocked_queue": session_blocked_queue,
+        },
+        "owners": {
+            "session_recovery_owner": session_recovery_owner,
+            "session_required_review": session_required_review,
+            "session_escalation_path": session_escalation_path,
+            "session_owner_handoff": session_owner_handoff,
+        },
+        "actions": {
+            "session_action_backlog_count": len(session_action_backlog),
+            "session_transition_queue": session_transition_queue,
+            "session_checkpoint_mutations": session_checkpoint_mutations,
+        },
+        "summary": session_live_ops_board,
+    }
 
     return {
         "contract_version": "writer-imitate-session-state.v3",
@@ -3506,6 +3534,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_action_backlog": session_action_backlog,
         "session_transition_queue": session_transition_queue,
         "session_checkpoint_mutations": session_checkpoint_mutations,
+        "session_operator_contract": session_operator_contract,
         "experiments": ledger_entries,
     }
 
@@ -3942,6 +3971,183 @@ def _writer_output_execution_replay_markdown(output_dir: Path) -> str:
         lines.append(f"- blocked_ticket_ids: {blocked_text}")
         lines.append(f"- review_ticket_ids: {review_text}")
 
+    return "\n".join(lines).strip() + "\n"
+
+
+def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
+    replay = _build_writer_output_execution_replay(output_dir)
+    replay_results_obj = replay.get("replay_results", [])
+    replay_results = replay_results_obj if isinstance(replay_results_obj, list) else []
+    transition_preview_obj = replay.get("transition_preview", [])
+    transition_preview = transition_preview_obj if isinstance(transition_preview_obj, list) else []
+    checkpoint_preview_obj = replay.get("checkpoint_preview", [])
+    checkpoint_preview = checkpoint_preview_obj if isinstance(checkpoint_preview_obj, list) else []
+
+    applied_tickets: list[dict[str, object]] = []
+    deferred_tickets: list[dict[str, object]] = []
+    blocked_tickets: list[dict[str, object]] = []
+    for item in replay_results:
+        if not isinstance(item, dict):
+            continue
+        result = str(item.get("result", "")).strip()
+        normalized = {
+            "ticket_id": item.get("ticket_id", ""),
+            "result": result,
+            "phase_after": item.get("phase_after", ""),
+            "owner": item.get("owner", ""),
+        }
+        if result == "applied-preview":
+            applied_tickets.append(normalized)
+        elif result == "deferred-review":
+            deferred_tickets.append(normalized)
+        else:
+            blocked_tickets.append(normalized)
+
+    applied_transitions = [
+        {
+            "from": item.get("from", ""),
+            "to": item.get("to", ""),
+            "owner": item.get("owner", ""),
+        }
+        for item in transition_preview
+        if isinstance(item, dict) and bool(item.get("would_apply", False))
+    ]
+    applied_checkpoints = [
+        {
+            "field": item.get("field", ""),
+            "value": item.get("pending_value", ""),
+            "reason": item.get("reason", ""),
+        }
+        for item in checkpoint_preview
+        if isinstance(item, dict) and bool(item.get("would_apply", False))
+    ]
+    apply_status = (
+        "applied-preview"
+        if applied_tickets
+        else "deferred-review"
+        if deferred_tickets
+        else "blocked-recovery"
+    )
+    next_resume_hint = (
+        "apply-ready-checkpoints"
+        if applied_tickets
+        else "resolve-review-gate"
+        if deferred_tickets
+        else "run-recovery-lane"
+    )
+    return {
+        "contract_version": "writer-imitate-execution-apply.v1",
+        "source_contract_version": replay.get("contract_version", ""),
+        "apply_status": apply_status,
+        "applied_tickets": applied_tickets,
+        "deferred_tickets": deferred_tickets,
+        "blocked_tickets": blocked_tickets,
+        "applied_transitions": applied_transitions,
+        "applied_checkpoints": applied_checkpoints,
+        "next_resume_hint": next_resume_hint,
+    }
+
+
+def _writer_output_execution_apply_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_execution_apply(output_dir)
+    lines = ["# Writer Imitation Execution Apply Preview"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
+    lines.append(f"- apply_status: {payload.get('apply_status', '')}")
+    lines.append(f"- next_resume_hint: {payload.get('next_resume_hint', '')}")
+    applied_tickets = payload.get("applied_tickets", [])
+    deferred_tickets = payload.get("deferred_tickets", [])
+    blocked_tickets = payload.get("blocked_tickets", [])
+    applied_transitions = payload.get("applied_transitions", [])
+    applied_checkpoints = payload.get("applied_checkpoints", [])
+    lines.append("\n## Applied Tickets")
+    for item in applied_tickets if isinstance(applied_tickets, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('ticket_id', '')}: result={item.get('result', '')} | phase_after={item.get('phase_after', '')} | owner={item.get('owner', '')}"
+            )
+    lines.append("\n## Deferred Tickets")
+    for item in deferred_tickets if isinstance(deferred_tickets, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('ticket_id', '')}: result={item.get('result', '')} | phase_after={item.get('phase_after', '')} | owner={item.get('owner', '')}"
+            )
+    lines.append("\n## Blocked Tickets")
+    for item in blocked_tickets if isinstance(blocked_tickets, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('ticket_id', '')}: result={item.get('result', '')} | phase_after={item.get('phase_after', '')} | owner={item.get('owner', '')}"
+            )
+    lines.append("\n## Applied Transitions")
+    for item in applied_transitions if isinstance(applied_transitions, list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('from', '')} -> {item.get('to', '')} | owner={item.get('owner', '')}")
+    lines.append("\n## Applied Checkpoints")
+    for item in applied_checkpoints if isinstance(applied_checkpoints, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('field', '')}: value={item.get('value', '')} | reason={item.get('reason', '')}"
+            )
+    return "\n".join(lines).strip() + "\n"
+
+
+def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
+    apply_preview = _build_writer_output_execution_apply(output_dir)
+    deferred_obj = apply_preview.get("deferred_tickets", [])
+    deferred_tickets = deferred_obj if isinstance(deferred_obj, list) else []
+    blocked_obj = apply_preview.get("blocked_tickets", [])
+    blocked_tickets = blocked_obj if isinstance(blocked_obj, list) else []
+    resume_targets = [
+        {
+            "ticket_id": item.get("ticket_id", ""),
+            "resume_mode": "review-resume",
+            "owner": item.get("owner", ""),
+        }
+        for item in deferred_tickets
+        if isinstance(item, dict)
+    ] + [
+        {
+            "ticket_id": item.get("ticket_id", ""),
+            "resume_mode": "recovery-resume",
+            "owner": item.get("owner", ""),
+        }
+        for item in blocked_tickets
+        if isinstance(item, dict)
+    ]
+    resume_steps = [
+        "若存在 applied_checkpoints，先确认 checkpoint writeback 顺序",
+        "对 deferred tickets 走 review-resume",
+        "对 blocked tickets 走 recovery-resume",
+    ]
+    resume_status = "resume-ready" if resume_targets else "no-resume-needed"
+    return {
+        "contract_version": "writer-imitate-execution-resume.v1",
+        "source_contract_version": apply_preview.get("contract_version", ""),
+        "resume_status": resume_status,
+        "resume_targets": resume_targets,
+        "resume_steps": resume_steps,
+        "resume_hint": apply_preview.get("next_resume_hint", ""),
+    }
+
+
+def _writer_output_execution_resume_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_execution_resume(output_dir)
+    lines = ["# Writer Imitation Execution Resume Plan"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
+    lines.append(f"- resume_status: {payload.get('resume_status', '')}")
+    lines.append(f"- resume_hint: {payload.get('resume_hint', '')}")
+    resume_targets = payload.get("resume_targets", [])
+    resume_steps = payload.get("resume_steps", [])
+    lines.append("\n## Resume Targets")
+    for item in resume_targets if isinstance(resume_targets, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('ticket_id', '')}: resume_mode={item.get('resume_mode', '')} | owner={item.get('owner', '')}"
+            )
+    lines.append("\n## Resume Steps")
+    for item in resume_steps if isinstance(resume_steps, list) else []:
+        lines.append(f"- {item}")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -5013,6 +5219,49 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"lattice={len(session_control_lattice)}",
             f"authority_bus={len(session_authority_bus)}",
         ]
+        session_transition_preview = (
+            "pilot-lane -> expansion-lane"
+            if promotion_verdict == "promote" and risk_register == "controlled"
+            else "pilot-lane -> risk-mitigation-lane"
+            if promotion_verdict == "de-risk"
+            else "evidence-lane -> pilot-lane"
+        )
+        session_checkpoint_preview = [
+            "promotion_verdict",
+            "risk_register",
+            "session_ship_decision",
+            "session_recovery_owner",
+        ]
+        lines.append("\n### Operator-Facing Stable Contract")
+        lines.append(f"- promotion_verdict: {promotion_verdict}")
+        lines.append(f"- risk_register: {risk_register}")
+        lines.append(f"- session_ship_decision: {session_ship_decision}")
+        lines.append(f"- session_lane_status: {session_lane_status}")
+        lines.append(f"- session_execution_mode: {session_execution_mode}")
+        lines.append(f"- session_release_readiness: {session_release_readiness}")
+        lines.append(f"- session_priority_queue: {'；'.join(session_priority_queue)}")
+        lines.append(
+            f"- session_ready_queue: {'；'.join(session_ready_queue) if session_ready_queue else 'none'}"
+        )
+        lines.append(
+            f"- session_blocked_queue: {'；'.join(session_blocked_queue) if session_blocked_queue else 'none'}"
+        )
+        lines.append(f"- session_recovery_owner: {session_recovery_owner}")
+        lines.append(f"- session_required_review: {'；'.join(session_required_review)}")
+        lines.append(f"- session_escalation_path: {'；'.join(session_escalation_path)}")
+        lines.append(f"- session_owner_handoff: {'；'.join(session_owner_handoff)}")
+        lines.append(f"- session_transition_queue: next={session_transition_preview}")
+        lines.append(
+            f"- session_checkpoint_mutations: fields={len(session_checkpoint_preview)} | first={session_checkpoint_preview[0]}"
+        )
+        lines.append(
+            f"- session_live_ops_board: ship={session_ship_decision}；promotion={promotion_verdict}；risk={risk_register}"
+        )
+        lines.append(
+            f"- session_digest_registry: runtime={session_runtime_contract}；summary={session_control_summary[0]}"
+        )
+
+        lines.append("\n### Full Session Field Surface")
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -5513,6 +5762,42 @@ def writer_imitate_index(
     echo(f"writer_imitate_execution_state_markdown={execution_state_md_path}")
     echo(f"writer_imitate_execution_replay_json={execution_replay_json_path}")
     echo(f"writer_imitate_execution_replay_markdown={execution_replay_md_path}")
+
+
+@app.command()
+def writer_imitate_apply_replay(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Build an apply-preview artifact from writer imitation replay state."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-execution-apply.json"
+    md_path = output_dir / "writer-imitate-execution-apply.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_execution_apply(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(_writer_output_execution_apply_markdown(output_dir), encoding="utf-8")
+    echo(f"writer_imitate_execution_apply_json={json_path}")
+    echo(f"writer_imitate_execution_apply_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_resume_replay(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Build a resume-plan artifact from writer imitation apply preview."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-execution-resume.json"
+    md_path = output_dir / "writer-imitate-execution-resume.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_execution_resume(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(_writer_output_execution_resume_markdown(output_dir), encoding="utf-8")
+    echo(f"writer_imitate_execution_resume_json={json_path}")
+    echo(f"writer_imitate_execution_resume_markdown={md_path}")
 
 
 @app.command()

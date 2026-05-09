@@ -211,6 +211,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `writer-imitate-index.md` 中新增的聚合视图 `session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board`
 - `writer-imitate-index.md` 中新增更偏执行面的 `session_action_backlog / session_transition_queue / session_checkpoint_mutations`
+- `writer-imitate-index.md` 的 `Operator-Facing Stable Contract` 小节已开始把第一层真正应该先看的状态 / 队列 / owner / 迁移 / 摘要字段收口出来
 - `writer-imitate-index` 现在还会额外产出：
   - `writer-imitate-action-queue.json`
   - `writer-imitate-action-queue.md`
