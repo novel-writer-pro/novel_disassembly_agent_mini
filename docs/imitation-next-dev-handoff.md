@@ -86,6 +86,7 @@
 - 现已新增 `writer-imitate-live-checkpoint-state.json/.md`，作为第一次本地 checkpoint writeback 执行桥
 - 现已新增 `writer-imitate-live-transition-state.json/.md`，作为第一次本地 transition apply 执行桥
 - 现已新增 `writer-imitate-live-validation-state.json/.md`，作为本地 checkpoint+transition 执行后的验证桥
+- 现已新增 `writer-imitate-external-runtime-executor-readiness.json/.md`，作为跨到真实 runtime executor 前的 readiness gate
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 现在 `Primary Verdicts / Primary Digests` 的显示顺序也已前置到 operator contract 之前，展示优先级开始真正偏向 primary 层
 - `writer-imitate-index.md` 的完整字段面中，legacy verdict/digest 家族也已开始被单独归类到 compatibility layer 小节

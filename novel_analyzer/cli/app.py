@@ -5055,6 +5055,51 @@ def _writer_output_live_validation_state_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -> dict[str, object]:
+    live_validation_state = _build_writer_output_live_validation_state(output_dir)
+    validation_status = str(live_validation_state.get("live_validation_status", "")).strip()
+    readiness = {
+        "status": "not-ready" if validation_status != "validated-local" else "bridge-ready-runtime-not-wired",
+        "required_conditions": [
+            "external runtime checkpoint executor implemented",
+            "external runtime transition executor implemented",
+            "runtime-side rollback path verified",
+            "consumer migration telemetry connected",
+        ],
+        "blocking_reasons": [
+            "local bridge stops at output artifacts only",
+            "external runtime mutation path not wired yet",
+        ],
+        "next_action": "implement external runtime checkpoint executor",
+    }
+    return {
+        "contract_version": "writer-imitate-external-runtime-executor-readiness.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "live_validation_state_entrypoint": "writer-imitate-live-validation-state.json",
+        "readiness": readiness,
+    }
+
+
+def _writer_output_external_runtime_executor_readiness_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_external_runtime_executor_readiness(output_dir)
+    lines = ["# Writer Imitation External Runtime Executor Readiness"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- live_validation_state_entrypoint: writer-imitate-live-validation-state.md")
+    readiness = payload.get("readiness", {})
+    if isinstance(readiness, dict):
+        lines.append("\n## Readiness")
+        lines.append(f"- status: {readiness.get('status', '')}")
+        required_conditions = readiness.get("required_conditions", [])
+        blocking_reasons = readiness.get("blocking_reasons", [])
+        required_text = "；".join(str(x) for x in required_conditions) if isinstance(required_conditions, list) else ""
+        blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
+        lines.append(f"- required_conditions: {required_text}")
+        lines.append(f"- blocking_reasons: {blocking_text}")
+        lines.append(f"- next_action: {readiness.get('next_action', '')}")
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -6914,6 +6959,27 @@ def writer_imitate_validate_live_state(
     )
     echo(f"writer_imitate_live_validation_state_json={json_path}")
     echo(f"writer_imitate_live_validation_state_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_external_runtime_executor_readiness(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Build a readiness artifact for the future external runtime executors."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-external-runtime-executor-readiness.json"
+    md_path = output_dir / "writer-imitate-external-runtime-executor-readiness.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_external_runtime_executor_readiness(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_external_runtime_executor_readiness_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_external_runtime_executor_readiness_json={json_path}")
+    echo(f"writer_imitate_external_runtime_executor_readiness_markdown={md_path}")
 
 
 @app.command()

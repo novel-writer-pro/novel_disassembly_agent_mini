@@ -499,6 +499,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     live_transition_state_md = output_dir / 'writer-imitate-live-transition-state.md'
     live_validation_state_json = output_dir / 'writer-imitate-live-validation-state.json'
     live_validation_state_md = output_dir / 'writer-imitate-live-validation-state.md'
+    external_runtime_readiness_json = output_dir / 'writer-imitate-external-runtime-executor-readiness.json'
+    external_runtime_readiness_md = output_dir / 'writer-imitate-external-runtime-executor-readiness.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1139,6 +1141,20 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     live_validation_state_text = live_validation_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Live Validation State' in live_validation_state_text
     assert '## Validation Checks' in live_validation_state_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-external-runtime-executor-readiness', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert external_runtime_readiness_json.exists()
+    assert external_runtime_readiness_md.exists()
+    external_runtime_readiness_payload = json.loads(external_runtime_readiness_json.read_text(encoding='utf-8'))
+    assert external_runtime_readiness_payload['contract_version'] == 'writer-imitate-external-runtime-executor-readiness.v1'
+    assert external_runtime_readiness_payload['readiness']['next_action'] == 'implement external runtime checkpoint executor'
+    external_runtime_readiness_text = external_runtime_readiness_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation External Runtime Executor Readiness' in external_runtime_readiness_text
+    assert '## Readiness' in external_runtime_readiness_text
 
     result = runner.invoke(
         app,
