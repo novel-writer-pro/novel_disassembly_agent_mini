@@ -1,5 +1,7 @@
 ## Unreleased
 
+- docs: 新增 `docs/architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`，用完整 Mermaid 架构图与分层说明收口当前仿写商业 Agent 控制层的最新设计，把 experiment、session-state、operator/legacy 双 surface、retirement preview、root navigation 与 primary/legacy 分层治理全部放进同一张架构图里。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。
