@@ -811,14 +811,20 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_operator_contract']['status']['session_lane_status']
     assert session_state['session_operator_contract']['queues']['priority_queue']
     assert session_state['session_operator_contract']['owners']['session_recovery_owner']
+    assert session_state['session_primary_verdicts']['final_verdict']
+    assert session_state['session_primary_digests']['runtime_contract']
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
     assert operator_surface_payload['contract_version'] == 'writer-imitate-operator-surface.v1'
     assert operator_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert operator_surface_payload['session_operator_contract']['status']['session_execution_mode']
+    assert operator_surface_payload['session_primary_verdicts']['runtime_verdict']
+    assert operator_surface_payload['session_primary_digests']['operating_digest']
     operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Operator Surface' in operator_surface_text
     assert '## Operator-Facing Stable Contract' in operator_surface_text
+    assert '## Primary Verdicts' in operator_surface_text
+    assert '## Primary Digests' in operator_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
     assert action_queue_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'

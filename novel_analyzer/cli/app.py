@@ -3512,6 +3512,18 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         },
         "summary": session_live_ops_board,
     }
+    session_primary_verdicts = {
+        "promotion_verdict": promotion_verdict,
+        "runtime_verdict": f"{session_execution_mode}:{session_ship_decision}:{risk_register}",
+        "control_verdict": f"{session_governor_mode}:{session_lane_status}",
+        "final_verdict": f"{session_ship_decision}:{session_release_readiness}",
+    }
+    session_primary_digests = {
+        "runtime_contract": session_runtime_contract,
+        "control_summary": f"ship={session_ship_decision};lane={session_lane_status};risk={risk_register}",
+        "governance_checksum": f"checksum={len(session_escalation_path)}",
+        "operating_digest": f"ready={len(session_ready_queue)};blocked={len(session_blocked_queue)}",
+    }
 
     return {
         "contract_version": "writer-imitate-session-state.v3",
@@ -3535,6 +3547,8 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_transition_queue": session_transition_queue,
         "session_checkpoint_mutations": session_checkpoint_mutations,
         "session_operator_contract": session_operator_contract,
+        "session_primary_verdicts": session_primary_verdicts,
+        "session_primary_digests": session_primary_digests,
         "experiments": ledger_entries,
     }
 
@@ -3579,10 +3593,16 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     session_state = _build_writer_output_session_state(output_dir)
     operator_contract_obj = session_state.get("session_operator_contract", {})
     operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    primary_verdicts_obj = session_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    primary_digests_obj = session_state.get("session_primary_digests", {})
+    primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "session_operator_contract": operator_contract,
+        "session_primary_verdicts": primary_verdicts,
+        "session_primary_digests": primary_digests,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
@@ -3655,6 +3675,20 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
         include_queues=True,
         include_actions=True,
     )
+    primary_verdicts = payload.get("session_primary_verdicts", {})
+    if isinstance(primary_verdicts, dict):
+        lines.append("\n## Primary Verdicts")
+        lines.append(f"- promotion_verdict: {primary_verdicts.get('promotion_verdict', '')}")
+        lines.append(f"- runtime_verdict: {primary_verdicts.get('runtime_verdict', '')}")
+        lines.append(f"- control_verdict: {primary_verdicts.get('control_verdict', '')}")
+        lines.append(f"- final_verdict: {primary_verdicts.get('final_verdict', '')}")
+    primary_digests = payload.get("session_primary_digests", {})
+    if isinstance(primary_digests, dict):
+        lines.append("\n## Primary Digests")
+        lines.append(f"- runtime_contract: {primary_digests.get('runtime_contract', '')}")
+        lines.append(f"- control_summary: {primary_digests.get('control_summary', '')}")
+        lines.append(f"- governance_checksum: {primary_digests.get('governance_checksum', '')}")
+        lines.append(f"- operating_digest: {primary_digests.get('operating_digest', '')}")
     return "\n".join(lines).strip() + "\n"
 
 
