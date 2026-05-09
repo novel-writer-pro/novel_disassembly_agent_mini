@@ -12,6 +12,8 @@
 
 - docs: 新增 `docs/architecture/imitation-live-mutation-bridge-roadmap-20260509.md`，把从当前 preview/governance 结构走到第一次真正 live mutation / apply / retirement patch 还差哪些桥单独画出，方便判断下一步最关键的实现缺口。
 
+- imitation: 新增 `writer-imitate-live-control-state.json/.md` 与 `writer-imitate-live-control-state` 命令，把 apply preview 的结果沉淀成独立 live-control-state 过渡面，作为真正 live mutation 前的最后一层状态桥。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。
