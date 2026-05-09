@@ -3617,6 +3617,8 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "live_mutation_preview_markdown": "writer-imitate-live-mutation-preview.md",
         "live_validation_state_json": "writer-imitate-live-validation-state.json",
         "live_validation_state_markdown": "writer-imitate-live-validation-state.md",
+        "external_runtime_executor_readiness_json": "writer-imitate-external-runtime-executor-readiness.json",
+        "external_runtime_executor_readiness_markdown": "writer-imitate-external-runtime-executor-readiness.md",
         "entrypoint_roles": {
             "primary_operator_entrypoint": "default-operator-home",
             "legacy_operator_entrypoint": "compatibility-governance-surface",
@@ -3624,6 +3626,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "live_control_state": "preview-to-live-bridge-surface",
             "live_mutation_preview": "live-mutation-review-surface",
             "live_validation_state": "local-validation-bridge-surface",
+            "external_runtime_executor_readiness": "runtime-executor-gate-surface",
         },
         "preferred_first_layer_sections": [
             "session_primary_verdicts",
@@ -3895,6 +3898,7 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
         lines.append(f"- live_control_state: {entrypoints.get('live_control_state_markdown', '')}")
         lines.append(f"- live_mutation_preview: {entrypoints.get('live_mutation_preview_markdown', '')}")
         lines.append(f"- live_validation_state: {entrypoints.get('live_validation_state_markdown', '')}")
+        lines.append(f"- external_runtime_executor_readiness: {entrypoints.get('external_runtime_executor_readiness_markdown', '')}")
         entrypoint_roles = entrypoints.get("entrypoint_roles", {})
         if isinstance(entrypoint_roles, dict):
             lines.append(f"- primary_operator_role: {entrypoint_roles.get('primary_operator_entrypoint', '')}")
@@ -3903,6 +3907,7 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
             lines.append(f"- live_control_state_role: {entrypoint_roles.get('live_control_state', '')}")
             lines.append(f"- live_mutation_preview_role: {entrypoint_roles.get('live_mutation_preview', '')}")
             lines.append(f"- live_validation_state_role: {entrypoint_roles.get('live_validation_state', '')}")
+            lines.append(f"- external_runtime_executor_readiness_role: {entrypoint_roles.get('external_runtime_executor_readiness', '')}")
         lines.append(f"- display_policy: {entrypoints.get('display_policy', '')}")
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
@@ -3955,6 +3960,7 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
         lines.append(f"- legacy_retirement_preview: {entrypoints.get('legacy_retirement_preview_markdown', '')}")
         lines.append(f"- live_mutation_preview: {entrypoints.get('live_mutation_preview_markdown', '')}")
         lines.append(f"- live_validation_state: {entrypoints.get('live_validation_state_markdown', '')}")
+        lines.append(f"- external_runtime_executor_readiness: {entrypoints.get('external_runtime_executor_readiness_markdown', '')}")
         entrypoint_roles = entrypoints.get("entrypoint_roles", {})
         if isinstance(entrypoint_roles, dict):
             lines.append(f"- primary_operator_role: {entrypoint_roles.get('primary_operator_entrypoint', '')}")
@@ -3963,6 +3969,7 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
             lines.append(f"- live_control_state_role: {entrypoint_roles.get('live_control_state', '')}")
             lines.append(f"- live_mutation_preview_role: {entrypoint_roles.get('live_mutation_preview', '')}")
             lines.append(f"- live_validation_state_role: {entrypoint_roles.get('live_validation_state', '')}")
+            lines.append(f"- external_runtime_executor_readiness_role: {entrypoint_roles.get('external_runtime_executor_readiness', '')}")
     _append_primary_surface_lines(lines, payload)
     retirement_readiness = payload.get("session_legacy_retirement_readiness", {})
     if isinstance(retirement_readiness, dict):
@@ -6249,12 +6256,14 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append("- live_control_state: writer-imitate-live-control-state.md")
         lines.append("- live_mutation_preview: writer-imitate-live-mutation-preview.md")
         lines.append("- live_validation_state: writer-imitate-live-validation-state.md")
+        lines.append("- external_runtime_executor_readiness: writer-imitate-external-runtime-executor-readiness.md")
         lines.append("- primary_operator_role: default-operator-home")
         lines.append("- legacy_operator_role: compatibility-governance-surface")
         lines.append("- legacy_retirement_preview_role: retirement-preview-surface")
         lines.append("- live_control_state_role: preview-to-live-bridge-surface")
         lines.append("- live_mutation_preview_role: live-mutation-review-surface")
         lines.append("- live_validation_state_role: local-validation-bridge-surface")
+        lines.append("- external_runtime_executor_readiness_role: runtime-executor-gate-surface")
         lines.append("- display_policy: primary-first-legacy-secondary")
         lines.append("\n### Operator-Facing Stable Contract")
         lines.append(f"- promotion_verdict: {promotion_verdict}")

@@ -232,6 +232,7 @@ flowchart TD
 - 顶层入口层现在还会显式给出每个入口的 role / intent（如 `default-operator-home`、`compatibility-governance-surface`、`preview-to-live-bridge-surface`），让控制台不只知道入口在哪，也知道入口拿来做什么
 - 顶层入口层现已进一步显式暴露 `live_mutation_preview` 与 `live-mutation-review-surface`，把真正 live executor 前的 review 面也纳入 root registry
 - 顶层入口层现也开始显式暴露 `live_validation_state` 与 `local-validation-bridge-surface`，把 preview→checkpoint→transition→validation 的完整本地桥链全部接入 root registry
+- 顶层入口层现也开始显式暴露 `external_runtime_executor_readiness` 与 `runtime-executor-gate-surface`，把真正跨到外部 runtime executor 前的 gate 也纳入 root registry
 - 现已额外产出 `writer-imitate-control-surface-registry.json/.md`，把 root navigation / display policy / entrypoint roles 再单独收成一个 machine-readable registry 面
 - `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把真正 retirement 旧字段前的前置条件独立出来
 - 现在还额外暴露 `session_legacy_retirement_plan`，把首批候选、顺序和安全规则机读化，为第一次最小 retirement 试探做准备
