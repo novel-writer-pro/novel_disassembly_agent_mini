@@ -14,6 +14,7 @@
 10. [`./imitation-control-plane-implementation-status-map-20260509.md`](./imitation-control-plane-implementation-status-map-20260509.md)
 11. [`./imitation-control-plane-field-artifact-console-map-20260509.md`](./imitation-control-plane-field-artifact-console-map-20260509.md)
 12. [`./imitation-legacy-retirement-roadmap-20260509.md`](./imitation-legacy-retirement-roadmap-20260509.md)
+13. [`./imitation-live-mutation-bridge-roadmap-20260509.md`](./imitation-live-mutation-bridge-roadmap-20260509.md)
 
 适合回答：
 - 风险审查主链为什么分层
@@ -27,3 +28,4 @@
 - 当前控制层哪些层已经落地，哪些还只是 preview / 规划目标
 - 当前字段层、产物层、控制台层之间到底如何映射
 - 当前 legacy 字段真正 retirement 前要经过哪些步骤
+- 当前控制层从 preview 走到真正 live mutation / apply / retirement gate 还差哪些桥

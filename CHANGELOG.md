@@ -10,6 +10,8 @@
 
 - docs: 新增 `docs/architecture/imitation-legacy-retirement-roadmap-20260509.md`，把从 readiness 到 plan、pilot wave、preview 再到 first live retirement patch 的路径单独画清楚，方便后续真正做第一批 legacy 字段收敛时对照执行。
 
+- docs: 新增 `docs/architecture/imitation-live-mutation-bridge-roadmap-20260509.md`，把从当前 preview/governance 结构走到第一次真正 live mutation / apply / retirement patch 还差哪些桥单独画出，方便判断下一步最关键的实现缺口。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。

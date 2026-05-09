@@ -36,6 +36,7 @@
 - [`./architecture/imitation-control-plane-implementation-status-map-20260509.md`](./architecture/imitation-control-plane-implementation-status-map-20260509.md)
 - [`./architecture/imitation-control-plane-field-artifact-console-map-20260509.md`](./architecture/imitation-control-plane-field-artifact-console-map-20260509.md)
 - [`./architecture/imitation-legacy-retirement-roadmap-20260509.md`](./architecture/imitation-legacy-retirement-roadmap-20260509.md)
+- [`./architecture/imitation-live-mutation-bridge-roadmap-20260509.md`](./architecture/imitation-live-mutation-bridge-roadmap-20260509.md)
 - [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
 - [`./mainline-architecture-upgrade-review-20260504.md`](./mainline-architecture-upgrade-review-20260504.md)
 
