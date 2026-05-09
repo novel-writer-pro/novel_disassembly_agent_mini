@@ -213,6 +213,8 @@ flowchart TD
 - `writer-imitate-index` 现在还会额外产出：
   - `writer-imitate-action-queue.json`
   - `writer-imitate-action-queue.md`
+  - `writer-imitate-execution-state.json`
+  - `writer-imitate-execution-state.md`
 - `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，不仅保留 ready/blocked/escalation/recovery，还提供上述聚合注册表与 action-loop 入口，方便后续把 markdown 控制面接到真实调度器/看板/状态机上
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
@@ -253,6 +255,7 @@ flowchart TD
 - `session_action_backlog`：把每个 experiment 压成 ticket，开始具备“谁负责、当前状态、要去哪个 lane、缺什么才能 unblock”的操作性。
 - `session_transition_queue`：把下一跳 lane 迁移显式列出来，避免外部系统自己猜当前该往哪里切。
 - `session_checkpoint_mutations`：把本轮应该回写的核心状态字段列出来，为后续 checkpoint mutation / state persistence 提供最小合同。
+- `writer-imitate-execution-state.json/md`：在 action queue 之上进一步给出 execution tickets / transition history / checkpoint log / replay plan / recovery cursor，开始具备可恢复执行态的雏形。
 
 ### 这一步解决了什么
 
@@ -260,12 +263,13 @@ flowchart TD
 - 降低字段理解门槛：上层文档和操作面可以先看 6 个聚合视图，再按需下钻到细字段。
 - 把下一步真正需要实现的 queue transition / checkpoint mutation 先显式化，而不是只停留在命名层。
 - 让 `writer-imitate-action-queue.json/md` 成为一个更浅、更适合运营/编排系统直接消费的动作面，而不是每次都从全量 session-state 中提炼。
+- 让 `writer-imitate-execution-state.json/md` 成为后续 replay / recovery / persisted execution state 的起点，不必从零设计执行态合同。
 
 ---
 
 ## 7. 推荐下一步实战增强
 1. 把外置世界观 / 套路 steering pack 与真实 trope/worldview 资料做成可检索 RAG surface
-2. 在 `writer-imitate-session-state.v3` 之上补真实 action execution 与 checkpoint persistence
+2. 在 `writer-imitate-execution-state.v1` 之上补真实 action execution 与 checkpoint persistence
 3. 补一个 `writer-imitate-session`，把同一轮多章实验的 notes / artifacts 聚合进 output 子目录
 4. 对真实仿写章节做一次“边写边修”的长链实验，持续发现问题并优化
 5. 在 reader-sim / risk / style 之外，再引入更强的“创新收益 vs 越界风险”平衡检查

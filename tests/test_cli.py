@@ -475,10 +475,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     session_state_json = output_dir / 'writer-imitate-session-state.json'
     action_queue_json = output_dir / 'writer-imitate-action-queue.json'
     action_queue_md = output_dir / 'writer-imitate-action-queue.md'
+    execution_state_json = output_dir / 'writer-imitate-execution-state.json'
+    execution_state_md = output_dir / 'writer-imitate-execution-state.md'
     assert index_md.exists()
     assert session_state_json.exists()
     assert action_queue_json.exists()
     assert action_queue_md.exists()
+    assert execution_state_json.exists()
+    assert execution_state_md.exists()
     index_text = index_md.read_text(encoding='utf-8')
     assert 'writer-imitate-range-3-4.json' in index_text
     assert 'chapter 3' in index_text
@@ -803,6 +807,20 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Action Backlog' in action_queue_text
     assert '## Transition Queue' in action_queue_text
     assert '## Checkpoint Mutations' in action_queue_text
+    execution_state_payload = json.loads(execution_state_json.read_text(encoding='utf-8'))
+    assert execution_state_payload['contract_version'] == 'writer-imitate-execution-state.v1'
+    assert execution_state_payload['execution_tickets']
+    assert execution_state_payload['transition_history']
+    assert execution_state_payload['checkpoint_log']
+    assert execution_state_payload['replay_plan']
+    assert 'recovery_owner' in execution_state_payload['recovery_cursor']
+    execution_state_text = execution_state_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Execution State' in execution_state_text
+    assert '## Execution Tickets' in execution_state_text
+    assert '## Transition History' in execution_state_text
+    assert '## Checkpoint Log' in execution_state_text
+    assert '## Replay Plan' in execution_state_text
+    assert '## Recovery Cursor' in execution_state_text
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:
