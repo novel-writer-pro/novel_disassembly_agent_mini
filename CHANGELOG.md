@@ -38,6 +38,8 @@
 
 - imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `legacy_retirement_preview`，让第一次 legacy retirement 试探的独立预演面从 root 层即可被发现。
 
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `live_control_state`，让 apply preview 到未来 live mutation 的桥接状态面从 root 层即可被发现。
+
 - imitation: `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把 legacy 字段真正 retirement 之前的前置条件独立化。
 
 - imitation: 现已新增 `session_legacy_retirement_plan`，把 legacy 字段第一次最小 retirement 试探所需的 pilot candidates、second wave candidates、retirement order 与 safety rules 结构化下来。

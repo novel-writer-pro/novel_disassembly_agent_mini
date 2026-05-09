@@ -599,6 +599,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Experiment Session Control Plane' in index_text
     assert '### Control Surface EntryPoints' in index_text
     assert 'legacy_retirement_preview: writer-imitate-legacy-retirement-preview.md' in index_text
+    assert 'live_control_state: writer-imitate-live-control-state.md' in index_text
     assert 'display_policy: primary-first-legacy-secondary' in index_text
     assert '### Operator-Facing Stable Contract' in index_text
     assert '### Full Session Field Surface' in index_text
@@ -831,6 +832,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_legacy_retirement_pilot_wave']['wave_id'] == 'legacy-retirement-wave-01'
     assert session_state['session_control_surface_entrypoints']['primary_operator_entrypoint_json'] == 'writer-imitate-operator-surface.json'
     assert session_state['session_control_surface_entrypoints']['legacy_retirement_preview_json'] == 'writer-imitate-legacy-retirement-preview.json'
+    assert session_state['session_control_surface_entrypoints']['live_control_state_json'] == 'writer-imitate-live-control-state.json'
     assert session_state['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
@@ -844,6 +846,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert operator_surface_payload['session_control_surface_entrypoints']['legacy_operator_entrypoint_markdown'] == 'writer-imitate-legacy-contract-surface.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['legacy_retirement_preview_markdown'] == 'writer-imitate-legacy-retirement-preview.md'
+    assert operator_surface_payload['session_control_surface_entrypoints']['live_control_state_markdown'] == 'writer-imitate-live-control-state.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
     assert operator_surface_payload['session_legacy_retirement_plan']['pilot_candidates']
@@ -852,6 +855,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '# Writer Imitation Operator Surface' in operator_surface_text
     assert 'legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md' in operator_surface_text
     assert 'legacy_retirement_preview: writer-imitate-legacy-retirement-preview.md' in operator_surface_text
+    assert 'live_control_state: writer-imitate-live-control-state.md' in operator_surface_text
     assert 'display_policy: primary-first-legacy-secondary' in operator_surface_text
     assert '## Primary Verdicts' in operator_surface_text
     assert '## Primary Digests' in operator_surface_text
@@ -870,6 +874,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert legacy_surface_payload['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert legacy_surface_payload['session_control_surface_entrypoints']['primary_operator_entrypoint_markdown'] == 'writer-imitate-operator-surface.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['legacy_retirement_preview_markdown'] == 'writer-imitate-legacy-retirement-preview.md'
+    assert legacy_surface_payload['session_control_surface_entrypoints']['live_control_state_markdown'] == 'writer-imitate-live-control-state.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert legacy_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
     assert legacy_surface_payload['session_legacy_retirement_plan']['second_wave_candidates']

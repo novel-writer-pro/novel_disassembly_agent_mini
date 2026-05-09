@@ -69,6 +69,7 @@
 - index 与 session-state 也已开始显式暴露 `session_control_surface_entrypoints`，把双入口治理提升到总入口层
 - 顶层入口层现已新增 `display_policy=primary-first-legacy-secondary`，把显示优先级也机读固化下来
 - 顶层入口层现也开始显式暴露 `legacy_retirement_preview`，让 retirement 试探预演面从 root 层可发现
+- 顶层入口层现也开始显式暴露 `live_control_state`，让 live mutation bridge state 从 root 层可发现
 - `operator-surface` 与 `legacy-contract-surface` 现也开始显式承载 `session_legacy_retirement_readiness`
 - 现已进一步新增 `session_legacy_retirement_plan`，把 pilot candidates / second wave / retirement order 结构化下来
 - 现已进一步新增 `session_legacy_retirement_pilot_wave`，把 first-wave 试探切片单独对象化
