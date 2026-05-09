@@ -8,6 +8,8 @@
 
 - docs: 新增 `docs/architecture/imitation-control-plane-field-artifact-console-map-20260509.md`，把字段层、产物层、控制台层三者的映射关系单独画出来，方便产品、运营、前端与控制台接入方快速理解当前结构。
 
+- docs: 新增 `docs/architecture/imitation-legacy-retirement-roadmap-20260509.md`，把从 readiness 到 plan、pilot wave、preview 再到 first live retirement patch 的路径单独画清楚，方便后续真正做第一批 legacy 字段收敛时对照执行。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。

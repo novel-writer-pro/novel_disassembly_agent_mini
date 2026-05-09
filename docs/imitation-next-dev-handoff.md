@@ -31,6 +31,7 @@
 - `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`
 - `docs/architecture/imitation-control-plane-implementation-status-map-20260509.md`
 - `docs/architecture/imitation-control-plane-field-artifact-console-map-20260509.md`
+- `docs/architecture/imitation-legacy-retirement-roadmap-20260509.md`
 
 ## 最新推进补充（2026-05-09）
 
