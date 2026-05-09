@@ -3551,6 +3551,20 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "legacy_digest_count": len(session_primary_contract_hints["legacy_digest_fields"]),
         "status": "compatibility-layer-active",
     }
+    session_legacy_retirement_readiness = {
+        "contract_version": "writer-imitate-legacy-retirement-readiness.v1",
+        "status": "not-ready",
+        "required_conditions": [
+            "downstream consumers switched to session_primary_verdicts",
+            "downstream consumers switched to session_primary_digests",
+            "legacy contract surface reviewed by operators",
+            "primary-first display policy validated in production-like workflow",
+        ],
+        "blocking_reasons": [
+            "legacy verdict fields still exposed for compatibility",
+            "legacy digest fields still exposed for compatibility",
+        ],
+    }
     session_control_surface_entrypoints = {
         "primary_operator_entrypoint_json": "writer-imitate-operator-surface.json",
         "primary_operator_entrypoint_markdown": "writer-imitate-operator-surface.md",
@@ -3594,6 +3608,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_digests": session_primary_digests,
         "session_primary_contract_hints": session_primary_contract_hints,
         "session_legacy_contract_layer": session_legacy_contract_layer,
+        "session_legacy_retirement_readiness": session_legacy_retirement_readiness,
         "session_control_surface_entrypoints": session_control_surface_entrypoints,
         "experiments": ledger_entries,
     }
@@ -3654,6 +3669,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
     legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
+    retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
+    retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
@@ -3665,6 +3682,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_primary_digests": primary_digests,
         "session_primary_contract_hints": primary_hints,
         "session_legacy_contract_layer": legacy_layer,
+        "session_legacy_retirement_readiness": retirement_readiness,
         "session_control_surface_entrypoints": entrypoints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -3767,6 +3785,16 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- status: {legacy_layer.get('status', '')}")
         lines.append(f"- legacy_verdict_count: {legacy_layer.get('legacy_verdict_count', 0)}")
         lines.append(f"- legacy_digest_count: {legacy_layer.get('legacy_digest_count', 0)}")
+    retirement_readiness = payload.get("session_legacy_retirement_readiness", {})
+    if isinstance(retirement_readiness, dict):
+        lines.append("\n## Legacy Retirement Readiness")
+        lines.append(f"- status: {retirement_readiness.get('status', '')}")
+        required_conditions = retirement_readiness.get("required_conditions", [])
+        blocking_reasons = retirement_readiness.get("blocking_reasons", [])
+        required_text = "；".join(str(x) for x in required_conditions) if isinstance(required_conditions, list) else ""
+        blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
+        lines.append(f"- required_conditions: {required_text}")
+        lines.append(f"- blocking_reasons: {blocking_text}")
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
@@ -3798,6 +3826,8 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
+    retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
@@ -3806,6 +3836,7 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
         "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
         "session_legacy_contract_layer": legacy_layer,
         "session_primary_contract_hints": primary_hints,
+        "session_legacy_retirement_readiness": retirement_readiness,
         "session_control_surface_entrypoints": entrypoints,
     }
 
@@ -3819,6 +3850,16 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
         lines.append(f"- primary_operator_entrypoint: {entrypoints.get('primary_operator_entrypoint_markdown', '')}")
         lines.append(f"- legacy_operator_entrypoint: {entrypoints.get('legacy_operator_entrypoint_markdown', '')}")
     _append_primary_surface_lines(lines, payload)
+    retirement_readiness = payload.get("session_legacy_retirement_readiness", {})
+    if isinstance(retirement_readiness, dict):
+        lines.append("\n## Legacy Retirement Readiness")
+        lines.append(f"- status: {retirement_readiness.get('status', '')}")
+        required_conditions = retirement_readiness.get("required_conditions", [])
+        blocking_reasons = retirement_readiness.get("blocking_reasons", [])
+        required_text = "；".join(str(x) for x in required_conditions) if isinstance(required_conditions, list) else ""
+        blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
+        lines.append(f"- required_conditions: {required_text}")
+        lines.append(f"- blocking_reasons: {blocking_text}")
     return "\n".join(lines).strip() + "\n"
 
 
