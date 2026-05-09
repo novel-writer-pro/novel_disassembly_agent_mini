@@ -491,6 +491,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_apply_md = output_dir / 'writer-imitate-execution-apply.md'
     live_control_state_json = output_dir / 'writer-imitate-live-control-state.json'
     live_control_state_md = output_dir / 'writer-imitate-live-control-state.md'
+    live_mutation_preview_json = output_dir / 'writer-imitate-live-mutation-preview.json'
+    live_mutation_preview_md = output_dir / 'writer-imitate-live-mutation-preview.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1052,6 +1054,24 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Live Mutation Pilot Wave' in live_control_state_text
     assert '## Pending Checkpoint Writeback' in live_control_state_text
     assert '## Pending Transition Apply' in live_control_state_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-live-mutation-preview', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert live_mutation_preview_json.exists()
+    assert live_mutation_preview_md.exists()
+    live_mutation_preview_payload = json.loads(live_mutation_preview_json.read_text(encoding='utf-8'))
+    assert live_mutation_preview_payload['contract_version'] == 'writer-imitate-live-mutation-preview.v1'
+    assert live_mutation_preview_payload['live_mutation_pilot_wave']['wave_id'] == 'live-mutation-wave-01'
+    live_mutation_preview_text = live_mutation_preview_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Live Mutation Preview' in live_mutation_preview_text
+    assert '## Live Mutation Readiness' in live_mutation_preview_text
+    assert '## Live Mutation Plan' in live_mutation_preview_text
+    assert '## Live Mutation Pilot Wave' in live_mutation_preview_text
+    assert '## Checkpoint Writeback Preview' in live_mutation_preview_text
+    assert '## Transition Apply Preview' in live_mutation_preview_text
 
     result = runner.invoke(
         app,

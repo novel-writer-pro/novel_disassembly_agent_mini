@@ -4809,6 +4809,75 @@ def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_live_mutation_preview(output_dir: Path) -> dict[str, object]:
+    live_control_state = _build_writer_output_live_control_state(output_dir)
+    readiness_obj = live_control_state.get("live_mutation_readiness", {})
+    readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
+    plan_obj = live_control_state.get("live_mutation_plan", {})
+    plan = plan_obj if isinstance(plan_obj, dict) else {}
+    pilot_wave_obj = live_control_state.get("live_mutation_pilot_wave", {})
+    pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    checkpoints_obj = live_control_state.get("pending_checkpoint_writeback", [])
+    checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
+    transitions_obj = live_control_state.get("pending_transition_apply", [])
+    transitions = transitions_obj if isinstance(transitions_obj, list) else []
+
+    return {
+        "contract_version": "writer-imitate-live-mutation-preview.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "live_control_state_entrypoint": "writer-imitate-live-control-state.json",
+        "preview_status": "planned-not-executed",
+        "live_mutation_readiness": readiness,
+        "live_mutation_plan": plan,
+        "live_mutation_pilot_wave": pilot_wave,
+        "checkpoint_writeback_preview": checkpoints,
+        "transition_apply_preview": transitions,
+    }
+
+
+def _writer_output_live_mutation_preview_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_live_mutation_preview(output_dir)
+    lines = ["# Writer Imitation Live Mutation Preview"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- live_control_state_entrypoint: writer-imitate-live-control-state.md")
+    lines.append(f"- preview_status: {payload.get('preview_status', '')}")
+
+    readiness = payload.get("live_mutation_readiness", {})
+    if isinstance(readiness, dict):
+        lines.append("\n## Live Mutation Readiness")
+        lines.append(f"- status: {readiness.get('status', '')}")
+        lines.append(f"- next_action: {readiness.get('next_action', '')}")
+
+    plan = payload.get("live_mutation_plan", {})
+    if isinstance(plan, dict):
+        lines.append("\n## Live Mutation Plan")
+        execution_order = plan.get("execution_order", [])
+        order_text = "；".join(str(x) for x in execution_order) if isinstance(execution_order, list) else ""
+        lines.append(f"- execution_order: {order_text}")
+
+    pilot_wave = payload.get("live_mutation_pilot_wave", {})
+    if isinstance(pilot_wave, dict):
+        lines.append("\n## Live Mutation Pilot Wave")
+        lines.append(f"- wave_id: {pilot_wave.get('wave_id', '')}")
+        lines.append(f"- status: {pilot_wave.get('status', '')}")
+        lines.append(f"- rollback_rule: {pilot_wave.get('rollback_rule', '')}")
+
+    lines.append("\n## Checkpoint Writeback Preview")
+    checkpoints = payload.get("checkpoint_writeback_preview", [])
+    for item in checkpoints if isinstance(checkpoints, list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('field', '')}: value={item.get('value', '')} | reason={item.get('reason', '')}")
+
+    lines.append("\n## Transition Apply Preview")
+    transitions = payload.get("transition_apply_preview", [])
+    for item in transitions if isinstance(transitions, list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('from', '')} -> {item.get('to', '')} | owner={item.get('owner', '')}")
+
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -6580,6 +6649,27 @@ def writer_imitate_live_control_state(
     )
     echo(f"writer_imitate_live_control_state_json={json_path}")
     echo(f"writer_imitate_live_control_state_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_live_mutation_preview(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Build a standalone live-mutation preview artifact from the bridge state."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-live-mutation-preview.json"
+    md_path = output_dir / "writer-imitate-live-mutation-preview.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_live_mutation_preview(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_live_mutation_preview_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_live_mutation_preview_json={json_path}")
+    echo(f"writer_imitate_live_mutation_preview_markdown={md_path}")
 
 
 @app.command()
