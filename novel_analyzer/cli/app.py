@@ -3754,13 +3754,13 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
     lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
+    _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(
         lines,
         payload.get("session_operator_contract", {}),
         include_queues=True,
         include_actions=True,
     )
-    _append_primary_surface_lines(lines, payload)
     return "\n".join(lines).strip() + "\n"
 
 
@@ -3772,13 +3772,13 @@ def _writer_output_action_queue_markdown(output_dir: Path) -> str:
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
     lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
+    _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(
         lines,
         payload.get("session_operator_contract", {}),
         include_queues=True,
         include_actions=True,
     )
-    _append_primary_surface_lines(lines, payload)
 
     execution_registry = payload.get("execution_registry", {})
     if isinstance(execution_registry, dict):
@@ -3960,12 +3960,12 @@ def _writer_output_execution_state_markdown(output_dir: Path) -> str:
     lines.append(
         f"- counts: ready={payload.get('ready_count', 0)} | review={payload.get('review_count', 0)} | blocked={payload.get('blocked_count', 0)}"
     )
+    _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(
         lines,
         payload.get("session_operator_contract", {}),
         compact_mode="readiness",
     )
-    _append_primary_surface_lines(lines, payload)
 
     lines.append("\n## Execution Tickets")
     execution_tickets = payload.get("execution_tickets", [])
@@ -4145,8 +4145,8 @@ def _writer_output_execution_replay_markdown(output_dir: Path) -> str:
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- current_run_status: {payload.get('current_run_status', '')}")
     lines.append(f"- next_run_status: {payload.get('next_run_status', '')}")
-    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
     _append_primary_surface_lines(lines, payload)
+    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
 
     lines.append("\n## Replay Results")
     replay_results = payload.get("replay_results", [])
@@ -4283,8 +4283,8 @@ def _writer_output_execution_apply_markdown(output_dir: Path) -> str:
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- apply_status: {payload.get('apply_status', '')}")
     lines.append(f"- next_resume_hint: {payload.get('next_resume_hint', '')}")
-    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
     _append_primary_surface_lines(lines, payload)
+    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
     applied_tickets = payload.get("applied_tickets", [])
     deferred_tickets = payload.get("deferred_tickets", [])
     blocked_tickets = payload.get("blocked_tickets", [])
@@ -4374,8 +4374,8 @@ def _writer_output_execution_resume_markdown(output_dir: Path) -> str:
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- resume_status: {payload.get('resume_status', '')}")
     lines.append(f"- resume_hint: {payload.get('resume_hint', '')}")
-    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
     _append_primary_surface_lines(lines, payload)
+    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
     resume_targets = payload.get("resume_targets", [])
     resume_steps = payload.get("resume_steps", [])
     lines.append("\n## Resume Targets")

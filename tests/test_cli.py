@@ -826,9 +826,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Operator Surface' in operator_surface_text
-    assert '## Operator-Facing Stable Contract' in operator_surface_text
     assert '## Primary Verdicts' in operator_surface_text
     assert '## Primary Digests' in operator_surface_text
+    assert operator_surface_text.index('## Primary Verdicts') < operator_surface_text.index('## Operator-Facing Stable Contract')
+    assert '## Operator-Facing Stable Contract' in operator_surface_text
     assert '## Primary Contract Migration Hints' in operator_surface_text
     assert 'compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint' in operator_surface_text
     assert '## Legacy Contract Layer' in operator_surface_text
@@ -848,9 +849,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     action_queue_text = action_queue_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Action Queue' in action_queue_text
     assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in action_queue_text
-    assert '## Operator-Facing Stable Contract' in action_queue_text
     assert '## Primary Verdicts' in action_queue_text
     assert '## Primary Digests' in action_queue_text
+    assert action_queue_text.index('## Primary Verdicts') < action_queue_text.index('## Operator-Facing Stable Contract')
+    assert '## Operator-Facing Stable Contract' in action_queue_text
     assert '## Primary Contract Migration Hints' in action_queue_text
     assert '## Action Backlog' in action_queue_text
     assert '## Transition Queue' in action_queue_text
@@ -871,9 +873,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_state_text = execution_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution State' in execution_state_text
     assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_state_text
-    assert '## Operator-Facing Stable Contract' in execution_state_text
     assert '## Primary Verdicts' in execution_state_text
     assert '## Primary Digests' in execution_state_text
+    assert execution_state_text.index('## Primary Verdicts') < execution_state_text.index('## Operator-Facing Stable Contract')
+    assert '## Operator-Facing Stable Contract' in execution_state_text
     assert '## Primary Contract Migration Hints' in execution_state_text
     assert '## Execution Tickets' in execution_state_text
     assert '## Transition History' in execution_state_text
@@ -896,9 +899,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_replay_text = execution_replay_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Replay Preview' in execution_replay_text
     assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_replay_text
-    assert '## Operator-Facing Stable Contract' in execution_replay_text
     assert '## Primary Verdicts' in execution_replay_text
     assert '## Primary Digests' in execution_replay_text
+    assert execution_replay_text.index('## Primary Verdicts') < execution_replay_text.index('## Operator-Facing Stable Contract')
+    assert '## Operator-Facing Stable Contract' in execution_replay_text
     assert '## Primary Contract Migration Hints' in execution_replay_text
     assert '## Replay Results' in execution_replay_text
     assert '## Transition Preview' in execution_replay_text
@@ -925,9 +929,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_apply_text = execution_apply_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Apply Preview' in execution_apply_text
     assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_apply_text
-    assert '## Operator-Facing Stable Contract' in execution_apply_text
     assert '## Primary Verdicts' in execution_apply_text
     assert '## Primary Digests' in execution_apply_text
+    assert execution_apply_text.index('## Primary Verdicts') < execution_apply_text.index('## Operator-Facing Stable Contract')
+    assert '## Operator-Facing Stable Contract' in execution_apply_text
     assert '## Primary Contract Migration Hints' in execution_apply_text
     assert '## Applied Tickets' in execution_apply_text
     assert '## Applied Transitions' in execution_apply_text
@@ -953,9 +958,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_resume_text = execution_resume_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Resume Plan' in execution_resume_text
     assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_resume_text
-    assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Primary Verdicts' in execution_resume_text
     assert '## Primary Digests' in execution_resume_text
+    assert execution_resume_text.index('## Primary Verdicts') < execution_resume_text.index('## Operator-Facing Stable Contract')
+    assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Primary Contract Migration Hints' in execution_resume_text
     assert '## Resume Targets' in execution_resume_text
     assert '## Resume Steps' in execution_resume_text
