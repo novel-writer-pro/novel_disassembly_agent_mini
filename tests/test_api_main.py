@@ -293,6 +293,8 @@ def test_imitation_control_plane_glossary_is_indexed() -> None:
     assert "`writer-imitate-execution-apply.json`" in glossary
     assert "字段收敛建议表（第一版）" in glossary
     assert "`session_governance_checksum` + `session_governance_checksum_v2`" in glossary
+    assert "最小 operator-facing 稳定合同建议（第一版）" in glossary
+    assert "`session_live_ops_board`" in glossary
 
     readme = Path("docs/README.md").read_text(encoding="utf-8")
     assert "./imitation-control-plane-glossary.md" in readme

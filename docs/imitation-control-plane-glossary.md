@@ -477,7 +477,97 @@
 
 ---
 
-## 14. 后续建议
+## 14. 最小 operator-facing 稳定合同建议（第一版）
+
+如果后续要把当前复杂控制层真正收敛成一个更适合商业运营/控制台使用的“稳定合同”，建议第一版先只暴露下面这些核心字段：
+
+### A. 当前状态
+
+- `promotion_verdict`
+- `risk_register`
+- `session_ship_decision`
+- `session_lane_status`
+- `session_execution_mode`
+- `session_release_readiness`
+
+这组字段回答的是：
+
+> 当前这轮实验/仿写，到底处于什么状态，能不能继续推，属于扩张还是降风险。
+
+### B. 当前待办
+
+- `session_action_backlog`
+- `session_priority_queue`
+- `session_ready_queue`
+- `session_blocked_queue`
+
+这组字段回答的是：
+
+> 现在具体还有哪些动作待推进，哪些可做，哪些被卡住。
+
+### C. 当前责任链
+
+- `session_recovery_owner`
+- `session_required_review`
+- `session_escalation_path`
+- `session_owner_handoff`
+
+这组字段回答的是：
+
+> 这件事该谁看、谁接、谁审批、谁兜底。
+
+### D. 当前迁移与回写
+
+- `session_transition_queue`
+- `session_checkpoint_mutations`
+- `writer-imitate-execution-apply.json`
+- `writer-imitate-execution-resume.json`
+
+这组字段回答的是：
+
+> 下一步准备怎么迁移、哪些状态要回写、apply/resume 怎么走。
+
+### E. 当前运营摘要
+
+- `session_live_ops_board`
+- `session_digest_registry`
+- `writer-imitate-action-queue.json`
+
+这组字段回答的是：
+
+> 如果业务/运营/管理层不想看全量细节，最浅层应该看什么。
+
+### 为什么只保留这几类
+
+因为它们已经能覆盖商业运营闭环里最关键的 5 个问题：
+
+1. **当前状态是什么**
+2. **下一步动作是什么**
+3. **谁来负责**
+4. **怎么迁移/怎么回写**
+5. **如果只看摘要，最小看什么**
+
+换句话说：
+
+如果一个字段既不影响这 5 个问题，又不会被执行器/恢复链直接消费，它就不该长期停留在 operator 第一层。
+
+### 第一层不建议继续膨胀的字段类型
+
+后续不建议再往 operator 第一层继续堆这些类型：
+
+- 纯命名扩写型 `mesh/fabric/lattice` 字段
+- 多层重复 `verdict/signature/checksum/digest`
+- 偏架构解释但不直接驱动动作的 `topology/protocol/charter`
+
+这些字段并不是没价值，而是更适合：
+
+1. 下沉到深层执行态
+2. 作为解释文档存在
+3. 被聚合进 digest，而不是继续平铺在主控制面
+
+---
+
+## 15. 后续建议
 
 后续可以继续做两件事：
 
