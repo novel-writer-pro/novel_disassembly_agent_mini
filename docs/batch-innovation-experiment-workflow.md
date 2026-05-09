@@ -119,6 +119,7 @@
 - session_authority_fabric / session_override_chain / session_control_closure_audit / session_runtime_witness / session_governance_posture 是否足以形成闭环 authority fabric 层
 - session_operating_charter / session_control_charter / session_governance_charter / session_runtime_authority_digest / session_final_control_verdict 是否足以形成 final control charter 层
 - session_command_mesh / session_authority_fabric_v2 / session_closure_attestation / session_operating_charter_mesh / session_final_runtime_verdict 是否足以形成 final runtime OS 层
+- session_governance_backbone / session_control_lattice / session_authority_bus / session_runtime_witness_chain / session_os_control_digest 是否足以形成最终 control OS 层
 - session_executive_command_mesh / session_authority_control_matrix / session_runtime_closure_proof / session_governance_signal_chain / session_operating_system_verdict 是否足以形成 executive command / final OS verdict 层
 - session_governance_closure / session_authority_verdict / session_runtime_horizon / session_supervision_digest / session_control_summary 是否足以形成闭环治理总结层
 - session_operating_system_contract / session_control_checkpoint_digest / session_authority_signature / session_recovery_escalation_mesh / session_final_operating_posture 是否足以形成 operating-system contract 层

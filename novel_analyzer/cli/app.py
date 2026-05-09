@@ -4313,6 +4313,31 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"governor={session_governor_mode}",
             f"risk={risk_register}",
         ]
+        session_governance_backbone = [
+            f"governor={session_governor_mode}",
+            f"mesh={len(session_governance_mesh)}",
+            f"quorum={len(session_review_quorum)}",
+        ]
+        session_control_lattice = [
+            "decision -> governance -> runtime -> recovery",
+            "authority -> attestation -> verdict",
+            "policy -> checksum -> enforcement",
+        ]
+        session_authority_bus = [
+            "writer-operator -> continuity-reviewer",
+            "reader-feedback-owner -> risk-approver",
+            "risk-approver -> business-owner",
+        ]
+        session_runtime_witness_chain = [
+            "state_checkpoint -> runtime_witness",
+            "runtime_witness -> runtime_certificate",
+            "runtime_certificate -> final_runtime_verdict",
+        ]
+        session_os_control_digest = [
+            f"backbone={len(session_governance_backbone)}",
+            f"lattice={len(session_control_lattice)}",
+            f"authority_bus={len(session_authority_bus)}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4471,6 +4496,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_runtime_closure_proof: {'；'.join(session_runtime_closure_proof)}")
         lines.append(f"- session_governance_signal_chain: {'；'.join(session_governance_signal_chain)}")
         lines.append(f"- session_operating_system_verdict: {'；'.join(session_operating_system_verdict)}")
+        lines.append(f"- session_governance_backbone: {'；'.join(session_governance_backbone)}")
+        lines.append(f"- session_control_lattice: {'；'.join(session_control_lattice)}")
+        lines.append(f"- session_authority_bus: {'；'.join(session_authority_bus)}")
+        lines.append(f"- session_runtime_witness_chain: {'；'.join(session_runtime_witness_chain)}")
+        lines.append(f"- session_os_control_digest: {'；'.join(session_os_control_digest)}")
         lines.append(f"- session_governance_closure: {'；'.join(session_governance_closure)}")
         lines.append(f"- session_authority_verdict: {'；'.join(session_authority_verdict)}")
         lines.append(f"- session_runtime_horizon: {'；'.join(session_runtime_horizon)}")

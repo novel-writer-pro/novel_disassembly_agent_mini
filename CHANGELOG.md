@@ -101,6 +101,8 @@
 
 - imitation: writer-imitate-index now includes executive-command session fields (`session_executive_command_mesh`, `session_authority_control_matrix`, `session_runtime_closure_proof`, `session_governance_signal_chain`, `session_operating_system_verdict`) so the control plane gets closer to a final commercial operating-system verdict layer.
 
+- imitation: writer-imitate-index now includes control-OS session fields (`session_governance_backbone`, `session_control_lattice`, `session_authority_bus`, `session_runtime_witness_chain`, `session_os_control_digest`) so the control plane gets closer to a final commercial control OS layer.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -193,6 +195,7 @@
 
 
 - imitation: writer-imitate-index now includes final-runtime session fields (`session_command_mesh`, `session_authority_fabric_v2`, `session_closure_attestation`, `session_operating_charter_mesh`, `session_final_runtime_verdict`) so the control plane gets closer to a commercial final runtime OS layer.
+
 
 
 ## 2026-05-05
