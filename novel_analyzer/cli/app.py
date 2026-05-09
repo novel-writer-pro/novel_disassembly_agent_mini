@@ -4688,6 +4688,29 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         ],
         "next_action": "implement checkpoint writeback executor",
     }
+    live_mutation_plan = {
+        "phase": "pre-live-mutation",
+        "execution_order": [
+            "checkpoint-writeback",
+            "transition-apply",
+            "post-apply-validation",
+        ],
+        "checkpoint_writeback_targets": [
+            item.get("field", "")
+            for item in applied_checkpoints
+            if isinstance(item, dict)
+        ],
+        "transition_apply_targets": [
+            f"{item.get('from', '')}->{item.get('to', '')}"
+            for item in applied_transitions
+            if isinstance(item, dict)
+        ],
+        "rollback_strategy": [
+            "restore previous checkpoint snapshot",
+            "restore previous transition status",
+            "revert live mutation if downstream mismatch appears",
+        ],
+    }
 
     return {
         "contract_version": "writer-imitate-live-control-state.v1",
@@ -4702,6 +4725,7 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         "pending_transition_apply": applied_transitions,
         "next_live_mutation_step": "checkpoint-writeback",
         "live_mutation_readiness": live_mutation_readiness,
+        "live_mutation_plan": live_mutation_plan,
     }
 
 
@@ -4727,6 +4751,22 @@ def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
         lines.append(f"- required_conditions: {required_text}")
         lines.append(f"- blocking_reasons: {blocking_text}")
         lines.append(f"- next_action: {readiness.get('next_action', '')}")
+    plan = payload.get("live_mutation_plan", {})
+    if isinstance(plan, dict):
+        lines.append("\n## Live Mutation Plan")
+        lines.append(f"- phase: {plan.get('phase', '')}")
+        execution_order = plan.get("execution_order", [])
+        checkpoints = plan.get("checkpoint_writeback_targets", [])
+        transitions = plan.get("transition_apply_targets", [])
+        rollback = plan.get("rollback_strategy", [])
+        order_text = "；".join(str(x) for x in execution_order) if isinstance(execution_order, list) else ""
+        checkpoint_text = "；".join(str(x) for x in checkpoints) if isinstance(checkpoints, list) else ""
+        transition_text = "；".join(str(x) for x in transitions) if isinstance(transitions, list) else ""
+        rollback_text = "；".join(str(x) for x in rollback) if isinstance(rollback, list) else ""
+        lines.append(f"- execution_order: {order_text}")
+        lines.append(f"- checkpoint_writeback_targets: {checkpoint_text}")
+        lines.append(f"- transition_apply_targets: {transition_text}")
+        lines.append(f"- rollback_strategy: {rollback_text}")
 
     lines.append("\n## Pending Checkpoint Writeback")
     checkpoints = payload.get("pending_checkpoint_writeback", [])

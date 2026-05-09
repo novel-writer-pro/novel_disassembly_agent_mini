@@ -237,6 +237,7 @@ flowchart TD
 - 现在还会额外产出 `writer-imitate-legacy-retirement-preview.json/.md`，把 readiness / pilot wave / projected effect 收成一个可消费预演面
 - 现已新增 `writer-imitate-live-control-state.json/.md` 与 `writer-imitate-live-control-state` 命令，把 apply preview 的结果进一步沉淀成 live mutation 前的独立状态面
 - 该 live-control-state 现已开始显式暴露 `live_mutation_readiness`，把从 preview 走到真实 writeback 还缺哪些条件单独结构化出来
+- 现已进一步新增 `live_mutation_plan`，把 checkpoint writeback / transition apply / rollback strategy 的执行顺序单独结构化下来
 - markdown 第一层现在也会显式写出 compatibility note，说明 legacy verdict/digest 字段仍保留，但不再是推荐的一层入口
 - 现在 `Primary Verdicts / Primary Digests` 在这些产物中的展示顺序也已被前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升为默认阅读路径
 - `writer-imitate-index.md` 的 `Full Session Field Surface` 中，旧 verdict/digest 家族也开始被单独归到 `Legacy Verdict/Digest Compatibility Layer` 小节，避免继续在完整字段面中无差别平铺

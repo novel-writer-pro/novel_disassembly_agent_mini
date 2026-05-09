@@ -78,6 +78,7 @@
 - 现已额外产出 `writer-imitate-legacy-retirement-preview.json/.md`，为第一次最小 retirement patch 提供独立预演面
 - 现已新增 `writer-imitate-live-control-state.json/.md`，作为 apply preview 向未来 live mutation 过渡的独立状态面
 - live-control-state 现也开始显式承载 `live_mutation_readiness`
+- 现已进一步新增 `live_mutation_plan`，把 bridge state 进入真实 writeback/apply 前的执行顺序单独结构化
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 现在 `Primary Verdicts / Primary Digests` 的显示顺序也已前置到 operator contract 之前，展示优先级开始真正偏向 primary 层
 - `writer-imitate-index.md` 的完整字段面中，legacy verdict/digest 家族也已开始被单独归类到 compatibility layer 小节
