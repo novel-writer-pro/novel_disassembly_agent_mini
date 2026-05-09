@@ -58,6 +58,7 @@
 - 这些 primary verdict/digest 收口层也已开始向 action/execution/replay/apply/resume 产物同步扩散
 - 现已新增 `session_primary_contract_hints`，把 primary 层与 legacy compatibility layer 的关系机读显式化
 - 现已进一步新增 `session_legacy_contract_layer`，把 legacy verdict/digest 家族正式对象化
+- 现已额外产出 `writer-imitate-legacy-contract-surface.json/.md`，把 compatibility layer 从 hints 提升成独立入口产物
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 现在 `Primary Verdicts / Primary Digests` 的显示顺序也已前置到 operator contract 之前，展示优先级开始真正偏向 primary 层
 - 其他 markdown 产物也开始显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，降低控制链入口歧义

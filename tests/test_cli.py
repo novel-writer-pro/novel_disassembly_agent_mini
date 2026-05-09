@@ -475,6 +475,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     session_state_json = output_dir / 'writer-imitate-session-state.json'
     operator_surface_json = output_dir / 'writer-imitate-operator-surface.json'
     operator_surface_md = output_dir / 'writer-imitate-operator-surface.md'
+    legacy_surface_json = output_dir / 'writer-imitate-legacy-contract-surface.json'
+    legacy_surface_md = output_dir / 'writer-imitate-legacy-contract-surface.md'
     action_queue_json = output_dir / 'writer-imitate-action-queue.json'
     action_queue_md = output_dir / 'writer-imitate-action-queue.md'
     execution_state_json = output_dir / 'writer-imitate-execution-state.json'
@@ -489,6 +491,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state_json.exists()
     assert operator_surface_json.exists()
     assert operator_surface_md.exists()
+    assert legacy_surface_json.exists()
+    assert legacy_surface_md.exists()
     assert action_queue_json.exists()
     assert action_queue_md.exists()
     assert execution_state_json.exists()
@@ -833,6 +837,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Primary Contract Migration Hints' in operator_surface_text
     assert 'compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint' in operator_surface_text
     assert '## Legacy Contract Layer' in operator_surface_text
+    legacy_surface_payload = json.loads(legacy_surface_json.read_text(encoding='utf-8'))
+    assert legacy_surface_payload['contract_version'] == 'writer-imitate-legacy-contract-surface.v1'
+    assert legacy_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
+    assert legacy_surface_payload['session_legacy_contract_layer']['legacy_verdict_count'] > 0
+    legacy_surface_text = legacy_surface_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Legacy Contract Surface' in legacy_surface_text
+    assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in legacy_surface_text
+    assert '## Legacy Contract Layer' in legacy_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
     assert action_queue_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'

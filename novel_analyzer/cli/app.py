@@ -3764,6 +3764,29 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, object]:
+    session_state = _build_writer_output_session_state(output_dir)
+    legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
+    legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
+    primary_hints_obj = session_state.get("session_primary_contract_hints", {})
+    primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    return {
+        "contract_version": "writer-imitate-legacy-contract-surface.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "session_legacy_contract_layer": legacy_layer,
+        "session_primary_contract_hints": primary_hints,
+    }
+
+
+def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_legacy_contract_surface(output_dir)
+    lines = ["# Writer Imitation Legacy Contract Surface"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    _append_primary_surface_lines(lines, payload)
+    return "\n".join(lines).strip() + "\n"
+
+
 def _writer_output_action_queue_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_action_queue(output_dir)
     lines = ["# Writer Imitation Action Queue"]
@@ -5960,6 +5983,8 @@ def writer_imitate_index(
     state_path = output_dir / "writer-imitate-session-state.json"
     operator_surface_json_path = output_dir / "writer-imitate-operator-surface.json"
     operator_surface_md_path = output_dir / "writer-imitate-operator-surface.md"
+    legacy_surface_json_path = output_dir / "writer-imitate-legacy-contract-surface.json"
+    legacy_surface_md_path = output_dir / "writer-imitate-legacy-contract-surface.md"
     action_queue_json_path = output_dir / "writer-imitate-action-queue.json"
     action_queue_md_path = output_dir / "writer-imitate-action-queue.md"
     execution_state_json_path = output_dir / "writer-imitate-execution-state.json"
@@ -5977,6 +6002,14 @@ def writer_imitate_index(
     )
     operator_surface_md_path.write_text(
         _writer_output_operator_surface_markdown(output_dir),
+        encoding="utf-8",
+    )
+    legacy_surface_json_path.write_text(
+        json.dumps(_build_writer_output_legacy_contract_surface(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    legacy_surface_md_path.write_text(
+        _writer_output_legacy_contract_surface_markdown(output_dir),
         encoding="utf-8",
     )
     action_queue_json_path.write_text(
@@ -6007,6 +6040,8 @@ def writer_imitate_index(
     echo(f"writer_imitate_session_state_json={state_path}")
     echo(f"writer_imitate_operator_surface_json={operator_surface_json_path}")
     echo(f"writer_imitate_operator_surface_markdown={operator_surface_md_path}")
+    echo(f"writer_imitate_legacy_contract_surface_json={legacy_surface_json_path}")
+    echo(f"writer_imitate_legacy_contract_surface_markdown={legacy_surface_md_path}")
     echo(f"writer_imitate_action_queue_json={action_queue_json_path}")
     echo(f"writer_imitate_action_queue_markdown={action_queue_md_path}")
     echo(f"writer_imitate_execution_state_json={execution_state_json_path}")
