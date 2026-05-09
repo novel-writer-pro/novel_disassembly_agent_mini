@@ -495,6 +495,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     live_mutation_preview_md = output_dir / 'writer-imitate-live-mutation-preview.md'
     live_checkpoint_state_json = output_dir / 'writer-imitate-live-checkpoint-state.json'
     live_checkpoint_state_md = output_dir / 'writer-imitate-live-checkpoint-state.md'
+    live_transition_state_json = output_dir / 'writer-imitate-live-transition-state.json'
+    live_transition_state_md = output_dir / 'writer-imitate-live-transition-state.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1097,6 +1099,21 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     live_checkpoint_state_text = live_checkpoint_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Live Checkpoint State' in live_checkpoint_state_text
     assert '## Applied Checkpoints' in live_checkpoint_state_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-apply-live-transition', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert live_transition_state_json.exists()
+    assert live_transition_state_md.exists()
+    live_transition_state_payload = json.loads(live_transition_state_json.read_text(encoding='utf-8'))
+    assert live_transition_state_payload['contract_version'] == 'writer-imitate-live-transition-state.v1'
+    assert live_transition_state_payload['live_transition_status'] == 'transition-apply-applied-local'
+    assert live_transition_state_payload['applied_transitions']
+    live_transition_state_text = live_transition_state_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Live Transition State' in live_transition_state_text
+    assert '## Applied Transitions' in live_transition_state_text
 
     result = runner.invoke(
         app,
