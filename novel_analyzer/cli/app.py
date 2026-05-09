@@ -4995,6 +4995,59 @@ def _writer_output_live_transition_state_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, object]:
+    live_checkpoint_state = _build_writer_output_live_checkpoint_state(output_dir)
+    live_transition_state = _build_writer_output_live_transition_state(output_dir)
+    checkpoints_obj = live_checkpoint_state.get("applied_checkpoints", [])
+    checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
+    transitions_obj = live_transition_state.get("applied_transitions", [])
+    transitions = transitions_obj if isinstance(transitions_obj, list) else []
+    operator_contract_obj = live_transition_state.get("session_operator_contract", {})
+    operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    primary_verdicts_obj = live_transition_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    primary_digests_obj = live_transition_state.get("session_primary_digests", {})
+    primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+
+    validation_checks = [
+        {"check": "checkpoint_writeback_applied", "passed": bool(checkpoints)},
+        {"check": "transition_apply_applied", "passed": bool(transitions)},
+        {"check": "operator_contract_preserved", "passed": bool(operator_contract)},
+    ]
+
+    validation_status = "validated-local" if all(bool(item.get("passed", False)) for item in validation_checks) else "validation-failed"
+
+    return {
+        "contract_version": "writer-imitate-live-validation-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "live_control_state_entrypoint": "writer-imitate-live-control-state.json",
+        "live_validation_status": validation_status,
+        "session_operator_contract": operator_contract,
+        "session_primary_verdicts": primary_verdicts,
+        "session_primary_digests": primary_digests,
+        "validation_checks": validation_checks,
+        "next_live_mutation_step": "external-runtime-executor",
+    }
+
+
+def _writer_output_live_validation_state_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_live_validation_state(output_dir)
+    lines = ["# Writer Imitation Live Validation State"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- live_control_state_entrypoint: writer-imitate-live-control-state.md")
+    lines.append(f"- live_validation_status: {payload.get('live_validation_status', '')}")
+    lines.append(f"- next_live_mutation_step: {payload.get('next_live_mutation_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    lines.append("\n## Validation Checks")
+    checks = payload.get("validation_checks", [])
+    for item in checks if isinstance(checks, list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('check', '')}: passed={item.get('passed', False)}")
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -6831,6 +6884,27 @@ def writer_imitate_apply_live_transition(
     )
     echo(f"writer_imitate_live_transition_state_json={json_path}")
     echo(f"writer_imitate_live_transition_state_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_validate_live_state(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Validate the local live bridge state into an output artifact without touching external runtime state."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-live-validation-state.json"
+    md_path = output_dir / "writer-imitate-live-validation-state.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_live_validation_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_live_validation_state_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_live_validation_state_json={json_path}")
+    echo(f"writer_imitate_live_validation_state_markdown={md_path}")
 
 
 @app.command()
