@@ -220,6 +220,7 @@ flowchart TD
 - 现在还额外产出 `writer-imitate-legacy-contract-surface.json/.md`，把 legacy compatibility layer 单独抽成可消费入口，避免旧字段家族长期散落在主控制面
 - 现在 action/execution/replay/apply/resume 等主产物也会统一暴露 `legacy_operator_entrypoint`，让 legacy surface 作为次级入口被显式发现，而不是只存在于新增产物清单里
 - `writer-imitate-index.md` 与 `writer-imitate-session-state.json` 现在也开始显式暴露 primary/legacy 双入口，把双入口治理再上提到总入口层
+- 顶层入口层现在还会额外提供 `display_policy=primary-first-legacy-secondary`，明确告诉控制台先展示 primary 层、再暴露 legacy 层
 - markdown 第一层现在也会显式写出 compatibility note，说明 legacy verdict/digest 字段仍保留，但不再是推荐的一层入口
 - 现在 `Primary Verdicts / Primary Digests` 在这些产物中的展示顺序也已被前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升为默认阅读路径
 - `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物也会显式写出 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，减少“先看哪个文件”的歧义
