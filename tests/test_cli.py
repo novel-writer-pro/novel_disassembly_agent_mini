@@ -505,6 +505,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_preview_md = output_dir / 'writer-imitate-external-runtime-executor-preview.md'
     external_runtime_checkpoint_json = output_dir / 'writer-imitate-external-runtime-checkpoint-state.json'
     external_runtime_checkpoint_md = output_dir / 'writer-imitate-external-runtime-checkpoint-state.md'
+    external_runtime_transition_json = output_dir / 'writer-imitate-external-runtime-transition-state.json'
+    external_runtime_transition_md = output_dir / 'writer-imitate-external-runtime-transition-state.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1210,6 +1212,21 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_checkpoint_text = external_runtime_checkpoint_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Checkpoint State' in external_runtime_checkpoint_text
     assert '## Applied Runtime Checkpoints' in external_runtime_checkpoint_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-apply-external-runtime-transition', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert external_runtime_transition_json.exists()
+    assert external_runtime_transition_md.exists()
+    external_runtime_transition_payload = json.loads(external_runtime_transition_json.read_text(encoding='utf-8'))
+    assert external_runtime_transition_payload['contract_version'] == 'writer-imitate-external-runtime-transition-state.v1'
+    assert external_runtime_transition_payload['transition_state_status'] == 'external-runtime-transition-simulated-local'
+    assert external_runtime_transition_payload['applied_runtime_transitions']
+    external_runtime_transition_text = external_runtime_transition_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation External Runtime Transition State' in external_runtime_transition_text
+    assert '## Applied Runtime Transitions' in external_runtime_transition_text
 
     result = runner.invoke(
         app,
