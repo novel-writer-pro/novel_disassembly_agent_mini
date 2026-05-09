@@ -1,6 +1,16 @@
 ## Unreleased
 
-- loom: 新增 Loom 架构（织机架构）Phase 1 + Phase 2 完整实现。Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEdge）与 0509 仿写控制层之上的升级层，填补三个关键缺口：分层记忆代谢、学习型评估、叙事张力自动调节。
+- loom/migration: 新增 Alembic migration `20260509_01_loom_memory_fields.py`，为 PostgreSQL 生产环境添加 Loom 所需的 10 个字段（`fact_records` +3、`graph_nodes` +4、`graph_edges` +3），均有 server-side 默认值，现有数据安全，支持 downgrade。
+
+- loom/docs: 更新 `docs/loom/roadmap.md`，将 Phase 1+2 所有任务标记为 ✅ 已完成，补充 Phase 3 详细任务清单（生产部署 / 0509 对接 / pairwise 数据积累 / reward model / 角色认知基），更新风险登记表。
+
+- docs: 更新 `docs/cli-operations-manual.md`，新增第 12 节"Loom 记忆与张力命令"，完整记录 `loom-status`、`loom-consolidate`、`loom-assemble` 三个命令的用法、输出示例、环境变量说明、PostgreSQL 生产启用步骤，以及 Loom 与现有命令的关系表。
+
+- docs: 更新 `docs/real-run-checklist.md`，新增第 8 节"Loom 记忆层检查"，包含试跑后的 Loom 状态检查步骤、PostgreSQL migration 指引、feature flag 切换建议。
+
+- loom/docs: 更新 `docs/loom/memory/carry-over-migration.md`，将三阶段迁移路径全部标记为已实现，补充实验结果记录表（shadow 验证 ✅、A/B 实验 🔲、生产 migration 🔲），明确 PostgreSQL 生产环境必须先运行 migration 的警告。
+
+Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEdge）与 0509 仿写控制层之上的升级层，填补三个关键缺口：分层记忆代谢、学习型评估、叙事张力自动调节。
 
 - loom/db: `FactRecord` 新增 `importance_score`、`decay_factor`、`episodic_status` 三个字段，支持情节记忆的重要性排序与衰减。
 

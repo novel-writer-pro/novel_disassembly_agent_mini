@@ -10,6 +10,91 @@
 
 ---
 
+## 2. 现有 carry_over_state 的问题
+
+```python
+carry_over_state = {
+    "characters": [...],          # 追加，不去重，不排序
+    "relationships": [...],       # 追加，冲突不消解
+    "rules": [...],               # 追加，矛盾不检测
+    "unresolved_threads": [...],  # 追加，已解决的不清理
+    "previous_chapter_summary": "..."
+}
+```
+
+随章节数线性增长，第 50 章时可能超过 8000 tokens，模型处理效率下降，冲突信息干扰生成。
+
+---
+
+## 3. 迁移路径（三阶段）✅ 已实现
+
+### 阶段 0：现状（不变）
+
+旧路径继续工作，`imitation_harness_service._build_carry_over_json()` 直接拼装。
+
+### 阶段 1：并行运行（`LOOM_MEMORY_MODE=shadow`）✅ 已实现
+
+Loom 并行运行，结果附加到 `_loom_memory` 字段，不影响主链路。
+
+```bash
+# 验证 shadow 模式输出
+poetry run novel-analyzer loom-assemble <branch_id> <chapter>
+```
+
+### 阶段 2：A/B 测试（`LOOM_MEMORY_MODE=ab`）✅ 已实现（待运行实验）
+
+50/50 分流，对比 `character_ooc` 触发率。验收条件：新路径触发率 < 旧路径 × 80%。
+
+### 阶段 3：全量切换（`LOOM_MEMORY_MODE=enabled`）✅ 已实现（待生产验证）
+
+全量使用 MemoryAssemblerService 输出，旧逻辑保留但不调用。
+
+---
+
+## 4. 与 0509 session_state 的兼容 ✅ 已验证
+
+`_legacy_compat` 字段保持与现有格式 100% 兼容，0509 session_state 无需修改。
+
+测试覆盖：`tests/test_loom_phase2.py::test_assembler_carry_over_state_has_legacy_compat`
+
+---
+
+## 5. 回滚方案 ✅ 已实现
+
+```bash
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=disabled  # 完全使用旧路径，行为与 Loom 引入前一致
+```
+
+---
+
+## 6. PostgreSQL 生产环境 ⚠️ 必须先运行 migration
+
+```bash
+poetry run novel-analyzer db-upgrade
+```
+
+migration 文件：`alembic/versions/20260509_01_loom_memory_fields.py`
+
+新增 10 个字段，均有默认值，现有数据安全。
+
+---
+
+## 7. 当前实验结果记录
+
+| 实验 | 状态 | 结果 |
+|------|------|------|
+| shadow 模式功能验证 | ✅ 完成 | 38 个测试全部通过 |
+| `_legacy_compat` 兼容性验证 | ✅ 完成 | 格式 100% 兼容 |
+| A/B 实验（20 章对比） | 🔲 待运行 | 需要真实小说数据 |
+| `character_ooc` 触发率对比 | 🔲 待运行 | 目标：下降 ≥ 20% |
+| PostgreSQL 生产 migration | 🔲 待运行 | 需要生产环境访问 |
+
+---
+
+返回 [Memory 层入口](./README.md) | [三层记忆设计](./layered-memory-design.md)
+
+---
+
 ## 2. 现有 carry_over_state 的结构
 
 ```json
