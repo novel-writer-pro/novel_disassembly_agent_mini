@@ -129,6 +129,7 @@
 - session_action_backlog / session_transition_queue / session_checkpoint_mutations 是否已经把“下一步该做什么、如何迁移、要改哪些状态”显式化
 - writer-imitate-action-queue.json / writer-imitate-action-queue.md 是否已经成为更浅层、更适合编排/运营直接消费的动作合同
 - writer-imitate-execution-state.json / writer-imitate-execution-state.md 是否已经形成 replay / recovery / persisted execution 的最小执行态合同
+- writer-imitate-execution-replay.json / writer-imitate-execution-replay.md 是否已经把 apply/replay 预演显式化，方便下一步安全接入真实状态回写
 - 这些聚合注册表与 action-loop 入口是否已经足以驱动下一步真实 action execution / checkpoint persistence，而不只是 markdown 报告
 
 ---

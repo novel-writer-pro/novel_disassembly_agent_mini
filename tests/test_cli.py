@@ -477,12 +477,16 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     action_queue_md = output_dir / 'writer-imitate-action-queue.md'
     execution_state_json = output_dir / 'writer-imitate-execution-state.json'
     execution_state_md = output_dir / 'writer-imitate-execution-state.md'
+    execution_replay_json = output_dir / 'writer-imitate-execution-replay.json'
+    execution_replay_md = output_dir / 'writer-imitate-execution-replay.md'
     assert index_md.exists()
     assert session_state_json.exists()
     assert action_queue_json.exists()
     assert action_queue_md.exists()
     assert execution_state_json.exists()
     assert execution_state_md.exists()
+    assert execution_replay_json.exists()
+    assert execution_replay_md.exists()
     index_text = index_md.read_text(encoding='utf-8')
     assert 'writer-imitate-range-3-4.json' in index_text
     assert 'chapter 3' in index_text
@@ -821,6 +825,19 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Checkpoint Log' in execution_state_text
     assert '## Replay Plan' in execution_state_text
     assert '## Recovery Cursor' in execution_state_text
+    execution_replay_payload = json.loads(execution_replay_json.read_text(encoding='utf-8'))
+    assert execution_replay_payload['contract_version'] == 'writer-imitate-execution-replay.v1'
+    assert 'next_run_status' in execution_replay_payload
+    assert execution_replay_payload['replay_results']
+    assert execution_replay_payload['transition_preview']
+    assert execution_replay_payload['checkpoint_preview']
+    assert 'recovery_owner' in execution_replay_payload['next_recovery_cursor']
+    execution_replay_text = execution_replay_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Execution Replay Preview' in execution_replay_text
+    assert '## Replay Results' in execution_replay_text
+    assert '## Transition Preview' in execution_replay_text
+    assert '## Checkpoint Preview' in execution_replay_text
+    assert '## Next Recovery Cursor' in execution_replay_text
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:

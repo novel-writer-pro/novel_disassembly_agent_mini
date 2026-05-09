@@ -3778,6 +3778,173 @@ def _writer_output_execution_state_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]:
+    execution_state = _build_writer_output_execution_state(output_dir)
+    tickets_obj = execution_state.get("execution_tickets", [])
+    tickets = tickets_obj if isinstance(tickets_obj, list) else []
+    transition_history_obj = execution_state.get("transition_history", [])
+    transition_history = transition_history_obj if isinstance(transition_history_obj, list) else []
+    checkpoint_log_obj = execution_state.get("checkpoint_log", [])
+    checkpoint_log = checkpoint_log_obj if isinstance(checkpoint_log_obj, list) else []
+
+    applied_ticket_ids: list[str] = []
+    deferred_ticket_ids: list[str] = []
+    blocked_ticket_ids: list[str] = []
+    replay_results: list[dict[str, object]] = []
+    for item in tickets:
+        if not isinstance(item, dict):
+            continue
+        ticket_id = str(item.get("ticket_id", "")).strip()
+        status = str(item.get("status", "")).strip()
+        if status == "ready":
+            applied_ticket_ids.append(ticket_id)
+            replay_results.append(
+                {
+                    "ticket_id": ticket_id,
+                    "result": "applied-preview",
+                    "phase_after": "checkpoint-pending",
+                    "owner": item.get("owner", ""),
+                }
+            )
+        elif status == "review":
+            deferred_ticket_ids.append(ticket_id)
+            replay_results.append(
+                {
+                    "ticket_id": ticket_id,
+                    "result": "deferred-review",
+                    "phase_after": "review-gate",
+                    "owner": item.get("owner", ""),
+                }
+            )
+        else:
+            blocked_ticket_ids.append(ticket_id)
+            replay_results.append(
+                {
+                    "ticket_id": ticket_id,
+                    "result": "blocked-recovery",
+                    "phase_after": "blocked-recovery",
+                    "owner": item.get("owner", ""),
+                }
+            )
+
+    transition_preview = []
+    for item in transition_history:
+        if not isinstance(item, dict):
+            continue
+        transition_preview.append(
+            {
+                "from": item.get("from", ""),
+                "to": item.get("to", ""),
+                "trigger": item.get("trigger", ""),
+                "owner": item.get("owner", ""),
+                "would_apply": bool(applied_ticket_ids),
+            }
+        )
+
+    checkpoint_preview = []
+    applied_checkpoint_fields: list[str] = []
+    for item in checkpoint_log:
+        if not isinstance(item, dict):
+            continue
+        field = str(item.get("field", "")).strip()
+        would_apply = bool(applied_ticket_ids)
+        if would_apply and field:
+            applied_checkpoint_fields.append(field)
+        checkpoint_preview.append(
+            {
+                "field": field,
+                "pending_value": item.get("pending_value", ""),
+                "would_apply": would_apply,
+                "reason": item.get("reason", ""),
+            }
+        )
+
+    next_run_status = (
+        "checkpoint-pending"
+        if applied_ticket_ids
+        else "reviewing"
+        if deferred_ticket_ids
+        else "blocked"
+    )
+    recovery_cursor_obj = execution_state.get("recovery_cursor", {})
+    recovery_cursor = recovery_cursor_obj if isinstance(recovery_cursor_obj, dict) else {}
+    next_recovery_cursor = {
+        "blocked_ticket_ids": blocked_ticket_ids,
+        "review_ticket_ids": deferred_ticket_ids,
+        "replay_ready_ticket_ids": applied_ticket_ids,
+        "recovery_owner": recovery_cursor.get("recovery_owner", ""),
+    }
+    return {
+        "contract_version": "writer-imitate-execution-replay.v1",
+        "source_contract_version": execution_state.get("contract_version", ""),
+        "current_run_status": execution_state.get("run_status", ""),
+        "next_run_status": next_run_status,
+        "applied_ticket_ids": applied_ticket_ids,
+        "deferred_ticket_ids": deferred_ticket_ids,
+        "blocked_ticket_ids": blocked_ticket_ids,
+        "replay_results": replay_results,
+        "transition_preview": transition_preview,
+        "checkpoint_preview": checkpoint_preview,
+        "applied_checkpoint_fields": applied_checkpoint_fields,
+        "next_recovery_cursor": next_recovery_cursor,
+    }
+
+
+def _writer_output_execution_replay_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_execution_replay(output_dir)
+    lines = ["# Writer Imitation Execution Replay Preview"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
+    lines.append(f"- current_run_status: {payload.get('current_run_status', '')}")
+    lines.append(f"- next_run_status: {payload.get('next_run_status', '')}")
+
+    lines.append("\n## Replay Results")
+    replay_results = payload.get("replay_results", [])
+    for item in replay_results if isinstance(replay_results, list) else []:
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"- {item.get('ticket_id', '')}: result={item.get('result', '')} | "
+            f"phase_after={item.get('phase_after', '')} | owner={item.get('owner', '')}"
+        )
+
+    lines.append("\n## Transition Preview")
+    transition_preview = payload.get("transition_preview", [])
+    for item in transition_preview if isinstance(transition_preview, list) else []:
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"- {item.get('from', '')} -> {item.get('to', '')} | trigger={item.get('trigger', '')} | "
+            f"would_apply={item.get('would_apply', False)} | owner={item.get('owner', '')}"
+        )
+
+    lines.append("\n## Checkpoint Preview")
+    checkpoint_preview = payload.get("checkpoint_preview", [])
+    for item in checkpoint_preview if isinstance(checkpoint_preview, list) else []:
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"- {item.get('field', '')}: pending_value={item.get('pending_value', '')} | "
+            f"would_apply={item.get('would_apply', False)} | reason={item.get('reason', '')}"
+        )
+
+    recovery_cursor = payload.get("next_recovery_cursor", {})
+    if isinstance(recovery_cursor, dict):
+        blocked_ids = recovery_cursor.get("blocked_ticket_ids", [])
+        review_ids = recovery_cursor.get("review_ticket_ids", [])
+        replay_ready_ids = recovery_cursor.get("replay_ready_ticket_ids", [])
+        blocked_text = "；".join(str(x) for x in blocked_ids) if isinstance(blocked_ids, list) else ""
+        review_text = "；".join(str(x) for x in review_ids) if isinstance(review_ids, list) else ""
+        replay_ready_text = "；".join(str(x) for x in replay_ready_ids) if isinstance(replay_ready_ids, list) else ""
+        lines.append("\n## Next Recovery Cursor")
+        lines.append(f"- recovery_owner: {recovery_cursor.get('recovery_owner', '')}")
+        lines.append(f"- replay_ready_ticket_ids: {replay_ready_text}")
+        lines.append(f"- blocked_ticket_ids: {blocked_text}")
+        lines.append(f"- review_ticket_ids: {review_text}")
+
+    return "\n".join(lines).strip() + "\n"
+
+
 def _writer_output_index_markdown(output_dir: Path) -> str:
     lines: list[str] = ["# Writer Imitation Output Index"]
     range_files = sorted(output_dir.glob("writer-imitate-range-*.json"))
@@ -5307,6 +5474,8 @@ def writer_imitate_index(
     action_queue_md_path = output_dir / "writer-imitate-action-queue.md"
     execution_state_json_path = output_dir / "writer-imitate-execution-state.json"
     execution_state_md_path = output_dir / "writer-imitate-execution-state.md"
+    execution_replay_json_path = output_dir / "writer-imitate-execution-replay.json"
+    execution_replay_md_path = output_dir / "writer-imitate-execution-replay.md"
     md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
     state_path.write_text(
         json.dumps(_build_writer_output_session_state(output_dir), ensure_ascii=False, indent=2),
@@ -5328,12 +5497,22 @@ def writer_imitate_index(
         _writer_output_execution_state_markdown(output_dir),
         encoding="utf-8",
     )
+    execution_replay_json_path.write_text(
+        json.dumps(_build_writer_output_execution_replay(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    execution_replay_md_path.write_text(
+        _writer_output_execution_replay_markdown(output_dir),
+        encoding="utf-8",
+    )
     echo(f"writer_imitate_index_markdown={md_path}")
     echo(f"writer_imitate_session_state_json={state_path}")
     echo(f"writer_imitate_action_queue_json={action_queue_json_path}")
     echo(f"writer_imitate_action_queue_markdown={action_queue_md_path}")
     echo(f"writer_imitate_execution_state_json={execution_state_json_path}")
     echo(f"writer_imitate_execution_state_markdown={execution_state_md_path}")
+    echo(f"writer_imitate_execution_replay_json={execution_replay_json_path}")
+    echo(f"writer_imitate_execution_replay_markdown={execution_replay_md_path}")
 
 
 @app.command()

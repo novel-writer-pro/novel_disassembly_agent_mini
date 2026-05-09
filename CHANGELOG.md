@@ -8,6 +8,8 @@
 
 - imitation: `writer-imitate-index` 现在继续额外产出 `writer-imitate-execution-state.json` 与 `writer-imitate-execution-state.md`，把 action queue 提升为 execution tickets / transition history / checkpoint log / replay plan / recovery cursor，开始形成可持久化执行与恢复的最小合同。
 
+- imitation: `writer-imitate-index` 现在还会额外产出 `writer-imitate-execution-replay.json` 与 `writer-imitate-execution-replay.md`，对 execution-state 做 apply/replay 预演，显式给出哪些 ticket/transition/checkpoint 会进入下一步，方便后续安全接入真实状态回写。
+
 - imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
 - imitation: local steering retrieval now understands `tags` and scores tag / label / query overlap separately, making trope/worldview/audience doc selection more stable and explainable.
 
