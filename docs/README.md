@@ -47,6 +47,7 @@
 - [`./product/ai-novel-product-strategy.md`](./product/ai-novel-product-strategy.md)
 - [`./product/ai-novel-capability-scorecard.md`](./product/ai-novel-capability-scorecard.md)
 - [`./product/ai-novel-capability-map.md`](./product/ai-novel-capability-map.md)
+- [`./product/ai-novel-commercialization-and-moat-20260508.md`](./product/ai-novel-commercialization-and-moat-20260508.md)
 - [`./strategy/ai-novel-system-benchmark.md`](./strategy/ai-novel-system-benchmark.md)
 - [`./strategy/docs-governance-and-handoff-checklist.md`](./strategy/docs-governance-and-handoff-checklist.md)
 - [`./strategy/docs-information-architecture-guide.md`](./strategy/docs-information-architecture-guide.md)
@@ -81,6 +82,7 @@
 13. [`./trope-worldview-rag-library-format.md`](./trope-worldview-rag-library-format.md)
 14. [`./batch-innovation-experiment-workflow.md`](./batch-innovation-experiment-workflow.md)
 15. [`./imitation-next-dev-handoff.md`](./imitation-next-dev-handoff.md)
+16. [`./imitation-control-plane-glossary.md`](./imitation-control-plane-glossary.md)
 
 ### 说明
 - 第 1 步：先看怎么跑 CLI
@@ -98,6 +100,7 @@
 - 第 13 步：若想对一批章节统一做创新导向实验，直接看 `batch-innovation-experiment-workflow.md`
 - 第 14 步：若想直接从本地 trope/worldview/audience 文档装配 steering pack，先准备 `rag/` 目录再走 innovation experiment
 - 第 15 步：若本轮要暂停并为后续继续开发留交接入口，直接看 `imitation-next-dev-handoff.md`
+- 第 16 步：若觉得 control-plane 里英文术语过多，直接看 `imitation-control-plane-glossary.md`
 - 补充：可直接从 `../runs/manual_eval/_template/README.md` 复制一套标准评估目录
 - 也可运行 `python3 scripts/bootstrap_manual_eval_workspace.py <novel_slug>` 一键初始化评估目录
 

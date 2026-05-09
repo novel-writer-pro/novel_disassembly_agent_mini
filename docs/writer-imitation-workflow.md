@@ -43,6 +43,7 @@
    - `harness-imitation`
    - `iterate-imitation`
    - `run-whole-book-imitation`
+7. 如果对 control-plane / governance / replay 等英文术语理解成本高，补看 `docs/imitation-control-plane-glossary.md`
 
 ## 2.1 仿写执行流程图
 
@@ -217,6 +218,10 @@ flowchart TD
   - `writer-imitate-execution-state.md`
   - `writer-imitate-execution-replay.json`
   - `writer-imitate-execution-replay.md`
+  - `writer-imitate-execution-apply.json`
+  - `writer-imitate-execution-apply.md`
+  - `writer-imitate-execution-resume.json`
+  - `writer-imitate-execution-resume.md`
 - `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，不仅保留 ready/blocked/escalation/recovery，还提供上述聚合注册表与 action-loop 入口，方便后续把 markdown 控制面接到真实调度器/看板/状态机上
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
@@ -259,6 +264,8 @@ flowchart TD
 - `session_checkpoint_mutations`：把本轮应该回写的核心状态字段列出来，为后续 checkpoint mutation / state persistence 提供最小合同。
 - `writer-imitate-execution-state.json/md`：在 action queue 之上进一步给出 execution tickets / transition history / checkpoint log / replay plan / recovery cursor，开始具备可恢复执行态的雏形。
 - `writer-imitate-execution-replay.json/md`：对 execution-state 做一次“apply/replay 预演”，明确哪些 ticket 会被应用、哪些 transition/checkpoint 会进入下一步，以及恢复游标如何变化。
+- `writer-imitate-apply-replay`：显式生成 apply preview，便于在真实状态回写前先确认将被应用的 ticket / transition / checkpoint。
+- `writer-imitate-resume-replay`：显式生成 resume plan，把 deferred / blocked ticket 收敛成后续 review-resume / recovery-resume 动作面。
 
 ### 这一步解决了什么
 
@@ -268,12 +275,13 @@ flowchart TD
 - 让 `writer-imitate-action-queue.json/md` 成为一个更浅、更适合运营/编排系统直接消费的动作面，而不是每次都从全量 session-state 中提炼。
 - 让 `writer-imitate-execution-state.json/md` 成为后续 replay / recovery / persisted execution state 的起点，不必从零设计执行态合同。
 - 让 `writer-imitate-execution-replay.json/md` 成为真正 apply/replay mechanics 落地前的安全预演层，先验证控制流，再接入真实状态回写。
+- 让 `writer-imitate-execution-apply.json/md` 与 `writer-imitate-execution-resume.json/md` 成为显式命令面，而不只是被动导出文件，后续更容易演化为真正的 apply/resume CLI。
 
 ---
 
 ## 7. 推荐下一步实战增强
 1. 把外置世界观 / 套路 steering pack 与真实 trope/worldview 资料做成可检索 RAG surface
-2. 在 `writer-imitate-execution-replay.v1` 之上补真实 action execution 与 checkpoint persistence
+2. 在 `writer-imitate-execution-apply.v1` / `writer-imitate-execution-resume.v1` 之上补真实 action execution 与 checkpoint persistence
 3. 补一个 `writer-imitate-session`，把同一轮多章实验的 notes / artifacts 聚合进 output 子目录
 4. 对真实仿写章节做一次“边写边修”的长链实验，持续发现问题并优化
 5. 在 reader-sim / risk / style 之外，再引入更强的“创新收益 vs 越界风险”平衡检查

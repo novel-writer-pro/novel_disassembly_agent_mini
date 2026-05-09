@@ -282,6 +282,22 @@ def test_docs_readme_numbered_sections_are_sequential() -> None:
             assert nums == list(range(1, len(nums) + 1))
 
 
+def test_imitation_control_plane_glossary_is_indexed() -> None:
+    glossary = Path("docs/imitation-control-plane-glossary.md").read_text(encoding="utf-8")
+    assert "assurance" in glossary
+    assert "meta-governance" in glossary
+    assert "checkpoint" in glossary
+
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "./imitation-control-plane-glossary.md" in readme
+
+    workflow = Path("docs/writer-imitation-workflow.md").read_text(encoding="utf-8")
+    assert "imitation-control-plane-glossary.md" in workflow
+
+    handoff = Path("docs/imitation-next-dev-handoff.md").read_text(encoding="utf-8")
+    assert "docs/imitation-control-plane-glossary.md" in handoff
+
+
 
 
 def test_manual_eval_docs_and_template_are_linked() -> None:

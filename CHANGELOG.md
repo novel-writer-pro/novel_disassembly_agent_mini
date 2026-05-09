@@ -1,5 +1,7 @@
 ## Unreleased
 
+- docs: 新增 `docs/imitation-control-plane-glossary.md`，集中解释当前仿写商业 Agent 控制层中的英文术语（如 assurance / alignment / governance / attestation / replay / resume / checkpoint 等），并同步挂到 docs 入口，降低理解与交接成本。
+
 - imitation: `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，在 v2 聚合注册表基础上继续新增 `session_action_backlog`、`session_transition_queue`、`session_checkpoint_mutations`，把“下一步做什么、怎么迁移、要回写什么状态”显式化。
 
 - imitation: `writer-imitate-index.md` 现在同步输出 action backlog / transition / checkpoint 摘要，`docs/writer-imitation-workflow.md` 的 mermaid 架构图与字段解释也已升级到 v3，使控制面从 taxonomy 汇总继续靠近真实商业 Agent 的 action-loop 编排层。
@@ -9,6 +11,8 @@
 - imitation: `writer-imitate-index` 现在继续额外产出 `writer-imitate-execution-state.json` 与 `writer-imitate-execution-state.md`，把 action queue 提升为 execution tickets / transition history / checkpoint log / replay plan / recovery cursor，开始形成可持久化执行与恢复的最小合同。
 
 - imitation: `writer-imitate-index` 现在还会额外产出 `writer-imitate-execution-replay.json` 与 `writer-imitate-execution-replay.md`，对 execution-state 做 apply/replay 预演，显式给出哪些 ticket/transition/checkpoint 会进入下一步，方便后续安全接入真实状态回写。
+
+- imitation: 新增 `writer-imitate-apply-replay` 与 `writer-imitate-resume-replay` 命令，分别产出 apply preview 与 resume plan，使 execution replay 不再只是静态导出，而开始具备显式 CLI 入口。
 
 - imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
 - imitation: local steering retrieval now understands `tags` and scores tag / label / query overlap separately, making trope/worldview/audience doc selection more stable and explainable.
