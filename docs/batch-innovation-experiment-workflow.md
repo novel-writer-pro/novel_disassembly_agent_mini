@@ -128,8 +128,10 @@
 - writer-imitate-session-state.v3 中的 session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board 是否已经把冗长字段压缩成可消费的编排注册表
 - session_action_backlog / session_transition_queue / session_checkpoint_mutations 是否已经把“下一步该做什么、如何迁移、要改哪些状态”显式化
 - writer-imitate-action-queue.json / writer-imitate-action-queue.md 是否已经成为更浅层、更适合编排/运营直接消费的动作合同
+- writer-imitate-operator-surface.json / writer-imitate-operator-surface.md 是否已经成为控制台/运营面默认可读的第一层稳定合同入口
 - writer-imitate-execution-state.json / writer-imitate-execution-state.md 是否已经形成 replay / recovery / persisted execution 的最小执行态合同
 - writer-imitate-execution-replay.json / writer-imitate-execution-replay.md 是否已经把 apply/replay 预演显式化，方便下一步安全接入真实状态回写
+- writer-imitate-apply-replay / writer-imitate-resume-replay 是否已经把 apply / resume 入口显式命令化，而不是仅靠人工读取预演产物
 - 这些聚合注册表与 action-loop 入口是否已经足以驱动下一步真实 action execution / checkpoint persistence，而不只是 markdown 报告
 
 ---
