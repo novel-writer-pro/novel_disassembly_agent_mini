@@ -53,6 +53,7 @@
   - `writer-imitate-apply-replay`
   - `writer-imitate-resume-replay`
 - `writer-imitate-index.md` 已新增 `Operator-Facing Stable Contract` 小节，开始把 operator 第一层字段从全量 session 面中单独收口
+- `writer-imitate-operator-surface.json/.md` 已新增，作为独立默认入口承载 `session_operator_contract`
 - `writer-imitate-action-queue` / `writer-imitate-execution-state` 也开始复用 `session_operator_contract` 作为统一第一层合同
 - `writer-imitate-execution-replay / apply / resume` 也开始复用 `session_operator_contract`，第一层 operator 合同已逐步覆盖整条控制链
 - `Operator-Facing Stable Contract` 的 markdown 渲染已抽成统一 helper，后续第一层摘要演进时不必再多处手改

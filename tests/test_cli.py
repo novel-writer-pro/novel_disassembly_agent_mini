@@ -473,6 +473,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert result.exit_code == 0
     index_md = output_dir / 'writer-imitate-index.md'
     session_state_json = output_dir / 'writer-imitate-session-state.json'
+    operator_surface_json = output_dir / 'writer-imitate-operator-surface.json'
+    operator_surface_md = output_dir / 'writer-imitate-operator-surface.md'
     action_queue_json = output_dir / 'writer-imitate-action-queue.json'
     action_queue_md = output_dir / 'writer-imitate-action-queue.md'
     execution_state_json = output_dir / 'writer-imitate-execution-state.json'
@@ -485,6 +487,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
     assert session_state_json.exists()
+    assert operator_surface_json.exists()
+    assert operator_surface_md.exists()
     assert action_queue_json.exists()
     assert action_queue_md.exists()
     assert execution_state_json.exists()
@@ -808,6 +812,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_operator_contract']['queues']['priority_queue']
     assert session_state['session_operator_contract']['owners']['session_recovery_owner']
     assert session_state['experiments']
+    operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
+    assert operator_surface_payload['contract_version'] == 'writer-imitate-operator-surface.v1'
+    assert operator_surface_payload['session_operator_contract']['status']['session_execution_mode']
+    operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Operator Surface' in operator_surface_text
+    assert '## Operator-Facing Stable Contract' in operator_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
     assert action_queue_payload['session_operator_contract']['status']['session_execution_mode']

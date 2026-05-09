@@ -3574,6 +3574,19 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
     }
 
 
+def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]:
+    session_state = _build_writer_output_session_state(output_dir)
+    operator_contract_obj = session_state.get("session_operator_contract", {})
+    operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    return {
+        "contract_version": "writer-imitate-operator-surface.v1",
+        "session_operator_contract": operator_contract,
+        "promotion_verdict": session_state.get("promotion_verdict", ""),
+        "risk_register": session_state.get("risk_register", ""),
+        "session_ship_decision": session_state.get("session_ship_decision", ""),
+    }
+
+
 def _append_operator_contract_lines(
     lines: list[str],
     operator_contract: object,
@@ -3625,6 +3638,22 @@ def _append_operator_contract_lines(
             f"transitions={len(actions.get('session_transition_queue', [])) if isinstance(actions.get('session_transition_queue', []), list) else 0} | "
             f"checkpoints={len(actions.get('session_checkpoint_mutations', [])) if isinstance(actions.get('session_checkpoint_mutations', []), list) else 0}"
         )
+
+
+def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_operator_surface(output_dir)
+    lines = ["# Writer Imitation Operator Surface"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
+    lines.append(f"- risk_register: {payload.get('risk_register', '')}")
+    lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
+    _append_operator_contract_lines(
+        lines,
+        payload.get("session_operator_contract", {}),
+        include_queues=True,
+        include_actions=True,
+    )
+    return "\n".join(lines).strip() + "\n"
 
 
 def _writer_output_action_queue_markdown(output_dir: Path) -> str:
@@ -5791,6 +5820,8 @@ def writer_imitate_index(
     output_dir.mkdir(parents=True, exist_ok=True)
     md_path = output_dir / "writer-imitate-index.md"
     state_path = output_dir / "writer-imitate-session-state.json"
+    operator_surface_json_path = output_dir / "writer-imitate-operator-surface.json"
+    operator_surface_md_path = output_dir / "writer-imitate-operator-surface.md"
     action_queue_json_path = output_dir / "writer-imitate-action-queue.json"
     action_queue_md_path = output_dir / "writer-imitate-action-queue.md"
     execution_state_json_path = output_dir / "writer-imitate-execution-state.json"
@@ -5800,6 +5831,14 @@ def writer_imitate_index(
     md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
     state_path.write_text(
         json.dumps(_build_writer_output_session_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    operator_surface_json_path.write_text(
+        json.dumps(_build_writer_output_operator_surface(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    operator_surface_md_path.write_text(
+        _writer_output_operator_surface_markdown(output_dir),
         encoding="utf-8",
     )
     action_queue_json_path.write_text(
@@ -5828,6 +5867,8 @@ def writer_imitate_index(
     )
     echo(f"writer_imitate_index_markdown={md_path}")
     echo(f"writer_imitate_session_state_json={state_path}")
+    echo(f"writer_imitate_operator_surface_json={operator_surface_json_path}")
+    echo(f"writer_imitate_operator_surface_markdown={operator_surface_md_path}")
     echo(f"writer_imitate_action_queue_json={action_queue_json_path}")
     echo(f"writer_imitate_action_queue_markdown={action_queue_md_path}")
     echo(f"writer_imitate_execution_state_json={execution_state_json_path}")
