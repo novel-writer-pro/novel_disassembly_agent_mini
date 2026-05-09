@@ -295,6 +295,8 @@ def test_imitation_control_plane_glossary_is_indexed() -> None:
     assert "`session_governance_checksum` + `session_governance_checksum_v2`" in glossary
     assert "最小 operator-facing 稳定合同建议（第一版）" in glossary
     assert "`session_live_ops_board`" in glossary
+    assert "控制面精简路线图（建议执行顺序）" in glossary
+    assert "Phase 1：先做展示层收敛（低风险）" in glossary
 
     readme = Path("docs/README.md").read_text(encoding="utf-8")
     assert "./imitation-control-plane-glossary.md" in readme

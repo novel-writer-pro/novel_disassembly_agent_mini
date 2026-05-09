@@ -567,7 +567,102 @@
 
 ---
 
-## 15. 后续建议
+## 15. 控制面精简路线图（建议执行顺序）
+
+既然已经有了：
+
+- 术语解释
+- 字段族映射
+- 商业问题映射
+- 字段收敛建议
+- 最小 operator-facing 稳定合同
+
+下一步就不应再停留在“理解层”，而应进入“精简落地层”。
+
+下面是一版建议路线图：
+
+### Phase 1：先做展示层收敛（低风险）
+
+目标：
+
+- 不删底层字段
+- 先把 operator 第一层只展示“最小稳定合同”
+- 其余字段收进折叠区 / 深层摘要区 / 诊断区
+
+建议动作：
+
+1. `writer-imitate-index.md` 第一屏只保留最小 operator-facing 字段
+2. `session_live_ops_board` 与 `session_digest_registry` 成为默认摘要入口
+3. `session_action_backlog` / `session_transition_queue` / `session_checkpoint_mutations` 成为默认动作入口
+
+验收标准：
+
+- 业务/运营首次打开控制面时，不必滚过几十个 `session_*` 字段
+- 第一屏能回答“当前状态 / 下一步 / 谁负责 / 怎么迁移”
+
+### Phase 2：再做聚合字段收敛（中风险）
+
+目标：
+
+- 不改变已有真实执行入口
+- 先合并重复 digest / signature / verdict / checksum 家族
+
+建议动作：
+
+1. 明确只保留 1 组主 `verdict`
+2. 明确只保留 1 组主 `checksum/digest`
+3. 把重复 `signature/certificate/attestation` 重新分层：
+   - operator-facing 一层
+   - deep execution 一层
+
+验收标准：
+
+- 同类字段不再出现三四套平行命名
+- 新接手的人能快速判断“哪个 verdict 才是主 verdict”
+
+### Phase 3：最后做深层解释字段下沉（中高风险）
+
+目标：
+
+- 把 mesh / fabric / topology / charter / protocol 这类更偏解释层字段下沉
+- 主控制面只留下真正驱动动作和恢复的字段
+
+建议动作：
+
+1. 将 `mesh/fabric/lattice/topology/protocol/charter` 系列归入深层诊断区
+2. 主控制面只保留可驱动 operator 决策的聚合结论
+3. 若某字段长期没有被 apply/resume/runtime 消费，进入候选废弃清单
+
+验收标准：
+
+- operator 主控制面只剩“能驱动动作”的字段
+- 深层解释字段仍可追溯，但不再污染第一层阅读体验
+
+### 不建议的做法
+
+不建议一步到位直接删字段，因为现在控制层仍在快速演进期。
+
+更稳妥的方式是：
+
+1. **先隐藏**
+2. **再聚合**
+3. **再下沉**
+4. **最后再删除**
+
+这样不会破坏当前已有的：
+
+- session-state
+- action-queue
+- execution-state
+- execution-replay
+- execution-apply
+- execution-resume
+
+这几层合同。
+
+---
+
+## 16. 后续建议
 
 后续可以继续做两件事：
 
