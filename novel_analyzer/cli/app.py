@@ -4014,6 +4014,45 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
     }
 
 
+def _build_writer_output_control_surface_registry(output_dir: Path) -> dict[str, object]:
+    session_state = _build_writer_output_session_state(output_dir)
+    entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
+    entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
+    operator_contract_obj = session_state.get("session_operator_contract", {})
+    operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    return {
+        "contract_version": "writer-imitate-control-surface-registry.v1",
+        "session_control_surface_entrypoints": entrypoints,
+        "session_operator_contract": operator_contract,
+        "registry_status": "active",
+    }
+
+
+def _writer_output_control_surface_registry_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_control_surface_registry(output_dir)
+    lines = ["# Writer Imitation Control Surface Registry"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append(f"- registry_status: {payload.get('registry_status', '')}")
+    entrypoints = payload.get("session_control_surface_entrypoints", {})
+    if isinstance(entrypoints, dict):
+        lines.append("\n## EntryPoints")
+        lines.append(f"- primary_operator_entrypoint: {entrypoints.get('primary_operator_entrypoint_markdown', '')}")
+        lines.append(f"- legacy_operator_entrypoint: {entrypoints.get('legacy_operator_entrypoint_markdown', '')}")
+        lines.append(f"- legacy_retirement_preview: {entrypoints.get('legacy_retirement_preview_markdown', '')}")
+        lines.append(f"- live_control_state: {entrypoints.get('live_control_state_markdown', '')}")
+        lines.append(f"- display_policy: {entrypoints.get('display_policy', '')}")
+        roles = entrypoints.get("entrypoint_roles", {})
+        if isinstance(roles, dict):
+            lines.append("\n## EntryPoint Roles")
+            lines.append(f"- primary_operator_entrypoint: {roles.get('primary_operator_entrypoint', '')}")
+            lines.append(f"- legacy_operator_entrypoint: {roles.get('legacy_operator_entrypoint', '')}")
+            lines.append(f"- legacy_retirement_preview: {roles.get('legacy_retirement_preview', '')}")
+            lines.append(f"- live_control_state: {roles.get('live_control_state', '')}")
+    operator_contract = payload.get("session_operator_contract", {})
+    _append_operator_contract_lines(lines, operator_contract, include_queues=True, include_actions=True)
+    return "\n".join(lines).strip() + "\n"
+
+
 def _writer_output_legacy_retirement_preview_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_legacy_retirement_preview(output_dir)
     lines = ["# Writer Imitation Legacy Retirement Preview"]
@@ -6329,6 +6368,8 @@ def writer_imitate_index(
     legacy_surface_md_path = output_dir / "writer-imitate-legacy-contract-surface.md"
     legacy_retirement_preview_json_path = output_dir / "writer-imitate-legacy-retirement-preview.json"
     legacy_retirement_preview_md_path = output_dir / "writer-imitate-legacy-retirement-preview.md"
+    control_surface_registry_json_path = output_dir / "writer-imitate-control-surface-registry.json"
+    control_surface_registry_md_path = output_dir / "writer-imitate-control-surface-registry.md"
     action_queue_json_path = output_dir / "writer-imitate-action-queue.json"
     action_queue_md_path = output_dir / "writer-imitate-action-queue.md"
     execution_state_json_path = output_dir / "writer-imitate-execution-state.json"
@@ -6364,6 +6405,14 @@ def writer_imitate_index(
         _writer_output_legacy_retirement_preview_markdown(output_dir),
         encoding="utf-8",
     )
+    control_surface_registry_json_path.write_text(
+        json.dumps(_build_writer_output_control_surface_registry(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    control_surface_registry_md_path.write_text(
+        _writer_output_control_surface_registry_markdown(output_dir),
+        encoding="utf-8",
+    )
     action_queue_json_path.write_text(
         json.dumps(_build_writer_output_action_queue(output_dir), ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -6396,6 +6445,8 @@ def writer_imitate_index(
     echo(f"writer_imitate_legacy_contract_surface_markdown={legacy_surface_md_path}")
     echo(f"writer_imitate_legacy_retirement_preview_json={legacy_retirement_preview_json_path}")
     echo(f"writer_imitate_legacy_retirement_preview_markdown={legacy_retirement_preview_md_path}")
+    echo(f"writer_imitate_control_surface_registry_json={control_surface_registry_json_path}")
+    echo(f"writer_imitate_control_surface_registry_markdown={control_surface_registry_md_path}")
     echo(f"writer_imitate_action_queue_json={action_queue_json_path}")
     echo(f"writer_imitate_action_queue_markdown={action_queue_md_path}")
     echo(f"writer_imitate_execution_state_json={execution_state_json_path}")

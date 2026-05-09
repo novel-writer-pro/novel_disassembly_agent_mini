@@ -479,6 +479,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     legacy_surface_md = output_dir / 'writer-imitate-legacy-contract-surface.md'
     legacy_retirement_preview_json = output_dir / 'writer-imitate-legacy-retirement-preview.json'
     legacy_retirement_preview_md = output_dir / 'writer-imitate-legacy-retirement-preview.md'
+    control_surface_registry_json = output_dir / 'writer-imitate-control-surface-registry.json'
+    control_surface_registry_md = output_dir / 'writer-imitate-control-surface-registry.md'
     action_queue_json = output_dir / 'writer-imitate-action-queue.json'
     action_queue_md = output_dir / 'writer-imitate-action-queue.md'
     execution_state_json = output_dir / 'writer-imitate-execution-state.json'
@@ -499,6 +501,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert legacy_surface_md.exists()
     assert legacy_retirement_preview_json.exists()
     assert legacy_retirement_preview_md.exists()
+    assert control_surface_registry_json.exists()
+    assert control_surface_registry_md.exists()
     assert action_queue_json.exists()
     assert action_queue_md.exists()
     assert execution_state_json.exists()
@@ -905,6 +909,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Retirement Readiness' in legacy_retirement_preview_text
     assert '## Retirement Pilot Wave' in legacy_retirement_preview_text
     assert '## Projected Effect' in legacy_retirement_preview_text
+    control_surface_registry_payload = json.loads(control_surface_registry_json.read_text(encoding='utf-8'))
+    assert control_surface_registry_payload['contract_version'] == 'writer-imitate-control-surface-registry.v1'
+    assert control_surface_registry_payload['registry_status'] == 'active'
+    assert control_surface_registry_payload['session_control_surface_entrypoints']['entrypoint_roles']['primary_operator_entrypoint'] == 'default-operator-home'
+    control_surface_registry_text = control_surface_registry_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Control Surface Registry' in control_surface_registry_text
+    assert '## EntryPoints' in control_surface_registry_text
+    assert '## EntryPoint Roles' in control_surface_registry_text
     assert '## Legacy Retirement Pilot Wave' in legacy_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
