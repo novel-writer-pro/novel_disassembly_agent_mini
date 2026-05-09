@@ -6,6 +6,8 @@
 
 - imitation: `writer-imitate-execution-replay`、`writer-imitate-execution-apply`、`writer-imitate-execution-resume` 现在也开始复用 `session_operator_contract`，使 replay/apply/resume 整条控制链的第一层 operator 合同进一步统一。
 
+- imitation: action/execution/replay/apply/resume 多个产物中的 `Operator-Facing Stable Contract` 渲染现已走统一 helper，降低第一层 operator 摘要后续继续漂移的风险。
+
 - docs: 新增 `docs/imitation-control-plane-glossary.md`，集中解释当前仿写商业 Agent 控制层中的英文术语（如 assurance / alignment / governance / attestation / replay / resume / checkpoint 等），并同步挂到 docs 入口，降低理解与交接成本。
 
 - imitation: `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，在 v2 聚合注册表基础上继续新增 `session_action_backlog`、`session_transition_queue`、`session_checkpoint_mutations`，把“下一步做什么、怎么迁移、要回写什么状态”显式化。
