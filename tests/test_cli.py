@@ -828,6 +828,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert action_queue_payload['checkpoint_mutations']
     action_queue_text = action_queue_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Action Queue' in action_queue_text
+    assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in action_queue_text
     assert '## Operator-Facing Stable Contract' in action_queue_text
     assert '## Action Backlog' in action_queue_text
     assert '## Transition Queue' in action_queue_text
@@ -842,6 +843,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'recovery_owner' in execution_state_payload['recovery_cursor']
     execution_state_text = execution_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution State' in execution_state_text
+    assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_state_text
     assert '## Operator-Facing Stable Contract' in execution_state_text
     assert '## Execution Tickets' in execution_state_text
     assert '## Transition History' in execution_state_text
@@ -858,6 +860,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'recovery_owner' in execution_replay_payload['next_recovery_cursor']
     execution_replay_text = execution_replay_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Replay Preview' in execution_replay_text
+    assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_replay_text
     assert '## Operator-Facing Stable Contract' in execution_replay_text
     assert '## Replay Results' in execution_replay_text
     assert '## Transition Preview' in execution_replay_text
@@ -878,6 +881,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'next_resume_hint' in execution_apply_payload
     execution_apply_text = execution_apply_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Apply Preview' in execution_apply_text
+    assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_apply_text
     assert '## Operator-Facing Stable Contract' in execution_apply_text
     assert '## Applied Tickets' in execution_apply_text
     assert '## Applied Transitions' in execution_apply_text
@@ -897,6 +901,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_payload['resume_steps']
     execution_resume_text = execution_resume_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Resume Plan' in execution_resume_text
+    assert 'primary_operator_entrypoint: writer-imitate-operator-surface.md' in execution_resume_text
     assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Resume Targets' in execution_resume_text
     assert '## Resume Steps' in execution_resume_text

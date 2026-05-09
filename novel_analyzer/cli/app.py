@@ -3660,6 +3660,7 @@ def _writer_output_action_queue_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_action_queue(output_dir)
     lines = ["# Writer Imitation Action Queue"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
     lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
@@ -3837,6 +3838,7 @@ def _writer_output_execution_state_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_execution_state(output_dir)
     lines = ["# Writer Imitation Execution State"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append(f"- run_status: {payload.get('run_status', '')}")
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
@@ -4019,6 +4021,7 @@ def _writer_output_execution_replay_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_execution_replay(output_dir)
     lines = ["# Writer Imitation Execution Replay Preview"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- current_run_status: {payload.get('current_run_status', '')}")
     lines.append(f"- next_run_status: {payload.get('next_run_status', '')}")
@@ -4150,6 +4153,7 @@ def _writer_output_execution_apply_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_execution_apply(output_dir)
     lines = ["# Writer Imitation Execution Apply Preview"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- apply_status: {payload.get('apply_status', '')}")
     lines.append(f"- next_resume_hint: {payload.get('next_resume_hint', '')}")
@@ -4234,6 +4238,7 @@ def _writer_output_execution_resume_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_execution_resume(output_dir)
     lines = ["# Writer Imitation Execution Resume Plan"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- resume_status: {payload.get('resume_status', '')}")
     lines.append(f"- resume_hint: {payload.get('resume_hint', '')}")
