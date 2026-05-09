@@ -3960,6 +3960,81 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str, object]:
+    session_state = _build_writer_output_session_state(output_dir)
+    pilot_wave_obj = session_state.get("session_legacy_retirement_pilot_wave", {})
+    pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
+    readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
+    legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
+    legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
+    return {
+        "contract_version": "writer-imitate-legacy-retirement-preview.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
+        "retirement_readiness": readiness,
+        "retirement_pilot_wave": pilot_wave,
+        "legacy_contract_layer": legacy_layer,
+        "preview_status": "planned-not-executed",
+        "projected_effect": {
+            "legacy_verdict_count_after_wave": max(int(legacy_layer.get("legacy_verdict_count", 0) or 0), 0),
+            "legacy_digest_count_after_wave": max(
+                int(legacy_layer.get("legacy_digest_count", 0) or 0) - len(pilot_wave.get("target_fields", []))
+                if isinstance(pilot_wave.get("target_fields", []), list)
+                else int(legacy_layer.get("legacy_digest_count", 0) or 0),
+                0,
+            ),
+            "requires_rollback_on_mismatch": True,
+        },
+    }
+
+
+def _writer_output_legacy_retirement_preview_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_legacy_retirement_preview(output_dir)
+    lines = ["# Writer Imitation Legacy Retirement Preview"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
+    lines.append(f"- preview_status: {payload.get('preview_status', '')}")
+
+    readiness = payload.get("retirement_readiness", {})
+    if isinstance(readiness, dict):
+        lines.append("\n## Retirement Readiness")
+        lines.append(f"- status: {readiness.get('status', '')}")
+        required_conditions = readiness.get("required_conditions", [])
+        blocking_reasons = readiness.get("blocking_reasons", [])
+        required_text = "；".join(str(x) for x in required_conditions) if isinstance(required_conditions, list) else ""
+        blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
+        lines.append(f"- required_conditions: {required_text}")
+        lines.append(f"- blocking_reasons: {blocking_text}")
+
+    pilot_wave = payload.get("retirement_pilot_wave", {})
+    if isinstance(pilot_wave, dict):
+        lines.append("\n## Retirement Pilot Wave")
+        lines.append(f"- wave_id: {pilot_wave.get('wave_id', '')}")
+        lines.append(f"- status: {pilot_wave.get('status', '')}")
+        lines.append(f"- target_family: {pilot_wave.get('target_family', '')}")
+        targets = pilot_wave.get("target_fields", [])
+        target_text = "；".join(str(x) for x in targets) if isinstance(targets, list) else ""
+        lines.append(f"- target_fields: {target_text}")
+        lines.append(f"- rollback_rule: {pilot_wave.get('rollback_rule', '')}")
+
+    projected_effect = payload.get("projected_effect", {})
+    if isinstance(projected_effect, dict):
+        lines.append("\n## Projected Effect")
+        lines.append(
+            f"- legacy_verdict_count_after_wave: {projected_effect.get('legacy_verdict_count_after_wave', 0)}"
+        )
+        lines.append(
+            f"- legacy_digest_count_after_wave: {projected_effect.get('legacy_digest_count_after_wave', 0)}"
+        )
+        lines.append(
+            f"- requires_rollback_on_mismatch: {projected_effect.get('requires_rollback_on_mismatch', False)}"
+        )
+
+    return "\n".join(lines).strip() + "\n"
+
+
 def _writer_output_action_queue_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_action_queue(output_dir)
     lines = ["# Writer Imitation Action Queue"]
@@ -6172,6 +6247,8 @@ def writer_imitate_index(
     operator_surface_md_path = output_dir / "writer-imitate-operator-surface.md"
     legacy_surface_json_path = output_dir / "writer-imitate-legacy-contract-surface.json"
     legacy_surface_md_path = output_dir / "writer-imitate-legacy-contract-surface.md"
+    legacy_retirement_preview_json_path = output_dir / "writer-imitate-legacy-retirement-preview.json"
+    legacy_retirement_preview_md_path = output_dir / "writer-imitate-legacy-retirement-preview.md"
     action_queue_json_path = output_dir / "writer-imitate-action-queue.json"
     action_queue_md_path = output_dir / "writer-imitate-action-queue.md"
     execution_state_json_path = output_dir / "writer-imitate-execution-state.json"
@@ -6197,6 +6274,14 @@ def writer_imitate_index(
     )
     legacy_surface_md_path.write_text(
         _writer_output_legacy_contract_surface_markdown(output_dir),
+        encoding="utf-8",
+    )
+    legacy_retirement_preview_json_path.write_text(
+        json.dumps(_build_writer_output_legacy_retirement_preview(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    legacy_retirement_preview_md_path.write_text(
+        _writer_output_legacy_retirement_preview_markdown(output_dir),
         encoding="utf-8",
     )
     action_queue_json_path.write_text(
@@ -6229,6 +6314,8 @@ def writer_imitate_index(
     echo(f"writer_imitate_operator_surface_markdown={operator_surface_md_path}")
     echo(f"writer_imitate_legacy_contract_surface_json={legacy_surface_json_path}")
     echo(f"writer_imitate_legacy_contract_surface_markdown={legacy_surface_md_path}")
+    echo(f"writer_imitate_legacy_retirement_preview_json={legacy_retirement_preview_json_path}")
+    echo(f"writer_imitate_legacy_retirement_preview_markdown={legacy_retirement_preview_md_path}")
     echo(f"writer_imitate_action_queue_json={action_queue_json_path}")
     echo(f"writer_imitate_action_queue_markdown={action_queue_md_path}")
     echo(f"writer_imitate_execution_state_json={execution_state_json_path}")

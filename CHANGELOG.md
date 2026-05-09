@@ -28,6 +28,8 @@
 
 - imitation: 现已新增 `session_legacy_retirement_pilot_wave`，把 first-wave 目标、波次 id、target family、target fields 与 rollback 约束单独对象化，为第一次最小 retirement patch 做最后准备。
 
+- imitation: 现已额外产出 `writer-imitate-legacy-retirement-preview.json/.md`，把 retirement readiness、pilot wave 与 projected effect 收成独立预演面，供真正第一次 legacy retirement 试探前消费。
+
 - imitation: markdown 第一层现在也会显式提示 legacy verdict/digest 仍作为 compatibility layer 保留，但 primary 层已经是推荐默认入口，进一步把展示层迁移方向固化下来。
 
 - imitation: `Primary Verdicts / Primary Digests` 现在在 operator-surface 与 action/execution/replay/apply/resume 等 markdown 产物中的显示顺序已前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升成默认阅读入口。

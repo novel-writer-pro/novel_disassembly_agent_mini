@@ -477,6 +477,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     operator_surface_md = output_dir / 'writer-imitate-operator-surface.md'
     legacy_surface_json = output_dir / 'writer-imitate-legacy-contract-surface.json'
     legacy_surface_md = output_dir / 'writer-imitate-legacy-contract-surface.md'
+    legacy_retirement_preview_json = output_dir / 'writer-imitate-legacy-retirement-preview.json'
+    legacy_retirement_preview_md = output_dir / 'writer-imitate-legacy-retirement-preview.md'
     action_queue_json = output_dir / 'writer-imitate-action-queue.json'
     action_queue_md = output_dir / 'writer-imitate-action-queue.md'
     execution_state_json = output_dir / 'writer-imitate-execution-state.json'
@@ -493,6 +495,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_md.exists()
     assert legacy_surface_json.exists()
     assert legacy_surface_md.exists()
+    assert legacy_retirement_preview_json.exists()
+    assert legacy_retirement_preview_md.exists()
     assert action_queue_json.exists()
     assert action_queue_md.exists()
     assert execution_state_json.exists()
@@ -872,6 +876,15 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Legacy Contract Layer' in legacy_surface_text
     assert '## Legacy Retirement Readiness' in legacy_surface_text
     assert '## Legacy Retirement Plan' in legacy_surface_text
+    legacy_retirement_preview_payload = json.loads(legacy_retirement_preview_json.read_text(encoding='utf-8'))
+    assert legacy_retirement_preview_payload['contract_version'] == 'writer-imitate-legacy-retirement-preview.v1'
+    assert legacy_retirement_preview_payload['preview_status'] == 'planned-not-executed'
+    assert legacy_retirement_preview_payload['retirement_pilot_wave']['wave_id'] == 'legacy-retirement-wave-01'
+    legacy_retirement_preview_text = legacy_retirement_preview_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Legacy Retirement Preview' in legacy_retirement_preview_text
+    assert '## Retirement Readiness' in legacy_retirement_preview_text
+    assert '## Retirement Pilot Wave' in legacy_retirement_preview_text
+    assert '## Projected Effect' in legacy_retirement_preview_text
     assert '## Legacy Retirement Pilot Wave' in legacy_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
