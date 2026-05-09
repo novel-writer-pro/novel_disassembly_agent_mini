@@ -201,6 +201,7 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_authority_fabric / session_override_chain / session_control_closure_audit / session_runtime_witness / session_governance_posture
 - `writer-imitate-index.md` 中的 session_operating_charter / session_control_charter / session_governance_charter / session_runtime_authority_digest / session_final_control_verdict
 - `writer-imitate-index.md` 中的 session_governance_closure / session_authority_verdict / session_runtime_horizon / session_supervision_digest / session_control_summary
+- `writer-imitate-index.md` 中的 session_operating_system_contract / session_control_checkpoint_digest / session_authority_signature / session_recovery_escalation_mesh / session_final_operating_posture
 - `writer-imitate-index.md` 中的 session_control_plane_closure / session_exec_fabric / session_authority_routes / session_assurance_chain / session_runtime_seal
 - `writer-imitate-index.md` 中的 session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum

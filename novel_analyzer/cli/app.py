@@ -4236,6 +4236,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"verdict={session_ship_decision}",
             f"confidence={decision_confidence or 'unknown'}",
         ]
+        session_operating_system_contract = [
+            "session-state / index / decision artifact 必须共享同一控制结论",
+            "authority, governance, runtime 三层字段必须可互相校验",
+            "任何 promote/ship-ready 必须可回溯到 attestation + runtime proof",
+        ]
+        session_control_checkpoint_digest = [
+            f"state={len(session_state_checkpoint)}",
+            f"contract={len(session_checkpoint_contract)}",
+            f"ring={len(session_checkpoint_ring)}",
+        ]
+        session_authority_signature = [
+            "lane_owner=writer-operator",
+            f"risk_owner={session_recovery_owner}",
+            f"business_route={len(session_escalation_path)}",
+        ]
+        session_recovery_escalation_mesh = [
+            "reader regression -> de-risk -> remediation -> pilot",
+            "high-risk -> risk-approver -> business-owner",
+            "blocked ship -> executive review -> closure",
+        ]
+        session_final_operating_posture = [
+            f"governor={session_governor_mode}",
+            f"runtime={session_execution_mode}",
+            f"verdict={session_ship_decision}",
+            f"risk={risk_register}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4389,6 +4415,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_runtime_horizon: {'；'.join(session_runtime_horizon)}")
         lines.append(f"- session_supervision_digest: {'；'.join(session_supervision_digest)}")
         lines.append(f"- session_control_summary: {'；'.join(session_control_summary)}")
+        lines.append(f"- session_operating_system_contract: {'；'.join(session_operating_system_contract)}")
+        lines.append(f"- session_control_checkpoint_digest: {'；'.join(session_control_checkpoint_digest)}")
+        lines.append(f"- session_authority_signature: {'；'.join(session_authority_signature)}")
+        lines.append(f"- session_recovery_escalation_mesh: {'；'.join(session_recovery_escalation_mesh)}")
+        lines.append(f"- session_final_operating_posture: {'；'.join(session_final_operating_posture)}")
         lines.append(f"- session_control_kernel: {'；'.join(session_control_kernel)}")
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
