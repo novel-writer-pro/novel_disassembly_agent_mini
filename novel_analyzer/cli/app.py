@@ -3524,6 +3524,25 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "governance_checksum": f"checksum={len(session_escalation_path)}",
         "operating_digest": f"ready={len(session_ready_queue)};blocked={len(session_blocked_queue)}",
     }
+    session_primary_contract_hints = {
+        "preferred_verdict_source": "session_primary_verdicts",
+        "preferred_digest_source": "session_primary_digests",
+        "legacy_verdict_fields": [
+            "session_control_verdict",
+            "session_runtime_verdict",
+            "session_final_control_verdict",
+            "session_final_runtime_verdict",
+            "session_operating_system_verdict",
+        ],
+        "legacy_digest_fields": [
+            "session_governance_checksum",
+            "session_governance_checksum_v2",
+            "session_os_control_digest",
+            "session_control_summary",
+            "session_operating_checksum",
+        ],
+        "migration_status": "compatibility-layer-active",
+    }
 
     return {
         "contract_version": "writer-imitate-session-state.v3",
@@ -3549,6 +3568,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_operator_contract": session_operator_contract,
         "session_primary_verdicts": session_primary_verdicts,
         "session_primary_digests": session_primary_digests,
+        "session_primary_contract_hints": session_primary_contract_hints,
         "experiments": ledger_entries,
     }
 
@@ -3581,6 +3601,7 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
         "session_operator_contract": session_state.get("session_operator_contract", {}),
         "session_primary_verdicts": primary_verdicts if isinstance(primary_verdicts, dict) else {},
         "session_primary_digests": primary_digests if isinstance(primary_digests, dict) else {},
+        "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
         "action_backlog": backlog,
         "ready_items": ready_items,
         "review_items": review_items,
@@ -3601,12 +3622,15 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = session_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    primary_hints_obj = session_state.get("session_primary_contract_hints", {})
+    primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_primary_contract_hints": primary_hints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
@@ -3681,6 +3705,12 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- control_summary: {primary_digests.get('control_summary', '')}")
         lines.append(f"- governance_checksum: {primary_digests.get('governance_checksum', '')}")
         lines.append(f"- operating_digest: {primary_digests.get('operating_digest', '')}")
+    primary_hints = payload.get("session_primary_contract_hints", {})
+    if isinstance(primary_hints, dict):
+        lines.append("\n## Primary Contract Migration Hints")
+        lines.append(f"- preferred_verdict_source: {primary_hints.get('preferred_verdict_source', '')}")
+        lines.append(f"- preferred_digest_source: {primary_hints.get('preferred_digest_source', '')}")
+        lines.append(f"- migration_status: {primary_hints.get('migration_status', '')}")
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
@@ -3869,6 +3899,7 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
         "session_operator_contract": session_state.get("session_operator_contract", {}),
         "session_primary_verdicts": session_state.get("session_primary_verdicts", {}),
         "session_primary_digests": session_state.get("session_primary_digests", {}),
+        "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
         "execution_ticket_count": len(execution_tickets),
         "ready_count": ready_count,
         "review_count": review_count,
@@ -4056,6 +4087,7 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
         "session_operator_contract": execution_state.get("session_operator_contract", {}),
         "session_primary_verdicts": execution_state.get("session_primary_verdicts", {}),
         "session_primary_digests": execution_state.get("session_primary_digests", {}),
+        "session_primary_contract_hints": execution_state.get("session_primary_contract_hints", {}),
         "current_run_status": execution_state.get("run_status", ""),
         "next_run_status": next_run_status,
         "applied_ticket_ids": applied_ticket_ids,
@@ -4195,6 +4227,7 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
         "session_operator_contract": replay.get("session_operator_contract", {}),
         "session_primary_verdicts": replay.get("session_primary_verdicts", {}),
         "session_primary_digests": replay.get("session_primary_digests", {}),
+        "session_primary_contract_hints": replay.get("session_primary_contract_hints", {}),
         "apply_status": apply_status,
         "applied_tickets": applied_tickets,
         "deferred_tickets": deferred_tickets,
@@ -4287,6 +4320,7 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
         "session_operator_contract": apply_preview.get("session_operator_contract", {}),
         "session_primary_verdicts": apply_preview.get("session_primary_verdicts", {}),
         "session_primary_digests": apply_preview.get("session_primary_digests", {}),
+        "session_primary_contract_hints": apply_preview.get("session_primary_contract_hints", {}),
         "resume_status": resume_status,
         "resume_targets": resume_targets,
         "resume_steps": resume_steps,

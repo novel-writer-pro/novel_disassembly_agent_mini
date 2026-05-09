@@ -56,6 +56,7 @@
 - `writer-imitate-operator-surface.json/.md` 已新增，作为独立默认入口承载 `session_operator_contract`
 - 该默认入口现已开始额外承载 `session_primary_verdicts` / `session_primary_digests`，作为 P1 字段家族收敛的低风险切口
 - 这些 primary verdict/digest 收口层也已开始向 action/execution/replay/apply/resume 产物同步扩散
+- 现已新增 `session_primary_contract_hints`，把 primary 层与 legacy compatibility layer 的关系机读显式化
 - 其他 markdown 产物也开始显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，降低控制链入口歧义
 - 对应 JSON 产物也开始统一暴露 `primary_operator_entrypoint=writer-imitate-operator-surface.json`
 - `writer-imitate-action-queue` / `writer-imitate-execution-state` 也开始复用 `session_operator_contract` 作为统一第一层合同
