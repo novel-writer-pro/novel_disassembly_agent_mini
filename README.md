@@ -247,6 +247,7 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 
 - 变更记录：[`./CHANGELOG.md`](./CHANGELOG.md)（每次修复 / 变动必须追加）
 - 完整文档中心：[`./docs/README.md`](./docs/README.md)
+- 当前 API surface：[`./docs/api-current-surface.md`](./docs/api-current-surface.md)
 ### PostgreSQL checks
 ```bash
 python3 scripts/check_postgres.py

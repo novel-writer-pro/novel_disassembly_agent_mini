@@ -1,6 +1,46 @@
 ## Unreleased
 
-- docs: 新增 `docs/architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`，用完整 Mermaid 架构图与分层说明收口当前仿写商业 Agent 控制层的最新设计，把 experiment、session-state、operator/legacy 双 surface、retirement preview、root navigation 与 primary/legacy 分层治理全部放进同一张架构图里。
+- loom: 新增 Loom 架构（织机架构）Phase 1 + Phase 2 完整实现。Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEdge）与 0509 仿写控制层之上的升级层，填补三个关键缺口：分层记忆代谢、学习型评估、叙事张力自动调节。
+
+- loom/db: `FactRecord` 新增 `importance_score`、`decay_factor`、`episodic_status` 三个字段，支持情节记忆的重要性排序与衰减。
+
+- loom/db: `GraphNode` 新增 `conflict_status`、`loom_version`、`superseded_by_node_id`、`importance_score` 四个字段，支持节点冲突分类（clean/contradiction/evolution/ambiguity/resolved）与版本链追踪。
+
+- loom/db: `GraphEdge` 新增 `conflict_status`、`loom_version`、`is_active` 三个字段，支持边的活跃状态管理。
+
+- loom/service: 新增 `memory_consolidation_service.py`，每章分析完成后运行冲突检测与情节记忆衰减。支持 contradiction/evolution/ambiguity 三类冲突分类，输出 `ConsolidationResult` 可直接作为 0509 operator_surface 的信号。
+
+- loom/service: 新增 `memory_assembler_service.py`，从三层记忆（Working/Episodic/Semantic）动态组装 carry_over_state。输出包含 `_legacy_compat` 字段，与现有 0509 session_state 格式 100% 兼容。
+
+- loom/service: 新增 `tension_service.py`，计算三个叙事张力指标：`plot_similarity_score`（pgvector cosine 相似度，fallback 为 Jaccard keyword 相似度）、`conflict_density`（冲突边密度）、`surprise_index`（新颖度指数）。全部基于现有 DB 数据，不需要新的 LLM 调用。
+
+- loom/service: 新增 `pairwise_eval_service.py`，LLM-as-judge pairwise 评估框架。支持四个维度（character_consistency/plot_coherence/style_fidelity/narrative_tension），含 heuristic fallback（无 LLM 时可用）。输出 `chapter_quality_score` 可接入 0509 session_primary_verdicts。
+
+- loom/settings: `Settings` 新增五个 Loom feature flags：`loom_memory_mode`（disabled/shadow/ab/enabled，默认 shadow）、`loom_tension_enabled`（默认 True）、`loom_pairwise_enabled`（默认 False）、`loom_episodic_top_k`（默认 20）、`loom_tension_lookback_n`（默认 3）。
+
+- loom/analysis: `analysis_service.py` 在章节 materialization 完成后调用 `MemoryConsolidationService`（shadow/enabled/ab 模式下生效），非阻塞，失败只记录 job event。
+
+- loom/harness: `imitation_harness_service.py` 的 `preflight_draft` 新增 `loom_tension` 检查项，当 `loom_tension_enabled=True` 时自动计算张力指标并附加到 preflight checks（warn 级别，非阻塞）。
+
+- loom/harness: `imitation_harness_service.py` 新增 `_build_carry_over_json` 方法，在 shadow 模式下并行运行 MemoryAssemblerService 并将结果附加到 `_loom_memory` 字段；在 enabled 模式下直接使用 Loom 三层记忆输出替换原有静态组装逻辑。
+
+- loom/cli: 新增三个 CLI 命令：`loom-status`（查看分支的记忆状态与张力指标）、`loom-consolidate`（对指定章节手动运行冲突代谢）、`loom-assemble`（输出指定章节的 carry_over_state JSON）。
+
+- loom/docs: 新增 `docs/loom/` 目录，包含 README.md、overview.md、arch-diff-and-alignment.md（0509 vs Loom 冲突点与对齐方案）、roadmap.md，以及 memory/、reward/、tension/ 三个子目录共 16 份架构文档。
+
+- loom/test: 新增 `tests/test_loom_phase1.py`（23 个单元测试）和 `tests/test_loom_phase2.py`（15 个集成测试），覆盖 DB 字段默认值、冲突代谢、记忆组装、张力指标、pairwise 评估、CLI 命令全链路，共 38 个测试全部通过。
+
+- docs: 整理 `docs/README.md` 为生产级文档管理结构，按角色（产品/后端/接入者/维护者/仿写）和能力线（风险审查/Review Workflow/仿写/读者体验）分流，新增 A/B/C/D 四层文档分类。
+
+- docs: 更新 `docs/roles/` 下各角色入口 README，加入场景描述、分步阅读顺序、关键文档速查表。
+
+- docs: 更新 `docs/tracks/imitation/README.md` 和 `docs/roles/imitation/README.md`，完整收录 0509 仿写控制层六份文档，标注适合角色和阅读顺序。
+
+- docs: 更新 `docs/architecture/README.md`，加入分层表格和 0509 文档用途说明，新增 Loom 架构入口。
+
+- docs: `README.md` Newcomer Path 改为按角色分流表，More docs 收口到两行。
+
+，用完整 Mermaid 架构图与分层说明收口当前仿写商业 Agent 控制层的最新设计，把 experiment、session-state、operator/legacy 双 surface、retirement preview、root navigation 与 primary/legacy 分层治理全部放进同一张架构图里。
 
 - docs: 新增 `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`，从商业运营闭环视角解释当前控制层如何把 experiment、operator surface、action/execution、primary/legacy 治理与 retirement preview 串成接近商用的操作闭环。
 

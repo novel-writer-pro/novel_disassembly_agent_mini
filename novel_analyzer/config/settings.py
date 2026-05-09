@@ -62,6 +62,19 @@ class Settings(BaseSettings):
     rerank_max_length: int = Field(default=512)
     gate_model_name: str = Field(default="")
 
+    # ------------------------------------------------------------------
+    # Loom feature flags
+    # disabled  – Loom is off, existing pipeline unchanged
+    # shadow    – Loom runs in parallel but output is not used (safe default)
+    # ab        – 50/50 split between old and Loom paths
+    # enabled   – Loom is fully active
+    # ------------------------------------------------------------------
+    loom_memory_mode: str = Field(default="shadow")
+    loom_tension_enabled: bool = Field(default=True)
+    loom_pairwise_enabled: bool = Field(default=False)
+    loom_episodic_top_k: int = Field(default=20)
+    loom_tension_lookback_n: int = Field(default=3)
+
     @property
     def resolved_database_url(self) -> str:
         """Return the effective SQLAlchemy URL."""

@@ -7676,3 +7676,128 @@ def latest_manifest(novel_id: str, database_url: str | None = None) -> None:
 
 if __name__ == "__main__":
     app()
+
+
+# ---------------------------------------------------------------------------
+# Loom commands
+# ---------------------------------------------------------------------------
+
+@app.command()
+def loom_status(
+    branch_id: str,
+    database_url: str | None = None,
+) -> None:
+    """Show Loom memory and tension status for a branch."""
+    from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
+    from novel_analyzer.services.tension_service import TensionService
+    from novel_analyzer.database.models import FactRecord, GraphNode
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        # Memory stats
+        total_facts = session.scalar(
+            select(func.count(FactRecord.id))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.deleted_at.is_(None))
+        ) or 0
+        active_facts = session.scalar(
+            select(func.count(FactRecord.id))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.episodic_status == "active")
+            .where(FactRecord.deleted_at.is_(None))
+        ) or 0
+        total_nodes = session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+        contradiction_nodes = session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.conflict_status == "contradiction")
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+        evolution_nodes = session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.conflict_status == "evolution")
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+
+        echo("=== Loom Memory Status ===")
+        echo(f"branch_id:           {branch_id}")
+        echo(f"total_facts:         {total_facts}")
+        echo(f"active_facts:        {active_facts}")
+        echo(f"total_graph_nodes:   {total_nodes}")
+        echo(f"contradiction_nodes: {contradiction_nodes}")
+        echo(f"evolution_nodes:     {evolution_nodes}")
+        echo(f"loom_memory_mode:    {settings.loom_memory_mode}")
+        echo(f"loom_tension_enabled:{settings.loom_tension_enabled}")
+
+        # Latest chapter for tension
+        latest_chapter = session.scalar(
+            select(func.max(FactRecord.chapter_index))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.deleted_at.is_(None))
+        )
+        if latest_chapter:
+            tension_svc = TensionService(session)
+            score = tension_svc.compute(branch_id, chapter_index=latest_chapter)
+            echo("")
+            echo(f"=== Loom Tension (chapter {latest_chapter}) ===")
+            echo(f"tension_score:       {score.tension_score:.4f}")
+            echo(f"plot_similarity:     {score.plot_similarity:.4f}")
+            echo(f"conflict_density:    {score.conflict_density:.4f}")
+            echo(f"surprise_index:      {score.surprise_index:.4f}")
+            if score.alerts:
+                echo("alerts:")
+                for a in score.alerts:
+                    echo(f"  [{a.severity}] {a.message}")
+            else:
+                echo("alerts:              none")
+
+
+@app.command()
+def loom_consolidate(
+    branch_id: str,
+    chapter_index: int,
+    database_url: str | None = None,
+) -> None:
+    """Run Loom memory consolidation for a specific chapter."""
+    from novel_analyzer.services.memory_consolidation_service import MemoryConsolidationService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        svc = MemoryConsolidationService(session)
+        result = svc.consolidate(branch_id, chapter_index)
+        session.commit()
+        echo(f"branch_id:      {branch_id}")
+        echo(f"chapter_index:  {chapter_index}")
+        echo(f"contradictions: {len(result.contradictions)}")
+        echo(f"evolutions:     {len(result.evolutions)}")
+        echo(f"ambiguities:    {len(result.ambiguities)}")
+        echo(f"human_review:   {result.human_review_required}")
+        if result.contradictions:
+            echo("contradiction details:")
+            for c in result.contradictions:
+                echo(f"  - {c.entity_label}: {c.description}")
+
+
+@app.command()
+def loom_assemble(
+    branch_id: str,
+    target_chapter: int,
+    database_url: str | None = None,
+) -> None:
+    """Assemble and print Loom carry_over_state for a target chapter."""
+    from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        svc = MemoryAssemblerService(session)
+        mem = svc.assemble(branch_id, target_chapter_index=target_chapter)
+        cos = mem.to_carry_over_state()
+        echo(json.dumps(cos, ensure_ascii=False, indent=2))

@@ -38,6 +38,7 @@ from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.graph_service import GraphService
+from novel_analyzer.services.memory_consolidation_service import MemoryConsolidationService
 from novel_analyzer.services.quality_gate_service import QualityGateService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
@@ -56,6 +57,7 @@ class AnalysisService:
         self.fact_service = FactService(session)
         self.graph_service = GraphService(session)
         self.risk_audit_service = RiskAuditService(session)
+        self.memory_consolidation = MemoryConsolidationService(session)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -923,6 +925,36 @@ class AnalysisService:
                     segment.chapter_index,
                     self.settings.cross_chapter_window,
                 )
+                # Loom: memory consolidation (shadow / enabled mode)
+                if self.settings.loom_memory_mode in ("shadow", "enabled", "ab"):
+                    try:
+                        loom_result = self.memory_consolidation.consolidate(
+                            branch_id, segment.chapter_index
+                        )
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
+                            chapter_index=segment.chapter_index,
+                            event_type="loom_consolidation_complete",
+                            stage="loom_memory",
+                            message=(
+                                f"loom consolidation: {loom_result.total_conflicts} conflicts "
+                                f"(contradictions={len(loom_result.contradictions)}, "
+                                f"evolutions={len(loom_result.evolutions)}, "
+                                f"ambiguities={len(loom_result.ambiguities)})"
+                            ),
+                            payload_json=loom_result.to_operator_signal(),
+                        )
+                    except Exception as _loom_exc:  # noqa: BLE001
+                        # Loom is non-blocking – log and continue
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
+                            chapter_index=segment.chapter_index,
+                            event_type="loom_consolidation_failed",
+                            stage="loom_memory",
+                            level="warning",
+                            message=str(_loom_exc),
+                            payload_json={"non_blocking": True},
+                        )
                 self.run_service.complete_chapter_job(branch_id, segment.chapter_index)
                 try:
                     self.run_service.record_job_event(
