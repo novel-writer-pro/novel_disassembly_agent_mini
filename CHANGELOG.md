@@ -50,6 +50,8 @@
 
 - imitation: 顶层 `session_control_surface_entrypoints` 现还开始显式暴露 `entrypoint_roles`，把 primary/legacy/retirement-preview/live-control-state 各自的入口语义机读化，方便控制台按角色和意图消费。
 
+- imitation: 顶层 `session_control_surface_entrypoints` 现已进一步显式暴露 `live_mutation_preview` 与 `live-mutation-review-surface` 角色，把真正 live executor 前的 review 面也纳入 root registry。
+
 - imitation: 现已额外产出 `writer-imitate-control-surface-registry.json/.md`，把 root navigation / display policy / entrypoint roles 再单独收成 machine-readable registry 产物，进一步逼近真正 control surface registry。
 
 - imitation: `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把 legacy 字段真正 retirement 之前的前置条件独立化。
