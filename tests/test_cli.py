@@ -758,6 +758,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_governance_registry:' in index_text
     assert 'session_digest_registry:' in index_text
     assert 'session_live_ops_board:' in index_text
+    assert 'session_action_backlog:' in index_text
+    assert 'session_transition_queue:' in index_text
+    assert 'session_checkpoint_mutations:' in index_text
     assert '## Experiment Ledger' in index_text
     assert '### batch-a' in index_text
     assert 'focus:' in index_text
@@ -768,7 +771,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'observation_window:' in index_text
     assert 'business_risk_label:' in index_text
     session_state = json.loads(session_state_json.read_text(encoding='utf-8'))
-    assert session_state['contract_version'] == 'writer-imitate-session-state.v2'
+    assert session_state['contract_version'] == 'writer-imitate-session-state.v3'
     assert 'promotion_verdict' in session_state
     assert 'session_ready_queue' in session_state
     assert 'session_blocked_queue' in session_state
@@ -780,6 +783,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_governance_registry']['governor_mode']
     assert session_state['session_digest_registry']['runtime_contract']
     assert session_state['session_live_ops_board']['session_ship_decision']
+    assert session_state['session_action_backlog']
+    assert session_state['session_transition_queue']
+    assert session_state['session_checkpoint_mutations']
     assert session_state['experiments']
 
 

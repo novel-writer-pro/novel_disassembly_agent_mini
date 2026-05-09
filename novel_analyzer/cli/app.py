@@ -3396,9 +3396,97 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "primary_focus": session_focuses[0] if session_focuses else "",
         "focuses": session_focuses[:3],
     }
+    session_action_backlog: list[dict[str, object]] = []
+    for index, entry in enumerate(ledger_entries, start=1):
+        recommendation = str(entry.get("recommendation", "")).strip()
+        business_risk_label = str(entry.get("business_risk_label", "")).strip()
+        if business_risk_label == "high-risk":
+            status = "blocked"
+            owner = "risk-approver"
+        elif recommendation in {"de-risk", "pilot"} or business_risk_label == "guarded":
+            status = "review"
+            owner = "continuity-reviewer"
+        else:
+            status = "ready"
+            owner = "writer-operator"
+        target_lane = (
+            "expansion-lane"
+            if recommendation == "promote"
+            else "risk-mitigation-lane"
+            if recommendation == "de-risk"
+            else "pilot-lane"
+            if recommendation == "pilot"
+            else "evidence-lane"
+        )
+        unblock_conditions: list[str] = []
+        if status == "blocked":
+            unblock_conditions.append("risk approver 完成高风险复核")
+        elif status == "review":
+            unblock_conditions.append("补齐 reader acceptance / continuity evidence")
+        session_action_backlog.append(
+            {
+                "ticket_id": f"exp-{index:02d}",
+                "experiment_name": entry.get("experiment_name", ""),
+                "status": status,
+                "owner": owner,
+                "target_lane": target_lane,
+                "next_action": entry.get("next_action", ""),
+                "checkpoint": f"{entry.get('experiment_name', '')}:{recommendation or 'observe'}",
+                "unblock_conditions": unblock_conditions,
+            }
+        )
+    if promotion_verdict == "promote" and risk_register == "controlled":
+        session_transition_queue = [
+            {
+                "from": "pilot-lane",
+                "to": "expansion-lane",
+                "trigger": "promotion_verdict=promote and risk_register=controlled",
+                "owner": "writer-operator",
+            }
+        ]
+    elif promotion_verdict == "de-risk":
+        session_transition_queue = [
+            {
+                "from": "pilot-lane",
+                "to": "risk-mitigation-lane",
+                "trigger": "promotion_verdict=de-risk",
+                "owner": "risk-approver",
+            }
+        ]
+    else:
+        session_transition_queue = [
+            {
+                "from": "evidence-lane",
+                "to": "pilot-lane",
+                "trigger": "reader acceptance improves and blockers clear",
+                "owner": "continuity-reviewer",
+            }
+        ]
+    session_checkpoint_mutations = [
+        {
+            "field": "promotion_verdict",
+            "value": promotion_verdict,
+            "reason": "聚合 experiment_decision_note.recommendation",
+        },
+        {
+            "field": "risk_register",
+            "value": risk_register,
+            "reason": "聚合 business_risk_label",
+        },
+        {
+            "field": "session_ship_decision",
+            "value": session_ship_decision,
+            "reason": "由 promotion_verdict + risk_register 推导",
+        },
+        {
+            "field": "session_recovery_owner",
+            "value": session_recovery_owner,
+            "reason": "根据 guarded/high-risk 状态自动选择",
+        },
+    ]
 
     return {
-        "contract_version": "writer-imitate-session-state.v2",
+        "contract_version": "writer-imitate-session-state.v3",
         "output_dir": str(output_dir),
         "experiment_count": len(ledger_entries),
         "promotion_verdict": promotion_verdict,
@@ -3415,6 +3503,9 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_governance_registry": session_governance_registry,
         "session_digest_registry": session_digest_registry,
         "session_live_ops_board": session_live_ops_board,
+        "session_action_backlog": session_action_backlog,
+        "session_transition_queue": session_transition_queue,
+        "session_checkpoint_mutations": session_checkpoint_mutations,
         "experiments": ledger_entries,
     }
 
@@ -4694,6 +4785,34 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "- session_live_ops_board: "
             f"ship={session_ship_decision}；promotion={promotion_verdict}；"
             f"risk={risk_register}；focuses={len(session_focuses[:3])}"
+        )
+        ready_ticket_count = sum(
+            1
+            for entry in ledger_entries
+            if entry.get("recommendation") == "promote" and entry.get("business_risk_label") != "high-risk"
+        )
+        blocked_ticket_count = sum(1 for item in session_blockers) or sum(1 for entry in ledger_entries if entry.get("business_risk_label") == "high-risk")
+        review_ticket_count = max(len(ledger_entries) - ready_ticket_count - blocked_ticket_count, 0)
+        next_transition = (
+            "pilot-lane -> expansion-lane"
+            if promotion_verdict == "promote" and risk_register == "controlled"
+            else "pilot-lane -> risk-mitigation-lane"
+            if promotion_verdict == "de-risk"
+            else "evidence-lane -> pilot-lane"
+        )
+        lines.append(
+            "- session_action_backlog: "
+            f"tickets={len(ledger_entries)}；ready={ready_ticket_count}；"
+            f"review={review_ticket_count}；blocked={blocked_ticket_count}"
+        )
+        lines.append(
+            "- session_transition_queue: "
+            f"transitions=1；next={next_transition}；owner={session_recovery_owner}"
+        )
+        lines.append(
+            "- session_checkpoint_mutations: "
+            f"mutations=4；primary=promotion_verdict->{promotion_verdict}；"
+            f"risk_register->{risk_register}"
         )
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")

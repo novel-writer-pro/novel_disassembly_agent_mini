@@ -209,7 +209,8 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `writer-imitate-index.md` 中新增的聚合视图 `session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board`
-- `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v2`，不仅保留 ready/blocked/escalation/recovery，还提供上述 6 个机读聚合注册表，方便后续把 markdown 控制面接到真实调度器/看板/状态机上
+- `writer-imitate-index.md` 中新增更偏执行面的 `session_action_backlog / session_transition_queue / session_checkpoint_mutations`
+- `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，不仅保留 ready/blocked/escalation/recovery，还提供上述聚合注册表与 action-loop 入口，方便后续把 markdown 控制面接到真实调度器/看板/状态机上
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
 - `ship_blockers / required_human_review / confidence_level / business_risk_label / go_live_checklist` 用于 go-live gate
@@ -217,7 +218,7 @@ flowchart TD
 
 ---
 
-## 6.1 session-state v2 简化架构图
+## 6.1 session-state v3 简化架构图
 
 ```mermaid
 flowchart TD
@@ -231,8 +232,11 @@ flowchart TD
     E --> G
     F --> G
     G --> H[session_live_ops_board]
-    H --> I[writer-imitate-index.md]
-    H --> J[writer-imitate-session-state.json v2]
+    H --> I[session_action_backlog]
+    I --> J[session_transition_queue]
+    J --> K[session_checkpoint_mutations]
+    K --> L[writer-imitate-index.md]
+    K --> M[writer-imitate-session-state.json v3]
 ```
 
 ### 为什么新增这 6 个聚合注册表
@@ -243,18 +247,21 @@ flowchart TD
 - `session_governance_registry`：集中表达 governor / decision bus / review quorum / authority map，避免治理字段分散后难以落地。
 - `session_digest_registry`：把 runtime contract / state snapshot / operating verdict 压缩成对外摘要层，方便 API、监控面板和后续 agent runtime 直接消费。
 - `session_live_ops_board`：给运营侧一个最浅层状态板，快速看到 ship / promotion / risk / focus，而不是先理解全量 taxonomy。
+- `session_action_backlog`：把每个 experiment 压成 ticket，开始具备“谁负责、当前状态、要去哪个 lane、缺什么才能 unblock”的操作性。
+- `session_transition_queue`：把下一跳 lane 迁移显式列出来，避免外部系统自己猜当前该往哪里切。
+- `session_checkpoint_mutations`：把本轮应该回写的核心状态字段列出来，为后续 checkpoint mutation / state persistence 提供最小合同。
 
 ### 这一步解决了什么
 
-- 让 `writer-imitate-session-state.json` 不再只是“结果快照”，而是开始接近“可被调度器消费的 session registry”。
+- 让 `writer-imitate-session-state.json` 不再只是“结果快照”，而是开始接近“可被调度器消费的 session registry + action backlog”。
 - 降低字段理解门槛：上层文档和操作面可以先看 6 个聚合视图，再按需下钻到细字段。
-- 为下一步真正把控制面接到 action loop / queue transition / external metric feedback 做准备。
+- 把下一步真正需要实现的 queue transition / checkpoint mutation 先显式化，而不是只停留在命名层。
 
 ---
 
 ## 7. 推荐下一步实战增强
 1. 把外置世界观 / 套路 steering pack 与真实 trope/worldview 资料做成可检索 RAG surface
-2. 在 `writer-imitate-session-state.v2` 之上补真实 queue transition / action execution / checkpoint mutation
+2. 在 `writer-imitate-session-state.v3` 之上补真实 action execution 与 checkpoint persistence
 3. 补一个 `writer-imitate-session`，把同一轮多章实验的 notes / artifacts 聚合进 output 子目录
 4. 对真实仿写章节做一次“边写边修”的长链实验，持续发现问题并优化
 5. 在 reader-sim / risk / style 之外，再引入更强的“创新收益 vs 越界风险”平衡检查

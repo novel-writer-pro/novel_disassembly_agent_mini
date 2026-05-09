@@ -29,7 +29,7 @@
 
 ## 最新推进补充（2026-05-09）
 
-- `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v2`
+- `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`
 - 新增 6 个聚合注册表：
   - `session_control_loop`
   - `session_queue_registry`
@@ -37,12 +37,16 @@
   - `session_governance_registry`
   - `session_digest_registry`
   - `session_live_ops_board`
+- 新增 3 个更偏执行面的 action-loop 入口：
+  - `session_action_backlog`
+  - `session_transition_queue`
+  - `session_checkpoint_mutations`
 - 这一步的目的不是继续堆 taxonomy，而是把已有 session 字段压缩成更像真实商业 Agent 控制层可消费的编排注册表
 - 下一步优先方向应转向：
-  1. queue transition
-  2. action execution
-  3. checkpoint mutation
-  4. external metric / feedback backflow
+  1. action execution
+  2. checkpoint persistence / mutation
+  3. external metric / feedback backflow
+  4. queue 状态回写与恢复
 
 ---
 
