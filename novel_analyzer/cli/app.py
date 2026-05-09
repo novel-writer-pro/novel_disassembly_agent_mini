@@ -3943,6 +3943,7 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
     return {
         "contract_version": "writer-imitate-execution-replay.v1",
         "source_contract_version": execution_state.get("contract_version", ""),
+        "session_operator_contract": execution_state.get("session_operator_contract", {}),
         "current_run_status": execution_state.get("run_status", ""),
         "next_run_status": next_run_status,
         "applied_ticket_ids": applied_ticket_ids,
@@ -3963,6 +3964,20 @@ def _writer_output_execution_replay_markdown(output_dir: Path) -> str:
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- current_run_status: {payload.get('current_run_status', '')}")
     lines.append(f"- next_run_status: {payload.get('next_run_status', '')}")
+    operator_contract = payload.get("session_operator_contract", {})
+    if isinstance(operator_contract, dict):
+        status = operator_contract.get("status", {})
+        owners = operator_contract.get("owners", {})
+        if isinstance(status, dict) and isinstance(owners, dict):
+            lines.append("\n## Operator-Facing Stable Contract")
+            lines.append(
+                f"- status: lane={status.get('session_lane_status', '')} | "
+                f"mode={status.get('session_execution_mode', '')} | ship={status.get('session_ship_decision', '')}"
+            )
+            lines.append(
+                f"- owner: recovery={owners.get('session_recovery_owner', '')} | "
+                f"readiness={status.get('session_release_readiness', '')}"
+            )
 
     lines.append("\n## Replay Results")
     replay_results = payload.get("replay_results", [])
@@ -4075,6 +4090,7 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
     return {
         "contract_version": "writer-imitate-execution-apply.v1",
         "source_contract_version": replay.get("contract_version", ""),
+        "session_operator_contract": replay.get("session_operator_contract", {}),
         "apply_status": apply_status,
         "applied_tickets": applied_tickets,
         "deferred_tickets": deferred_tickets,
@@ -4092,6 +4108,20 @@ def _writer_output_execution_apply_markdown(output_dir: Path) -> str:
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- apply_status: {payload.get('apply_status', '')}")
     lines.append(f"- next_resume_hint: {payload.get('next_resume_hint', '')}")
+    operator_contract = payload.get("session_operator_contract", {})
+    if isinstance(operator_contract, dict):
+        status = operator_contract.get("status", {})
+        owners = operator_contract.get("owners", {})
+        if isinstance(status, dict) and isinstance(owners, dict):
+            lines.append("\n## Operator-Facing Stable Contract")
+            lines.append(
+                f"- status: lane={status.get('session_lane_status', '')} | "
+                f"mode={status.get('session_execution_mode', '')} | ship={status.get('session_ship_decision', '')}"
+            )
+            lines.append(
+                f"- owner: recovery={owners.get('session_recovery_owner', '')} | "
+                f"readiness={status.get('session_release_readiness', '')}"
+            )
     applied_tickets = payload.get("applied_tickets", [])
     deferred_tickets = payload.get("deferred_tickets", [])
     blocked_tickets = payload.get("blocked_tickets", [])
@@ -4160,6 +4190,7 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
     return {
         "contract_version": "writer-imitate-execution-resume.v1",
         "source_contract_version": apply_preview.get("contract_version", ""),
+        "session_operator_contract": apply_preview.get("session_operator_contract", {}),
         "resume_status": resume_status,
         "resume_targets": resume_targets,
         "resume_steps": resume_steps,
@@ -4174,6 +4205,20 @@ def _writer_output_execution_resume_markdown(output_dir: Path) -> str:
     lines.append(f"- source_contract_version: {payload.get('source_contract_version', '')}")
     lines.append(f"- resume_status: {payload.get('resume_status', '')}")
     lines.append(f"- resume_hint: {payload.get('resume_hint', '')}")
+    operator_contract = payload.get("session_operator_contract", {})
+    if isinstance(operator_contract, dict):
+        status = operator_contract.get("status", {})
+        owners = operator_contract.get("owners", {})
+        if isinstance(status, dict) and isinstance(owners, dict):
+            lines.append("\n## Operator-Facing Stable Contract")
+            lines.append(
+                f"- status: lane={status.get('session_lane_status', '')} | "
+                f"mode={status.get('session_execution_mode', '')} | ship={status.get('session_ship_decision', '')}"
+            )
+            lines.append(
+                f"- owner: recovery={owners.get('session_recovery_owner', '')} | "
+                f"readiness={status.get('session_release_readiness', '')}"
+            )
     resume_targets = payload.get("resume_targets", [])
     resume_steps = payload.get("resume_steps", [])
     lines.append("\n## Resume Targets")

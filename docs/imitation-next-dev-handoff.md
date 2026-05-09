@@ -54,6 +54,7 @@
   - `writer-imitate-resume-replay`
 - `writer-imitate-index.md` 已新增 `Operator-Facing Stable Contract` 小节，开始把 operator 第一层字段从全量 session 面中单独收口
 - `writer-imitate-action-queue` / `writer-imitate-execution-state` 也开始复用 `session_operator_contract` 作为统一第一层合同
+- `writer-imitate-execution-replay / apply / resume` 也开始复用 `session_operator_contract`，第一层 operator 合同已逐步覆盖整条控制链
 - 这一步的目的不是继续堆 taxonomy，而是把已有 session 字段压缩成更像真实商业 Agent 控制层可消费的编排注册表
 - 下一步优先方向应转向：
   1. action execution

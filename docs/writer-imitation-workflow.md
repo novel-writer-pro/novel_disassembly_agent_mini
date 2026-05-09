@@ -213,6 +213,7 @@ flowchart TD
 - `writer-imitate-index.md` 中新增更偏执行面的 `session_action_backlog / session_transition_queue / session_checkpoint_mutations`
 - `writer-imitate-index.md` 的 `Operator-Facing Stable Contract` 小节已开始把第一层真正应该先看的状态 / 队列 / owner / 迁移 / 摘要字段收口出来
 - `writer-imitate-action-queue.md` 与 `writer-imitate-execution-state.md` 也开始复用同一个 `session_operator_contract`，减少不同产物各自重复拼装第一层摘要
+- `writer-imitate-execution-replay / apply / resume` 也开始复用 `session_operator_contract`，使整条控制链的第一层 operator 摘要逐步统一
 - `writer-imitate-index` 现在还会额外产出：
   - `writer-imitate-action-queue.json`
   - `writer-imitate-action-queue.md`

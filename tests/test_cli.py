@@ -840,6 +840,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Recovery Cursor' in execution_state_text
     execution_replay_payload = json.loads(execution_replay_json.read_text(encoding='utf-8'))
     assert execution_replay_payload['contract_version'] == 'writer-imitate-execution-replay.v1'
+    assert execution_replay_payload['session_operator_contract']['status']['session_ship_decision']
     assert 'next_run_status' in execution_replay_payload
     assert execution_replay_payload['replay_results']
     assert execution_replay_payload['transition_preview']
@@ -847,6 +848,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'recovery_owner' in execution_replay_payload['next_recovery_cursor']
     execution_replay_text = execution_replay_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Replay Preview' in execution_replay_text
+    assert '## Operator-Facing Stable Contract' in execution_replay_text
     assert '## Replay Results' in execution_replay_text
     assert '## Transition Preview' in execution_replay_text
     assert '## Checkpoint Preview' in execution_replay_text
@@ -861,10 +863,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_apply_md.exists()
     execution_apply_payload = json.loads(execution_apply_json.read_text(encoding='utf-8'))
     assert execution_apply_payload['contract_version'] == 'writer-imitate-execution-apply.v1'
+    assert execution_apply_payload['session_operator_contract']['owners']['session_recovery_owner']
     assert 'apply_status' in execution_apply_payload
     assert 'next_resume_hint' in execution_apply_payload
     execution_apply_text = execution_apply_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Apply Preview' in execution_apply_text
+    assert '## Operator-Facing Stable Contract' in execution_apply_text
     assert '## Applied Tickets' in execution_apply_text
     assert '## Applied Transitions' in execution_apply_text
     assert '## Applied Checkpoints' in execution_apply_text
@@ -878,10 +882,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_md.exists()
     execution_resume_payload = json.loads(execution_resume_json.read_text(encoding='utf-8'))
     assert execution_resume_payload['contract_version'] == 'writer-imitate-execution-resume.v1'
+    assert execution_resume_payload['session_operator_contract']['status']['session_lane_status']
     assert 'resume_status' in execution_resume_payload
     assert execution_resume_payload['resume_steps']
     execution_resume_text = execution_resume_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Execution Resume Plan' in execution_resume_text
+    assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Resume Targets' in execution_resume_text
     assert '## Resume Steps' in execution_resume_text
 
