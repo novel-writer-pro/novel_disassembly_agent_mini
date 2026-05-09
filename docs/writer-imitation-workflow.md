@@ -46,6 +46,7 @@
 7. 如果对 control-plane / governance / replay 等英文术语理解成本高，补看 `docs/imitation-control-plane-glossary.md`
 8. 如果想看当前最新完整控制层架构总图，补看 `docs/architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`
 9. 如果想看当前控制层怎样支撑商业运营闭环，补看 `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`
+10. 如果想快速判断哪些能力已落地、哪些还只是 preview / 规划中，补看 `docs/architecture/imitation-control-plane-implementation-status-map-20260509.md`
 
 ## 2.1 仿写执行流程图
 

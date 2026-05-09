@@ -4,6 +4,8 @@
 
 - docs: 新增 `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`，从商业运营闭环视角解释当前控制层如何把 experiment、operator surface、action/execution、primary/legacy 治理与 retirement preview 串成接近商用的操作闭环。
 
+- docs: 新增 `docs/architecture/imitation-control-plane-implementation-status-map-20260509.md`，用状态分层图明确当前控制层哪些能力已经落地，哪些仍处于 preview / 未闭环阶段，方便快速判断当前实现边界。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。
