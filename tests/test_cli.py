@@ -493,6 +493,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     live_control_state_md = output_dir / 'writer-imitate-live-control-state.md'
     live_mutation_preview_json = output_dir / 'writer-imitate-live-mutation-preview.json'
     live_mutation_preview_md = output_dir / 'writer-imitate-live-mutation-preview.md'
+    live_checkpoint_state_json = output_dir / 'writer-imitate-live-checkpoint-state.json'
+    live_checkpoint_state_md = output_dir / 'writer-imitate-live-checkpoint-state.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1080,6 +1082,21 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Live Mutation Pilot Wave' in live_mutation_preview_text
     assert '## Checkpoint Writeback Preview' in live_mutation_preview_text
     assert '## Transition Apply Preview' in live_mutation_preview_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-apply-live-checkpoint', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert live_checkpoint_state_json.exists()
+    assert live_checkpoint_state_md.exists()
+    live_checkpoint_state_payload = json.loads(live_checkpoint_state_json.read_text(encoding='utf-8'))
+    assert live_checkpoint_state_payload['contract_version'] == 'writer-imitate-live-checkpoint-state.v1'
+    assert live_checkpoint_state_payload['live_checkpoint_status'] == 'checkpoint-writeback-applied-local'
+    assert live_checkpoint_state_payload['applied_checkpoints']
+    live_checkpoint_state_text = live_checkpoint_state_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Live Checkpoint State' in live_checkpoint_state_text
+    assert '## Applied Checkpoints' in live_checkpoint_state_text
 
     result = runner.invoke(
         app,

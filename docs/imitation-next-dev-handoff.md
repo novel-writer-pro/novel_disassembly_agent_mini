@@ -82,6 +82,7 @@
 - 现已进一步新增 `live_mutation_plan`，把 bridge state 进入真实 writeback/apply 前的执行顺序单独结构化
 - 现已进一步新增 `live_mutation_pilot_wave`，把第一次 live mutation 最小试探波次单独对象化
 - 现已新增 `writer-imitate-live-mutation-preview.json/.md`，把第一次 live mutation 试探的完整预演独立成可消费产物
+- 现已新增 `writer-imitate-live-checkpoint-state.json/.md`，作为第一次本地 checkpoint writeback 执行桥
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 现在 `Primary Verdicts / Primary Digests` 的显示顺序也已前置到 operator contract 之前，展示优先级开始真正偏向 primary 层
 - `writer-imitate-index.md` 的完整字段面中，legacy verdict/digest 家族也已开始被单独归类到 compatibility layer 小节

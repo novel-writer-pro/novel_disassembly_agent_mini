@@ -4885,6 +4885,61 @@ def _writer_output_live_mutation_preview_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, object]:
+    live_control_state = _build_writer_output_live_control_state(output_dir)
+    checkpoints_obj = live_control_state.get("pending_checkpoint_writeback", [])
+    checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
+    applied_checkpoints: list[dict[str, object]] = []
+    for item in checkpoints:
+        if not isinstance(item, dict):
+            continue
+        applied_checkpoints.append(
+            {
+                "field": item.get("field", ""),
+                "value": item.get("value", ""),
+                "reason": item.get("reason", ""),
+                "applied": True,
+            }
+        )
+    operator_contract_obj = live_control_state.get("session_operator_contract", {})
+    operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    primary_verdicts_obj = live_control_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    primary_digests_obj = live_control_state.get("session_primary_digests", {})
+    primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    return {
+        "contract_version": "writer-imitate-live-checkpoint-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "live_control_state_entrypoint": "writer-imitate-live-control-state.json",
+        "live_checkpoint_status": "checkpoint-writeback-applied-local",
+        "next_live_mutation_step": "transition-apply",
+        "session_operator_contract": operator_contract,
+        "session_primary_verdicts": primary_verdicts,
+        "session_primary_digests": primary_digests,
+        "applied_checkpoints": applied_checkpoints,
+    }
+
+
+def _writer_output_live_checkpoint_state_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_live_checkpoint_state(output_dir)
+    lines = ["# Writer Imitation Live Checkpoint State"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- live_control_state_entrypoint: writer-imitate-live-control-state.md")
+    lines.append(f"- live_checkpoint_status: {payload.get('live_checkpoint_status', '')}")
+    lines.append(f"- next_live_mutation_step: {payload.get('next_live_mutation_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    lines.append("\n## Applied Checkpoints")
+    checkpoints = payload.get("applied_checkpoints", [])
+    for item in checkpoints if isinstance(checkpoints, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('field', '')}: value={item.get('value', '')} | applied={item.get('applied', False)} | reason={item.get('reason', '')}"
+            )
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -6679,6 +6734,27 @@ def writer_imitate_live_mutation_preview(
     )
     echo(f"writer_imitate_live_mutation_preview_json={json_path}")
     echo(f"writer_imitate_live_mutation_preview_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_apply_live_checkpoint(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Apply checkpoint writeback locally into an output artifact without touching external runtime state."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-live-checkpoint-state.json"
+    md_path = output_dir / "writer-imitate-live-checkpoint-state.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_live_checkpoint_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_live_checkpoint_state_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_live_checkpoint_state_json={json_path}")
+    echo(f"writer_imitate_live_checkpoint_state_markdown={md_path}")
 
 
 @app.command()
