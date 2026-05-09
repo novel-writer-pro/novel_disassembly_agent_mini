@@ -29,6 +29,11 @@ from novel_analyzer.database.models import (
 # Edge types that count as "conflict" for conflict_density
 CONFLICT_EDGE_TYPES: frozenset[str] = frozenset(
     {
+        # Actual edge types produced by graph_service
+        "conflict_centers_on",
+        "conflict_involves",
+        "pressured_by",
+        # Legacy / future types kept for forward-compat
         "conflict",
         "confrontation",
         "opposition",
@@ -211,8 +216,10 @@ class TensionService:
     # ------------------------------------------------------------------
 
     def _conflict_density(self, branch_id: str, chapter_index: int) -> float:
-        """Conflict-type edges per 1000 characters in this chapter."""
-        conflict_count = self.session.scalar(
+        """Conflict signals per 1000 characters: conflict-type edges + conflict nodes."""
+        from novel_analyzer.database.models import GraphNode
+
+        edge_count = self.session.scalar(
             select(func.count(GraphEdge.id))
             .where(GraphEdge.branch_id == branch_id)
             .where(GraphEdge.chapter_last_seen == chapter_index)
@@ -220,6 +227,15 @@ class TensionService:
             .where(GraphEdge.deleted_at.is_(None))
         ) or 0
 
+        node_count = self.session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.chapter_last_seen == chapter_index)
+            .where(GraphNode.node_type == "conflict")
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+
+        conflict_count = edge_count + node_count
         word_count = self._get_chapter_word_count(branch_id, chapter_index)
         if word_count == 0:
             return 0.0

@@ -123,13 +123,13 @@ class MemoryAssemblerService:
     def _get_active_characters(
         self, branch_id: str, chapter_index: int
     ) -> list[dict[str, Any]]:
-        """Characters seen in the last 5 chapters with no contradiction."""
+        """Entity nodes seen in the last 5 chapters with no contradiction."""
         lookback = max(1, chapter_index - 5)
         nodes = list(
             self.session.scalars(
                 select(GraphNode)
                 .where(GraphNode.branch_id == branch_id)
-                .where(GraphNode.node_type == "character")
+                .where(GraphNode.node_type.in_(["entity", "character"]))
                 .where(GraphNode.chapter_last_seen >= lookback)
                 .where(GraphNode.conflict_status != "contradiction")
                 .where(GraphNode.deleted_at.is_(None))
@@ -256,7 +256,7 @@ class MemoryAssemblerService:
         nodes = self.session.scalars(
             select(GraphNode)
             .where(GraphNode.branch_id == branch_id)
-            .where(GraphNode.node_type == "character")
+            .where(GraphNode.node_type.in_(["entity", "character"]))
             .where(GraphNode.conflict_status != "contradiction")
             .where(GraphNode.deleted_at.is_(None))
         ).all()
@@ -267,7 +267,7 @@ class MemoryAssemblerService:
             self.session.scalars(
                 select(GraphNode)
                 .where(GraphNode.branch_id == branch_id)
-                .where(GraphNode.node_type == "rule")
+                .where(GraphNode.node_type.in_(["world_rule", "rule"]))
                 .where(GraphNode.conflict_status.notin_(["contradiction", "evolution"]))
                 .where(GraphNode.deleted_at.is_(None))
                 .order_by(GraphNode.importance_score.desc())
@@ -285,7 +285,7 @@ class MemoryAssemblerService:
             self.session.scalars(
                 select(GraphEdge)
                 .where(GraphEdge.branch_id == branch_id)
-                .where(GraphEdge.edge_type == "relationship")
+                .where(GraphEdge.edge_type.in_(["relates_to", "relationship"]))
                 .where(GraphEdge.chapter_last_seen >= lookback)
                 .where(GraphEdge.is_active.is_(True))
                 .where(GraphEdge.deleted_at.is_(None))

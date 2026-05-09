@@ -77,8 +77,14 @@ class ConsolidationResult:
 # ---------------------------------------------------------------------------
 
 # Edge types that count as "conflict" for conflict_density metric
+# Aligned to actual graph_service production edge types + legacy forward-compat
 CONFLICT_EDGE_TYPES: frozenset[str] = frozenset(
     {
+        # Actual conflict edge types produced by graph_service
+        "conflict_centers_on",
+        "conflict_involves",
+        "pressured_by",
+        # Legacy / future types kept for forward-compat
         "conflict",
         "confrontation",
         "opposition",
@@ -283,7 +289,7 @@ class MemoryConsolidationService:
     def _mark_evolution(self, new_node: GraphNode, old_node: GraphNode) -> None:
         """Mark old node as superseded, bump version on new node."""
         old_node.conflict_status = "evolution"
-        old_node.is_active = False  # type: ignore[attr-defined]
+        # GraphNode has no is_active column; edge-level is_active lives on GraphEdge
         old_node.superseded_by_node_id = new_node.id
         new_node.loom_version = old_node.loom_version + 1
         new_node.conflict_status = "evolution"
