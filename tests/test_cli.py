@@ -501,6 +501,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     live_validation_state_md = output_dir / 'writer-imitate-live-validation-state.md'
     external_runtime_readiness_json = output_dir / 'writer-imitate-external-runtime-executor-readiness.json'
     external_runtime_readiness_md = output_dir / 'writer-imitate-external-runtime-executor-readiness.md'
+    external_runtime_preview_json = output_dir / 'writer-imitate-external-runtime-executor-preview.json'
+    external_runtime_preview_md = output_dir / 'writer-imitate-external-runtime-executor-preview.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1163,6 +1165,22 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_readiness_text = external_runtime_readiness_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Readiness' in external_runtime_readiness_text
     assert '## Readiness' in external_runtime_readiness_text
+    assert '## External Runtime Executor Plan' in external_runtime_readiness_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-external-runtime-executor-preview', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert external_runtime_preview_json.exists()
+    assert external_runtime_preview_md.exists()
+    external_runtime_preview_payload = json.loads(external_runtime_preview_json.read_text(encoding='utf-8'))
+    assert external_runtime_preview_payload['contract_version'] == 'writer-imitate-external-runtime-executor-preview.v1'
+    assert external_runtime_preview_payload['preview_status'] == 'planned-not-executed'
+    external_runtime_preview_text = external_runtime_preview_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation External Runtime Executor Preview' in external_runtime_preview_text
+    assert '## Readiness' in external_runtime_preview_text
+    assert '## External Runtime Executor Plan' in external_runtime_preview_text
 
     result = runner.invoke(
         app,

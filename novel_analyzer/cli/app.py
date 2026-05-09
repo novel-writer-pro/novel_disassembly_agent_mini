@@ -5079,11 +5079,29 @@ def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -
         ],
         "next_action": "implement external runtime checkpoint executor",
     }
+    runtime_executor_plan = {
+        "phase": "pre-runtime-executor",
+        "execution_order": [
+            "external-checkpoint-writeback",
+            "external-transition-apply",
+            "post-runtime-validation",
+        ],
+        "pilot_scope": [
+            "checkpoint-writeback-only on controlled output-backed branch",
+            "single transition apply after checkpoint success",
+        ],
+        "rollback_strategy": [
+            "restore previous runtime checkpoint snapshot",
+            "restore previous runtime transition state",
+            "disable runtime executor if downstream mismatch appears",
+        ],
+    }
     return {
         "contract_version": "writer-imitate-external-runtime-executor-readiness.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "live_validation_state_entrypoint": "writer-imitate-live-validation-state.json",
         "readiness": readiness,
+        "external_runtime_executor_plan": runtime_executor_plan,
     }
 
 
@@ -5104,6 +5122,59 @@ def _writer_output_external_runtime_executor_readiness_markdown(output_dir: Path
         lines.append(f"- required_conditions: {required_text}")
         lines.append(f"- blocking_reasons: {blocking_text}")
         lines.append(f"- next_action: {readiness.get('next_action', '')}")
+    plan = payload.get("external_runtime_executor_plan", {})
+    if isinstance(plan, dict):
+        lines.append("\n## External Runtime Executor Plan")
+        lines.append(f"- phase: {plan.get('phase', '')}")
+        execution_order = plan.get("execution_order", [])
+        pilot_scope = plan.get("pilot_scope", [])
+        rollback = plan.get("rollback_strategy", [])
+        execution_text = "；".join(str(x) for x in execution_order) if isinstance(execution_order, list) else ""
+        pilot_text = "；".join(str(x) for x in pilot_scope) if isinstance(pilot_scope, list) else ""
+        rollback_text = "；".join(str(x) for x in rollback) if isinstance(rollback, list) else ""
+        lines.append(f"- execution_order: {execution_text}")
+        lines.append(f"- pilot_scope: {pilot_text}")
+        lines.append(f"- rollback_strategy: {rollback_text}")
+    return "\n".join(lines).strip() + "\n"
+
+
+def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> dict[str, object]:
+    readiness = _build_writer_output_external_runtime_executor_readiness(output_dir)
+    readiness_obj = readiness.get("readiness", {})
+    readiness_payload = readiness_obj if isinstance(readiness_obj, dict) else {}
+    plan_obj = readiness.get("external_runtime_executor_plan", {})
+    plan = plan_obj if isinstance(plan_obj, dict) else {}
+    return {
+        "contract_version": "writer-imitate-external-runtime-executor-preview.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "external_runtime_executor_readiness_entrypoint": "writer-imitate-external-runtime-executor-readiness.json",
+        "preview_status": "planned-not-executed",
+        "readiness": readiness_payload,
+        "external_runtime_executor_plan": plan,
+    }
+
+
+def _writer_output_external_runtime_executor_preview_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_external_runtime_executor_preview(output_dir)
+    lines = ["# Writer Imitation External Runtime Executor Preview"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- external_runtime_executor_readiness_entrypoint: writer-imitate-external-runtime-executor-readiness.md")
+    lines.append(f"- preview_status: {payload.get('preview_status', '')}")
+    readiness = payload.get("readiness", {})
+    if isinstance(readiness, dict):
+        lines.append("\n## Readiness")
+        lines.append(f"- status: {readiness.get('status', '')}")
+        lines.append(f"- next_action: {readiness.get('next_action', '')}")
+    plan = payload.get("external_runtime_executor_plan", {})
+    if isinstance(plan, dict):
+        lines.append("\n## External Runtime Executor Plan")
+        execution_order = plan.get("execution_order", [])
+        pilot_scope = plan.get("pilot_scope", [])
+        execution_text = "；".join(str(x) for x in execution_order) if isinstance(execution_order, list) else ""
+        pilot_text = "；".join(str(x) for x in pilot_scope) if isinstance(pilot_scope, list) else ""
+        lines.append(f"- execution_order: {execution_text}")
+        lines.append(f"- pilot_scope: {pilot_text}")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -6989,6 +7060,27 @@ def writer_imitate_external_runtime_executor_readiness(
     )
     echo(f"writer_imitate_external_runtime_executor_readiness_json={json_path}")
     echo(f"writer_imitate_external_runtime_executor_readiness_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_external_runtime_executor_preview(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Build a standalone preview artifact for the future external runtime executors."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-external-runtime-executor-preview.json"
+    md_path = output_dir / "writer-imitate-external-runtime-executor-preview.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_external_runtime_executor_preview(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_external_runtime_executor_preview_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_external_runtime_executor_preview_json={json_path}")
+    echo(f"writer_imitate_external_runtime_executor_preview_markdown={md_path}")
 
 
 @app.command()

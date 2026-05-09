@@ -247,6 +247,7 @@ flowchart TD
 - 现已进一步新增 `writer-imitate-live-transition-state.json/.md` 与 `writer-imitate-apply-live-transition` 命令，把 transition apply 也先落成**本地 output 状态产物**，继续沿 preview→live 的安全桥向前推进
 - 现已进一步新增 `writer-imitate-live-validation-state.json/.md` 与 `writer-imitate-validate-live-state` 命令，把 checkpoint+transition 本地执行后的验证结果单独收口，形成 preview→checkpoint→transition→validation 的完整本地桥链
 - 现已新增 `writer-imitate-external-runtime-executor-readiness.json/.md` 与对应命令，把从本地桥链跨到真实 external runtime executor 之前还缺哪些条件再次独立化
+- 现已新增 `writer-imitate-external-runtime-executor-preview.json/.md` 与对应命令，把 runtime gate 上的 readiness + executor plan 再抽成独立 review 面，形成 root registry → runtime gate → runtime preview 的最后一跳
 - markdown 第一层现在也会显式写出 compatibility note，说明 legacy verdict/digest 字段仍保留，但不再是推荐的一层入口
 - 现在 `Primary Verdicts / Primary Digests` 在这些产物中的展示顺序也已被前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升为默认阅读路径
 - `writer-imitate-index.md` 的 `Full Session Field Surface` 中，旧 verdict/digest 家族也开始被单独归到 `Legacy Verdict/Digest Compatibility Layer` 小节，避免继续在完整字段面中无差别平铺

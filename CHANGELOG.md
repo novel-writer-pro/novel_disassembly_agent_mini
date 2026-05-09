@@ -30,6 +30,8 @@
 
 - imitation: 新增 `writer-imitate-external-runtime-executor-readiness.json/.md` 与对应命令，把从本地桥链跨到真实 external runtime executor 之前的前置条件、阻断原因和下一步动作再次独立成 readiness gate。
 
+- imitation: 新增 `writer-imitate-external-runtime-executor-preview.json/.md` 与对应命令，把 runtime gate 上的 readiness + executor plan 再抽成独立 review 面，形成 root registry → runtime gate → runtime preview 的最后一跳。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。
