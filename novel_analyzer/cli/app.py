@@ -3551,6 +3551,12 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "legacy_digest_count": len(session_primary_contract_hints["legacy_digest_fields"]),
         "status": "compatibility-layer-active",
     }
+    session_control_surface_entrypoints = {
+        "primary_operator_entrypoint_json": "writer-imitate-operator-surface.json",
+        "primary_operator_entrypoint_markdown": "writer-imitate-operator-surface.md",
+        "legacy_operator_entrypoint_json": "writer-imitate-legacy-contract-surface.json",
+        "legacy_operator_entrypoint_markdown": "writer-imitate-legacy-contract-surface.md",
+    }
 
     return {
         "contract_version": "writer-imitate-session-state.v3",
@@ -3578,6 +3584,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_digests": session_primary_digests,
         "session_primary_contract_hints": session_primary_contract_hints,
         "session_legacy_contract_layer": session_legacy_contract_layer,
+        "session_control_surface_entrypoints": session_control_surface_entrypoints,
         "experiments": ledger_entries,
     }
 
@@ -3637,6 +3644,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
     legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
+    entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
+    entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -3646,6 +3655,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_primary_digests": primary_digests,
         "session_primary_contract_hints": primary_hints,
         "session_legacy_contract_layer": legacy_layer,
+        "session_control_surface_entrypoints": entrypoints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
@@ -3754,6 +3764,10 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
     lines = ["# Writer Imitation Operator Surface"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
     lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
+    entrypoints = payload.get("session_control_surface_entrypoints", {})
+    if isinstance(entrypoints, dict):
+        lines.append(f"- primary_operator_entrypoint: {entrypoints.get('primary_operator_entrypoint_markdown', '')}")
+        lines.append(f"- legacy_operator_entrypoint: {entrypoints.get('legacy_operator_entrypoint_markdown', '')}")
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
     lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
@@ -3773,12 +3787,15 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
+    entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-legacy-contract-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
         "session_legacy_contract_layer": legacy_layer,
         "session_primary_contract_hints": primary_hints,
+        "session_control_surface_entrypoints": entrypoints,
     }
 
 
@@ -3786,8 +3803,10 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
     payload = _build_writer_output_legacy_contract_surface(output_dir)
     lines = ["# Writer Imitation Legacy Contract Surface"]
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
-    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
-    lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
+    entrypoints = payload.get("session_control_surface_entrypoints", {})
+    if isinstance(entrypoints, dict):
+        lines.append(f"- primary_operator_entrypoint: {entrypoints.get('primary_operator_entrypoint_markdown', '')}")
+        lines.append(f"- legacy_operator_entrypoint: {entrypoints.get('legacy_operator_entrypoint_markdown', '')}")
     _append_primary_surface_lines(lines, payload)
     return "\n".join(lines).strip() + "\n"
 
@@ -5508,6 +5527,9 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "session_ship_decision",
             "session_recovery_owner",
         ]
+        lines.append("\n### Control Surface EntryPoints")
+        lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+        lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
         lines.append("\n### Operator-Facing Stable Contract")
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
