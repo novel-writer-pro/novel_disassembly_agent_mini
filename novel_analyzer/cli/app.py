@@ -3588,6 +3588,22 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "retire one family slice at a time with regression evidence",
         ],
     }
+    session_legacy_retirement_pilot_wave = {
+        "contract_version": "writer-imitate-legacy-retirement-pilot-wave.v1",
+        "status": "planned-not-executed",
+        "wave_id": "legacy-retirement-wave-01",
+        "target_fields": [
+            "session_governance_checksum_v2",
+            "session_operating_checksum",
+        ],
+        "target_family": "extra digest/checksum variants",
+        "rollback_rule": "restore legacy fields immediately if downstream consumer mismatch appears",
+        "evidence_required": [
+            "primary digest consumers confirmed",
+            "legacy surface remains complete",
+            "targeted regression suite passes",
+        ],
+    }
     session_control_surface_entrypoints = {
         "primary_operator_entrypoint_json": "writer-imitate-operator-surface.json",
         "primary_operator_entrypoint_markdown": "writer-imitate-operator-surface.md",
@@ -3633,6 +3649,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_legacy_contract_layer": session_legacy_contract_layer,
         "session_legacy_retirement_readiness": session_legacy_retirement_readiness,
         "session_legacy_retirement_plan": session_legacy_retirement_plan,
+        "session_legacy_retirement_pilot_wave": session_legacy_retirement_pilot_wave,
         "session_control_surface_entrypoints": session_control_surface_entrypoints,
         "experiments": ledger_entries,
     }
@@ -3697,6 +3714,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
     retirement_plan_obj = session_state.get("session_legacy_retirement_plan", {})
     retirement_plan = retirement_plan_obj if isinstance(retirement_plan_obj, dict) else {}
+    retirement_pilot_wave_obj = session_state.get("session_legacy_retirement_pilot_wave", {})
+    retirement_pilot_wave = retirement_pilot_wave_obj if isinstance(retirement_pilot_wave_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
@@ -3710,6 +3729,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_legacy_contract_layer": legacy_layer,
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
+        "session_legacy_retirement_pilot_wave": retirement_pilot_wave,
         "session_control_surface_entrypoints": entrypoints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -3835,6 +3855,15 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- pilot_candidates: {pilot_text}")
         lines.append(f"- second_wave_candidates: {second_wave_text}")
         lines.append(f"- retirement_order: {order_text}")
+    retirement_pilot_wave = payload.get("session_legacy_retirement_pilot_wave", {})
+    if isinstance(retirement_pilot_wave, dict):
+        lines.append("\n## Legacy Retirement Pilot Wave")
+        lines.append(f"- status: {retirement_pilot_wave.get('status', '')}")
+        lines.append(f"- wave_id: {retirement_pilot_wave.get('wave_id', '')}")
+        lines.append(f"- target_family: {retirement_pilot_wave.get('target_family', '')}")
+        targets = retirement_pilot_wave.get("target_fields", [])
+        target_text = "；".join(str(x) for x in targets) if isinstance(targets, list) else ""
+        lines.append(f"- target_fields: {target_text}")
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
@@ -3870,6 +3899,8 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
     retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
     retirement_plan_obj = session_state.get("session_legacy_retirement_plan", {})
     retirement_plan = retirement_plan_obj if isinstance(retirement_plan_obj, dict) else {}
+    retirement_pilot_wave_obj = session_state.get("session_legacy_retirement_pilot_wave", {})
+    retirement_pilot_wave = retirement_pilot_wave_obj if isinstance(retirement_pilot_wave_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
@@ -3880,6 +3911,7 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
         "session_primary_contract_hints": primary_hints,
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
+        "session_legacy_retirement_pilot_wave": retirement_pilot_wave,
         "session_control_surface_entrypoints": entrypoints,
     }
 
@@ -3916,6 +3948,15 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
         lines.append(f"- pilot_candidates: {pilot_text}")
         lines.append(f"- second_wave_candidates: {second_wave_text}")
         lines.append(f"- retirement_order: {order_text}")
+    retirement_pilot_wave = payload.get("session_legacy_retirement_pilot_wave", {})
+    if isinstance(retirement_pilot_wave, dict):
+        lines.append("\n## Legacy Retirement Pilot Wave")
+        lines.append(f"- status: {retirement_pilot_wave.get('status', '')}")
+        lines.append(f"- wave_id: {retirement_pilot_wave.get('wave_id', '')}")
+        lines.append(f"- target_family: {retirement_pilot_wave.get('target_family', '')}")
+        targets = retirement_pilot_wave.get("target_fields", [])
+        target_text = "；".join(str(x) for x in targets) if isinstance(targets, list) else ""
+        lines.append(f"- target_fields: {target_text}")
     return "\n".join(lines).strip() + "\n"
 
 
