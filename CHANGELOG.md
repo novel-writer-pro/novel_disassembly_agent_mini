@@ -1,3 +1,220 @@
+## Unreleased
+
+- docs: 新增 `docs/architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`，用完整 Mermaid 架构图与分层说明收口当前仿写商业 Agent 控制层的最新设计，把 experiment、session-state、operator/legacy 双 surface、retirement preview、root navigation 与 primary/legacy 分层治理全部放进同一张架构图里。
+
+- docs: 新增 `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`，从商业运营闭环视角解释当前控制层如何把 experiment、operator surface、action/execution、primary/legacy 治理与 retirement preview 串成接近商用的操作闭环。
+
+- docs: 新增 `docs/architecture/imitation-control-plane-implementation-status-map-20260509.md`，用状态分层图明确当前控制层哪些能力已经落地，哪些仍处于 preview / 未闭环阶段，方便快速判断当前实现边界。
+
+- docs: 新增 `docs/architecture/imitation-control-plane-field-artifact-console-map-20260509.md`，把字段层、产物层、控制台层三者的映射关系单独画出来，方便产品、运营、前端与控制台接入方快速理解当前结构。
+
+- docs: 新增 `docs/architecture/imitation-legacy-retirement-roadmap-20260509.md`，把从 readiness 到 plan、pilot wave、preview 再到 first live retirement patch 的路径单独画清楚，方便后续真正做第一批 legacy 字段收敛时对照执行。
+
+- docs: 新增 `docs/architecture/imitation-live-mutation-bridge-roadmap-20260509.md`，把从当前 preview/governance 结构走到第一次真正 live mutation / apply / retirement patch 还差哪些桥单独画出，方便判断下一步最关键的实现缺口。
+
+- imitation: 新增 `writer-imitate-live-control-state.json/.md` 与 `writer-imitate-live-control-state` 命令，把 apply preview 的结果沉淀成独立 live-control-state 过渡面，作为真正 live mutation 前的最后一层状态桥。
+
+- imitation: `writer-imitate-live-control-state` 现已开始显式暴露 `live_mutation_readiness`，把从 preview 走到真实 checkpoint writeback / transition apply 还缺哪些条件结构化出来。
+
+- imitation: `writer-imitate-live-control-state` 现已进一步新增 `live_mutation_plan`，把 checkpoint writeback / transition apply / rollback strategy 的执行顺序结构化，作为真正 executor 实现前的最后一层执行计划。
+
+- imitation: `writer-imitate-live-control-state` 现已进一步新增 `live_mutation_pilot_wave`，把第一次 live checkpoint writeback / transition apply 的最小试探波次对象化，为真正 live executor 实现前的 first-wave 试探做准备。
+
+- imitation: 新增 `writer-imitate-live-mutation-preview.json/.md` 与 `writer-imitate-live-mutation-preview` 命令，把 bridge state 上的 readiness / plan / pilot wave / projected writeback+transition 收成独立预演面，作为真正 live executor 前的最后一层 review surface。
+
+- imitation: 新增 `writer-imitate-live-checkpoint-state.json/.md` 与 `writer-imitate-apply-live-checkpoint` 命令，在不触碰外部运行时状态的前提下先把 checkpoint writeback 落成 output 工作区本地状态产物，作为 preview→live 的第一步执行桥。
+
+- imitation: 新增 `writer-imitate-live-transition-state.json/.md` 与 `writer-imitate-apply-live-transition` 命令，在不触碰外部运行时状态的前提下把 transition apply 也落成 output 工作区本地状态产物，继续沿 preview→live 的安全桥向前推进。
+
+- imitation: 新增 `writer-imitate-live-validation-state.json/.md` 与 `writer-imitate-validate-live-state` 命令，把 checkpoint+transition 本地执行后的验证结果单独收口，形成 preview→checkpoint→transition→validation 的完整本地桥链。
+
+- imitation: 新增 `writer-imitate-external-runtime-executor-readiness.json/.md` 与对应命令，把从本地桥链跨到真实 external runtime executor 之前的前置条件、阻断原因和下一步动作再次独立成 readiness gate。
+
+- imitation: 新增 `writer-imitate-external-runtime-executor-preview.json/.md` 与对应命令，把 runtime gate 上的 readiness + executor plan 再抽成独立 review 面，形成 root registry → runtime gate → runtime preview 的最后一跳。
+
+- imitation: 现已进一步新增 `external_runtime_executor_pilot_wave`，把真正 external checkpoint writeback / transition apply 的 first-wave 试探范围独立对象化，为第一个 runtime executor patch 提供最小范围边界。
+
+- imitation: 新增 `writer-imitate-external-runtime-checkpoint-state.json/.md` 与 `writer-imitate-apply-external-runtime-checkpoint` 命令，先把 external runtime 第一波 checkpoint writeback 试探落成 output 工作区内的本地模拟状态面。
+
+- imitation: 新增 `writer-imitate-external-runtime-transition-state.json/.md` 与 `writer-imitate-apply-external-runtime-transition` 命令，把 external runtime 第一波 transition apply 也落成 output 工作区内的本地模拟状态面，继续沿 runtime simulation bridge 向前推进。
+
+- imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
+
+- imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。
+
+- imitation: 对应的 action/execution/replay/apply/resume JSON 产物现在也统一暴露 `primary_operator_entrypoint=writer-imitate-operator-surface.json`，方便控制台和下游系统机读默认入口。
+
+- imitation: `writer-imitate-operator-surface` 现在新增 `session_primary_verdicts` 与 `session_primary_digests`，先把 verdict / digest 家族收口到一个低风险稳定入口里，而不立即删除旧字段。
+
+- imitation: `action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些产物现在也开始同步暴露并渲染 `session_primary_verdicts / session_primary_digests`，让主 verdict/digest 收口层沿整条控制链保持一致。
+
+- imitation: 现已新增 `session_primary_contract_hints`，把 primary verdict/digest 入口与 legacy compatibility layer 的关系机读显式化，方便下游逐步迁移而不必立即移除旧字段族。
+
+- imitation: 现已新增 `session_legacy_contract_layer`，把 legacy verdict/digest 家族正式收口成独立兼容层对象，方便后续真正 retirement 某些旧字段前先完成过渡治理。
+
+- imitation: 现已额外产出 `writer-imitate-legacy-contract-surface.json/.md`，把 legacy compatibility layer 提升成独立入口产物，避免旧字段家族继续散落在主控制链里。
+
+- imitation: action/execution/replay/apply/resume 以及 operator-surface 等主产物现在也开始统一暴露 `legacy_operator_entrypoint`，让 legacy surface 成为整条控制链显式可发现的次级入口。
+
+- imitation: `writer-imitate-index` 与 `writer-imitate-session-state` 现在也开始显式暴露 `Control Surface EntryPoints` / `session_control_surface_entrypoints`，把 primary/legacy 双入口治理再上提到总入口层。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现在新增 `display_policy=primary-first-legacy-secondary` 与 preferred/secondary section hints，把控制台应该先展示 primary 层、再暴露 legacy 层的策略机读固化下来。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `legacy_retirement_preview`，让第一次 legacy retirement 试探的独立预演面从 root 层即可被发现。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `live_control_state`，让 apply preview 到未来 live mutation 的桥接状态面从 root 层即可被发现。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现还开始显式暴露 `entrypoint_roles`，把 primary/legacy/retirement-preview/live-control-state 各自的入口语义机读化，方便控制台按角色和意图消费。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现已进一步显式暴露 `live_mutation_preview` 与 `live-mutation-review-surface` 角色，把真正 live executor 前的 review 面也纳入 root registry。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `live_validation_state` 与 `local-validation-bridge-surface` 角色，把 preview→checkpoint→transition→validation 的完整本地桥链全部接入 root registry。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `external_runtime_executor_readiness` 与 `runtime-executor-gate-surface` 角色，把真正跨到外部 runtime executor 前的 gate 也纳入 root registry。
+
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `external_runtime_executor_preview` 与 `runtime-executor-review-surface` 角色，使 runtime gate → runtime preview 的最后一跳在 root registry 中完整可见。
+
+- imitation: 现已额外产出 `writer-imitate-control-surface-registry.json/.md`，把 root navigation / display policy / entrypoint roles 再单独收成 machine-readable registry 产物，进一步逼近真正 control surface registry。
+
+- imitation: `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把 legacy 字段真正 retirement 之前的前置条件独立化。
+
+- imitation: 现已新增 `session_legacy_retirement_plan`，把 legacy 字段第一次最小 retirement 试探所需的 pilot candidates、second wave candidates、retirement order 与 safety rules 结构化下来。
+
+- imitation: 现已新增 `session_legacy_retirement_pilot_wave`，把 first-wave 目标、波次 id、target family、target fields 与 rollback 约束单独对象化，为第一次最小 retirement patch 做最后准备。
+
+- imitation: 现已额外产出 `writer-imitate-legacy-retirement-preview.json/.md`，把 retirement readiness、pilot wave 与 projected effect 收成独立预演面，供真正第一次 legacy retirement 试探前消费。
+
+- imitation: markdown 第一层现在也会显式提示 legacy verdict/digest 仍作为 compatibility layer 保留，但 primary 层已经是推荐默认入口，进一步把展示层迁移方向固化下来。
+
+- imitation: `Primary Verdicts / Primary Digests` 现在在 operator-surface 与 action/execution/replay/apply/resume 等 markdown 产物中的显示顺序已前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升成默认阅读入口。
+
+- imitation: `writer-imitate-index.md` 的 `Full Session Field Surface` 现在开始把旧 verdict/digest 家族单独归到 `Legacy Verdict/Digest Compatibility Layer` 小节，进一步弱化它们在主阅读路径中的位置。
+
+- imitation: `writer-imitate-index.md` 现在新增 `Operator-Facing Stable Contract` 小节，先把 operator 第一层真正该看的状态、队列、责任链、迁移与摘要字段单独收口，为后续 P0 展示层瘦身做低风险落地。
+
+- imitation: `writer-imitate-action-queue` 与 `writer-imitate-execution-state` 现在也开始复用 `session_operator_contract`，让多个输出面优先消费同一套第一层合同，而不是继续各自重复拼装 operator 摘要。
+
+- imitation: `writer-imitate-execution-replay`、`writer-imitate-execution-apply`、`writer-imitate-execution-resume` 现在也开始复用 `session_operator_contract`，使 replay/apply/resume 整条控制链的第一层 operator 合同进一步统一。
+
+- imitation: action/execution/replay/apply/resume 多个产物中的 `Operator-Facing Stable Contract` 渲染现已走统一 helper，降低第一层 operator 摘要后续继续漂移的风险。
+
+- docs: 新增 `docs/imitation-control-plane-glossary.md`，集中解释当前仿写商业 Agent 控制层中的英文术语（如 assurance / alignment / governance / attestation / replay / resume / checkpoint 等），并同步挂到 docs 入口，降低理解与交接成本。
+
+- imitation: `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，在 v2 聚合注册表基础上继续新增 `session_action_backlog`、`session_transition_queue`、`session_checkpoint_mutations`，把“下一步做什么、怎么迁移、要回写什么状态”显式化。
+
+- imitation: `writer-imitate-index.md` 现在同步输出 action backlog / transition / checkpoint 摘要，`docs/writer-imitation-workflow.md` 的 mermaid 架构图与字段解释也已升级到 v3，使控制面从 taxonomy 汇总继续靠近真实商业 Agent 的 action-loop 编排层。
+
+- imitation: `writer-imitate-index` 现在还会额外产出 `writer-imitate-action-queue.json` 与 `writer-imitate-action-queue.md`，把 session-state 中的 backlog / transition / mutation 压成更浅层的动作合同，方便后续接真实运营面与执行器。
+
+- imitation: `writer-imitate-index` 现在继续额外产出 `writer-imitate-execution-state.json` 与 `writer-imitate-execution-state.md`，把 action queue 提升为 execution tickets / transition history / checkpoint log / replay plan / recovery cursor，开始形成可持久化执行与恢复的最小合同。
+
+- imitation: `writer-imitate-index` 现在还会额外产出 `writer-imitate-execution-replay.json` 与 `writer-imitate-execution-replay.md`，对 execution-state 做 apply/replay 预演，显式给出哪些 ticket/transition/checkpoint 会进入下一步，方便后续安全接入真实状态回写。
+
+- imitation: 新增 `writer-imitate-apply-replay` 与 `writer-imitate-resume-replay` 命令，分别产出 apply preview 与 resume plan，使 execution replay 不再只是静态导出，而开始具备显式 CLI 入口。
+
+- imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
+- imitation: local steering retrieval now understands `tags` and scores tag / label / query overlap separately, making trope/worldview/audience doc selection more stable and explainable.
+
+- imitation: expanded the local trope/worldview/audience sample corpus with return-home payoff, mercantile resource play, frontier spirit-market, ancestral-contract, revenge rhythm, and faction-intrigue variants so the new retrieval rules have a broader P1 seed library.
+
+- imitation: writer innovation experiment now emits a baseline-vs-steering comparison report, so each batch can directly compare baseline and steering verdict/title drift without a second manual pass.
+
+- imitation: experiment outputs now include `delta_visual_summary`, making innovation/risk pressure easier to scan in markdown and JSON without a separate dashboard.
+
+- imitation: experiment outputs now include `reader_sim_acceptance_summary`, so innovation batches can compare baseline/steering engagement and concern drift with existing harness evidence.
+
+- imitation: experiment outputs now include `writer_innovation_explanation`, turning steering, hit docs, delta summaries, and reader acceptance signals into a concise writer-facing explanation block.
+
+- imitation: writer-imitate-index now summarizes innovation experiment artifacts, making output workdirs easier to scan across multiple experiment batches.
+
+- imitation: writer-imitate-index now includes an Experiment Ledger view so multiple innovation batches can be reviewed chronologically from one output index.
+
+- imitation: experiment outputs now include `experiment_decision_note`, turning comparison, delta, and reader-acceptance signals into an actionable commercial recommendation instead of a demo-style artifact.
+
+- imitation: experiment_decision_note now carries rollout-lane fields (`pilot_scope`, `promotion_gate`, `rollback_trigger`, `evidence_required`) so the artifact can drive commercial operations instead of acting like a demo summary.
+
+- imitation: experiment_decision_note now includes go-live gate fields (`ship_blockers`, `required_human_review`, `confidence_level`, `business_risk_label`, `go_live_checklist`) so the artifact can act more like an execution contract than a report.
+
+- imitation: experiment_decision_note now includes post-launch operations fields (`success_kpi_targets`, `failure_kpi_triggers`, `observation_window`, `owner_roles`, `handoff_packet`) so the artifact can govern post-launch operation instead of stopping at go-live review.
+
+- imitation: writer-imitate-index now emits a session-level control plane (`promotion_verdict`, `risk_register`, `handoff_summary`) so multiple experiment artifacts can be operated as one commercial lane instead of isolated reports.
+
+- imitation: writer-imitate-index now includes operator-panel session fields (`session_ship_decision`, `session_blockers`, `session_required_review`, `session_owner_handoff`, `session_priority_queue`) so multiple experiments can be queued and handed off as one commercial lane.
+
+- imitation: writer-imitate-index now includes orchestration-facing session fields (`session_lane_status`, `session_escalation_path`, `session_release_readiness`, `session_recovery_plan`, `session_command_brief`) so the output workspace behaves more like a commercial agent control surface.
+
+- imitation: writer-imitate-index now includes runtime-facing session fields (`session_execution_mode`, `session_action_window`, `session_ready_queue`, `session_blocked_queue`, `session_recovery_owner`) so the control surface gets closer to a commercial agent orchestration layer.
+
+- imitation: writer-imitate-index now includes runtime-contract session fields (`session_runtime_contract`, `session_state_snapshot`, `session_transition_rules`, `session_auto_actions`, `session_manual_overrides`) so the control layer behaves more like an agent runtime contract than a static operator summary.
+
+- imitation: writer-imitate-index now includes runtime-governance session fields (`session_guard_conditions`, `session_entry_criteria`, `session_exit_criteria`, `session_auto_escalations`, `session_override_audit`) so the control layer gets closer to an executable governance contract.
+
+- imitation: writer-imitate-index now includes session state-machine and reconciliation fields (`session_state_machine`, `session_allowed_transitions`, `session_trigger_matrix`, `session_reconciliation_steps`, `session_operator_commands`) so the control plane gets closer to a commercial agent execution surface.
+
+- imitation: writer-imitate-index now includes enterprise control fields (`session_policy_pack`, `session_slo_contract`, `session_failure_domains`, `session_intervention_matrix`, `session_audit_digest`) so the control plane moves closer to a commercial agent operations layer.
+
+- imitation: writer-imitate-index now includes governor-facing session fields (`session_governor_mode`, `session_decision_bus`, `session_watchdog_rules`, `session_contingency_routes`, `session_operating_envelope`) so the control plane gets closer to a commercial agent runtime governor.
+
+- imitation: writer-imitate-index now includes control-objective session fields (`session_control_objectives`, `session_enforcement_rules`, `session_decision_priorities`, `session_supervision_hooks`, `session_telemetry_digest`) so the control plane gets closer to a commercial agent operating system.
+
+- imitation: writer-imitate-index now includes contract-plane session fields (`session_policy_versions`, `session_safety_budget`, `session_latency_budget`, `session_review_quorum`, `session_contract_digest`) so the control surface gets closer to an enterprise commercial agent contract plane.
+
+- imitation: writer-imitate-index now includes compliance-plane session fields (`session_compliance_pack`, `session_failure_budget`, `session_override_budget`, `session_reliability_digest`, `session_governance_checksum`) so the control plane gets closer to an enterprise commercial agent governance OS.
+
+- imitation: writer-imitate-index now includes governance-OS session fields (`session_authority_map`, `session_escalation_budget`, `session_remediation_contract`, `session_consensus_rules`, `session_integrity_digest`) so the control plane gets closer to a commercial agent governance operating system.
+
+- imitation: writer-imitate-index now includes execution-kernel session fields (`session_control_kernel`, `session_safety_circuit_breakers`, `session_override_channels`, `session_repair_loops`, `session_operating_checksum`) so the control plane gets closer to a commercial agent runtime kernel.
+
+- imitation: writer-imitate-index now includes core-constraint session fields (`session_control_memory`, `session_constraint_register`, `session_safety_invariants`, `session_repair_budget`, `session_runtime_digest`) so the control plane gets closer to a commercial agent runtime core.
+
+- imitation: writer-imitate-index now includes control-fabric session fields (`session_control_fabric`, `session_guardrail_matrix`, `session_override_protocol`, `session_failure_isolation`, `session_runtime_manifest`) so the control plane gets closer to a commercial agent control fabric.
+
+- imitation: writer-imitate-index now emits `writer-imitate-session-state.json`, providing a machine-readable session-level state snapshot with ready/blocked/escalation/recovery views alongside the markdown control plane.
+
+- imitation: writer-imitate-index now includes control-bus session fields (`session_control_bus`, `session_event_channels`, `session_runtime_priorities`, `session_alert_routes`, `session_state_checkpoint`) so the control plane gets closer to a commercial runtime bus/checkpoint layer.
+
+- imitation: writer-imitate-index now includes stateful-execution session fields (`session_execution_graph`, `session_signal_registry`, `session_action_contract`, `session_backpressure_rules`, `session_runtime_proof`) so the control plane gets closer to a stateful commercial agent execution contract.
+
+- imitation: writer-imitate-index now includes supervisory/ledger session fields (`session_supervisory_contract`, `session_recovery_matrix`, `session_signal_budget`, `session_checkpoint_policy`, `session_operating_ledger`) so the control plane gets closer to a commercial operating ledger.
+
+- imitation: writer-imitate-index now includes governance-fabric session fields (`session_governance_fabric`, `session_checkpoint_contract`, `session_supervision_priorities`, `session_ledger_consistency_rules`, `session_runtime_attestation`) so the control plane gets closer to a governed checkpoint OS.
+
+- imitation: writer-imitate-index now includes runtime-mesh session fields (`session_runtime_mesh`, `session_policy_router`, `session_checkpoint_ring`, `session_audit_stream`, `session_operating_signature`) so the control plane gets closer to a commercial agent mesh/ring/stream/signature layer.
+
+- imitation: writer-imitate-index now includes policy-kernel session fields (`session_policy_mesh`, `session_enforcement_bus`, `session_runtime_sentry`, `session_checkpoint_audit_chain`, `session_operating_posture`) so the control plane gets closer to a commercial agent policy kernel.
+
+- imitation: writer-imitate-index now includes attestation/trust session fields (`session_attestation_chain`, `session_trust_zones`, `session_policy_attestors`, `session_recovery_posture`, `session_control_verdict`) so the control plane gets closer to a commercial agent trust/attestation layer.
+
+- imitation: writer-imitate-index now includes protocol-stack session fields (`session_protocol_stack`, `session_trust_contract`, `session_recovery_authority`, `session_audit_checkpoint_map`, `session_runtime_certificate`) so the control plane gets closer to a commercial agent protocol/certificate layer.
+
+- imitation: writer-imitate-index now includes topology/authorization session fields (`session_governance_topology`, `session_protocol_budget`, `session_certificate_chain`, `session_recovery_authorizations`, `session_control_attestation`) so the control plane gets closer to a commercial agent topology/certificate/authorization layer.
+
+- imitation: writer-imitate-index now includes assurance/alignment session fields (`session_assurance_contract`, `session_policy_checksum`, `session_runtime_alignment`, `session_recovery_certainty`, `session_operator_assurance`) so the control plane gets closer to a commercial assurance/checksum layer.
+
+- imitation: writer-imitate-index now includes meta-governance session fields (`session_meta_governor`, `session_policy_integrity`, `session_runtime_consistency`, `session_override_accountability`, `session_control_confidence`) so the control plane gets closer to a commercial control-integrity layer.
+
+- imitation: writer-imitate-index now includes executive-governance session fields (`session_executive_contract`, `session_governance_checksum_v2`, `session_supervision_certificate`, `session_override_liability`, `session_operating_authority`) so the control plane gets closer to a commercial executive-governance layer.
+
+- imitation: writer-imitate-index now includes authority/assurance session fields (`session_authority_certificate`, `session_policy_envelope`, `session_escalation_authority`, `session_assurance_digest`, `session_governance_verdict`) so the control plane gets closer to a commercial authority/assurance/verdict OS layer.
+
+- imitation: writer-imitate-index now includes governance-mesh session fields (`session_governance_mesh`, `session_attestation_budget`, `session_policy_fallbacks`, `session_recovery_routing`, `session_runtime_verdict`) so the control plane gets closer to a final commercial governance mesh.
+
+- imitation: writer-imitate-index now includes control-plane closure fields (`session_control_plane_closure`, `session_exec_fabric`, `session_authority_routes`, `session_assurance_chain`, `session_runtime_seal`) so the control plane gets closer to a closed-loop commercial execution fabric.
+
+- imitation: writer-imitate-index now includes authority-fabric session fields (`session_authority_fabric`, `session_override_chain`, `session_control_closure_audit`, `session_runtime_witness`, `session_governance_posture`) so the control plane gets closer to a closed-loop commercial authority fabric.
+
+- imitation: writer-imitate-index now includes final-charter session fields (`session_operating_charter`, `session_control_charter`, `session_governance_charter`, `session_runtime_authority_digest`, `session_final_control_verdict`) so the control plane gets closer to a commercial agent final control charter.
+
+- imitation: writer-imitate-index now includes governance-closure session fields (`session_governance_closure`, `session_authority_verdict`, `session_runtime_horizon`, `session_supervision_digest`, `session_control_summary`) so the control plane gets closer to a closed-loop commercial governance summary.
+
+- imitation: writer-imitate-index now includes operating-system session fields (`session_operating_system_contract`, `session_control_checkpoint_digest`, `session_authority_signature`, `session_recovery_escalation_mesh`, `session_final_operating_posture`) so the control plane gets closer to a commercial agent operating system layer.
+
+- imitation: writer-imitate-index now includes final-runtime session fields (`session_command_mesh`, `session_authority_fabric_v2`, `session_closure_attestation`, `session_operating_charter_mesh`, `session_final_runtime_verdict`) so the control plane gets closer to a commercial final runtime OS layer.
+
+- imitation: writer-imitate-index now includes executive-command session fields (`session_executive_command_mesh`, `session_authority_control_matrix`, `session_runtime_closure_proof`, `session_governance_signal_chain`, `session_operating_system_verdict`) so the control plane gets closer to a final commercial operating-system verdict layer.
+
+- imitation: writer-imitate-index now includes control-OS session fields (`session_governance_backbone`, `session_control_lattice`, `session_authority_bus`, `session_runtime_witness_chain`, `session_os_control_digest`) so the control plane gets closer to a final commercial control OS layer.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -41,6 +258,57 @@
 - 进一步新增 `docs/manual-eval-record-template.md`，用于把每本新小说的人工测试结果、薄弱点与商业化判断标准化沉淀。
 - 新增 `runs/manual_eval/_template/` 样板目录，方便直接复制出一套评估工作区，统一 artifacts / exports / notes 收纳结构。
 - 新增 `scripts/bootstrap_manual_eval_workspace.py`，可一键从模板生成新小说评估工作区，降低手工初始化成本。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- imitation: writer-imitate-index now includes final-runtime session fields (`session_command_mesh`, `session_authority_fabric_v2`, `session_closure_attestation`, `session_operating_charter_mesh`, `session_final_runtime_verdict`) so the control plane gets closer to a commercial final runtime OS layer.
+
+
 
 ## 2026-05-05
 

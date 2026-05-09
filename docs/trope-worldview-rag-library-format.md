@@ -20,12 +20,18 @@ rag/
   trope-library/
     xianxia-underdog-ledger.md
     clan-bureaucracy-power-climb.md
+    exile-return-face-reversal.md
+    mercantile-alliance-resource-gamble.md
   worldview-dossiers/
     aura-decline-tax-state.md
     sect-credit-feudal-order.md
+    frontier-garrison-spirit-market.md
+    ancestral-contract-cultivation-law.md
   audience-expectation-notes/
     male-xianxia-commercial-hooks.md
     cautious-growth-reader-signals.md
+    revenge-payoff-commercial-rhythm.md
+    faction-intrigue-reader-signals.md
 ```
 
 ---
@@ -37,6 +43,11 @@ rag/
 
 ## label
 底层逆袭 / 账本修仙
+
+## tags
+- 男频
+- 账本修仙
+- 收益可见
 
 ## use_when
 - 主角处于资源匮乏阶段
@@ -142,7 +153,7 @@ rag/
 先做：
 - markdown 文档库
 - 统一 frontmatter / section naming
-- 一层简单检索
+- 一层简单检索（至少覆盖 tag / label / query 三条命中线）
 
 当前最小可用状态已经支持：
 - `--trope-doc`
