@@ -22,6 +22,8 @@
 
 - imitation: 顶层 `session_control_surface_entrypoints` 现在新增 `display_policy=primary-first-legacy-secondary` 与 preferred/secondary section hints，把控制台应该先展示 primary 层、再暴露 legacy 层的策略机读固化下来。
 
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `legacy_retirement_preview`，让第一次 legacy retirement 试探的独立预演面从 root 层即可被发现。
+
 - imitation: `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把 legacy 字段真正 retirement 之前的前置条件独立化。
 
 - imitation: 现已新增 `session_legacy_retirement_plan`，把 legacy 字段第一次最小 retirement 试探所需的 pilot candidates、second wave candidates、retirement order 与 safety rules 结构化下来。

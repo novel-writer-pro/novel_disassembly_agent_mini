@@ -221,6 +221,7 @@ flowchart TD
 - 现在 action/execution/replay/apply/resume 等主产物也会统一暴露 `legacy_operator_entrypoint`，让 legacy surface 作为次级入口被显式发现，而不是只存在于新增产物清单里
 - `writer-imitate-index.md` 与 `writer-imitate-session-state.json` 现在也开始显式暴露 primary/legacy 双入口，把双入口治理再上提到总入口层
 - 顶层入口层现在还会额外提供 `display_policy=primary-first-legacy-secondary`，明确告诉控制台先展示 primary 层、再暴露 legacy 层
+- 顶层入口层现在也开始显式暴露 `legacy_retirement_preview`，让第一次 legacy retirement 试探预演面从 root 层即可被发现
 - `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把真正 retirement 旧字段前的前置条件独立出来
 - 现在还额外暴露 `session_legacy_retirement_plan`，把首批候选、顺序和安全规则机读化，为第一次最小 retirement 试探做准备
 - 现已进一步新增 `session_legacy_retirement_pilot_wave`，把第一批最小试探波次（wave id / target family / target fields / rollback 约束）独立出来

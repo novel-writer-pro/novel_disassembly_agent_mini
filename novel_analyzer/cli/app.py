@@ -3609,6 +3609,8 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "primary_operator_entrypoint_markdown": "writer-imitate-operator-surface.md",
         "legacy_operator_entrypoint_json": "writer-imitate-legacy-contract-surface.json",
         "legacy_operator_entrypoint_markdown": "writer-imitate-legacy-contract-surface.md",
+        "legacy_retirement_preview_json": "writer-imitate-legacy-retirement-preview.json",
+        "legacy_retirement_preview_markdown": "writer-imitate-legacy-retirement-preview.md",
         "preferred_first_layer_sections": [
             "session_primary_verdicts",
             "session_primary_digests",
@@ -3875,6 +3877,7 @@ def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
     if isinstance(entrypoints, dict):
         lines.append(f"- primary_operator_entrypoint: {entrypoints.get('primary_operator_entrypoint_markdown', '')}")
         lines.append(f"- legacy_operator_entrypoint: {entrypoints.get('legacy_operator_entrypoint_markdown', '')}")
+        lines.append(f"- legacy_retirement_preview: {entrypoints.get('legacy_retirement_preview_markdown', '')}")
         lines.append(f"- display_policy: {entrypoints.get('display_policy', '')}")
     lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
     lines.append(f"- risk_register: {payload.get('risk_register', '')}")
@@ -3924,6 +3927,7 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
     if isinstance(entrypoints, dict):
         lines.append(f"- primary_operator_entrypoint: {entrypoints.get('primary_operator_entrypoint_markdown', '')}")
         lines.append(f"- legacy_operator_entrypoint: {entrypoints.get('legacy_operator_entrypoint_markdown', '')}")
+        lines.append(f"- legacy_retirement_preview: {entrypoints.get('legacy_retirement_preview_markdown', '')}")
     _append_primary_surface_lines(lines, payload)
     retirement_readiness = payload.get("session_legacy_retirement_readiness", {})
     if isinstance(retirement_readiness, dict):
@@ -5754,6 +5758,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append("\n### Control Surface EntryPoints")
         lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
         lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
+        lines.append("- legacy_retirement_preview: writer-imitate-legacy-retirement-preview.md")
         lines.append("- display_policy: primary-first-legacy-secondary")
         lines.append("\n### Operator-Facing Stable Contract")
         lines.append(f"- promotion_verdict: {promotion_verdict}")
