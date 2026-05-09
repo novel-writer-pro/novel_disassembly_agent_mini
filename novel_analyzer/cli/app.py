@@ -5103,12 +5103,26 @@ def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -
             "disable runtime executor if downstream mismatch appears",
         ],
     }
+    runtime_executor_pilot_wave = {
+        "wave_id": "external-runtime-wave-01",
+        "status": "planned-not-executed",
+        "target_scope": [
+            "external-checkpoint-writeback",
+            "external-transition-apply",
+        ],
+        "pilot_targets": [
+            "single runtime checkpoint writeback after local validation success",
+            "single runtime transition apply after checkpoint writeback success",
+        ],
+        "rollback_rule": "disable runtime executor and restore previous runtime checkpoint/transition state if mismatch appears",
+    }
     return {
         "contract_version": "writer-imitate-external-runtime-executor-readiness.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "live_validation_state_entrypoint": "writer-imitate-live-validation-state.json",
         "readiness": readiness,
         "external_runtime_executor_plan": runtime_executor_plan,
+        "external_runtime_executor_pilot_wave": runtime_executor_pilot_wave,
     }
 
 
@@ -5142,6 +5156,15 @@ def _writer_output_external_runtime_executor_readiness_markdown(output_dir: Path
         lines.append(f"- execution_order: {execution_text}")
         lines.append(f"- pilot_scope: {pilot_text}")
         lines.append(f"- rollback_strategy: {rollback_text}")
+    pilot_wave = payload.get("external_runtime_executor_pilot_wave", {})
+    if isinstance(pilot_wave, dict):
+        lines.append("\n## External Runtime Executor Pilot Wave")
+        lines.append(f"- wave_id: {pilot_wave.get('wave_id', '')}")
+        lines.append(f"- status: {pilot_wave.get('status', '')}")
+        target_scope = pilot_wave.get("target_scope", [])
+        target_text = "；".join(str(x) for x in target_scope) if isinstance(target_scope, list) else ""
+        lines.append(f"- target_scope: {target_text}")
+        lines.append(f"- rollback_rule: {pilot_wave.get('rollback_rule', '')}")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -5151,6 +5174,8 @@ def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> 
     readiness_payload = readiness_obj if isinstance(readiness_obj, dict) else {}
     plan_obj = readiness.get("external_runtime_executor_plan", {})
     plan = plan_obj if isinstance(plan_obj, dict) else {}
+    pilot_wave_obj = readiness.get("external_runtime_executor_pilot_wave", {})
+    pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-external-runtime-executor-preview.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -5158,6 +5183,7 @@ def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> 
         "preview_status": "planned-not-executed",
         "readiness": readiness_payload,
         "external_runtime_executor_plan": plan,
+        "external_runtime_executor_pilot_wave": pilot_wave,
     }
 
 
@@ -5182,6 +5208,12 @@ def _writer_output_external_runtime_executor_preview_markdown(output_dir: Path) 
         pilot_text = "；".join(str(x) for x in pilot_scope) if isinstance(pilot_scope, list) else ""
         lines.append(f"- execution_order: {execution_text}")
         lines.append(f"- pilot_scope: {pilot_text}")
+    pilot_wave = payload.get("external_runtime_executor_pilot_wave", {})
+    if isinstance(pilot_wave, dict):
+        lines.append("\n## External Runtime Executor Pilot Wave")
+        lines.append(f"- wave_id: {pilot_wave.get('wave_id', '')}")
+        lines.append(f"- status: {pilot_wave.get('status', '')}")
+        lines.append(f"- rollback_rule: {pilot_wave.get('rollback_rule', '')}")
     return "\n".join(lines).strip() + "\n"
 
 

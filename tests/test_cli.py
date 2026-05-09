@@ -1170,10 +1170,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_readiness_payload = json.loads(external_runtime_readiness_json.read_text(encoding='utf-8'))
     assert external_runtime_readiness_payload['contract_version'] == 'writer-imitate-external-runtime-executor-readiness.v1'
     assert external_runtime_readiness_payload['readiness']['next_action'] == 'implement external runtime checkpoint executor'
+    assert external_runtime_readiness_payload['external_runtime_executor_pilot_wave']['wave_id'] == 'external-runtime-wave-01'
     external_runtime_readiness_text = external_runtime_readiness_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Readiness' in external_runtime_readiness_text
     assert '## Readiness' in external_runtime_readiness_text
     assert '## External Runtime Executor Plan' in external_runtime_readiness_text
+    assert '## External Runtime Executor Pilot Wave' in external_runtime_readiness_text
 
     result = runner.invoke(
         app,
@@ -1185,10 +1187,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_preview_payload = json.loads(external_runtime_preview_json.read_text(encoding='utf-8'))
     assert external_runtime_preview_payload['contract_version'] == 'writer-imitate-external-runtime-executor-preview.v1'
     assert external_runtime_preview_payload['preview_status'] == 'planned-not-executed'
+    assert external_runtime_preview_payload['external_runtime_executor_pilot_wave']['status'] == 'planned-not-executed'
     external_runtime_preview_text = external_runtime_preview_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Preview' in external_runtime_preview_text
     assert '## Readiness' in external_runtime_preview_text
     assert '## External Runtime Executor Plan' in external_runtime_preview_text
+    assert '## External Runtime Executor Pilot Wave' in external_runtime_preview_text
 
     result = runner.invoke(
         app,
