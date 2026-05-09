@@ -3253,9 +3253,152 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "若 reader_acceptance 转负，回退到上一版 steering 组合",
         "若 risk_register 升级，切换到 de-risk lane 并压缩 pilot_scope",
     ]
+    session_required_review = ["session operator review"]
+    if risk_register in {"guarded", "high-risk"}:
+        session_required_review.append("risk approver review")
+    session_owner_handoff = [
+        "writer-operator -> continuity-reviewer",
+        "continuity-reviewer -> reader-feedback-owner",
+    ]
+    if risk_register in {"guarded", "high-risk"}:
+        session_owner_handoff.append("reader-feedback-owner -> risk-approver")
+    session_priority_queue = session_next_actions[:3] if session_next_actions else ["补更多证据后再推进。"]
+    session_lane_status = (
+        "expansion-lane"
+        if promotion_verdict == "promote"
+        else "risk-mitigation-lane"
+        if promotion_verdict == "de-risk"
+        else "pilot-lane"
+        if promotion_verdict == "pilot"
+        else "evidence-lane"
+    )
+    session_release_readiness = (
+        "ready-for-managed-pilot"
+        if session_ship_decision == "ship-ready"
+        else "blocked-pending-review"
+    )
+    session_execution_mode = (
+        "scale"
+        if session_ship_decision == "ship-ready" and promotion_verdict == "promote"
+        else "stabilize"
+        if promotion_verdict == "de-risk"
+        else "pilot"
+    )
+    session_action_window = "next-5-8-chapters" if session_execution_mode == "scale" else "next-2-4-chapters"
+    session_recovery_owner = (
+        "risk-approver"
+        if risk_register in {"guarded", "high-risk"}
+        else "writer-operator"
+    )
+    session_command_brief = [
+        f"当前 lane: {session_lane_status}",
+        f"当前 ship decision: {session_ship_decision}",
+        f"优先动作: {session_priority_queue[0]}",
+    ]
+    session_governor_mode = (
+        "guarded-scale"
+        if session_ship_decision == "ship-ready"
+        else "risk-first"
+        if risk_register in {"guarded", "high-risk"}
+        else "evidence-first"
+    )
+    session_runtime_contract = (
+        f"mode={session_execution_mode} | readiness={session_release_readiness} | lane={session_lane_status}"
+    )
+    session_state_snapshot = [
+        f"promotion_verdict={promotion_verdict}",
+        f"risk_register={risk_register}",
+        f"ship_decision={session_ship_decision}",
+    ]
+    session_control_loop = {
+        "entry_criteria": [
+            "至少存在 1 个 innovation experiment artifact",
+            "baseline_vs_steering 与 reader_sim_acceptance evidence 已生成",
+        ],
+        "guard_conditions": [
+            "risk_register 不能为 high-risk 才允许进入 ship-ready",
+            "reader_acceptance_not_improved 时禁止进入 scale 模式",
+        ],
+        "state_machine": [
+            "evidence-lane -> pilot-lane",
+            "pilot-lane -> expansion-lane",
+            "pilot-lane -> risk-mitigation-lane",
+            "risk-mitigation-lane -> pilot-lane",
+        ],
+        "allowed_transitions": [
+            "hold -> pilot",
+            "pilot -> promote",
+            "pilot -> de-risk",
+            "de-risk -> pilot",
+        ],
+        "auto_actions": [
+            f"根据 {promotion_verdict} 自动选择 {session_lane_status}",
+            f"根据 risk_register={risk_register} 自动分配 recovery owner={session_recovery_owner}",
+        ],
+        "manual_overrides": [
+            "允许 business-owner 人工改写 promotion_verdict",
+            "允许 risk-approver 人工冻结扩区或切回 de-risk lane",
+        ],
+    }
+    session_queue_registry = {
+        "priority_queue": session_priority_queue,
+        "ready_queue": session_ready_queue,
+        "blocked_queue": session_blocked_queue,
+        "required_review": session_required_review,
+        "owner_handoff": session_owner_handoff,
+        "escalation_path": session_escalation_path,
+        "recovery_plan": session_recovery_plan,
+    }
+    session_execution_registry = {
+        "lane_status": session_lane_status,
+        "release_readiness": session_release_readiness,
+        "execution_mode": session_execution_mode,
+        "action_window": session_action_window,
+        "recovery_owner": session_recovery_owner,
+        "command_brief": session_command_brief,
+    }
+    session_governance_registry = {
+        "governor_mode": session_governor_mode,
+        "decision_bus": [
+            "promotion_verdict -> session_ship_decision",
+            "risk_register -> required_review",
+            "session_blockers -> escalation_path",
+        ],
+        "policy_versions": ["innovation-policy.v1", "session-control.v1"],
+        "review_quorum": ["writer-operator", "continuity-reviewer", "reader-feedback-owner"],
+        "authority_map": session_escalation_path,
+    }
+    session_digest_registry = {
+        "runtime_contract": session_runtime_contract,
+        "state_snapshot": session_state_snapshot,
+        "control_summary": [
+            f"ship={session_ship_decision}",
+            f"lane={session_lane_status}",
+            f"risk={risk_register}",
+            f"queue={len(session_priority_queue)}",
+        ],
+        "operating_system_verdict": [
+            f"runtime={session_execution_mode}",
+            f"authority={session_ship_decision}",
+            f"governor={session_governor_mode}",
+            f"risk={risk_register}",
+        ],
+        "os_control_digest": [
+            f"backbone={len(session_escalation_path)}",
+            f"queue={len(session_priority_queue)}",
+            f"review={len(session_required_review)}",
+        ],
+    }
+    session_live_ops_board = {
+        "promotion_verdict": promotion_verdict,
+        "risk_register": risk_register,
+        "session_ship_decision": session_ship_decision,
+        "primary_focus": session_focuses[0] if session_focuses else "",
+        "focuses": session_focuses[:3],
+    }
 
     return {
-        "contract_version": "writer-imitate-session-state.v1",
+        "contract_version": "writer-imitate-session-state.v2",
         "output_dir": str(output_dir),
         "experiment_count": len(ledger_entries),
         "promotion_verdict": promotion_verdict,
@@ -3266,6 +3409,12 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_escalation_path": session_escalation_path,
         "session_recovery_plan": session_recovery_plan,
         "session_focuses": session_focuses[:3],
+        "session_control_loop": session_control_loop,
+        "session_queue_registry": session_queue_registry,
+        "session_execution_registry": session_execution_registry,
+        "session_governance_registry": session_governance_registry,
+        "session_digest_registry": session_digest_registry,
+        "session_live_ops_board": session_live_ops_board,
         "experiments": ledger_entries,
     }
 
@@ -4516,6 +4665,36 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
         lines.append(f"- session_repair_loops: {'；'.join(session_repair_loops)}")
         lines.append(f"- session_operating_checksum: {'；'.join(session_operating_checksum)}")
+        lines.append(
+            "- session_control_loop: "
+            f"entry={len(session_entry_criteria)}；guards={len(session_guard_conditions)}；"
+            f"transitions={len(session_allowed_transitions)}；auto_actions={len(session_auto_actions)}"
+        )
+        lines.append(
+            "- session_queue_registry: "
+            f"priority={len(session_priority_queue)}；ready={len(session_ready_queue)}；"
+            f"blocked={len(session_blocked_queue)}；review={len(session_required_review)}"
+        )
+        lines.append(
+            "- session_execution_registry: "
+            f"lane={session_lane_status}；mode={session_execution_mode}；"
+            f"window={session_action_window}；owner={session_recovery_owner}"
+        )
+        lines.append(
+            "- session_governance_registry: "
+            f"governor={session_governor_mode}；authority_routes={len(session_escalation_path)}；"
+            f"quorum={len(session_review_quorum)}"
+        )
+        lines.append(
+            "- session_digest_registry: "
+            f"runtime={session_runtime_contract}；control_summary={session_control_summary[0]}；"
+            f"os_digest={session_os_control_digest[0]}"
+        )
+        lines.append(
+            "- session_live_ops_board: "
+            f"ship={session_ship_decision}；promotion={promotion_verdict}；"
+            f"risk={risk_register}；focuses={len(session_focuses[:3])}"
+        )
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
         if session_ready_queue:

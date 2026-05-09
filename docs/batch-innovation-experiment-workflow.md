@@ -125,6 +125,8 @@
 - session_operating_system_contract / session_control_checkpoint_digest / session_authority_signature / session_recovery_escalation_mesh / session_final_operating_posture 是否足以形成 operating-system contract 层
 - session_control_plane_closure / session_exec_fabric / session_authority_routes / session_assurance_chain / session_runtime_seal 是否足以形成控制面闭环与执行织面
 - session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence 是否足以形成 meta-governance / control-integrity 层
+- writer-imitate-session-state.v2 中的 session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board 是否已经把冗长字段压缩成可消费的编排注册表
+- 这些聚合注册表是否已经足以驱动下一步真实 queue transition / action loop / checkpoint mutation，而不只是 markdown 报告
 
 ---
 

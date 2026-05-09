@@ -1,5 +1,9 @@
 ## Unreleased
 
+- imitation: `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v2`，新增 `session_control_loop`、`session_queue_registry`、`session_execution_registry`、`session_governance_registry`、`session_digest_registry`、`session_live_ops_board` 六个聚合注册表，让 session 状态更接近真实商业 Agent 编排层，而不只是冗长字段快照。
+
+- imitation: `writer-imitate-index.md` 现在同步输出上述 6 个聚合摘要字段，并在 `docs/writer-imitation-workflow.md` 增补 mermaid 架构图与字段分层解释，降低控制面理解成本并为后续 action-loop 化铺路。
+
 - imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
 - imitation: local steering retrieval now understands `tags` and scores tag / label / query overlap separately, making trope/worldview/audience doc selection more stable and explainable.
 
