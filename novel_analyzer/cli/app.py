@@ -3558,6 +3558,7 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
     ]
     return {
         "contract_version": "writer-imitate-action-queue.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
@@ -3580,6 +3581,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "session_operator_contract": operator_contract,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -3816,6 +3818,7 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
     ]
     return {
         "contract_version": "writer-imitate-execution-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "run_status": run_status,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -4002,6 +4005,7 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
     }
     return {
         "contract_version": "writer-imitate-execution-replay.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "source_contract_version": execution_state.get("contract_version", ""),
         "session_operator_contract": execution_state.get("session_operator_contract", {}),
         "current_run_status": execution_state.get("run_status", ""),
@@ -4137,6 +4141,7 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
     )
     return {
         "contract_version": "writer-imitate-execution-apply.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "source_contract_version": replay.get("contract_version", ""),
         "session_operator_contract": replay.get("session_operator_contract", {}),
         "apply_status": apply_status,
@@ -4225,6 +4230,7 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
     resume_status = "resume-ready" if resume_targets else "no-resume-needed"
     return {
         "contract_version": "writer-imitate-execution-resume.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "source_contract_version": apply_preview.get("contract_version", ""),
         "session_operator_contract": apply_preview.get("session_operator_contract", {}),
         "resume_status": resume_status,

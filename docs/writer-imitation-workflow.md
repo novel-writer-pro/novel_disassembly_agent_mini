@@ -214,6 +214,7 @@ flowchart TD
 - `writer-imitate-index.md` 的 `Operator-Facing Stable Contract` 小节已开始把第一层真正应该先看的状态 / 队列 / owner / 迁移 / 摘要字段收口出来
 - `writer-imitate-operator-surface.json/.md` 已作为独立默认入口产物补上，控制台/运营面可以直接消费这一层，而不必先读更大的 session-state
 - `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物也会显式写出 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，减少“先看哪个文件”的歧义
+- 对应的 JSON 产物也会统一暴露 `primary_operator_entrypoint=writer-imitate-operator-surface.json`，方便控制台直接机读默认入口
 - `writer-imitate-action-queue.md` 与 `writer-imitate-execution-state.md` 也开始复用同一个 `session_operator_contract`，减少不同产物各自重复拼装第一层摘要
 - `writer-imitate-execution-replay / apply / resume` 也开始复用 `session_operator_contract`，使整条控制链的第一层 operator 摘要逐步统一
 - 这些产物里的 `Operator-Facing Stable Contract` 渲染现已走统一 helper，后续第一层 operator 摘要调整不需要再在多个产物里重复改

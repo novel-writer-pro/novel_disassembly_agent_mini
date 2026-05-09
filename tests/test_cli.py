@@ -814,12 +814,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
     assert operator_surface_payload['contract_version'] == 'writer-imitate-operator-surface.v1'
+    assert operator_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert operator_surface_payload['session_operator_contract']['status']['session_execution_mode']
     operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Operator Surface' in operator_surface_text
     assert '## Operator-Facing Stable Contract' in operator_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
+    assert action_queue_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert action_queue_payload['session_operator_contract']['status']['session_execution_mode']
     assert action_queue_payload['action_backlog']
     assert 'execution_mode' in action_queue_payload['execution_registry']
@@ -835,6 +837,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Checkpoint Mutations' in action_queue_text
     execution_state_payload = json.loads(execution_state_json.read_text(encoding='utf-8'))
     assert execution_state_payload['contract_version'] == 'writer-imitate-execution-state.v1'
+    assert execution_state_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert execution_state_payload['session_operator_contract']['owners']['session_recovery_owner']
     assert execution_state_payload['execution_tickets']
     assert execution_state_payload['transition_history']
@@ -852,6 +855,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Recovery Cursor' in execution_state_text
     execution_replay_payload = json.loads(execution_replay_json.read_text(encoding='utf-8'))
     assert execution_replay_payload['contract_version'] == 'writer-imitate-execution-replay.v1'
+    assert execution_replay_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert execution_replay_payload['session_operator_contract']['status']['session_ship_decision']
     assert 'next_run_status' in execution_replay_payload
     assert execution_replay_payload['replay_results']
@@ -876,6 +880,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_apply_md.exists()
     execution_apply_payload = json.loads(execution_apply_json.read_text(encoding='utf-8'))
     assert execution_apply_payload['contract_version'] == 'writer-imitate-execution-apply.v1'
+    assert execution_apply_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert execution_apply_payload['session_operator_contract']['owners']['session_recovery_owner']
     assert 'apply_status' in execution_apply_payload
     assert 'next_resume_hint' in execution_apply_payload
@@ -896,6 +901,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_md.exists()
     execution_resume_payload = json.loads(execution_resume_json.read_text(encoding='utf-8'))
     assert execution_resume_payload['contract_version'] == 'writer-imitate-execution-resume.v1'
+    assert execution_resume_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert execution_resume_payload['session_operator_contract']['status']['session_lane_status']
     assert 'resume_status' in execution_resume_payload
     assert execution_resume_payload['resume_steps']
