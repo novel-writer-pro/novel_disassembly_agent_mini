@@ -34,6 +34,7 @@
 - [`./architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`](./architecture/imitation-commercial-agent-control-plane-architecture-20260509.md)
 - [`./architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`](./architecture/imitation-commercial-agent-ops-closed-loop-20260509.md)
 - [`./architecture/imitation-control-plane-implementation-status-map-20260509.md`](./architecture/imitation-control-plane-implementation-status-map-20260509.md)
+- [`./architecture/imitation-control-plane-field-artifact-console-map-20260509.md`](./architecture/imitation-control-plane-field-artifact-console-map-20260509.md)
 - [`./risk-audit-production-readiness.md`](./risk-audit-production-readiness.md)
 - [`./mainline-architecture-upgrade-review-20260504.md`](./mainline-architecture-upgrade-review-20260504.md)
 
