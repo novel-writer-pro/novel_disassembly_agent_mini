@@ -210,6 +210,9 @@ flowchart TD
 - `writer-imitate-index.md` 中的 session_control_kernel / session_safety_circuit_breakers / session_override_channels / session_repair_loops / session_operating_checksum
 - `writer-imitate-index.md` 中新增的聚合视图 `session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board`
 - `writer-imitate-index.md` 中新增更偏执行面的 `session_action_backlog / session_transition_queue / session_checkpoint_mutations`
+- `writer-imitate-index` 现在还会额外产出：
+  - `writer-imitate-action-queue.json`
+  - `writer-imitate-action-queue.md`
 - `writer-imitate-session-state.json` 已升级到 `writer-imitate-session-state.v3`，不仅保留 ready/blocked/escalation/recovery，还提供上述聚合注册表与 action-loop 入口，方便后续把 markdown 控制面接到真实调度器/看板/状态机上
 - `experiment_decision_note` 用于是否推广 / pilot / de-risk / hold 的操作结论
 - `pilot_scope / promotion_gate / rollback_trigger / evidence_required` 用于 rollout 闭环
@@ -256,6 +259,7 @@ flowchart TD
 - 让 `writer-imitate-session-state.json` 不再只是“结果快照”，而是开始接近“可被调度器消费的 session registry + action backlog”。
 - 降低字段理解门槛：上层文档和操作面可以先看 6 个聚合视图，再按需下钻到细字段。
 - 把下一步真正需要实现的 queue transition / checkpoint mutation 先显式化，而不是只停留在命名层。
+- 让 `writer-imitate-action-queue.json/md` 成为一个更浅、更适合运营/编排系统直接消费的动作面，而不是每次都从全量 session-state 中提炼。
 
 ---
 

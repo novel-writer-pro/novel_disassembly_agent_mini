@@ -3510,6 +3510,111 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     }
 
 
+def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
+    session_state = _build_writer_output_session_state(output_dir)
+    backlog_obj = session_state.get("session_action_backlog", [])
+    backlog = backlog_obj if isinstance(backlog_obj, list) else []
+    transition_queue_obj = session_state.get("session_transition_queue", [])
+    transition_queue = transition_queue_obj if isinstance(transition_queue_obj, list) else []
+    checkpoint_mutations_obj = session_state.get("session_checkpoint_mutations", [])
+    checkpoint_mutations = checkpoint_mutations_obj if isinstance(checkpoint_mutations_obj, list) else []
+    ready_items = [
+        item for item in backlog if isinstance(item, dict) and str(item.get("status", "")).strip() == "ready"
+    ]
+    review_items = [
+        item for item in backlog if isinstance(item, dict) and str(item.get("status", "")).strip() == "review"
+    ]
+    blocked_items = [
+        item for item in backlog if isinstance(item, dict) and str(item.get("status", "")).strip() == "blocked"
+    ]
+    return {
+        "contract_version": "writer-imitate-action-queue.v1",
+        "promotion_verdict": session_state.get("promotion_verdict", ""),
+        "risk_register": session_state.get("risk_register", ""),
+        "session_ship_decision": session_state.get("session_ship_decision", ""),
+        "action_backlog": backlog,
+        "ready_items": ready_items,
+        "review_items": review_items,
+        "blocked_items": blocked_items,
+        "transition_queue": transition_queue,
+        "checkpoint_mutations": checkpoint_mutations,
+        "execution_registry": session_state.get("session_execution_registry", {}),
+        "governance_registry": session_state.get("session_governance_registry", {}),
+        "live_ops_board": session_state.get("session_live_ops_board", {}),
+    }
+
+
+def _writer_output_action_queue_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_action_queue(output_dir)
+    lines = ["# Writer Imitation Action Queue"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append(f"- promotion_verdict: {payload.get('promotion_verdict', '')}")
+    lines.append(f"- risk_register: {payload.get('risk_register', '')}")
+    lines.append(f"- session_ship_decision: {payload.get('session_ship_decision', '')}")
+
+    execution_registry = payload.get("execution_registry", {})
+    if isinstance(execution_registry, dict):
+        lines.append(
+            "- execution_registry: "
+            f"lane={execution_registry.get('lane_status', '')} | "
+            f"mode={execution_registry.get('execution_mode', '')} | "
+            f"window={execution_registry.get('action_window', '')} | "
+            f"owner={execution_registry.get('recovery_owner', '')}"
+        )
+
+    lines.append("\n## Action Backlog")
+    action_backlog = payload.get("action_backlog", [])
+    for item in action_backlog if isinstance(action_backlog, list) else []:
+        if not isinstance(item, dict):
+            continue
+        unblock = item.get("unblock_conditions", [])
+        unblock_text = "；".join(str(x) for x in unblock) if isinstance(unblock, list) and unblock else "none"
+        lines.append(
+            f"- {item.get('ticket_id', '')}: status={item.get('status', '')} | owner={item.get('owner', '')} | "
+            f"lane={item.get('target_lane', '')} | checkpoint={item.get('checkpoint', '')}"
+        )
+        lines.append(f"  - experiment_name: {item.get('experiment_name', '')}")
+        lines.append(f"  - next_action: {item.get('next_action', '')}")
+        lines.append(f"  - unblock_conditions: {unblock_text}")
+
+    lines.append("\n## Transition Queue")
+    transition_queue = payload.get("transition_queue", [])
+    for item in transition_queue if isinstance(transition_queue, list) else []:
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"- {item.get('from', '')} -> {item.get('to', '')} | "
+            f"trigger={item.get('trigger', '')} | owner={item.get('owner', '')}"
+        )
+
+    lines.append("\n## Checkpoint Mutations")
+    checkpoint_mutations = payload.get("checkpoint_mutations", [])
+    for item in checkpoint_mutations if isinstance(checkpoint_mutations, list) else []:
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"- {item.get('field', '')}: value={item.get('value', '')} | reason={item.get('reason', '')}"
+        )
+
+    governance_registry = payload.get("governance_registry", {})
+    if isinstance(governance_registry, dict):
+        review_quorum = governance_registry.get("review_quorum", [])
+        quorum_text = "；".join(str(x) for x in review_quorum) if isinstance(review_quorum, list) else ""
+        lines.append("\n## Governance Registry")
+        lines.append(f"- governor_mode: {governance_registry.get('governor_mode', '')}")
+        lines.append(f"- review_quorum: {quorum_text}")
+
+    live_ops_board = payload.get("live_ops_board", {})
+    if isinstance(live_ops_board, dict):
+        focuses = live_ops_board.get("focuses", [])
+        focus_text = "；".join(str(x) for x in focuses) if isinstance(focuses, list) else ""
+        lines.append("\n## Live Ops Board")
+        lines.append(f"- primary_focus: {live_ops_board.get('primary_focus', '')}")
+        lines.append(f"- focuses: {focus_text}")
+
+    return "\n".join(lines).strip() + "\n"
+
+
 def _writer_output_index_markdown(output_dir: Path) -> str:
     lines: list[str] = ["# Writer Imitation Output Index"]
     range_files = sorted(output_dir.glob("writer-imitate-range-*.json"))
@@ -5035,13 +5140,25 @@ def writer_imitate_index(
     output_dir.mkdir(parents=True, exist_ok=True)
     md_path = output_dir / "writer-imitate-index.md"
     state_path = output_dir / "writer-imitate-session-state.json"
+    action_queue_json_path = output_dir / "writer-imitate-action-queue.json"
+    action_queue_md_path = output_dir / "writer-imitate-action-queue.md"
     md_path.write_text(_writer_output_index_markdown(output_dir), encoding="utf-8")
     state_path.write_text(
         json.dumps(_build_writer_output_session_state(output_dir), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    action_queue_json_path.write_text(
+        json.dumps(_build_writer_output_action_queue(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    action_queue_md_path.write_text(
+        _writer_output_action_queue_markdown(output_dir),
+        encoding="utf-8",
+    )
     echo(f"writer_imitate_index_markdown={md_path}")
     echo(f"writer_imitate_session_state_json={state_path}")
+    echo(f"writer_imitate_action_queue_json={action_queue_json_path}")
+    echo(f"writer_imitate_action_queue_markdown={action_queue_md_path}")
 
 
 @app.command()

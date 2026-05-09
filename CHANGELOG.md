@@ -4,6 +4,8 @@
 
 - imitation: `writer-imitate-index.md` 现在同步输出 action backlog / transition / checkpoint 摘要，`docs/writer-imitation-workflow.md` 的 mermaid 架构图与字段解释也已升级到 v3，使控制面从 taxonomy 汇总继续靠近真实商业 Agent 的 action-loop 编排层。
 
+- imitation: `writer-imitate-index` 现在还会额外产出 `writer-imitate-action-queue.json` 与 `writer-imitate-action-queue.md`，把 session-state 中的 backlog / transition / mutation 压成更浅层的动作合同，方便后续接真实运营面与执行器。
+
 - imitation: writer innovation experiment outputs now include `steering_retrieval_meta.selected_doc_summaries`, so selected trope/worldview/audience docs carry compact summaries alongside hit reasons.
 - imitation: local steering retrieval now understands `tags` and scores tag / label / query overlap separately, making trope/worldview/audience doc selection more stable and explainable.
 

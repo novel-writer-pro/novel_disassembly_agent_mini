@@ -127,6 +127,7 @@
 - session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence 是否足以形成 meta-governance / control-integrity 层
 - writer-imitate-session-state.v3 中的 session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board 是否已经把冗长字段压缩成可消费的编排注册表
 - session_action_backlog / session_transition_queue / session_checkpoint_mutations 是否已经把“下一步该做什么、如何迁移、要改哪些状态”显式化
+- writer-imitate-action-queue.json / writer-imitate-action-queue.md 是否已经成为更浅层、更适合编排/运营直接消费的动作合同
 - 这些聚合注册表与 action-loop 入口是否已经足以驱动下一步真实 action execution / checkpoint persistence，而不只是 markdown 报告
 
 ---

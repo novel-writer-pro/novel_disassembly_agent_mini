@@ -473,8 +473,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert result.exit_code == 0
     index_md = output_dir / 'writer-imitate-index.md'
     session_state_json = output_dir / 'writer-imitate-session-state.json'
+    action_queue_json = output_dir / 'writer-imitate-action-queue.json'
+    action_queue_md = output_dir / 'writer-imitate-action-queue.md'
     assert index_md.exists()
     assert session_state_json.exists()
+    assert action_queue_json.exists()
+    assert action_queue_md.exists()
     index_text = index_md.read_text(encoding='utf-8')
     assert 'writer-imitate-range-3-4.json' in index_text
     assert 'chapter 3' in index_text
@@ -787,6 +791,18 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_transition_queue']
     assert session_state['session_checkpoint_mutations']
     assert session_state['experiments']
+    action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
+    assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
+    assert action_queue_payload['action_backlog']
+    assert 'execution_mode' in action_queue_payload['execution_registry']
+    assert 'governor_mode' in action_queue_payload['governance_registry']
+    assert action_queue_payload['transition_queue']
+    assert action_queue_payload['checkpoint_mutations']
+    action_queue_text = action_queue_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Action Queue' in action_queue_text
+    assert '## Action Backlog' in action_queue_text
+    assert '## Transition Queue' in action_queue_text
+    assert '## Checkpoint Mutations' in action_queue_text
 
 
 def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) -> None:

@@ -41,6 +41,9 @@
   - `session_action_backlog`
   - `session_transition_queue`
   - `session_checkpoint_mutations`
+- `writer-imitate-index` 现已同时产出：
+  - `writer-imitate-action-queue.json`
+  - `writer-imitate-action-queue.md`
 - 这一步的目的不是继续堆 taxonomy，而是把已有 session 字段压缩成更像真实商业 Agent 控制层可消费的编排注册表
 - 下一步优先方向应转向：
   1. action execution
