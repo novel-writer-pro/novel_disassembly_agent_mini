@@ -417,7 +417,67 @@
 
 ---
 
-## 13. 后续建议
+## 13. 字段收敛建议表（第一版）
+
+这一节不是马上改代码，而是先给后续字段治理一个“讨论底稿”。
+
+原则：
+
+1. **保留**：对真实控制/编排/恢复直接有用
+2. **合并**：语义相近，未来可以折叠进聚合注册表
+3. **下沉**：不必放在 operator 第一层，但可以保留在深层执行态
+4. **候选废弃**：如果后续没有真实执行价值，可以逐步退出主表面
+
+| 字段/字段族 | 当前建议 | 原因 |
+| --- | --- | --- |
+| `session_control_loop` | 保留 | 已经是最重要的控制逻辑聚合面 |
+| `session_queue_registry` | 保留 | 对运营/编排最直接 |
+| `session_execution_registry` | 保留 | 对 runtime 与执行器最关键 |
+| `session_governance_registry` | 保留 | 对审批/升级/owner 边界最关键 |
+| `session_digest_registry` | 保留 | 方便下游消费，不必每次读全量字段 |
+| `session_live_ops_board` | 保留 | 适合作为 operator 最浅入口 |
+| `session_action_backlog` | 保留 | 已经进入可执行动作面 |
+| `session_transition_queue` | 保留 | 对 lane 迁移最关键 |
+| `session_checkpoint_mutations` | 保留 | 是后续真实状态回写的核心 |
+| `writer-imitate-action-queue.*` | 保留 | 已是浅动作合同 |
+| `writer-imitate-execution-state.*` | 保留 | 已是持久化执行态雏形 |
+| `writer-imitate-execution-replay.*` | 保留 | 是 apply 前的安全预演层 |
+| `writer-imitate-execution-apply.*` | 保留 | 是显式 apply 命令入口 |
+| `writer-imitate-execution-resume.*` | 保留 | 是显式 resume 命令入口 |
+| `session_runtime_contract` + `session_state_snapshot` | 合并候选 | 长期可以更多并入 `session_digest_registry` |
+| `session_operating_signature` + `session_authority_signature` | 合并候选 | 都偏“签名/摘要层”，未来可收敛 |
+| `session_governance_checksum` + `session_governance_checksum_v2` | 合并候选 | 明显有重复演进痕迹 |
+| `session_control_verdict` + `session_runtime_verdict` + `session_operating_system_verdict` | 合并候选 | verdict 层级较多，未来需要收口 |
+| `session_authority_certificate` + `session_runtime_certificate` | 下沉候选 | 更像深层可信执行信息，不必始终暴露在主控制面 |
+| `session_protocol_stack` + `session_governance_topology` + `session_control_lattice` | 下沉候选 | 更像架构解释层，而不是日常 operator 层 |
+| `session_meta_governor` | 下沉候选 | 重要但更偏治理系统自解释 |
+| `session_exec_fabric` / `session_control_fabric` / `session_authority_fabric` | 合并候选 | “fabric” 家族过多，未来应收缩成更少稳定面 |
+| `session_command_mesh` / `session_runtime_mesh` / `session_governance_mesh` | 合并候选 | “mesh” 家族过多，未来应收缩成更清晰分层 |
+| 仅用于命名扩写但无真实执行消费的高阶摘要字段 | 候选废弃 | 若后续没有 apply/resume/runtime 消费，就不该留在主表面 |
+
+### 推荐治理顺序
+
+1. **先保留 execution/apply/resume 相关字段**
+   - 因为这些已经开始接近真实商业 Agent 的执行面
+2. **再合并重复的 digest / signature / verdict / checksum 家族**
+   - 因为这些最容易继续膨胀
+3. **最后再处理 mesh / fabric / topology / charter 这类解释层字段**
+   - 因为这些更多影响可读性，而不是立即影响执行正确性
+
+### 一个简单判断标准
+
+如果一个字段不能回答下面任一问题，就应进入“合并/下沉/候选废弃”清单：
+
+- 它能帮助 operator 决定下一步动作吗？
+- 它能帮助 runtime/执行器决定下一步状态迁移吗？
+- 它能帮助 recovery/resume 决定如何恢复吗？
+- 它能帮助审计/追责/复盘提供关键证据吗？
+
+如果都不能，说明它更可能只是“命名扩写”，不该长期停留在主控制面。
+
+---
+
+## 14. 后续建议
 
 后续可以继续做两件事：
 
