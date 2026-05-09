@@ -7674,13 +7674,6 @@ def latest_manifest(novel_id: str, database_url: str | None = None) -> None:
         echo(f"chapter_count={manifest.chapter_count}")
 
 
-if __name__ == "__main__":
-    app()
-
-
-# ---------------------------------------------------------------------------
-# Loom commands
-# ---------------------------------------------------------------------------
 
 @app.command()
 def loom_status(
@@ -7801,3 +7794,7 @@ def loom_assemble(
         mem = svc.assemble(branch_id, target_chapter_index=target_chapter)
         cos = mem.to_carry_over_state()
         echo(json.dumps(cos, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    app()
