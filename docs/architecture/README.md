@@ -10,6 +10,7 @@
 6. [`../skills-vs-risk-checkers-boundary.md`](../skills-vs-risk-checkers-boundary.md)
 7. [`./chapter-imitation-harness-architecture.md`](./chapter-imitation-harness-architecture.md)
 8. [`./imitation-commercial-agent-control-plane-architecture-20260509.md`](./imitation-commercial-agent-control-plane-architecture-20260509.md)
+9. [`./imitation-commercial-agent-ops-closed-loop-20260509.md`](./imitation-commercial-agent-ops-closed-loop-20260509.md)
 
 适合回答：
 - 风险审查主链为什么分层
@@ -19,3 +20,4 @@
 - LLM 为什么只做目标式复核
 - 仿写能力为什么必须引入 skills + harness controller
 - 当前仿写商业 Agent 控制层为什么已经不是 demo，而是在向可运营控制台结构演进
+- 当前仿写商业 Agent 控制层距离真正商业运营闭环还差哪些环节

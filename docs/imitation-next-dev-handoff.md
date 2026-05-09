@@ -28,6 +28,7 @@
 - `docs/batch-innovation-experiment-workflow.md`
 - `docs/imitation-control-plane-glossary.md`
 - `docs/architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`
+- `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`
 
 ## 最新推进补充（2026-05-09）
 
