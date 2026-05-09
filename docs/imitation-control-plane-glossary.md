@@ -662,7 +662,84 @@
 
 ---
 
-## 16. 后续建议
+## 16. 控制面瘦身实施清单（可执行版）
+
+这一节把上面的路线图进一步落成 checklist，方便后续真正进入控制面瘦身时直接执行。
+
+### Phase 1 checklist：展示层收敛
+
+- [ ] 把 `writer-imitate-index.md` 第一屏改成只展示最小 operator-facing 合同
+- [ ] 把 `session_live_ops_board` 提升为默认摘要块
+- [ ] 把 `session_action_backlog / session_transition_queue / session_checkpoint_mutations` 提升为默认动作块
+- [ ] 把重复 `session_*` 明细移动到折叠区或深层诊断区
+
+验收标准：
+
+- [ ] 第一屏不再出现几十个平铺 `session_*`
+- [ ] 第一屏 30 秒内可回答：当前状态 / 下一步 / 谁负责 / 怎么迁移
+
+回滚信号：
+
+- [ ] 如果 operator 无法从第一屏判断 blocked/ready 状态，则回滚展示层收敛
+- [ ] 如果 apply/resume 入口被隐藏到难以发现的位置，则回滚展示层收敛
+
+### Phase 2 checklist：聚合字段收敛
+
+- [ ] 指定 1 组主 `verdict`
+- [ ] 指定 1 组主 `digest/checksum`
+- [ ] 指定 1 组主 `signature/certificate/attestation` 暴露面
+- [ ] 明确哪些字段只保留在 deep execution 层
+
+验收标准：
+
+- [ ] 团队能明确说出“主 verdict 是哪个”
+- [ ] 团队能明确说出“主 digest/checksum 是哪个”
+- [ ] 同类字段不会继续无限新增平行命名
+
+回滚信号：
+
+- [ ] 如果 runtime/apply/resume 需要同时依赖多套平行 verdict，则暂停聚合
+- [ ] 如果下游消费方还无法迁移到主字段，则先不删旧字段
+
+### Phase 3 checklist：深层字段下沉
+
+- [ ] 把 `mesh/fabric/lattice/topology/protocol/charter` 归入深层解释区
+- [ ] 仅保留能驱动 operator 动作的聚合字段在主控制面
+- [ ] 为下沉字段补文档索引，避免信息丢失
+
+验收标准：
+
+- [ ] operator 主面只剩动作、责任、迁移、回写、摘要
+- [ ] 深层解释字段仍然可检索、可追溯、可审计
+
+回滚信号：
+
+- [ ] 如果排障时必须频繁回到老的平铺字段列表，说明下沉过度
+- [ ] 如果治理/审计链断裂，说明下沉位置不合理
+
+### 总体执行原则
+
+建议整个瘦身过程都遵循下面 4 条：
+
+1. **先隐藏，再删除**
+2. **先聚合，再重命名**
+3. **先保留兼容层，再推动消费者迁移**
+4. **每一步都要有 operator-facing 验收标准**
+
+### 最终目标
+
+最终希望把控制面稳定成两层：
+
+- **第一层：operator-facing 稳定合同**
+  - 给业务/运营/控制台直接看
+- **第二层：deep execution / governance 诊断层**
+  - 给排障、治理、追责、恢复链使用
+
+这样既能保留商业 Agent 控制层的完整性，又能避免第一层继续失控膨胀。
+
+---
+
+## 17. 后续建议
 
 后续可以继续做两件事：
 
