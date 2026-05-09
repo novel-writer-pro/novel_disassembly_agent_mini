@@ -4603,6 +4603,64 @@ def _writer_output_execution_apply_markdown(output_dir: Path) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, object]:
+    apply_preview = _build_writer_output_execution_apply(output_dir)
+    operator_contract_obj = apply_preview.get("session_operator_contract", {})
+    operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    primary_verdicts_obj = apply_preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    primary_digests_obj = apply_preview.get("session_primary_digests", {})
+    primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    applied_checkpoints_obj = apply_preview.get("applied_checkpoints", [])
+    applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
+    applied_transitions_obj = apply_preview.get("applied_transitions", [])
+    applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
+
+    return {
+        "contract_version": "writer-imitate-live-control-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
+        "source_apply_contract_version": apply_preview.get("contract_version", ""),
+        "live_state_status": "preview-backed-pending-live-mutation",
+        "session_operator_contract": operator_contract,
+        "session_primary_verdicts": primary_verdicts,
+        "session_primary_digests": primary_digests,
+        "pending_checkpoint_writeback": applied_checkpoints,
+        "pending_transition_apply": applied_transitions,
+        "next_live_mutation_step": "checkpoint-writeback",
+    }
+
+
+def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_live_control_state(output_dir)
+    lines = ["# Writer Imitation Live Control State"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
+    lines.append(f"- source_apply_contract_version: {payload.get('source_apply_contract_version', '')}")
+    lines.append(f"- live_state_status: {payload.get('live_state_status', '')}")
+    lines.append(f"- next_live_mutation_step: {payload.get('next_live_mutation_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+
+    lines.append("\n## Pending Checkpoint Writeback")
+    checkpoints = payload.get("pending_checkpoint_writeback", [])
+    for item in checkpoints if isinstance(checkpoints, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('field', '')}: value={item.get('value', '')} | reason={item.get('reason', '')}"
+            )
+
+    lines.append("\n## Pending Transition Apply")
+    transitions = payload.get("pending_transition_apply", [])
+    for item in transitions if isinstance(transitions, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('from', '')} -> {item.get('to', '')} | owner={item.get('owner', '')}"
+            )
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -5140,11 +5198,6 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "reader regression -> de-risk -> pilot",
             "risk escalation -> freeze -> remediation -> pilot",
         ]
-        session_operating_checksum = [
-            f"kernel={len(session_control_kernel)}",
-            f"circuit_breakers={len(session_safety_circuit_breakers)}",
-            f"override_channels={len(session_override_channels)}",
-        ]
         session_control_memory = [
             f"last_promotion_verdict={promotion_verdict}",
             f"last_risk_register={risk_register}",
@@ -5475,11 +5528,6 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "promote 必须满足 review quorum + control verdict + runtime certificate",
             "blocked ship 必须进入 executive review",
             "override 必须绑定 accountable authority",
-        ]
-        session_governance_checksum_v2 = [
-            f"checksum={len(session_governance_checksum)}",
-            f"integrity={len(session_integrity_digest)}",
-            f"policy={len(session_policy_checksum)}",
         ]
         session_supervision_certificate = [
             f"supervision_hooks={len(session_supervision_hooks)}",
@@ -5910,7 +5958,6 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_override_accountability: {'；'.join(session_override_accountability)}")
         lines.append(f"- session_control_confidence: {'；'.join(session_control_confidence)}")
         lines.append(f"- session_executive_contract: {'；'.join(session_executive_contract)}")
-        lines.append(f"- session_governance_checksum_v2: {'；'.join(session_governance_checksum_v2)}")
         lines.append(f"- session_supervision_certificate: {'；'.join(session_supervision_certificate)}")
         lines.append(f"- session_override_liability: {'；'.join(session_override_liability)}")
         lines.append(f"- session_operating_authority: {'；'.join(session_operating_authority)}")
@@ -5968,7 +6015,6 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_safety_circuit_breakers: {'；'.join(session_safety_circuit_breakers)}")
         lines.append(f"- session_override_channels: {'；'.join(session_override_channels)}")
         lines.append(f"- session_repair_loops: {'；'.join(session_repair_loops)}")
-        lines.append(f"- session_operating_checksum: {'；'.join(session_operating_checksum)}")
         lines.append(
             "- session_control_loop: "
             f"entry={len(session_entry_criteria)}；guards={len(session_guard_conditions)}；"
@@ -6026,6 +6072,9 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "- session_checkpoint_mutations: "
             f"mutations=4；primary=promotion_verdict->{promotion_verdict}；"
             f"risk_register->{risk_register}"
+        )
+        lines.append(
+            "- legacy_retirement_wave_01: retired_from_full_surface=session_governance_checksum_v2；session_operating_checksum"
         )
         if session_blockers:
             lines.append(f"- session_blockers: {'；'.join(session_blockers)}")
@@ -6345,6 +6394,27 @@ def writer_imitate_apply_replay(
     md_path.write_text(_writer_output_execution_apply_markdown(output_dir), encoding="utf-8")
     echo(f"writer_imitate_execution_apply_json={json_path}")
     echo(f"writer_imitate_execution_apply_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_live_control_state(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Build a persisted-style live control state artifact from apply preview."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-live-control-state.json"
+    md_path = output_dir / "writer-imitate-live-control-state.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_live_control_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_live_control_state_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_live_control_state_json={json_path}")
+    echo(f"writer_imitate_live_control_state_markdown={md_path}")
 
 
 @app.command()

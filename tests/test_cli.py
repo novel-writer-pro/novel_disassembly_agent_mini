@@ -487,6 +487,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     execution_replay_md = output_dir / 'writer-imitate-execution-replay.md'
     execution_apply_json = output_dir / 'writer-imitate-execution-apply.json'
     execution_apply_md = output_dir / 'writer-imitate-execution-apply.md'
+    live_control_state_json = output_dir / 'writer-imitate-live-control-state.json'
+    live_control_state_md = output_dir / 'writer-imitate-live-control-state.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -727,7 +729,6 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_override_accountability:' in index_text
     assert 'session_control_confidence:' in index_text
     assert 'session_executive_contract:' in index_text
-    assert 'session_governance_checksum_v2:' in index_text
     assert 'session_supervision_certificate:' in index_text
     assert 'session_override_liability:' in index_text
     assert 'session_operating_authority:' in index_text
@@ -785,7 +786,6 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_safety_circuit_breakers:' in index_text
     assert 'session_override_channels:' in index_text
     assert 'session_repair_loops:' in index_text
-    assert 'session_operating_checksum:' in index_text
     assert 'session_control_loop:' in index_text
     assert 'session_queue_registry:' in index_text
     assert 'session_execution_registry:' in index_text
@@ -882,6 +882,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Legacy Contract Layer' in legacy_surface_text
     assert '## Legacy Retirement Readiness' in legacy_surface_text
     assert '## Legacy Retirement Plan' in legacy_surface_text
+    assert 'session_governance_checksum_v2' in legacy_surface_text
+    assert 'session_operating_checksum' in legacy_surface_text
     legacy_retirement_preview_payload = json.loads(legacy_retirement_preview_json.read_text(encoding='utf-8'))
     assert legacy_retirement_preview_payload['contract_version'] == 'writer-imitate-legacy-retirement-preview.v1'
     assert legacy_retirement_preview_payload['preview_status'] == 'planned-not-executed'
@@ -1004,6 +1006,22 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Applied Tickets' in execution_apply_text
     assert '## Applied Transitions' in execution_apply_text
     assert '## Applied Checkpoints' in execution_apply_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-live-control-state', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert live_control_state_json.exists()
+    assert live_control_state_md.exists()
+    live_control_state_payload = json.loads(live_control_state_json.read_text(encoding='utf-8'))
+    assert live_control_state_payload['contract_version'] == 'writer-imitate-live-control-state.v1'
+    assert live_control_state_payload['live_state_status'] == 'preview-backed-pending-live-mutation'
+    assert live_control_state_payload['pending_checkpoint_writeback']
+    live_control_state_text = live_control_state_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation Live Control State' in live_control_state_text
+    assert '## Pending Checkpoint Writeback' in live_control_state_text
+    assert '## Pending Transition Apply' in live_control_state_text
 
     result = runner.invoke(
         app,
