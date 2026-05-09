@@ -503,6 +503,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_readiness_md = output_dir / 'writer-imitate-external-runtime-executor-readiness.md'
     external_runtime_preview_json = output_dir / 'writer-imitate-external-runtime-executor-preview.json'
     external_runtime_preview_md = output_dir / 'writer-imitate-external-runtime-executor-preview.md'
+    external_runtime_checkpoint_json = output_dir / 'writer-imitate-external-runtime-checkpoint-state.json'
+    external_runtime_checkpoint_md = output_dir / 'writer-imitate-external-runtime-checkpoint-state.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1193,6 +1195,21 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Readiness' in external_runtime_preview_text
     assert '## External Runtime Executor Plan' in external_runtime_preview_text
     assert '## External Runtime Executor Pilot Wave' in external_runtime_preview_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-apply-external-runtime-checkpoint', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert external_runtime_checkpoint_json.exists()
+    assert external_runtime_checkpoint_md.exists()
+    external_runtime_checkpoint_payload = json.loads(external_runtime_checkpoint_json.read_text(encoding='utf-8'))
+    assert external_runtime_checkpoint_payload['contract_version'] == 'writer-imitate-external-runtime-checkpoint-state.v1'
+    assert external_runtime_checkpoint_payload['checkpoint_state_status'] == 'external-runtime-checkpoint-simulated-local'
+    assert external_runtime_checkpoint_payload['applied_runtime_checkpoints']
+    external_runtime_checkpoint_text = external_runtime_checkpoint_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation External Runtime Checkpoint State' in external_runtime_checkpoint_text
+    assert '## Applied Runtime Checkpoints' in external_runtime_checkpoint_text
 
     result = runner.invoke(
         app,

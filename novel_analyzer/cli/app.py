@@ -5217,6 +5217,70 @@ def _writer_output_external_runtime_executor_preview_markdown(output_dir: Path) 
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> dict[str, object]:
+    preview = _build_writer_output_external_runtime_executor_preview(output_dir)
+    readiness_obj = preview.get("readiness", {})
+    readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
+    pilot_wave_obj = preview.get("external_runtime_executor_pilot_wave", {})
+    pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    live_checkpoint_state = _build_writer_output_live_checkpoint_state(output_dir)
+    applied_checkpoints_obj = live_checkpoint_state.get("applied_checkpoints", [])
+    applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
+
+    simulated_runtime_checkpoints: list[dict[str, object]] = []
+    for item in applied_checkpoints:
+        if not isinstance(item, dict):
+            continue
+        simulated_runtime_checkpoints.append(
+            {
+                "field": item.get("field", ""),
+                "value": item.get("value", ""),
+                "reason": item.get("reason", ""),
+                "applied": True,
+                "mode": "external-runtime-simulated-local",
+            }
+        )
+
+    return {
+        "contract_version": "writer-imitate-external-runtime-checkpoint-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
+        "checkpoint_state_status": "external-runtime-checkpoint-simulated-local",
+        "readiness": readiness,
+        "pilot_wave": pilot_wave,
+        "applied_runtime_checkpoints": simulated_runtime_checkpoints,
+        "next_runtime_step": "external-transition-apply",
+    }
+
+
+def _writer_output_external_runtime_checkpoint_state_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_external_runtime_checkpoint_state(output_dir)
+    lines = ["# Writer Imitation External Runtime Checkpoint State"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
+    lines.append(f"- checkpoint_state_status: {payload.get('checkpoint_state_status', '')}")
+    lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    readiness = payload.get("readiness", {})
+    if isinstance(readiness, dict):
+        lines.append("\n## Readiness")
+        lines.append(f"- status: {readiness.get('status', '')}")
+        lines.append(f"- next_action: {readiness.get('next_action', '')}")
+    pilot_wave = payload.get("pilot_wave", {})
+    if isinstance(pilot_wave, dict):
+        lines.append("\n## Pilot Wave")
+        lines.append(f"- wave_id: {pilot_wave.get('wave_id', '')}")
+        lines.append(f"- status: {pilot_wave.get('status', '')}")
+    lines.append("\n## Applied Runtime Checkpoints")
+    items = payload.get("applied_runtime_checkpoints", [])
+    for item in items if isinstance(items, list) else []:
+        if isinstance(item, dict):
+            lines.append(
+                f"- {item.get('field', '')}: value={item.get('value', '')} | applied={item.get('applied', False)} | mode={item.get('mode', '')}"
+            )
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -7122,6 +7186,27 @@ def writer_imitate_external_runtime_executor_preview(
     )
     echo(f"writer_imitate_external_runtime_executor_preview_json={json_path}")
     echo(f"writer_imitate_external_runtime_executor_preview_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_apply_external_runtime_checkpoint(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Simulate the first external-runtime checkpoint writeback into an output artifact only."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-external-runtime-checkpoint-state.json"
+    md_path = output_dir / "writer-imitate-external-runtime-checkpoint-state.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_external_runtime_checkpoint_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_external_runtime_checkpoint_state_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_external_runtime_checkpoint_state_json={json_path}")
+    echo(f"writer_imitate_external_runtime_checkpoint_state_markdown={md_path}")
 
 
 @app.command()

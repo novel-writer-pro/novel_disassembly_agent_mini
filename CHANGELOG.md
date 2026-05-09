@@ -34,6 +34,8 @@
 
 - imitation: 现已进一步新增 `external_runtime_executor_pilot_wave`，把真正 external checkpoint writeback / transition apply 的 first-wave 试探范围独立对象化，为第一个 runtime executor patch 提供最小范围边界。
 
+- imitation: 新增 `writer-imitate-external-runtime-checkpoint-state.json/.md` 与 `writer-imitate-apply-external-runtime-checkpoint` 命令，先把 external runtime 第一波 checkpoint writeback 试探落成 output 工作区内的本地模拟状态面。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。
