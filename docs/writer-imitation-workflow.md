@@ -222,6 +222,7 @@ flowchart TD
 - `writer-imitate-index.md` 与 `writer-imitate-session-state.json` 现在也开始显式暴露 primary/legacy 双入口，把双入口治理再上提到总入口层
 - 顶层入口层现在还会额外提供 `display_policy=primary-first-legacy-secondary`，明确告诉控制台先展示 primary 层、再暴露 legacy 层
 - `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把真正 retirement 旧字段前的前置条件独立出来
+- 现在还额外暴露 `session_legacy_retirement_plan`，把首批候选、顺序和安全规则机读化，为第一次最小 retirement 试探做准备
 - markdown 第一层现在也会显式写出 compatibility note，说明 legacy verdict/digest 字段仍保留，但不再是推荐的一层入口
 - 现在 `Primary Verdicts / Primary Digests` 在这些产物中的展示顺序也已被前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升为默认阅读路径
 - `writer-imitate-index.md` 的 `Full Session Field Surface` 中，旧 verdict/digest 家族也开始被单独归到 `Legacy Verdict/Digest Compatibility Layer` 小节，避免继续在完整字段面中无差别平铺

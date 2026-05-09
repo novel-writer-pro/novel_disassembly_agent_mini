@@ -3565,6 +3565,29 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "legacy digest fields still exposed for compatibility",
         ],
     }
+    session_legacy_retirement_plan = {
+        "contract_version": "writer-imitate-legacy-retirement-plan.v1",
+        "phase": "pre-retirement",
+        "pilot_candidates": [
+            "session_governance_checksum_v2",
+            "session_operating_checksum",
+        ],
+        "second_wave_candidates": [
+            "session_control_verdict",
+            "session_runtime_verdict",
+            "session_operating_system_verdict",
+        ],
+        "retirement_order": [
+            "extra digest/checksum variants",
+            "overlapping verdict variants",
+            "deep legacy compatibility summary fields",
+        ],
+        "safety_rules": [
+            "do not retire any legacy field before primary consumer migration is verified",
+            "keep legacy-contract-surface updated while retirement is incomplete",
+            "retire one family slice at a time with regression evidence",
+        ],
+    }
     session_control_surface_entrypoints = {
         "primary_operator_entrypoint_json": "writer-imitate-operator-surface.json",
         "primary_operator_entrypoint_markdown": "writer-imitate-operator-surface.md",
@@ -3609,6 +3632,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_contract_hints": session_primary_contract_hints,
         "session_legacy_contract_layer": session_legacy_contract_layer,
         "session_legacy_retirement_readiness": session_legacy_retirement_readiness,
+        "session_legacy_retirement_plan": session_legacy_retirement_plan,
         "session_control_surface_entrypoints": session_control_surface_entrypoints,
         "experiments": ledger_entries,
     }
@@ -3671,6 +3695,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
     retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
+    retirement_plan_obj = session_state.get("session_legacy_retirement_plan", {})
+    retirement_plan = retirement_plan_obj if isinstance(retirement_plan_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
@@ -3683,6 +3709,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_primary_contract_hints": primary_hints,
         "session_legacy_contract_layer": legacy_layer,
         "session_legacy_retirement_readiness": retirement_readiness,
+        "session_legacy_retirement_plan": retirement_plan,
         "session_control_surface_entrypoints": entrypoints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -3795,6 +3822,19 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
         lines.append(f"- required_conditions: {required_text}")
         lines.append(f"- blocking_reasons: {blocking_text}")
+    retirement_plan = payload.get("session_legacy_retirement_plan", {})
+    if isinstance(retirement_plan, dict):
+        lines.append("\n## Legacy Retirement Plan")
+        lines.append(f"- phase: {retirement_plan.get('phase', '')}")
+        pilot = retirement_plan.get("pilot_candidates", [])
+        second_wave = retirement_plan.get("second_wave_candidates", [])
+        order = retirement_plan.get("retirement_order", [])
+        pilot_text = "；".join(str(x) for x in pilot) if isinstance(pilot, list) else ""
+        second_wave_text = "；".join(str(x) for x in second_wave) if isinstance(second_wave, list) else ""
+        order_text = "；".join(str(x) for x in order) if isinstance(order, list) else ""
+        lines.append(f"- pilot_candidates: {pilot_text}")
+        lines.append(f"- second_wave_candidates: {second_wave_text}")
+        lines.append(f"- retirement_order: {order_text}")
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
@@ -3828,6 +3868,8 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
     retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
     retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
+    retirement_plan_obj = session_state.get("session_legacy_retirement_plan", {})
+    retirement_plan = retirement_plan_obj if isinstance(retirement_plan_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     return {
@@ -3837,6 +3879,7 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
         "session_legacy_contract_layer": legacy_layer,
         "session_primary_contract_hints": primary_hints,
         "session_legacy_retirement_readiness": retirement_readiness,
+        "session_legacy_retirement_plan": retirement_plan,
         "session_control_surface_entrypoints": entrypoints,
     }
 
@@ -3860,6 +3903,19 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
         blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
         lines.append(f"- required_conditions: {required_text}")
         lines.append(f"- blocking_reasons: {blocking_text}")
+    retirement_plan = payload.get("session_legacy_retirement_plan", {})
+    if isinstance(retirement_plan, dict):
+        lines.append("\n## Legacy Retirement Plan")
+        lines.append(f"- phase: {retirement_plan.get('phase', '')}")
+        pilot = retirement_plan.get("pilot_candidates", [])
+        second_wave = retirement_plan.get("second_wave_candidates", [])
+        order = retirement_plan.get("retirement_order", [])
+        pilot_text = "；".join(str(x) for x in pilot) if isinstance(pilot, list) else ""
+        second_wave_text = "；".join(str(x) for x in second_wave) if isinstance(second_wave, list) else ""
+        order_text = "；".join(str(x) for x in order) if isinstance(order, list) else ""
+        lines.append(f"- pilot_candidates: {pilot_text}")
+        lines.append(f"- second_wave_candidates: {second_wave_text}")
+        lines.append(f"- retirement_order: {order_text}")
     return "\n".join(lines).strip() + "\n"
 
 

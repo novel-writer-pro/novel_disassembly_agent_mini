@@ -24,6 +24,8 @@
 
 - imitation: `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把 legacy 字段真正 retirement 之前的前置条件独立化。
 
+- imitation: 现已新增 `session_legacy_retirement_plan`，把 legacy 字段第一次最小 retirement 试探所需的 pilot candidates、second wave candidates、retirement order 与 safety rules 结构化下来。
+
 - imitation: markdown 第一层现在也会显式提示 legacy verdict/digest 仍作为 compatibility layer 保留，但 primary 层已经是推荐默认入口，进一步把展示层迁移方向固化下来。
 
 - imitation: `Primary Verdicts / Primary Digests` 现在在 operator-surface 与 action/execution/replay/apply/resume 等 markdown 产物中的显示顺序已前置到 `Operator-Facing Stable Contract` 之前，正式把 primary 层提升成默认阅读入口。
