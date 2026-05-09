@@ -4711,6 +4711,19 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
             "revert live mutation if downstream mismatch appears",
         ],
     }
+    live_mutation_pilot_wave = {
+        "wave_id": "live-mutation-wave-01",
+        "status": "planned-not-executed",
+        "target_scope": [
+            "checkpoint-writeback",
+            "transition-apply",
+        ],
+        "pilot_targets": {
+            "checkpoint_writeback_targets": live_mutation_plan["checkpoint_writeback_targets"],
+            "transition_apply_targets": live_mutation_plan["transition_apply_targets"],
+        },
+        "rollback_rule": "if writeback/apply mismatch appears, restore previous checkpoint snapshot and transition status immediately",
+    }
 
     return {
         "contract_version": "writer-imitate-live-control-state.v1",
@@ -4726,6 +4739,7 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         "next_live_mutation_step": "checkpoint-writeback",
         "live_mutation_readiness": live_mutation_readiness,
         "live_mutation_plan": live_mutation_plan,
+        "live_mutation_pilot_wave": live_mutation_pilot_wave,
     }
 
 
@@ -4767,6 +4781,15 @@ def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
         lines.append(f"- checkpoint_writeback_targets: {checkpoint_text}")
         lines.append(f"- transition_apply_targets: {transition_text}")
         lines.append(f"- rollback_strategy: {rollback_text}")
+    pilot_wave = payload.get("live_mutation_pilot_wave", {})
+    if isinstance(pilot_wave, dict):
+        lines.append("\n## Live Mutation Pilot Wave")
+        lines.append(f"- wave_id: {pilot_wave.get('wave_id', '')}")
+        lines.append(f"- status: {pilot_wave.get('status', '')}")
+        target_scope = pilot_wave.get("target_scope", [])
+        scope_text = "；".join(str(x) for x in target_scope) if isinstance(target_scope, list) else ""
+        lines.append(f"- target_scope: {scope_text}")
+        lines.append(f"- rollback_rule: {pilot_wave.get('rollback_rule', '')}")
 
     lines.append("\n## Pending Checkpoint Writeback")
     checkpoints = payload.get("pending_checkpoint_writeback", [])
