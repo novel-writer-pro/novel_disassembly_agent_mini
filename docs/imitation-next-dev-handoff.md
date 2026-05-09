@@ -57,6 +57,7 @@
 - 该默认入口现已开始额外承载 `session_primary_verdicts` / `session_primary_digests`，作为 P1 字段家族收敛的低风险切口
 - 这些 primary verdict/digest 收口层也已开始向 action/execution/replay/apply/resume 产物同步扩散
 - 现已新增 `session_primary_contract_hints`，把 primary 层与 legacy compatibility layer 的关系机读显式化
+- 现已进一步新增 `session_legacy_contract_layer`，把 legacy verdict/digest 家族正式对象化
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 其他 markdown 产物也开始显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，降低控制链入口歧义
 - 对应 JSON 产物也开始统一暴露 `primary_operator_entrypoint=writer-imitate-operator-surface.json`

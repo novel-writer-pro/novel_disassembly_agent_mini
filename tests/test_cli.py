@@ -814,6 +814,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_primary_verdicts']['final_verdict']
     assert session_state['session_primary_digests']['runtime_contract']
     assert session_state['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert session_state['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
     assert operator_surface_payload['contract_version'] == 'writer-imitate-operator-surface.v1'
@@ -822,6 +823,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_primary_verdicts']['runtime_verdict']
     assert operator_surface_payload['session_primary_digests']['operating_digest']
     assert operator_surface_payload['session_primary_contract_hints']['preferred_verdict_source'] == 'session_primary_verdicts'
+    assert operator_surface_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Operator Surface' in operator_surface_text
     assert '## Operator-Facing Stable Contract' in operator_surface_text
@@ -829,6 +831,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Primary Digests' in operator_surface_text
     assert '## Primary Contract Migration Hints' in operator_surface_text
     assert 'compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint' in operator_surface_text
+    assert '## Legacy Contract Layer' in operator_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
     assert action_queue_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
@@ -836,6 +839,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert action_queue_payload['session_primary_verdicts']['runtime_verdict']
     assert action_queue_payload['session_primary_digests']['control_summary']
     assert action_queue_payload['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert action_queue_payload['session_legacy_contract_layer']['legacy_digest_count'] > 0
     assert action_queue_payload['action_backlog']
     assert 'execution_mode' in action_queue_payload['execution_registry']
     assert 'governor_mode' in action_queue_payload['governance_registry']
@@ -858,6 +862,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_state_payload['session_primary_verdicts']['control_verdict']
     assert execution_state_payload['session_primary_digests']['governance_checksum']
     assert execution_state_payload['session_primary_contract_hints']['preferred_digest_source'] == 'session_primary_digests'
+    assert execution_state_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert execution_state_payload['execution_tickets']
     assert execution_state_payload['transition_history']
     assert execution_state_payload['checkpoint_log']
@@ -882,6 +887,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_replay_payload['session_primary_verdicts']['final_verdict']
     assert execution_replay_payload['session_primary_digests']['runtime_contract']
     assert execution_replay_payload['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert execution_replay_payload['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert 'next_run_status' in execution_replay_payload
     assert execution_replay_payload['replay_results']
     assert execution_replay_payload['transition_preview']
@@ -913,6 +919,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_apply_payload['session_primary_verdicts']['promotion_verdict']
     assert execution_apply_payload['session_primary_digests']['operating_digest']
     assert execution_apply_payload['session_primary_contract_hints']['preferred_verdict_source'] == 'session_primary_verdicts'
+    assert execution_apply_payload['session_legacy_contract_layer']['legacy_digest_count'] > 0
     assert 'apply_status' in execution_apply_payload
     assert 'next_resume_hint' in execution_apply_payload
     execution_apply_text = execution_apply_md.read_text(encoding='utf-8')
@@ -940,6 +947,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_payload['session_primary_verdicts']['runtime_verdict']
     assert execution_resume_payload['session_primary_digests']['control_summary']
     assert execution_resume_payload['session_primary_contract_hints']['preferred_digest_source'] == 'session_primary_digests'
+    assert execution_resume_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert 'resume_status' in execution_resume_payload
     assert execution_resume_payload['resume_steps']
     execution_resume_text = execution_resume_md.read_text(encoding='utf-8')

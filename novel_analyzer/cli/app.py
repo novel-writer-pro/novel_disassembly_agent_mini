@@ -3543,6 +3543,14 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         ],
         "migration_status": "compatibility-layer-active",
     }
+    session_legacy_contract_layer = {
+        "contract_version": "writer-imitate-legacy-contract-layer.v1",
+        "legacy_verdict_fields": session_primary_contract_hints["legacy_verdict_fields"],
+        "legacy_digest_fields": session_primary_contract_hints["legacy_digest_fields"],
+        "legacy_verdict_count": len(session_primary_contract_hints["legacy_verdict_fields"]),
+        "legacy_digest_count": len(session_primary_contract_hints["legacy_digest_fields"]),
+        "status": "compatibility-layer-active",
+    }
 
     return {
         "contract_version": "writer-imitate-session-state.v3",
@@ -3569,6 +3577,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": session_primary_verdicts,
         "session_primary_digests": session_primary_digests,
         "session_primary_contract_hints": session_primary_contract_hints,
+        "session_legacy_contract_layer": session_legacy_contract_layer,
         "experiments": ledger_entries,
     }
 
@@ -3602,6 +3611,7 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": primary_verdicts if isinstance(primary_verdicts, dict) else {},
         "session_primary_digests": primary_digests if isinstance(primary_digests, dict) else {},
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
+        "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "action_backlog": backlog,
         "ready_items": ready_items,
         "review_items": review_items,
@@ -3624,6 +3634,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
+    legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -3631,6 +3643,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_primary_contract_hints": primary_hints,
+        "session_legacy_contract_layer": legacy_layer,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
         "session_ship_decision": session_state.get("session_ship_decision", ""),
@@ -3726,6 +3739,12 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- legacy_verdict_fields: {legacy_verdict_text}")
         lines.append(f"- legacy_digest_fields: {legacy_digest_text}")
         lines.append("- compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint")
+    legacy_layer = payload.get("session_legacy_contract_layer", {})
+    if isinstance(legacy_layer, dict):
+        lines.append("\n## Legacy Contract Layer")
+        lines.append(f"- status: {legacy_layer.get('status', '')}")
+        lines.append(f"- legacy_verdict_count: {legacy_layer.get('legacy_verdict_count', 0)}")
+        lines.append(f"- legacy_digest_count: {legacy_layer.get('legacy_digest_count', 0)}")
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
@@ -3915,6 +3934,7 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": session_state.get("session_primary_verdicts", {}),
         "session_primary_digests": session_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
+        "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "execution_ticket_count": len(execution_tickets),
         "ready_count": ready_count,
         "review_count": review_count,
@@ -4103,6 +4123,7 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": execution_state.get("session_primary_verdicts", {}),
         "session_primary_digests": execution_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": execution_state.get("session_primary_contract_hints", {}),
+        "session_legacy_contract_layer": execution_state.get("session_legacy_contract_layer", {}),
         "current_run_status": execution_state.get("run_status", ""),
         "next_run_status": next_run_status,
         "applied_ticket_ids": applied_ticket_ids,
@@ -4243,6 +4264,7 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": replay.get("session_primary_verdicts", {}),
         "session_primary_digests": replay.get("session_primary_digests", {}),
         "session_primary_contract_hints": replay.get("session_primary_contract_hints", {}),
+        "session_legacy_contract_layer": replay.get("session_legacy_contract_layer", {}),
         "apply_status": apply_status,
         "applied_tickets": applied_tickets,
         "deferred_tickets": deferred_tickets,
@@ -4336,6 +4358,7 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": apply_preview.get("session_primary_verdicts", {}),
         "session_primary_digests": apply_preview.get("session_primary_digests", {}),
         "session_primary_contract_hints": apply_preview.get("session_primary_contract_hints", {}),
+        "session_legacy_contract_layer": apply_preview.get("session_legacy_contract_layer", {}),
         "resume_status": resume_status,
         "resume_targets": resume_targets,
         "resume_steps": resume_steps,
