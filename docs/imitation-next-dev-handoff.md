@@ -74,6 +74,7 @@
 - 顶层入口层现也开始显式暴露 `live_mutation_preview` 与其 role，root 层已可发现真正 live executor 前的 review 面
 - 顶层入口层现也开始显式暴露 `live_validation_state` 与其 role，完整本地桥链已在 root 层可发现
 - 顶层入口层现也开始显式暴露 `external_runtime_executor_readiness` 与其 role，跨到真实 runtime executor 前的 gate 已在 root 层可发现
+- 顶层入口层现也开始显式暴露 `external_runtime_executor_preview` 与其 role，runtime gate → runtime preview 的最后一跳也已 root 可发现
 - 现已额外产出 `writer-imitate-control-surface-registry.json/.md`，把 root navigation 正式提升成独立 registry 产物
 - `operator-surface` 与 `legacy-contract-surface` 现也开始显式承载 `session_legacy_retirement_readiness`
 - 现已进一步新增 `session_legacy_retirement_plan`，把 pilot candidates / second wave / retirement order 结构化下来

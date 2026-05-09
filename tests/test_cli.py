@@ -619,11 +619,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'live_mutation_preview: writer-imitate-live-mutation-preview.md' in index_text
     assert 'live_validation_state: writer-imitate-live-validation-state.md' in index_text
     assert 'external_runtime_executor_readiness: writer-imitate-external-runtime-executor-readiness.md' in index_text
+    assert 'external_runtime_executor_preview: writer-imitate-external-runtime-executor-preview.md' in index_text
     assert 'primary_operator_role: default-operator-home' in index_text
     assert 'live_control_state_role: preview-to-live-bridge-surface' in index_text
     assert 'live_mutation_preview_role: live-mutation-review-surface' in index_text
     assert 'live_validation_state_role: local-validation-bridge-surface' in index_text
     assert 'external_runtime_executor_readiness_role: runtime-executor-gate-surface' in index_text
+    assert 'external_runtime_executor_preview_role: runtime-executor-review-surface' in index_text
     assert 'display_policy: primary-first-legacy-secondary' in index_text
     assert '### Operator-Facing Stable Contract' in index_text
     assert '### Full Session Field Surface' in index_text
@@ -860,10 +862,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_control_surface_entrypoints']['live_mutation_preview_json'] == 'writer-imitate-live-mutation-preview.json'
     assert session_state['session_control_surface_entrypoints']['live_validation_state_json'] == 'writer-imitate-live-validation-state.json'
     assert session_state['session_control_surface_entrypoints']['external_runtime_executor_readiness_json'] == 'writer-imitate-external-runtime-executor-readiness.json'
+    assert session_state['session_control_surface_entrypoints']['external_runtime_executor_preview_json'] == 'writer-imitate-external-runtime-executor-preview.json'
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['primary_operator_entrypoint'] == 'default-operator-home'
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['live_mutation_preview'] == 'live-mutation-review-surface'
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['live_validation_state'] == 'local-validation-bridge-surface'
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_readiness'] == 'runtime-executor-gate-surface'
+    assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_preview'] == 'runtime-executor-review-surface'
     assert session_state['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
@@ -881,10 +885,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_control_surface_entrypoints']['live_mutation_preview_markdown'] == 'writer-imitate-live-mutation-preview.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['live_validation_state_markdown'] == 'writer-imitate-live-validation-state.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['external_runtime_executor_readiness_markdown'] == 'writer-imitate-external-runtime-executor-readiness.md'
+    assert operator_surface_payload['session_control_surface_entrypoints']['external_runtime_executor_preview_markdown'] == 'writer-imitate-external-runtime-executor-preview.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['live_control_state'] == 'preview-to-live-bridge-surface'
     assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['live_mutation_preview'] == 'live-mutation-review-surface'
     assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['live_validation_state'] == 'local-validation-bridge-surface'
     assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_readiness'] == 'runtime-executor-gate-surface'
+    assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_preview'] == 'runtime-executor-review-surface'
     assert operator_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
     assert operator_surface_payload['session_legacy_retirement_plan']['pilot_candidates']
@@ -897,6 +903,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'live_mutation_preview: writer-imitate-live-mutation-preview.md' in operator_surface_text
     assert 'live_validation_state: writer-imitate-live-validation-state.md' in operator_surface_text
     assert 'external_runtime_executor_readiness: writer-imitate-external-runtime-executor-readiness.md' in operator_surface_text
+    assert 'external_runtime_executor_preview: writer-imitate-external-runtime-executor-preview.md' in operator_surface_text
     assert 'primary_operator_role: default-operator-home' in operator_surface_text
     assert 'display_policy: primary-first-legacy-secondary' in operator_surface_text
     assert '## Primary Verdicts' in operator_surface_text
@@ -920,6 +927,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert legacy_surface_payload['session_control_surface_entrypoints']['live_mutation_preview_markdown'] == 'writer-imitate-live-mutation-preview.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['live_validation_state_markdown'] == 'writer-imitate-live-validation-state.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['external_runtime_executor_readiness_markdown'] == 'writer-imitate-external-runtime-executor-readiness.md'
+    assert legacy_surface_payload['session_control_surface_entrypoints']['external_runtime_executor_preview_markdown'] == 'writer-imitate-external-runtime-executor-preview.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['legacy_operator_entrypoint'] == 'compatibility-governance-surface'
     assert legacy_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert legacy_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'

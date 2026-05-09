@@ -66,6 +66,8 @@
 
 - imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `external_runtime_executor_readiness` 与 `runtime-executor-gate-surface` 角色，把真正跨到外部 runtime executor 前的 gate 也纳入 root registry。
 
+- imitation: 顶层 `session_control_surface_entrypoints` 现也开始显式暴露 `external_runtime_executor_preview` 与 `runtime-executor-review-surface` 角色，使 runtime gate → runtime preview 的最后一跳在 root registry 中完整可见。
+
 - imitation: 现已额外产出 `writer-imitate-control-surface-registry.json/.md`，把 root navigation / display policy / entrypoint roles 再单独收成 machine-readable registry 产物，进一步逼近真正 control surface registry。
 
 - imitation: `writer-imitate-operator-surface` 与 `writer-imitate-legacy-contract-surface` 现在也开始显式暴露 `session_legacy_retirement_readiness`，把 legacy 字段真正 retirement 之前的前置条件独立化。
