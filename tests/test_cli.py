@@ -828,6 +828,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Primary Verdicts' in operator_surface_text
     assert '## Primary Digests' in operator_surface_text
     assert '## Primary Contract Migration Hints' in operator_surface_text
+    assert 'compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint' in operator_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
     assert action_queue_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
@@ -846,6 +847,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Operator-Facing Stable Contract' in action_queue_text
     assert '## Primary Verdicts' in action_queue_text
     assert '## Primary Digests' in action_queue_text
+    assert '## Primary Contract Migration Hints' in action_queue_text
     assert '## Action Backlog' in action_queue_text
     assert '## Transition Queue' in action_queue_text
     assert '## Checkpoint Mutations' in action_queue_text
@@ -867,6 +869,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Operator-Facing Stable Contract' in execution_state_text
     assert '## Primary Verdicts' in execution_state_text
     assert '## Primary Digests' in execution_state_text
+    assert '## Primary Contract Migration Hints' in execution_state_text
     assert '## Execution Tickets' in execution_state_text
     assert '## Transition History' in execution_state_text
     assert '## Checkpoint Log' in execution_state_text
@@ -890,6 +893,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Operator-Facing Stable Contract' in execution_replay_text
     assert '## Primary Verdicts' in execution_replay_text
     assert '## Primary Digests' in execution_replay_text
+    assert '## Primary Contract Migration Hints' in execution_replay_text
     assert '## Replay Results' in execution_replay_text
     assert '## Transition Preview' in execution_replay_text
     assert '## Checkpoint Preview' in execution_replay_text
@@ -917,6 +921,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Operator-Facing Stable Contract' in execution_apply_text
     assert '## Primary Verdicts' in execution_apply_text
     assert '## Primary Digests' in execution_apply_text
+    assert '## Primary Contract Migration Hints' in execution_apply_text
     assert '## Applied Tickets' in execution_apply_text
     assert '## Applied Transitions' in execution_apply_text
     assert '## Applied Checkpoints' in execution_apply_text
@@ -943,6 +948,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Primary Verdicts' in execution_resume_text
     assert '## Primary Digests' in execution_resume_text
+    assert '## Primary Contract Migration Hints' in execution_resume_text
     assert '## Resume Targets' in execution_resume_text
     assert '## Resume Steps' in execution_resume_text
 

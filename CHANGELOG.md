@@ -12,6 +12,8 @@
 
 - imitation: 现已新增 `session_primary_contract_hints`，把 primary verdict/digest 入口与 legacy compatibility layer 的关系机读显式化，方便下游逐步迁移而不必立即移除旧字段族。
 
+- imitation: markdown 第一层现在也会显式提示 legacy verdict/digest 仍作为 compatibility layer 保留，但 primary 层已经是推荐默认入口，进一步把展示层迁移方向固化下来。
+
 - imitation: `writer-imitate-index.md` 现在新增 `Operator-Facing Stable Contract` 小节，先把 operator 第一层真正该看的状态、队列、责任链、迁移与摘要字段单独收口，为后续 P0 展示层瘦身做低风险落地。
 
 - imitation: `writer-imitate-action-queue` 与 `writer-imitate-execution-state` 现在也开始复用 `session_operator_contract`，让多个输出面优先消费同一套第一层合同，而不是继续各自重复拼装 operator 摘要。

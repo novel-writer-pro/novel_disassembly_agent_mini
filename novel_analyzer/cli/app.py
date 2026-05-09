@@ -3711,6 +3711,21 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- preferred_verdict_source: {primary_hints.get('preferred_verdict_source', '')}")
         lines.append(f"- preferred_digest_source: {primary_hints.get('preferred_digest_source', '')}")
         lines.append(f"- migration_status: {primary_hints.get('migration_status', '')}")
+        legacy_verdict_fields = primary_hints.get("legacy_verdict_fields", [])
+        legacy_digest_fields = primary_hints.get("legacy_digest_fields", [])
+        legacy_verdict_text = (
+            "；".join(str(x) for x in legacy_verdict_fields)
+            if isinstance(legacy_verdict_fields, list)
+            else ""
+        )
+        legacy_digest_text = (
+            "；".join(str(x) for x in legacy_digest_fields)
+            if isinstance(legacy_digest_fields, list)
+            else ""
+        )
+        lines.append(f"- legacy_verdict_fields: {legacy_verdict_text}")
+        lines.append(f"- legacy_digest_fields: {legacy_digest_text}")
+        lines.append("- compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint")
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
