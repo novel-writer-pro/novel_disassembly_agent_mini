@@ -507,6 +507,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_checkpoint_md = output_dir / 'writer-imitate-external-runtime-checkpoint-state.md'
     external_runtime_transition_json = output_dir / 'writer-imitate-external-runtime-transition-state.json'
     external_runtime_transition_md = output_dir / 'writer-imitate-external-runtime-transition-state.md'
+    external_runtime_validation_json = output_dir / 'writer-imitate-external-runtime-validation-state.json'
+    external_runtime_validation_md = output_dir / 'writer-imitate-external-runtime-validation-state.md'
     execution_resume_json = output_dir / 'writer-imitate-execution-resume.json'
     execution_resume_md = output_dir / 'writer-imitate-execution-resume.md'
     assert index_md.exists()
@@ -1227,6 +1229,21 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_transition_text = external_runtime_transition_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Transition State' in external_runtime_transition_text
     assert '## Applied Runtime Transitions' in external_runtime_transition_text
+
+    result = runner.invoke(
+        app,
+        ['writer-imitate-validate-external-runtime-state', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    assert external_runtime_validation_json.exists()
+    assert external_runtime_validation_md.exists()
+    external_runtime_validation_payload = json.loads(external_runtime_validation_json.read_text(encoding='utf-8'))
+    assert external_runtime_validation_payload['contract_version'] == 'writer-imitate-external-runtime-validation-state.v1'
+    assert external_runtime_validation_payload['validation_status'] == 'validated-runtime-simulation'
+    assert external_runtime_validation_payload['validation_checks']
+    external_runtime_validation_text = external_runtime_validation_md.read_text(encoding='utf-8')
+    assert '# Writer Imitation External Runtime Validation State' in external_runtime_validation_text
+    assert '## Validation Checks' in external_runtime_validation_text
 
     result = runner.invoke(
         app,

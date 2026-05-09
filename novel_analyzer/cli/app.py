@@ -5345,6 +5345,44 @@ def _writer_output_external_runtime_transition_state_markdown(output_dir: Path) 
     return "\n".join(lines).strip() + "\n"
 
 
+def _build_writer_output_external_runtime_validation_state(output_dir: Path) -> dict[str, object]:
+    checkpoint_state = _build_writer_output_external_runtime_checkpoint_state(output_dir)
+    transition_state = _build_writer_output_external_runtime_transition_state(output_dir)
+    checkpoints_obj = checkpoint_state.get("applied_runtime_checkpoints", [])
+    checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
+    transitions_obj = transition_state.get("applied_runtime_transitions", [])
+    transitions = transitions_obj if isinstance(transitions_obj, list) else []
+    validation_checks = [
+        {"check": "runtime_checkpoint_simulated", "passed": bool(checkpoints)},
+        {"check": "runtime_transition_simulated", "passed": bool(transitions)},
+    ]
+    validation_status = "validated-runtime-simulation" if all(bool(item.get("passed", False)) for item in validation_checks) else "validation-failed"
+    return {
+        "contract_version": "writer-imitate-external-runtime-validation-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
+        "validation_status": validation_status,
+        "validation_checks": validation_checks,
+        "next_runtime_step": "external-runtime-executor-implementation",
+    }
+
+
+def _writer_output_external_runtime_validation_state_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_external_runtime_validation_state(output_dir)
+    lines = ["# Writer Imitation External Runtime Validation State"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
+    lines.append(f"- validation_status: {payload.get('validation_status', '')}")
+    lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    lines.append("\n## Validation Checks")
+    checks = payload.get("validation_checks", [])
+    for item in checks if isinstance(checks, list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('check', '')}: passed={item.get('passed', False)}")
+    return "\n".join(lines).strip() + "\n"
+
+
 def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]:
     apply_preview = _build_writer_output_execution_apply(output_dir)
     deferred_obj = apply_preview.get("deferred_tickets", [])
@@ -7292,6 +7330,27 @@ def writer_imitate_apply_external_runtime_transition(
     )
     echo(f"writer_imitate_external_runtime_transition_state_json={json_path}")
     echo(f"writer_imitate_external_runtime_transition_state_markdown={md_path}")
+
+
+@app.command()
+def writer_imitate_validate_external_runtime_state(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Validate the external-runtime simulation bridge into an output artifact only."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-external-runtime-validation-state.json"
+    md_path = output_dir / "writer-imitate-external-runtime-validation-state.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_external_runtime_validation_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_external_runtime_validation_state_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_external_runtime_validation_state_json={json_path}")
+    echo(f"writer_imitate_external_runtime_validation_state_markdown={md_path}")
 
 
 @app.command()
