@@ -699,6 +699,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_trust_zones:' in index_text
     assert 'session_policy_attestors:' in index_text
     assert 'session_recovery_posture:' in index_text
+    assert '#### Legacy Verdict/Digest Compatibility Layer' in index_text
     assert 'session_control_verdict:' in index_text
     assert 'session_protocol_stack:' in index_text
     assert 'session_trust_contract:' in index_text

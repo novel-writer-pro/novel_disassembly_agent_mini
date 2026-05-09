@@ -64,6 +64,7 @@
 - 顶层入口层现已新增 `display_policy=primary-first-legacy-secondary`，把显示优先级也机读固化下来
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 现在 `Primary Verdicts / Primary Digests` 的显示顺序也已前置到 operator contract 之前，展示优先级开始真正偏向 primary 层
+- `writer-imitate-index.md` 的完整字段面中，legacy verdict/digest 家族也已开始被单独归类到 compatibility layer 小节
 - 其他 markdown 产物也开始显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，降低控制链入口歧义
 - 对应 JSON 产物也开始统一暴露 `primary_operator_entrypoint=writer-imitate-operator-surface.json`
 - `writer-imitate-action-queue` / `writer-imitate-execution-state` 也开始复用 `session_operator_contract` 作为统一第一层合同

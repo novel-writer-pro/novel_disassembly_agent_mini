@@ -5669,6 +5669,7 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_trust_zones: {'；'.join(session_trust_zones)}")
         lines.append(f"- session_policy_attestors: {'；'.join(session_policy_attestors)}")
         lines.append(f"- session_recovery_posture: {'；'.join(session_recovery_posture)}")
+        lines.append("\n#### Legacy Verdict/Digest Compatibility Layer")
         lines.append(f"- session_control_verdict: {'；'.join(session_control_verdict)}")
         lines.append(f"- session_protocol_stack: {'；'.join(session_protocol_stack)}")
         lines.append(f"- session_trust_contract: {'；'.join(session_trust_contract)}")
