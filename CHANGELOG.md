@@ -8,6 +8,8 @@
 
 - imitation: `writer-imitate-operator-surface` 现在新增 `session_primary_verdicts` 与 `session_primary_digests`，先把 verdict / digest 家族收口到一个低风险稳定入口里，而不立即删除旧字段。
 
+- imitation: `action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些产物现在也开始同步暴露并渲染 `session_primary_verdicts / session_primary_digests`，让主 verdict/digest 收口层沿整条控制链保持一致。
+
 - imitation: `writer-imitate-index.md` 现在新增 `Operator-Facing Stable Contract` 小节，先把 operator 第一层真正该看的状态、队列、责任链、迁移与摘要字段单独收口，为后续 P0 展示层瘦身做低风险落地。
 
 - imitation: `writer-imitate-action-queue` 与 `writer-imitate-execution-state` 现在也开始复用 `session_operator_contract`，让多个输出面优先消费同一套第一层合同，而不是继续各自重复拼装 operator 摘要。
