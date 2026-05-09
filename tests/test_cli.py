@@ -722,6 +722,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'session_governance_charter:' in index_text
     assert 'session_runtime_authority_digest:' in index_text
     assert 'session_final_control_verdict:' in index_text
+    assert 'session_command_mesh:' in index_text
+    assert 'session_authority_fabric_v2:' in index_text
+    assert 'session_closure_attestation:' in index_text
+    assert 'session_operating_charter_mesh:' in index_text
+    assert 'session_final_runtime_verdict:' in index_text
     assert 'session_governance_closure:' in index_text
     assert 'session_authority_verdict:' in index_text
     assert 'session_runtime_horizon:' in index_text

@@ -97,6 +97,8 @@
 
 - imitation: writer-imitate-index now includes operating-system session fields (`session_operating_system_contract`, `session_control_checkpoint_digest`, `session_authority_signature`, `session_recovery_escalation_mesh`, `session_final_operating_posture`) so the control plane gets closer to a commercial agent operating system layer.
 
+- imitation: writer-imitate-index now includes final-runtime session fields (`session_command_mesh`, `session_authority_fabric_v2`, `session_closure_attestation`, `session_operating_charter_mesh`, `session_final_runtime_verdict`) so the control plane gets closer to a commercial final runtime OS layer.
+
 ## 2026-05-05
 
 ### 仿写实战工作流与 output 工作目录补齐
@@ -187,6 +189,8 @@
 
 
 
+
+- imitation: writer-imitate-index now includes final-runtime session fields (`session_command_mesh`, `session_authority_fabric_v2`, `session_closure_attestation`, `session_operating_charter_mesh`, `session_final_runtime_verdict`) so the control plane gets closer to a commercial final runtime OS layer.
 
 ## 2026-05-05
 

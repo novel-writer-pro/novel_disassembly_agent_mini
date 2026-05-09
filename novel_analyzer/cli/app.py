@@ -4262,6 +4262,32 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             f"verdict={session_ship_decision}",
             f"risk={risk_register}",
         ]
+        session_command_mesh = [
+            "review ledger -> decide lane",
+            "decide lane -> assign next action",
+            "assign next action -> refresh state checkpoint",
+        ]
+        session_authority_fabric_v2 = [
+            f"authority_map={len(session_authority_map)}",
+            f"authority_certificate={len(session_authority_certificate)}",
+            f"authority_routes={len(session_authority_routes)}",
+        ]
+        session_closure_attestation = [
+            f"closure={len(session_control_plane_closure)}",
+            f"attestation={len(session_control_attestation)}",
+            f"governance={len(session_governance_closure)}",
+        ]
+        session_operating_charter_mesh = [
+            f"operating_charter={len(session_operating_charter)}",
+            f"control_charter={len(session_control_charter)}",
+            f"governance_charter={len(session_governance_charter)}",
+        ]
+        session_final_runtime_verdict = [
+            f"mode={session_execution_mode}",
+            f"ship={session_ship_decision}",
+            f"governor={session_governor_mode}",
+            f"confidence={decision_confidence or 'unknown'}",
+        ]
         lines.append(f"- promotion_verdict: {promotion_verdict}")
         lines.append(f"- risk_register: {risk_register}")
         lines.append(f"- handoff_summary: {handoff_summary}")
@@ -4410,6 +4436,11 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(f"- session_governance_charter: {'；'.join(session_governance_charter)}")
         lines.append(f"- session_runtime_authority_digest: {'；'.join(session_runtime_authority_digest)}")
         lines.append(f"- session_final_control_verdict: {'；'.join(session_final_control_verdict)}")
+        lines.append(f"- session_command_mesh: {'；'.join(session_command_mesh)}")
+        lines.append(f"- session_authority_fabric_v2: {'；'.join(session_authority_fabric_v2)}")
+        lines.append(f"- session_closure_attestation: {'；'.join(session_closure_attestation)}")
+        lines.append(f"- session_operating_charter_mesh: {'；'.join(session_operating_charter_mesh)}")
+        lines.append(f"- session_final_runtime_verdict: {'；'.join(session_final_runtime_verdict)}")
         lines.append(f"- session_governance_closure: {'；'.join(session_governance_closure)}")
         lines.append(f"- session_authority_verdict: {'；'.join(session_authority_verdict)}")
         lines.append(f"- session_runtime_horizon: {'；'.join(session_runtime_horizon)}")
