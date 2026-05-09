@@ -287,6 +287,10 @@ def test_imitation_control_plane_glossary_is_indexed() -> None:
     assert "assurance" in glossary
     assert "meta-governance" in glossary
     assert "checkpoint" in glossary
+    assert "session_* 字段族快速映射" in glossary
+    assert "`session_recovery_plan`" in glossary
+    assert "英文术语 -> 字段例子 -> 商业问题 对照表" in glossary
+    assert "`writer-imitate-execution-apply.json`" in glossary
 
     readme = Path("docs/README.md").read_text(encoding="utf-8")
     assert "./imitation-control-plane-glossary.md" in readme

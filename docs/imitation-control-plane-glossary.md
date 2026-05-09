@@ -270,7 +270,154 @@
 
 ---
 
-## 10. 后续建议
+## 10. session_* 字段族快速映射
+
+下面这张表不是逐字段解释，而是帮助大家看到“这一大族字段大概在解决什么问题”。
+
+| 字段族 | 可理解成什么 | 主要回答的问题 |
+| --- | --- | --- |
+| `session_control_*` | 控制核心 / 控制摘要 / 控制章程 | 系统到底想怎么控 |
+| `session_runtime_*` | 运行时状态 / 运行合同 / 运行结论 | 系统现在怎么跑、跑到哪 |
+| `session_governance_*` | 治理规则 / 治理网络 / 治理总结 | 谁审批、谁兜底、规则是什么 |
+| `session_authority_*` | 权限关系 / 决策权边界 | 谁能拍板、谁能 override |
+| `session_policy_*` | 策略、约束、版本化规则 | 系统按什么原则切换 |
+| `session_assurance_*` | 可信保障 / 对齐保障 | 为什么可以相信当前结论 |
+| `session_attestation_*` | 见证、证明、留痕 | 哪些状态是可验证的 |
+| `session_checkpoint_*` | 检查点 / 回写锚点 | 哪些状态需要被保存 |
+| `session_recovery_*` | 恢复、回滚、兜底 | 卡住后怎么回来 |
+| `session_execution_*` | 执行图 / 执行合同 / 执行票据 | 具体动作如何推进 |
+| `session_action_*` | 动作池 / backlog | 下一步要做什么 |
+| `session_transition_*` | 状态迁移 / lane 迁移 | 从哪切到哪 |
+| `session_override_*` | 人工覆盖 / 特权操作 | 什么时候允许人工改写 |
+| `session_operating_*` | 操作系统式摘要 / 高层运行结论 | 从业务运营角度怎么看当前状态 |
+| `session_meta_*` | 治理治理者本身 | 谁来约束治理系统自己 |
+
+### 怎么用这张映射表
+
+如果你看到类似下面的字段：
+
+- `session_assurance_contract`
+- `session_assurance_digest`
+- `session_operator_assurance`
+
+不要先逐个字面硬读，可以先归到 **assurance 族**，理解为：
+
+> 这一组字段都在回答“为什么我们可以相信当前状态/结论”。
+
+同理：
+
+- `session_recovery_plan`
+- `session_recovery_posture`
+- `session_recovery_cursor`
+- `session_recovery_escalation_mesh`
+
+可以先统一归到 **recovery 族**，理解为：
+
+> 这一组字段都在回答“出问题后怎么恢复、恢复到哪、谁来恢复”。
+
+---
+
+## 11. 英文术语 -> 字段例子 -> 商业问题 对照表
+
+这张表更偏实战，帮助快速把“词汇”映射到“字段”和“运营问题”。
+
+| 英文术语 | 中文理解 | 典型字段例子 | 它在回答什么商业问题 |
+| --- | --- | --- | --- |
+| assurance | 可信保障 | `session_assurance_contract` / `session_assurance_digest` | 我们为什么能相信当前这轮仿写/实验结论 |
+| alignment | 对齐 | `session_runtime_alignment` | 当前执行是否仍和业务目标、风险边界一致 |
+| governance | 治理 | `session_governance_registry` / `session_governance_mesh` | 谁在管、按什么规则管 |
+| authority | 权限 / 决策权 | `session_authority_routes` / `session_authority_verdict` | 谁能拍板、谁能兜底 |
+| policy | 策略 | `session_policy_mesh` / `session_policy_fallbacks` | 当前切 lane / 切策略的依据是什么 |
+| checkpoint | 检查点 | `session_checkpoint_mutations` / `session_control_checkpoint_digest` | 哪些关键状态需要保存，避免下次从头看 |
+| replay | 预演回放 | `writer-imitate-execution-replay.json` | 如果现在推进，会发生什么 |
+| apply | 应用执行 | `writer-imitate-execution-apply.json` | 哪些 ticket / checkpoint 准备真正落地 |
+| resume | 恢复续跑 | `writer-imitate-execution-resume.json` | 卡住之后怎么继续，不丢上下文 |
+| recovery | 恢复 | `session_recovery_plan` / `session_recovery_cursor` | 出问题之后谁接手、从哪恢复 |
+| attestation | 见证证明 | `session_attestation_budget` / `session_control_attestation` | 哪些状态是可留痕、可审计的 |
+| certificate | 凭证 / 证书 | `session_runtime_certificate` / `session_authority_certificate` | 哪些结论是“被确认过”的 |
+| verdict | 裁决 | `promotion_verdict` / `session_runtime_verdict` | 当前到底是 promote、pilot、de-risk 还是 blocked |
+| mesh | 网格 | `session_runtime_mesh` / `session_governance_mesh` | 当前不是单点控制，而是多点协同控制 |
+| fabric | 织面 | `session_control_fabric` / `session_authority_fabric` | 当前控制/授权关系是被编织成整体的 |
+| lattice | 格状结构 | `session_control_lattice` | 控制层之间的分层关系是什么 |
+| ledger | 账本 | `session_operating_ledger` / Experiment Ledger | 我们能否回看历史实验与操作轨迹 |
+| kernel | 内核 | `session_control_kernel` | 哪些约束是系统最不应漂移的核心 |
+| topology | 拓扑 | `session_governance_topology` | 角色、节点、责任路径是怎么连接的 |
+| meta-governance | 元治理 | `session_meta_governor` | 谁来约束治理系统本身 |
+
+### 如何使用这张对照表
+
+如果业务同学问：
+
+> “为什么这里又有 assurance，又有 attestation，又有 certificate？”
+
+可以快速这样回答：
+
+- `assurance`：偏“我们是否可以相信”
+- `attestation`：偏“有没有被记录和证明”
+- `certificate`：偏“有没有被正式确认”
+
+如果运营同学问：
+
+> “为什么这里又有 recovery，又有 resume，又有 replay？”
+
+可以快速这样回答：
+
+- `replay`：先预演接下来会怎么走
+- `apply`：再决定哪些动作真正落地
+- `resume`：最后决定卡住后如何继续
+- `recovery`：是整个异常恢复与兜底框架
+
+---
+
+## 12. 哪些词后续更适合中文化，哪些适合保留英文
+
+### 更适合中文化的
+
+这些词在团队日常讨论中可以优先说中文：
+
+- assurance -> 可信保障
+- alignment -> 对齐
+- checkpoint -> 检查点
+- recovery -> 恢复
+- resume -> 续跑 / 恢复推进
+- verdict -> 裁决 / 结论
+- ledger -> 账本
+
+原因：
+- 业务、产品、运营同学更容易理解
+- 中文表达不会明显损失技术精度
+
+### 更适合暂时保留英文的
+
+这些词可以先保留英文，再配中文解释：
+
+- governance
+- runtime
+- orchestration
+- mesh
+- fabric
+- lattice
+- topology
+- meta-governance
+
+原因：
+- 这些词已经是系统/平台/分布式语境里的常见术语
+- 直接硬翻中文，反而容易让不同人脑补成不同意思
+
+### 推荐实践
+
+更推荐用下面这种写法，而不是只写一种语言：
+
+- `governance（治理）`
+- `runtime（运行时）`
+- `checkpoint（检查点）`
+- `recovery（恢复）`
+
+这样既保留工程上下文，也降低理解门槛。
+
+---
+
+## 13. 后续建议
 
 后续可以继续做两件事：
 
