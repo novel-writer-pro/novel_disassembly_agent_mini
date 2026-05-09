@@ -26,13 +26,9 @@ $ralplan --interactive "task description"
 
 ## Behavior
 
-## GPT-5.4 Guidance Alignment
+## GPT-5.5 Guidance Alignment
 
-- Default to concise, evidence-dense progress and completion reporting unless the user or risk level requires more detail.
-- Treat newer user task updates as local overrides for the active workflow branch while preserving earlier non-conflicting constraints.
-- If correctness depends on additional inspection, retrieval, execution, or verification, keep using the relevant tools until the consensus-planning flow is grounded.
-- Right-size implementation steps and PRD story counts to the actual scope; do not default to exactly five steps when the task is clearly smaller or larger.
-- Continue through clear, low-risk, reversible next steps automatically; ask only when the next step is materially branching, destructive, or preference-dependent.
+Use the shared workflow guidance pattern: outcome-first framing, concise visible updates for multi-step planning, local overrides for the active workflow branch, evidence-backed planning and validation expectations, explicit stop rules, right-sized implementation/PRD shape, and automatic continuation for safe reversible steps. Ask only for material, destructive, credentialed, external-production, or preference-dependent branches.
 
 This skill invokes the Plan skill in consensus mode:
 
@@ -42,13 +38,13 @@ $plan --consensus --interactive <arguments>
 ```
 
 The consensus workflow:
-1. **Planner** creates initial plan and a compact **RALPLAN-DR summary** before review:
+1. **Planner** creates an adaptive plan (right-sized to task scope; do not default to exactly five steps) and a compact **RALPLAN-DR summary** before review:
    - Principles (3-5)
    - Decision Drivers (top 3)
    - Viable Options (>=2) with bounded pros/cons
    - If only one viable option remains, explicit invalidation rationale for alternatives
    - Deliberate mode only: pre-mortem (3 scenarios) + expanded test plan (unit/integration/e2e/observability)
-2. **User feedback** *(--interactive only)*: If `--interactive` is set, use `AskUserQuestion` to present the draft plan **plus the Principles / Drivers / Options summary** before review (Proceed to review / Request changes / Skip review). Otherwise, automatically proceed to review.
+2. **User feedback** *(--interactive only)*: If `--interactive` is set, use the structured question UI (`omx question` in attached tmux; native structured input outside tmux when available) to present the draft plan **plus the Principles / Drivers / Options summary** before review (Proceed to review / Request changes / Skip review). Otherwise, automatically proceed to review.
 3. **Architect** reviews for architectural soundness and must provide the strongest steelman antithesis, at least one real tradeoff tension, and (when possible) synthesis — **await completion before step 4**. In deliberate mode, Architect should explicitly flag principle violations.
 4. **Critic** evaluates against quality criteria — run only after step 3 completes. Critic must enforce principle-option consistency, fair alternatives, risk mitigation clarity, testable acceptance criteria, and concrete verification steps. In deliberate mode, Critic must reject missing/weak pre-mortem or expanded test plan.
 5. **Re-review loop** (max 5 iterations): Any non-`APPROVE` Critic verdict (`ITERATE` or `REJECT`) MUST run the same full closed loop:
@@ -58,13 +54,23 @@ The consensus workflow:
    d. Return to Critic evaluation
    e. Repeat this loop until Critic returns `APPROVE` or 5 iterations are reached
    f. If 5 iterations are reached without `APPROVE`, present the best version to the user
-6. On Critic approval *(--interactive only)*: If `--interactive` is set, use `AskUserQuestion` to present the plan with approval options (Approve and execute via ralph / Approve and implement via team / Request changes / Reject). Final plan must include ADR (Decision, Drivers, Alternatives considered, Why chosen, Consequences, Follow-ups), an explicit available-agent-types roster, concrete follow-up staffing guidance for both `ralph` and `team`, suggested reasoning levels by lane, explicit `omx team` / `$team` launch hints, and a concrete **team verification** path. Otherwise, output the final plan and stop.
-7. *(--interactive only)* User chooses: Approve (ralph or team), Request changes, or Reject
-8. *(--interactive only)* On approval: invoke `$ralph` for sequential execution or `$team` for parallel team execution with the explicit available-agent-types roster, reasoning-by-lane guidance, role/staffing allocation guidance, launch hints, and verification-path guidance from the approved plan -- never implement directly
+6. On Critic approval *(--interactive only)*: If `--interactive` is set, use the structured question UI to present the plan with approval options (Approve and execute via ralph / Approve and implement via team / Start a goal-mode follow-up / Request changes / Reject). Final plan must include ADR (Decision, Drivers, Alternatives considered, Why chosen, Consequences, Follow-ups), an explicit available-agent-types roster, concrete follow-up staffing guidance for both `ralph` and `team`, suggested reasoning levels by lane, explicit `omx team` / `$team` launch hints, a concrete **team verification** path, and a product-facing **Goal-Mode Follow-up Suggestions** section. Recommend `$ultragoal` by default for goal-mode follow-up, use `$autoresearch-goal` instead when the context is a research project, and use `$performance-goal` instead when the context is an optimization or performance project. Otherwise, output the final plan and stop.
+7. *(--interactive only)* User chooses: Approve (ralph, team, or a goal-mode follow-up), Request changes, or Reject
+8. *(--interactive only)* On approval: invoke `$ralph` for sequential execution, `$team` for parallel team execution, or the selected goal-mode follow-up (`$ultragoal`, `$autoresearch-goal`, or `$performance-goal`) with the approved plan and matching success/evaluator context -- never implement directly. Preserve the explicit available-agent-types roster, reasoning-by-lane guidance, role/staffing allocation guidance, launch hints, and verification-path guidance from the approved plan for Ralph/team paths.
 
 > **Important:** Steps 3 and 4 MUST run sequentially. Do NOT issue both agent calls in the same parallel batch. Always await the Architect result before invoking Critic.
 
 Follow the Plan skill's full documentation for consensus mode details.
+
+## Goal-Mode Follow-up Suggestions
+
+When ralplan outputs a final handoff or asks the user to choose a next lane, include product-facing goal-mode suggestions alongside the existing Ralph and team options:
+
+- `$ultragoal` — **default goal-mode follow-up** for implementation or general goal-oriented follow-up plans that should become durable Codex/OMX goals with sequential completion tracking.
+- `$autoresearch-goal` — research-project follow-up when the plan centers on a question, literature/reference gathering, evaluator-backed research, or a professor/critic-style research deliverable.
+- `$performance-goal` — optimization/performance follow-up when the plan centers on speed, latency, throughput, memory, benchmark, or other measurable performance work.
+
+Keep `$ralph` and `$team` as first-class execution options where appropriate: use Ralph for persistent single-owner completion/verification pressure and team for coordinated parallel implementation. Do not present the goal-mode options as replacements for Ralph/team when the task is mainly implementation delivery; present them as better fits when durable goal tracking, research validation, or performance evaluators are the primary need.
 
 ## Pre-context Intake
 

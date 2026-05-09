@@ -19,39 +19,19 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 - JSON-first chapter analysis -> PostgreSQL -> Markdown pipeline
 - PostgreSQL 内 BM25 / trigram / vector 扩展探测与启用
 
-## Newcomer Path
-- 想快速上手：[`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)
-- 想看接口与样例：[`./docs/interface-manifest.md`](./docs/interface-manifest.md) + [`./docs/examples/*.sample.json`](./docs/examples/)
-- 想看跨主线 eval/governance 冻结口径：[`./docs/eval-governance-sample-release-contract.md`](./docs/eval-governance-sample-release-contract.md) + [`./docs/examples/eval-governance-cross-lane-bundle.sample.json`](./docs/examples/eval-governance-cross-lane-bundle.sample.json)
-- 想看当前 API 实现契约：[`./docs/api-current-surface.md`](./docs/api-current-surface.md)
-- 想看交付全貌：[`./docs/final-handoff.md`](./docs/final-handoff.md)
-- 想看系统审查能力：[`./docs/risk-audit-capability.md`](./docs/risk-audit-capability.md)
-- 想看运行时边界：[`./docs/risk-audit-runtime-boundary.md`](./docs/risk-audit-runtime-boundary.md)
-- 想看 `skills_dir` 与门控 checker 的边界：[`./docs/skills-vs-risk-checkers-boundary.md`](./docs/skills-vs-risk-checkers-boundary.md)
-- 想看风险审查运行时架构：[`./docs/risk-audit-runtime-architecture.md`](./docs/risk-audit-runtime-architecture.md)
-- 想看风险审查架构专题总入口：[`./docs/architecture/README.md`](./docs/architecture/README.md)
-- 想看风险审查完成度 / 测试 / 使用说明：[`./docs/architecture/risk-audit-completion-status.md`](./docs/architecture/risk-audit-completion-status.md)
-- 想看 checker 路线图：[`./docs/risk-audit-checker-roadmap.md`](./docs/risk-audit-checker-roadmap.md)
-- 想看下一批 checker 技术设计：[`./docs/risk-audit-next-batch-checkers.md`](./docs/risk-audit-next-batch-checkers.md)
-- 想看风险审查系统总览：[`./docs/risk-audit-system-overview.md`](./docs/risk-audit-system-overview.md)
-- 想看风险审查最终交付摘要：[`./docs/risk-audit-delivery-summary.md`](./docs/risk-audit-delivery-summary.md)
-- 想看风险审查下一阶段执行建议：[`./docs/risk-audit-next-phase-30-60-90.md`](./docs/risk-audit-next-phase-30-60-90.md)
-- 想看团队同步版简报：[`./docs/risk-audit-team-sync-brief.md`](./docs/risk-audit-team-sync-brief.md)
-- 想看第一阶段冻结声明：[`./docs/risk-audit-phase-1-freeze-declaration.md`](./docs/risk-audit-phase-1-freeze-declaration.md)
-- 想看问题簇状态语义：[`./docs/cluster-status-semantics.md`](./docs/cluster-status-semantics.md)
-- 想看最小 review workflow 使用说明：[`./docs/minimal-review-workflow-guide.md`](./docs/minimal-review-workflow-guide.md)
-- 想看最小 review workflow 状态机：[`./docs/minimal-review-workflow-state-machine.md`](./docs/minimal-review-workflow-state-machine.md)
-- 想看 review workflow 第二阶段设计稿：[`./docs/review-workflow-phase2-design.md`](./docs/review-workflow-phase2-design.md)
-- 想看 review workflow 持久化策略：[`./docs/review-workflow-persistence-strategy.md`](./docs/review-workflow-persistence-strategy.md)
-- 想看 review workflow API 说明：[`./docs/review-workflow-api.md`](./docs/review-workflow-api.md)
-- 想看 review workflow API 版本化策略：[`./docs/review-workflow-api-versioning.md`](./docs/review-workflow-api-versioning.md)
-- 想看 review API 稳定字段收口清单：[`./docs/review-api-stability-summary.md`](./docs/review-api-stability-summary.md)
-- 想看第二阶段实施优先级建议：[`./docs/review-workflow-phase2-priority-ranking.md`](./docs/review-workflow-phase2-priority-ranking.md)
-- 想看 review workflow API 冻结就绪判断：[`./docs/review-workflow-api-freeze-readiness.md`](./docs/review-workflow-api-freeze-readiness.md)
-- 想看第二阶段 team 并行实施规范：[`./docs/review-workflow-team-execution-guidelines.md`](./docs/review-workflow-team-execution-guidelines.md)
-- 想看 review workflow DB-only 切换策略：[`./docs/review-workflow-db-only-cutover.md`](./docs/review-workflow-db-only-cutover.md)
-- 想看读者体验能力规划：[`./docs/reader-experience-capability.md`](./docs/reader-experience-capability.md)
-- 想浏览全部文档：[`./docs/README.md`](./docs/README.md)
+## 文档入口
+
+> 所有文档统一在 [`./docs/README.md`](./docs/README.md) 管理，按角色快速分流：
+
+| 我是… | 入口 |
+|-------|------|
+| 产品 / 业务 | [`docs/roles/product/`](./docs/roles/product/README.md) |
+| 后端 / 架构师 | [`docs/roles/backend/`](./docs/roles/backend/README.md) |
+| 接入者（API/前端） | [`docs/roles/integrator/`](./docs/roles/integrator/README.md) |
+| 维护者 / 接手人 | [`docs/roles/maintainer/`](./docs/roles/maintainer/README.md) |
+| 仿写 / 创作 | [`docs/roles/imitation/`](./docs/roles/imitation/README.md) |
+| 直接使用 CLI | [`docs/cli-operations-manual.md`](./docs/cli-operations-manual.md) |
+| 浏览全部文档 | [`docs/README.md`](./docs/README.md) |
 
 ## 当前工作台入口
 
@@ -265,31 +245,9 @@ If the environment cannot reach `huggingface.co`, the ONNX backend will now fail
 
 ## More docs
 
-### 0. 开发变更记录
-- 约定：每次修复 / 变动都需要同步：文档、`CHANGELOG.md`、git commit 记录
-- [`./CHANGELOG.md`](./CHANGELOG.md)：开发变更记录；后续每次开发更改都需要追加 changelog
-
-### 1. 使用者
-1. [`./docs/cli-operations-manual.md`](./docs/cli-operations-manual.md)
-2. [`./docs/direct-usage-guide.md`](./docs/direct-usage-guide.md)
-3. [`./docs/real-run-checklist.md`](./docs/real-run-checklist.md)
-4. [`./docs/review-template.md`](./docs/review-template.md)
-5. [`./docs/session-handoff-manual.md`](./docs/session-handoff-manual.md)
-
-### 2. 接入者
-1. [`./docs/interface-manifest.md`](./docs/interface-manifest.md)
-2. [`./docs/examples/`](./docs/examples/)
-3. [`./docs/real-run-evaluation-1-12.md`](./docs/real-run-evaluation-1-12.md)
-
-### 3. 开发者 / 维护者
-1. [`./docs/final-handoff.md`](./docs/final-handoff.md)
-2. [`./docs/release-handoff-brief.md`](./docs/release-handoff-brief.md)
-3. [`./docs/session-handoff-manual.md`](./docs/session-handoff-manual.md)
-4. [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md)
-5. [`./docs/model-eval-template.md`](./docs/model-eval-template.md)
-6. [`./docs/README.md`](./docs/README.md)
-7. [`./apps/web/README.md`](./apps/web/README.md)
-8. [`./apps/api/README.md`](./apps/api/README.md)
+- 变更记录：[`./CHANGELOG.md`](./CHANGELOG.md)（每次修复 / 变动必须追加）
+- 完整文档中心：[`./docs/README.md`](./docs/README.md)
+- 当前 API surface：[`./docs/api-current-surface.md`](./docs/api-current-surface.md)
 ### PostgreSQL checks
 ```bash
 python3 scripts/check_postgres.py

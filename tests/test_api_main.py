@@ -282,6 +282,36 @@ def test_docs_readme_numbered_sections_are_sequential() -> None:
             assert nums == list(range(1, len(nums) + 1))
 
 
+def test_imitation_control_plane_glossary_is_indexed() -> None:
+    glossary = Path("docs/imitation-control-plane-glossary.md").read_text(encoding="utf-8")
+    assert "assurance" in glossary
+    assert "meta-governance" in glossary
+    assert "checkpoint" in glossary
+    assert "session_* 字段族快速映射" in glossary
+    assert "`session_recovery_plan`" in glossary
+    assert "英文术语 -> 字段例子 -> 商业问题 对照表" in glossary
+    assert "`writer-imitate-execution-apply.json`" in glossary
+    assert "字段收敛建议表（第一版）" in glossary
+    assert "`session_governance_checksum` + `session_governance_checksum_v2`" in glossary
+    assert "最小 operator-facing 稳定合同建议（第一版）" in glossary
+    assert "`session_live_ops_board`" in glossary
+    assert "控制面精简路线图（建议执行顺序）" in glossary
+    assert "Phase 1：先做展示层收敛（低风险）" in glossary
+    assert "控制面瘦身实施清单（可执行版）" in glossary
+    assert "先隐藏，再删除" in glossary
+    assert "控制面字段改造优先级矩阵（第一版）" in glossary
+    assert "P0：高收益 + 低风险，优先改" in glossary
+
+    readme = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "./imitation-control-plane-glossary.md" in readme
+
+    workflow = Path("docs/writer-imitation-workflow.md").read_text(encoding="utf-8")
+    assert "imitation-control-plane-glossary.md" in workflow
+
+    handoff = Path("docs/imitation-next-dev-handoff.md").read_text(encoding="utf-8")
+    assert "docs/imitation-control-plane-glossary.md" in handoff
+
+
 
 
 def test_manual_eval_docs_and_template_are_linked() -> None:

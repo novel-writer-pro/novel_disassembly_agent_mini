@@ -1,0 +1,163 @@
+# Batch Innovation Experiment Workflow / 批量创新导向实验流程
+
+## 目标
+
+不是单章小修，而是：
+
+- 给一批章节统一注入新的世界观底座
+- 给一批章节统一注入套路轴
+- 验证这组创新导向是否提升可读性、商业感和差异化
+
+---
+
+## 当前入口
+
+新增 CLI：
+
+```bash
+./.venv/bin/novel-analyzer writer-innovation-experiment <branch_id> <experiment_name> \
+  '24:压住成绩爽点，但拉高阶层跃迁冲击' \
+  '25:强化回乡情绪与身份落差' \
+  --worldview-note "灵气衰败时代，资源与身份强绑定" \
+  --trope-axis "底层逆袭" \
+  --trope-axis "账本修仙" \
+  --innovation-directive "把修炼收益折算为社会信用与家族博弈" \
+  --taboo-innovation "不要突然引入无代价系统外挂" \
+  --knowledge-ref "男频修仙读者期待先压后扬、收益可见" \
+  --output-dir output
+```
+
+输出：
+- `writer-innovation-experiment-<name>.json`
+- `writer-innovation-experiment-<name>.md`
+
+现在同一份 experiment 里也会附带：
+- `baseline_items`
+- `delta_visual_summary`
+- `reader_sim_acceptance_summary`
+- `writer_innovation_explanation`
+- `experiment_decision_note`
+- `experiment_meta.baseline_vs_steering_report`
+
+其中建议重点看：
+- `steering_pack`
+- `steering_retrieval_meta`
+- `steering_retrieval_meta.selected_doc_summaries`
+- `delta_visual_summary`
+- `reader_sim_acceptance_summary`
+- `writer_innovation_explanation`
+- `experiment_decision_note`
+- `experiment_meta.baseline_vs_steering_report`
+- `experiment_meta.innovation_delta_summary`
+- `experiment_meta.risk_delta_summary`
+
+---
+
+## 推荐实验步骤
+
+1. 先定实验主题
+   - 例如“账本修仙化”
+   - 例如“宗门税制化世界观”
+
+2. 再定一组 steering pack
+   - worldview
+   - trope
+   - innovation
+   - taboo
+   - knowledge refs
+
+3. 选 2~5 个连续章节
+   - 最好是一段完整小弧线
+
+4. 统一跑 experiment
+
+5. 对比：
+   - 是否更有底座感
+   - 是否更有内涵创新
+   - 是否破坏 continuity
+   - 是否提高 reader-sim / hook / novelty 感
+   - 命中的 trope/worldview/audience 文档是否合理
+   - 命中文档摘要是否真的解释了本轮 steering 在借什么底座
+   - innovation/risk delta 是否在预期范围
+
+---
+
+## 推荐记录字段
+
+每次 experiment 建议记录：
+- experiment_name
+- chapter_range
+- steering_pack
+- steering_retrieval_meta
+- innovation_delta_summary
+- risk_delta_summary
+- 最满意章节
+- 最失真章节
+- continuity 风险
+- reader-sim 变化
+- 是否值得推广到更长区间
+- recommendation / next_action 是否支持商业化推广决策
+- writer-imitate-session-state.json 是否能提供机读 session-level ready/blocked/escalation/recovery 视图
+- pilot_scope / promotion_gate / rollback_trigger / evidence_required 是否足以形成真实 rollout 方案
+- ship_blockers / required_human_review / confidence_level / business_risk_label / go_live_checklist 是否足以形成上线 gate
+- success_kpi_targets / failure_kpi_triggers / observation_window / owner_roles / handoff_packet 是否足以形成上线后运营合同
+- session_control_memory / session_constraint_register / session_safety_invariants / session_repair_budget / session_runtime_digest 是否足以形成核心约束面
+- session_control_fabric / session_guardrail_matrix / session_override_protocol / session_failure_isolation / session_runtime_manifest 是否足以形成控制织面
+- session_control_bus / session_event_channels / session_runtime_priorities / session_alert_routes / session_state_checkpoint 是否足以形成控制总线与状态快照
+- session_execution_graph / session_signal_registry / session_action_contract / session_backpressure_rules / session_runtime_proof 是否足以形成有状态执行合同
+- session_supervisory_contract / session_recovery_matrix / session_signal_budget / session_checkpoint_policy / session_operating_ledger 是否足以形成监督与账本层
+- session_governance_fabric / session_checkpoint_contract / session_supervision_priorities / session_ledger_consistency_rules / session_runtime_attestation 是否足以形成治理织面与检查点合同
+- session_runtime_mesh / session_policy_router / session_checkpoint_ring / session_audit_stream / session_operating_signature 是否足以形成 mesh/ring/stream/signature 层
+- session_policy_mesh / session_enforcement_bus / session_runtime_sentry / session_checkpoint_audit_chain / session_operating_posture 是否足以形成 policy kernel / sentry 层
+- session_attestation_chain / session_trust_zones / session_policy_attestors / session_recovery_posture / session_control_verdict 是否足以形成信任/证明/姿态控制层
+- session_protocol_stack / session_trust_contract / session_recovery_authority / session_audit_checkpoint_map / session_runtime_certificate 是否足以形成协议栈与运行证书层
+- session_governance_topology / session_protocol_budget / session_certificate_chain / session_recovery_authorizations / session_control_attestation 是否足以形成拓扑/证书链/授权证明层
+- session_assurance_contract / session_policy_checksum / session_runtime_alignment / session_recovery_certainty / session_operator_assurance 是否足以形成 assurance/alignment/checksum 层
+- session_executive_contract / session_governance_checksum_v2 / session_supervision_certificate / session_override_liability / session_operating_authority 是否足以形成 executive governance 层
+- session_authority_certificate / session_policy_envelope / session_escalation_authority / session_assurance_digest / session_governance_verdict 是否足以形成 authority / assurance / verdict OS 层
+- session_governance_mesh / session_attestation_budget / session_policy_fallbacks / session_recovery_routing / session_runtime_verdict 是否足以形成最终治理网格层
+- session_authority_fabric / session_override_chain / session_control_closure_audit / session_runtime_witness / session_governance_posture 是否足以形成闭环 authority fabric 层
+- session_operating_charter / session_control_charter / session_governance_charter / session_runtime_authority_digest / session_final_control_verdict 是否足以形成 final control charter 层
+- session_command_mesh / session_authority_fabric_v2 / session_closure_attestation / session_operating_charter_mesh / session_final_runtime_verdict 是否足以形成 final runtime OS 层
+- session_governance_backbone / session_control_lattice / session_authority_bus / session_runtime_witness_chain / session_os_control_digest 是否足以形成最终 control OS 层
+- session_executive_command_mesh / session_authority_control_matrix / session_runtime_closure_proof / session_governance_signal_chain / session_operating_system_verdict 是否足以形成 executive command / final OS verdict 层
+- session_governance_closure / session_authority_verdict / session_runtime_horizon / session_supervision_digest / session_control_summary 是否足以形成闭环治理总结层
+- session_operating_system_contract / session_control_checkpoint_digest / session_authority_signature / session_recovery_escalation_mesh / session_final_operating_posture 是否足以形成 operating-system contract 层
+- session_control_plane_closure / session_exec_fabric / session_authority_routes / session_assurance_chain / session_runtime_seal 是否足以形成控制面闭环与执行织面
+- session_meta_governor / session_policy_integrity / session_runtime_consistency / session_override_accountability / session_control_confidence 是否足以形成 meta-governance / control-integrity 层
+- writer-imitate-session-state.v3 中的 session_control_loop / session_queue_registry / session_execution_registry / session_governance_registry / session_digest_registry / session_live_ops_board 是否已经把冗长字段压缩成可消费的编排注册表
+- session_action_backlog / session_transition_queue / session_checkpoint_mutations 是否已经把“下一步该做什么、如何迁移、要改哪些状态”显式化
+- writer-imitate-action-queue.json / writer-imitate-action-queue.md 是否已经成为更浅层、更适合编排/运营直接消费的动作合同
+- writer-imitate-operator-surface.json / writer-imitate-operator-surface.md 是否已经成为控制台/运营面默认可读的第一层稳定合同入口
+- writer-imitate-execution-state.json / writer-imitate-execution-state.md 是否已经形成 replay / recovery / persisted execution 的最小执行态合同
+- writer-imitate-execution-replay.json / writer-imitate-execution-replay.md 是否已经把 apply/replay 预演显式化，方便下一步安全接入真实状态回写
+- writer-imitate-apply-replay / writer-imitate-resume-replay 是否已经把 apply / resume 入口显式命令化，而不是仅靠人工读取预演产物
+- 这些聚合注册表与 action-loop 入口是否已经足以驱动下一步真实 action execution / checkpoint persistence，而不只是 markdown 报告
+
+---
+
+## 当前最适合的实验主题
+
+### A. 资源账本化成长
+- 把每次收益写成可见账本
+
+### B. 制度化修仙
+- 把修炼与家族/宗门/王朝信用绑定
+
+### C. 阶层跃迁型男频
+- 每次进步都要带社会位置变化
+
+---
+
+## 风险提醒
+
+批量创新实验最常见的问题：
+- 创新过头，人物连续性崩
+- 世界观一下变太大
+- 套路轴太强，导致章节都长得像说明书
+
+所以实验时必须保留：
+- taboo list
+- continuity memory
+- risk gate
+- reader sim

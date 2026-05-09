@@ -25,7 +25,9 @@ from novel_analyzer.domain.schemas import (
 )
 from novel_analyzer.skills.assets import render_skill_prompt
 from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
 from novel_analyzer.services.next_chapter_planner_service import PlannerContextWindow
+from novel_analyzer.services.tension_service import TensionService
 
 
 class HarnessControllerService:
@@ -104,6 +106,49 @@ class HarnessControllerService:
         self.session = session
         self.settings = settings or get_settings()
         self.chapter_imitation = ChapterImitationService(session, self.settings)
+        self.tension_service = TensionService(session)
+        self.memory_assembler = MemoryAssemblerService(session)
+
+    def _build_carry_over_json(
+        self,
+        branch_id: str,
+        *,
+        source_chapter_index: int,
+        plan: object,
+    ) -> str:
+        """Build carry_over_state JSON.
+
+        In 'enabled' mode: use Loom MemoryAssemblerService (three-layer memory).
+        In 'shadow' mode: run Loom assembler but return legacy format.
+        Otherwise: return legacy format from plan fields.
+        """
+        legacy = {
+            "worldview_capsule": getattr(plan, "worldview_capsule", ""),
+            "trope_axes": getattr(plan, "trope_axes", []),
+            "innovation_directives": getattr(plan, "innovation_directives", []),
+            "external_knowledge_refs": getattr(plan, "external_knowledge_refs", []),
+        }
+        mode = self.settings.loom_memory_mode
+        if mode in ("shadow", "enabled", "ab"):
+            try:
+                mem = self.memory_assembler.assemble(
+                    branch_id,
+                    target_chapter_index=source_chapter_index + 1,
+                    episodic_top_k=self.settings.loom_episodic_top_k,
+                )
+                cos = mem.to_carry_over_state()
+                if mode == "enabled":
+                    # Merge Loom output with plan fields
+                    cos["worldview_capsule"] = legacy["worldview_capsule"]
+                    cos["trope_axes"] = legacy["trope_axes"]
+                    cos["innovation_directives"] = legacy["innovation_directives"]
+                    cos["external_knowledge_refs"] = legacy["external_knowledge_refs"]
+                    return json.dumps(cos, ensure_ascii=False, indent=2)
+                # shadow / ab: return legacy but attach Loom data as metadata
+                legacy["_loom_memory"] = cos
+            except Exception:  # noqa: BLE001
+                pass  # Loom is non-blocking
+        return json.dumps(legacy, ensure_ascii=False, indent=2)
 
     @staticmethod
     def _severity_priority(status: str, *, risk_level: str | None = None) -> tuple[str, int]:
@@ -773,6 +818,45 @@ class HarnessControllerService:
                     )
                 )
 
+        # Loom: tension check (non-blocking, warn only)
+        if self.settings.loom_tension_enabled:
+            try:
+                tension = self.tension_service.compute(
+                    branch_id,
+                    chapter_index=source_chapter_index,
+                    lookback_n=self.settings.loom_tension_lookback_n,
+                )
+                tension_sig = tension.to_operator_signal()
+                if tension.alerts:
+                    alert_msgs = [a.message for a in tension.alerts]
+                    recommended_actions.extend(
+                        a.suggestion for a in tension.alerts
+                        if a.suggestion not in recommended_actions
+                    )
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_tension",
+                            status="warn",
+                            severity="medium",
+                            priority=3,
+                            notes=alert_msgs[:3],
+                        )
+                    )
+                else:
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_tension",
+                            status="pass",
+                            severity="low",
+                            priority=4,
+                            notes=[f"tension_score={tension.tension_score:.3f}"],
+                        )
+                    )
+                # Attach tension signal to outputs for downstream consumption
+                outputs["_loom_tension"] = tension_sig  # type: ignore[index]
+            except Exception:  # noqa: BLE001
+                pass  # Loom tension is non-blocking
+
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
             source_chapter_index=source_chapter_index,
@@ -790,12 +874,14 @@ class HarnessControllerService:
         source_chapter_index: int,
         target_goal: str,
         draft: ChapterImitationDraft,
+        steering_pack: dict[str, object] | None = None,
     ) -> dict[str, str]:
         title, source_text = self.chapter_imitation._source_chapter_text(branch_id, source_chapter_index)  # noqa: SLF001
         plan = self.chapter_imitation.build_imitation_plan(
             branch_id,
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
+            steering_pack=steering_pack,
         )
         planner_context = self.chapter_imitation.next_chapter_planner.build_context(
             branch_id,
@@ -818,7 +904,11 @@ class HarnessControllerService:
                 "source_plan_json": json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, indent=2),
                 "branch_context_json": json.dumps(planner_context.model_dump(mode="json"), ensure_ascii=False, indent=2),
                 "mapping_pack_json": "{}",
-                "carry_over_state_json": "{}",
+                "carry_over_state_json": self._build_carry_over_json(
+                    branch_id,
+                    source_chapter_index=source_chapter_index,
+                    plan=plan,
+                ),
             },
             "draft-self-check": {
                 "draft_text": draft.draft_text,
@@ -906,11 +996,13 @@ class HarnessControllerService:
         target_goal: str,
         draft: ChapterImitationDraft,
         strategy_input: dict[str, object] | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> dict[str, dict[str, object]]:
         plan = self.chapter_imitation.build_imitation_plan(
             branch_id,
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
+            steering_pack=steering_pack,
         )
         planner_context = self.chapter_imitation.next_chapter_planner.build_context(
             branch_id,
@@ -961,9 +1053,15 @@ class HarnessControllerService:
                 planner_context.relationship_state_notes[:2]
                 + planner_context.unresolved_threads[:2]
                 + planner_context.world_rules[:2]
+                + [f"trope:{item}" for item in plan.trope_axes[:2]]
+                + [f"worldview:{item}" for item in plan.worldview_capsule[:2]]
             ),
             "relationship_watchpoints": planner_context.relationship_state_notes[:3],
             "rule_watchpoints": planner_context.world_rules[:3],
+            "worldview_capsule": plan.worldview_capsule[:4],
+            "trope_axes": plan.trope_axes[:4],
+            "innovation_directives": plan.innovation_directives[:4],
+            "external_knowledge_refs": plan.external_knowledge_refs[:4],
         }
         strategy = strategy_input or {}
         if strategy:
@@ -1120,6 +1218,7 @@ class HarnessControllerService:
         use_llm: bool = False,
         model_name: str | None = None,
         strategy_input: dict[str, object] | None = None,
+        steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationHarnessReport:
         skill_contracts = self.list_skill_contracts()
         draft = (
@@ -1128,12 +1227,14 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name,
+                steering_pack=steering_pack,
             )
             if use_llm
             else self.chapter_imitation.build_skeleton_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
+                steering_pack=steering_pack,
             )
         )
 
@@ -1156,6 +1257,7 @@ class HarnessControllerService:
                 target_goal=target_goal,
                 draft=draft,
                 strategy_input=strategy_input,
+                steering_pack=steering_pack,
             )
             preflight = self.preflight_draft(
                 branch_id,
@@ -1207,6 +1309,7 @@ class HarnessControllerService:
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 draft=draft,
+                steering_pack=steering_pack,
             )
             rounds.append(
                 ChapterImitationHarnessRound(

@@ -38,6 +38,7 @@ from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.graph_service import GraphService
+from novel_analyzer.services.memory_consolidation_service import MemoryConsolidationService
 from novel_analyzer.services.quality_gate_service import QualityGateService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
@@ -56,6 +57,7 @@ class AnalysisService:
         self.fact_service = FactService(session)
         self.graph_service = GraphService(session)
         self.risk_audit_service = RiskAuditService(session)
+        self.memory_consolidation = MemoryConsolidationService(session)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -317,6 +319,74 @@ class AnalysisService:
         response = self._invoke_with_retry(model, prompt)
         raw = self._extract_json_payload(response)
         return ChapterAnalysisOutput.model_validate(raw)
+
+    @staticmethod
+    def _is_provider_unavailable_error(exc: Exception) -> bool:
+        text = str(exc)
+        markers = [
+            "Insufficient Balance",
+            "SUBSCRIPTION_NOT_FOUND",
+            "Your request was blocked",
+            "Error code: 402",
+            "Error code: 403",
+        ]
+        return any(marker in text for marker in markers)
+
+    @staticmethod
+    def _heuristic_entities(chapter_content: str, limit: int = 5) -> list[str]:
+        candidates = re.findall(r"[一-龥]{2,4}", chapter_content)
+        stop_words = {"第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个", "没有", "可以", "自己", "什么", "这样"}
+        seen: set[str] = set()
+        results: list[str] = []
+        for item in candidates:
+            if item in stop_words or item in seen:
+                continue
+            seen.add(item)
+            results.append(item)
+            if len(results) >= limit:
+                break
+        return results
+
+    @classmethod
+    def _build_local_heuristic_analysis(
+        cls,
+        chapter_index: int,
+        normalized_title: str,
+        chapter_content: str,
+    ) -> ChapterAnalysisOutput:
+        content = chapter_content.strip()
+        summary_source = re.split(r"[。！？\n]", content, maxsplit=1)[0].strip()
+        chapter_summary = summary_source[:120] if summary_source else f"本章围绕《{normalized_title}》展开。"
+        key_entities = cls._heuristic_entities(content)
+        key_events = [chapter_summary] if chapter_summary else []
+        continuity_notes = [
+            "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+            "建议后续在 provider 恢复后对该章补做完整 LLM 分析。",
+        ]
+        writer_learning_notes = [
+            "当前为保底分析结果，重点先保证章节不断档，再在后续补足风格与细节层判断。"
+        ]
+        quality_gate_notes = [
+            "provider unavailable -> local heuristic fallback"
+        ]
+        return ChapterAnalysisOutput(
+            chapter_index=chapter_index,
+            normalized_title=normalized_title,
+            dimensions=[],
+            chapter_summary=chapter_summary,
+            key_entities=key_entities,
+            key_events=key_events,
+            continuity_notes=continuity_notes,
+            writer_learning_notes=writer_learning_notes,
+            unsupported_inferences=[],
+            ambiguous_points=["启发式保底输出，细粒度事实与风格判断有限。"],
+            needs_human_review=True,
+            quality_gate_notes=quality_gate_notes,
+            hook_score=2.5,
+            state_transition_notes=[],
+            evidence_backed_resolutions=[],
+            unresolved_threads=[],
+        )
 
     @staticmethod
     def _is_sparse_result(result: ChapterAnalysisOutput) -> bool:
@@ -770,13 +840,27 @@ class AnalysisService:
                         progress_percent=55,
                         emit_event=True,
                     )
-                    result = self._invoke_monolithic_analysis(
-                        fallback_model,
-                        segment.chapter_index,
-                        segment.normalized_title,
-                        chapter_content,
-                    )
-                    stage_payload = {'stage_error': str(stage_exc), 'fallback': 'monolithic'}
+                    try:
+                        result = self._invoke_monolithic_analysis(
+                            fallback_model,
+                            segment.chapter_index,
+                            segment.normalized_title,
+                            chapter_content,
+                        )
+                        stage_payload = {'stage_error': str(stage_exc), 'fallback': 'monolithic'}
+                    except Exception as fallback_exc:
+                        if not self._is_provider_unavailable_error(fallback_exc):
+                            raise
+                        result = self._build_local_heuristic_analysis(
+                            segment.chapter_index,
+                            segment.normalized_title,
+                            chapter_content,
+                        )
+                        stage_payload = {
+                            'stage_error': str(stage_exc),
+                            'fallback_error': str(fallback_exc),
+                            'fallback': 'local-heuristic',
+                        }
 
                 response_text = json.dumps(stage_payload, ensure_ascii=False, indent=2)
                 raw_result = result.model_dump(mode='json')
@@ -841,6 +925,36 @@ class AnalysisService:
                     segment.chapter_index,
                     self.settings.cross_chapter_window,
                 )
+                # Loom: memory consolidation (shadow / enabled mode)
+                if self.settings.loom_memory_mode in ("shadow", "enabled", "ab"):
+                    try:
+                        loom_result = self.memory_consolidation.consolidate(
+                            branch_id, segment.chapter_index
+                        )
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
+                            chapter_index=segment.chapter_index,
+                            event_type="loom_consolidation_complete",
+                            stage="loom_memory",
+                            message=(
+                                f"loom consolidation: {loom_result.total_conflicts} conflicts "
+                                f"(contradictions={len(loom_result.contradictions)}, "
+                                f"evolutions={len(loom_result.evolutions)}, "
+                                f"ambiguities={len(loom_result.ambiguities)})"
+                            ),
+                            payload_json=loom_result.to_operator_signal(),
+                        )
+                    except Exception as _loom_exc:  # noqa: BLE001
+                        # Loom is non-blocking – log and continue
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
+                            chapter_index=segment.chapter_index,
+                            event_type="loom_consolidation_failed",
+                            stage="loom_memory",
+                            level="warning",
+                            message=str(_loom_exc),
+                            payload_json={"non_blocking": True},
+                        )
                 self.run_service.complete_chapter_job(branch_id, segment.chapter_index)
                 try:
                     self.run_service.record_job_event(

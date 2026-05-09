@@ -172,6 +172,31 @@ def test_chapter_imitation_service_builds_plan_and_skeleton(tmp_path: Path) -> N
         assert draft.comparison_notes
 
 
+def test_chapter_imitation_plan_accepts_external_steering_pack(tmp_path: Path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_schema(engine)
+    factory = sessionmaker(bind=engine, future=True)
+    with factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "sample.txt")
+        service = ChapterImitationService(session)
+        plan = service.build_imitation_plan(
+            branch_id,
+            source_chapter_index=3,
+            target_goal="延续主角获得功法后的行动线，并保持克制成长节奏",
+            steering_pack={
+                "worldview_capsule": ["灵气衰败时代，资源分层极强"],
+                "trope_axes": ["底层逆袭", "资源账本化成长"],
+                "innovation_directives": ["把修炼收益和社会信用绑定"],
+                "taboo_innovations": ["不要突然引入无代价系统外挂"],
+                "external_knowledge_refs": ["男频修仙读者期待先压后扬"],
+            },
+        )
+        assert "灵气衰败时代，资源分层极强" in plan.worldview_capsule
+        assert "底层逆袭" in plan.trope_axes
+        assert any("禁止创新越界" in item for item in plan.hard_constraints)
+        assert any("外置知识参考" in item for item in plan.soft_constraints)
+
+
 def test_chapter_imitation_service_builds_llm_draft(monkeypatch, tmp_path: Path) -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_schema(engine)

@@ -8,6 +8,17 @@
 
 ---
 
+## Loom 记忆与张力开发
+
+Loom 是 novel-analyzer 的跨章节仿写记忆与质量基础设施，当前 Phase 1+2 已完成。
+
+- **Loom 完整交接文档**：[`docs/loom/handoff.md`](./loom/handoff.md) — 架构、代码、数据、决策、剩余工作全覆盖
+- **架构全景**：[`docs/loom/overview.md`](./loom/overview.md)
+- **Roadmap**：[`docs/loom/roadmap.md`](./loom/roadmap.md)
+- **CLI 手册**：[`docs/cli-operations-manual.md`](./cli-operations-manual.md)（Loom 在第 12 节）
+
+---
+
 ## 1. 当前交接状态
 
 ### 1.1 当前真实试跑对象

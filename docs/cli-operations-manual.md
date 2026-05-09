@@ -481,3 +481,145 @@ python -m scripts.check_sample_branch <run_id> <branch_id> ./branch.md
 ```
 
 这条命令会顺序执行 PostgreSQL 能力检查与 branch report 导出，适合交接和真实环境 smoke。
+
+---
+
+## 12. Loom 记忆与张力命令（Phase 1+2）
+
+Loom 是叠加在现有系统之上的记忆代谢与质量评估层。默认以 `shadow` 模式运行（并行计算但不影响主链路）。
+
+### 12.1 环境变量
+
+```bash
+# 控制 Loom 记忆层模式
+export NOVEL_ANALYZER_LOOM_MEMORY_MODE=shadow   # disabled | shadow | ab | enabled
+
+# 控制张力检测
+export NOVEL_ANALYZER_LOOM_TENSION_ENABLED=true
+
+# 控制 pairwise 评估（默认关闭，需要 LLM）
+export NOVEL_ANALYZER_LOOM_PAIRWISE_ENABLED=false
+
+# 情节记忆 top-K 锚点数量
+export NOVEL_ANALYZER_LOOM_EPISODIC_TOP_K=20
+
+# 张力相似度回溯章节数
+export NOVEL_ANALYZER_LOOM_TENSION_LOOKBACK_N=3
+```
+
+### 12.2 loom-status — 查看分支记忆与张力状态
+
+```bash
+poetry run novel-analyzer loom-status <branch_id>
+# 或
+python3 -m novel_analyzer.cli.app loom-status <branch_id>
+```
+
+输出示例：
+```
+=== Loom Memory Status ===
+branch_id:           <branch_id>
+total_facts:         248
+active_facts:        231
+total_graph_nodes:   89
+contradiction_nodes: 2
+evolution_nodes:     14
+loom_memory_mode:    shadow
+loom_tension_enabled:True
+
+=== Loom Tension (chapter 42) ===
+tension_score:       0.5823
+plot_similarity:     0.4210
+conflict_density:    0.8500
+surprise_index:      0.3200
+alerts:              none
+```
+
+**说明**：
+- `contradiction_nodes` > 0 时，建议运行 `loom-consolidate` 手动检查冲突
+- `tension_score` < 0.3 时，情节可能过于平淡，建议引入新元素
+- `plot_similarity` > 0.85 时，当前章节与前几章高度重复
+
+### 12.3 loom-consolidate — 手动运行冲突代谢
+
+```bash
+poetry run novel-analyzer loom-consolidate <branch_id> <chapter_index>
+```
+
+对指定章节运行冲突检测与情节记忆衰减。通常由 `analysis_service` 在章节分析完成后自动调用（shadow/enabled 模式），此命令用于手动补跑或调试。
+
+输出示例：
+```
+branch_id:      <branch_id>
+chapter_index:  42
+contradictions: 1
+evolutions:     3
+ambiguities:    0
+human_review:   True
+contradiction details:
+  - 张三: '张三' 在第42章与第30章存在直接矛盾
+```
+
+### 12.4 loom-assemble — 查看 carry_over_state 内容
+
+```bash
+poetry run novel-analyzer loom-assemble <branch_id> <target_chapter>
+```
+
+输出 Loom 为目标章节组装的 `carry_over_state` JSON，用于调试记忆层内容。
+
+```bash
+# 示例：查看第 43 章的记忆组装结果
+poetry run novel-analyzer loom-assemble <branch_id> 43
+```
+
+输出包含：
+- `working_memory`：当前活跃角色、线索、近期摘要
+- `episodic_anchors`：按重要性排序的关键事件锚点
+- `semantic_snapshot`：角色数量、活跃规则、关键关系
+- `_legacy_compat`：与现有 carry_over_state 格式兼容的字段
+
+### 12.5 PostgreSQL 生产环境启用 Loom
+
+**首次启用前必须运行 Alembic migration：**
+
+```bash
+# 方式 1：通过 novel-analyzer CLI
+poetry run novel-analyzer db-upgrade
+
+# 方式 2：直接运行 alembic
+alembic upgrade head
+```
+
+migration 文件：`alembic/versions/20260509_01_loom_memory_fields.py`
+
+新增字段（均有默认值，现有数据安全）：
+- `fact_records`：`importance_score`、`decay_factor`、`episodic_status`
+- `graph_nodes`：`conflict_status`、`loom_version`、`superseded_by_node_id`、`importance_score`
+- `graph_edges`：`conflict_status`、`loom_version`、`is_active`
+
+**切换到 enabled 模式：**
+
+```bash
+# .env.local 中设置
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=enabled
+```
+
+建议先用 `ab` 模式做 A/B 实验验证效果，再切换到 `enabled`：
+
+```bash
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=ab
+```
+
+### 12.6 Loom 与现有命令的关系
+
+Loom 是非侵入式的叠加层：
+
+| 现有命令 | Loom 影响 |
+|---------|---------|
+| `analyze-range` | shadow/enabled 模式下，章节完成后自动调用 `loom-consolidate` |
+| `harness-imitation` | preflight 新增 `loom_tension` 检查项（warn 级别，非阻塞） |
+| `writer-imitate` | carry_over_state 在 enabled 模式下使用三层记忆组装 |
+| 其他命令 | 完全不受影响 |
+
+`loom_memory_mode=disabled` 时，所有 Loom 逻辑完全跳过，行为与 Loom 引入前完全一致。
