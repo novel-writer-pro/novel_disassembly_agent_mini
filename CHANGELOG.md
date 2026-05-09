@@ -14,6 +14,8 @@
 
 - imitation: 新增 `writer-imitate-live-control-state.json/.md` 与 `writer-imitate-live-control-state` 命令，把 apply preview 的结果沉淀成独立 live-control-state 过渡面，作为真正 live mutation 前的最后一层状态桥。
 
+- imitation: `writer-imitate-live-control-state` 现已开始显式暴露 `live_mutation_readiness`，把从 preview 走到真实 checkpoint writeback / transition apply 还缺哪些条件结构化出来。
+
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
 - imitation: `writer-imitate-action-queue / execution-state / execution-replay / execution-apply / execution-resume` 这些 markdown 产物现在会显式标注 `primary_operator_entrypoint: writer-imitate-operator-surface.md`，让整条控制链的默认入口更清晰。

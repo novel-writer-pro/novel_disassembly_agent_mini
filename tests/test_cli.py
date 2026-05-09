@@ -1042,8 +1042,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert live_control_state_payload['contract_version'] == 'writer-imitate-live-control-state.v1'
     assert live_control_state_payload['live_state_status'] == 'preview-backed-pending-live-mutation'
     assert live_control_state_payload['pending_checkpoint_writeback']
+    assert live_control_state_payload['live_mutation_readiness']['status'] == 'not-ready'
     live_control_state_text = live_control_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Live Control State' in live_control_state_text
+    assert '## Live Mutation Readiness' in live_control_state_text
     assert '## Pending Checkpoint Writeback' in live_control_state_text
     assert '## Pending Transition Apply' in live_control_state_text
 

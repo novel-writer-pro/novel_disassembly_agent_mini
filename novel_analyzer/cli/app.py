@@ -4675,6 +4675,19 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
     applied_transitions_obj = apply_preview.get("applied_transitions", [])
     applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
+    live_mutation_readiness = {
+        "status": "not-ready",
+        "required_conditions": [
+            "checkpoint writeback executor implemented",
+            "transition apply executor implemented",
+            "rollback path verified against live mutation",
+        ],
+        "blocking_reasons": [
+            "apply preview is still non-mutating",
+            "live checkpoint writeback has not been wired",
+        ],
+        "next_action": "implement checkpoint writeback executor",
+    }
 
     return {
         "contract_version": "writer-imitate-live-control-state.v1",
@@ -4688,6 +4701,7 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         "pending_checkpoint_writeback": applied_checkpoints,
         "pending_transition_apply": applied_transitions,
         "next_live_mutation_step": "checkpoint-writeback",
+        "live_mutation_readiness": live_mutation_readiness,
     }
 
 
@@ -4702,6 +4716,17 @@ def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
     lines.append(f"- next_live_mutation_step: {payload.get('next_live_mutation_step', '')}")
     _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    readiness = payload.get("live_mutation_readiness", {})
+    if isinstance(readiness, dict):
+        lines.append("\n## Live Mutation Readiness")
+        lines.append(f"- status: {readiness.get('status', '')}")
+        required_conditions = readiness.get("required_conditions", [])
+        blocking_reasons = readiness.get("blocking_reasons", [])
+        required_text = "；".join(str(x) for x in required_conditions) if isinstance(required_conditions, list) else ""
+        blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
+        lines.append(f"- required_conditions: {required_text}")
+        lines.append(f"- blocking_reasons: {blocking_text}")
+        lines.append(f"- next_action: {readiness.get('next_action', '')}")
 
     lines.append("\n## Pending Checkpoint Writeback")
     checkpoints = payload.get("pending_checkpoint_writeback", [])
