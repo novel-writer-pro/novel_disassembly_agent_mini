@@ -1,6 +1,14 @@
 ## Unreleased
 
-- loom/migration: 新增 Alembic migration `20260509_01_loom_memory_fields.py`，为 PostgreSQL 生产环境添加 Loom 所需的 10 个字段（`fact_records` +3、`graph_nodes` +4、`graph_edges` +3），均有 server-side 默认值，现有数据安全，支持 downgrade。
+- fix(loom/cli): 修复 `loom-status`、`loom-consolidate`、`loom-assemble` 三个命令未注册的问题。原因：命令定义在 `if __name__ == "__main__": app()` 之后，导致以 `python -m` 方式运行时 `app()` 先于装饰器执行，命令未被注册。已将三个命令移至 `__main__` guard 之前，现在 `--help` 中正确显示，并已在真实 PostgreSQL 数据上验证。
+
+- ops: 配置 DeepSeek 为当前 LLM provider（`deepseek-v4-flash`，base_url=`https://api.deepseek.com/v1`），更新 `.env.local` 并验证 API 连通性。
+
+- ops: 在 PostgreSQL 生产环境成功运行 Alembic migration `20260509_01_loom_memory_fields`，10 个 Loom 字段已创建（`fact_records` +3、`graph_nodes` +4、`graph_edges` +3），所有字段有默认值，现有数据安全。
+
+- ops: 端到端验证 Loom Phase 1+2 在真实 PostgreSQL 环境下的完整链路：导入测试小说（3章）→ DeepSeek 分析 → Loom consolidation 自动触发（`loom_consolidation_complete` 事件记录）→ `loom-status` 展示张力指标 → `loom-assemble` 输出含 episodic decay 的 carry_over_state。
+
+ `20260509_01_loom_memory_fields.py`，为 PostgreSQL 生产环境添加 Loom 所需的 10 个字段（`fact_records` +3、`graph_nodes` +4、`graph_edges` +3），均有 server-side 默认值，现有数据安全，支持 downgrade。
 
 - loom/docs: 更新 `docs/loom/roadmap.md`，将 Phase 1+2 所有任务标记为 ✅ 已完成，补充 Phase 3 详细任务清单（生产部署 / 0509 对接 / pairwise 数据积累 / reward model / 角色认知基），更新风险登记表。
 
