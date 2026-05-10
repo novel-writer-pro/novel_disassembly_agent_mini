@@ -191,6 +191,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 - 当前 external runtime preview / checkpoint / transition / validation 这条 simulation bridge 也已统一继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，避免 runtime 预演链路与 operator surface 再次分叉。
 - 当前 execution resume / recovery 路径也已继承迁移遥测，并在质量不达标时优先提示先处理质量，再进入 resume/recovery。
 - 当前 action/execution/replay/apply/resume 整条执行链还新增了统一的 `session_loom_gate_summary`，把质量、张力与迁移状态收口成一层稳定执行摘要。
+- 当前 live/runtime simulation bridge 也统一接入了 `session_loom_gate_summary`，这样从 operator 到 runtime 预演链已经共享同一层 Loom gate 摘要。
 
 ### 4.1 当前未完成的 Phase 3 规划
 

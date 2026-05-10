@@ -5021,6 +5021,8 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     consumer_migration_obj = apply_preview.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = apply_preview.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     applied_checkpoints_obj = apply_preview.get("applied_checkpoints", [])
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
     applied_transitions_obj = apply_preview.get("applied_transitions", [])
@@ -5097,6 +5099,7 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "pending_checkpoint_writeback": applied_checkpoints,
         "pending_transition_apply": applied_transitions,
         "next_live_mutation_step": "checkpoint-writeback",
@@ -5185,6 +5188,12 @@ def _build_writer_output_live_mutation_preview(output_dir: Path) -> dict[str, ob
     plan = plan_obj if isinstance(plan_obj, dict) else {}
     pilot_wave_obj = live_control_state.get("live_mutation_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = live_control_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_control_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     checkpoints_obj = live_control_state.get("pending_checkpoint_writeback", [])
     checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
     transitions_obj = live_control_state.get("pending_transition_apply", [])
@@ -5195,6 +5204,9 @@ def _build_writer_output_live_mutation_preview(output_dir: Path) -> dict[str, ob
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "live_control_state_entrypoint": "writer-imitate-live-control-state.json",
         "preview_status": "planned-not-executed",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "live_mutation_readiness": readiness,
         "live_mutation_plan": plan,
         "live_mutation_pilot_wave": pilot_wave,
@@ -5270,6 +5282,8 @@ def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, ob
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_control_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-live-checkpoint-state.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -5280,6 +5294,7 @@ def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, ob
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "applied_checkpoints": applied_checkpoints,
     }
 
@@ -5328,6 +5343,8 @@ def _build_writer_output_live_transition_state(output_dir: Path) -> dict[str, ob
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_control_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-live-transition-state.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -5338,6 +5355,7 @@ def _build_writer_output_live_transition_state(output_dir: Path) -> dict[str, ob
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "applied_transitions": applied_transitions,
     }
 
@@ -5377,6 +5395,8 @@ def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, ob
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     consumer_migration_obj = live_transition_state.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_transition_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
 
     validation_checks = [
         {"check": "checkpoint_writeback_applied", "passed": bool(checkpoints)},
@@ -5395,6 +5415,7 @@ def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, ob
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "validation_checks": validation_checks,
         "next_live_mutation_step": "external-runtime-executor",
     }
@@ -5425,6 +5446,8 @@ def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     consumer_migration_obj = live_validation_state.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_validation_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
     readiness = {
         "status": (
@@ -5493,6 +5516,7 @@ def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -
         "live_validation_state_entrypoint": "writer-imitate-live-validation-state.json",
         "session_primary_verdicts": primary_verdicts,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness,
         "external_runtime_executor_plan": runtime_executor_plan,
         "external_runtime_executor_pilot_wave": runtime_executor_pilot_wave,
@@ -5559,6 +5583,8 @@ def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> 
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     consumer_migration_obj = readiness.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = readiness.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-external-runtime-executor-preview.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -5566,6 +5592,7 @@ def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> 
         "preview_status": "planned-not-executed",
         "session_primary_verdicts": primary_verdicts,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness_payload,
         "external_runtime_executor_plan": plan,
         "external_runtime_executor_pilot_wave": pilot_wave,
@@ -5618,6 +5645,8 @@ def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> 
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     consumer_migration_obj = preview.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = preview.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     live_checkpoint_state = _build_writer_output_live_checkpoint_state(output_dir)
     applied_checkpoints_obj = live_checkpoint_state.get("applied_checkpoints", [])
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
@@ -5643,6 +5672,7 @@ def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> 
         "checkpoint_state_status": "external-runtime-checkpoint-simulated-local",
         "session_primary_verdicts": primary_verdicts,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness,
         "pilot_wave": pilot_wave,
         "applied_runtime_checkpoints": simulated_runtime_checkpoints,
@@ -5694,6 +5724,8 @@ def _build_writer_output_external_runtime_transition_state(output_dir: Path) -> 
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     consumer_migration_obj = preview.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = preview.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     live_transition_state = _build_writer_output_live_transition_state(output_dir)
     applied_transitions_obj = live_transition_state.get("applied_transitions", [])
     applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
@@ -5719,6 +5751,7 @@ def _build_writer_output_external_runtime_transition_state(output_dir: Path) -> 
         "transition_state_status": "external-runtime-transition-simulated-local",
         "session_primary_verdicts": primary_verdicts,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness,
         "pilot_wave": pilot_wave,
         "applied_runtime_transitions": simulated_runtime_transitions,
@@ -5771,6 +5804,8 @@ def _build_writer_output_external_runtime_validation_state(output_dir: Path) -> 
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     consumer_migration_obj = transition_state.get("session_consumer_migration_telemetry", {})
     consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = transition_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     validation_checks = [
         {"check": "runtime_checkpoint_simulated", "passed": bool(checkpoints)},
         {"check": "runtime_transition_simulated", "passed": bool(transitions)},
@@ -5783,6 +5818,7 @@ def _build_writer_output_external_runtime_validation_state(output_dir: Path) -> 
         "validation_status": validation_status,
         "session_primary_verdicts": primary_verdicts,
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "validation_checks": validation_checks,
         "next_runtime_step": "external-runtime-executor-implementation",
     }
