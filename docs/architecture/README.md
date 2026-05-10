@@ -25,7 +25,7 @@
 | [../loom/README.md](../loom/README.md) | Loom 架构总入口 |
 | [../loom/arch-diff-and-alignment.md](../loom/arch-diff-and-alignment.md) | **0509 vs Loom 冲突点与对齐方案**（必读） |
 | [../loom/overview.md](../loom/overview.md) | 完整架构图 + SOTA 对比表 |
-| [../loom/roadmap.md](../loom/roadmap.md) | Phase 1/2/3 开发路线图 |
+| [../loom/roadmap.md](../loom/roadmap.md) | Phase 1-5 开发路线图 |
 
 ---
 
