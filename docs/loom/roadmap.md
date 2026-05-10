@@ -310,7 +310,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
      （active ≤5章 / dormant ≤15章 / overdue >15章 三类线索分类）
    - suggest_thread_activation(branch_id, chapter_index) → ThreadActivationSignal
 ✅ preflight_imitation：线索调度建议（feature flag loom_character_enabled，warn-only）
-□ tension 层：overdue_threads 触发 obstacle injection
+✅ tension 层：overdue_threads 触发 obstacle injection（TensionService._build_alerts 接入 thread_status，preflight 联动）
 □ 验收：overdue_threads 比例下降 ≥ 30%
 ```
 
