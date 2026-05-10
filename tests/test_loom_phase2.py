@@ -398,6 +398,9 @@ def test_cli_loom_status_with_data(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert "Loom Memory Status" in result.output
     assert branch_id in result.output
     assert "total_facts" in result.output
+    assert "loom_pairwise_enabled" in result.output
+    assert "loom_style_enabled" in result.output
+    assert "loom_character_enabled" in result.output
 
 
 def test_cli_loom_consolidate_with_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
