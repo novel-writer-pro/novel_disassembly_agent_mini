@@ -1,5 +1,7 @@
 ## Unreleased
 
+- feat(loom/resume-gate): `writer-imitate-execution-resume` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，并在 `quality-hold` 时把恢复提示切换为先处理质量，再进入 resume/recovery。
+
 - feat(loom/runtime-sim-bridge): `writer-imitate-external-runtime-executor-preview` / checkpoint / transition / validation 产物统一继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 external runtime simulation bridge 与 operator/live 面共享同一套 Loom 状态。
 
 - feat(loom/runtime-readiness): `writer-imitate-live-control-state` 与 `writer-imitate-external-runtime-executor-readiness` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 live/runtime readiness 面在进入真实执行器前即可感知 Loom 质量与迁移状态。

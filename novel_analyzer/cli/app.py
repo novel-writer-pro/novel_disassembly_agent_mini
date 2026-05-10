@@ -5771,21 +5771,38 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
         "对 deferred tickets 走 review-resume",
         "对 blocked tickets 走 recovery-resume",
     ]
-    resume_status = "resume-ready" if resume_targets else "no-resume-needed"
+    primary_verdicts_obj = apply_preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = apply_preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
+    resume_status = (
+        "quality-blocked"
+        if quality_verdict == "quality-hold"
+        else "resume-ready"
+        if resume_targets
+        else "no-resume-needed"
+    )
+    resume_hint = (
+        "raise quality before resume/recovery"
+        if quality_verdict == "quality-hold"
+        else apply_preview.get("next_resume_hint", "")
+    )
     return {
         "contract_version": "writer-imitate-execution-resume.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
         "source_contract_version": apply_preview.get("contract_version", ""),
         "session_operator_contract": apply_preview.get("session_operator_contract", {}),
-        "session_primary_verdicts": apply_preview.get("session_primary_verdicts", {}),
+        "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": apply_preview.get("session_primary_digests", {}),
         "session_primary_contract_hints": apply_preview.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": consumer_migration,
         "session_legacy_contract_layer": apply_preview.get("session_legacy_contract_layer", {}),
         "resume_status": resume_status,
         "resume_targets": resume_targets,
         "resume_steps": resume_steps,
-        "resume_hint": apply_preview.get("next_resume_hint", ""),
+        "resume_hint": resume_hint,
     }
 
 
@@ -5800,6 +5817,11 @@ def _writer_output_execution_resume_markdown(output_dir: Path) -> str:
     lines.append(f"- resume_hint: {payload.get('resume_hint', '')}")
     _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     resume_targets = payload.get("resume_targets", [])
     resume_steps = payload.get("resume_steps", [])
     lines.append("\n## Resume Targets")

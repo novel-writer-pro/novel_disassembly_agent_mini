@@ -1370,6 +1370,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_payload['session_primary_verdicts']['runtime_verdict']
     assert execution_resume_payload['session_primary_digests']['control_summary']
     assert execution_resume_payload['session_primary_contract_hints']['preferred_digest_source'] == 'session_primary_digests'
+    assert execution_resume_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert execution_resume_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert 'resume_status' in execution_resume_payload
     assert execution_resume_payload['resume_steps']
@@ -1382,6 +1383,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_text.index('## Primary Verdicts') < execution_resume_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Primary Contract Migration Hints' in execution_resume_text
+    assert '## Consumer Migration Telemetry' in execution_resume_text
     assert '## Resume Targets' in execution_resume_text
     assert '## Resume Steps' in execution_resume_text
 

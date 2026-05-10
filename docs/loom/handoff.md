@@ -189,6 +189,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 - 当前 control surfaces 还会输出 `session_consumer_migration_telemetry`，明确哪些消费面已可读取 primary verdict/digest，哪些仍停留在 legacy 兼容层。
 - 当前 live control / external runtime readiness 面也已继承 `quality_verdict` 与迁移遥测，后续真实 runtime executor 接入时可直接复用这层 Loom 状态。
 - 当前 external runtime preview / checkpoint / transition / validation 这条 simulation bridge 也已统一继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，避免 runtime 预演链路与 operator surface 再次分叉。
+- 当前 execution resume / recovery 路径也已继承迁移遥测，并在质量不达标时优先提示先处理质量，再进入 resume/recovery。
 
 ### 4.1 当前未完成的 Phase 3 规划
 
