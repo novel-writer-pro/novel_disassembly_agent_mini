@@ -292,10 +292,10 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P1：读者模拟评审面板**
 
 ```
-□ 新增 reader_simulation_service.py
-   - simulate_reader_panel(chapter_text, panel_type) → ReaderSimSignal
-     panel_type: "casual" | "veteran" | "satisfaction" | "editor"
-   - aggregate_reader_scores(signals) → ReaderSatisfactionScore
+✅ 新增 reader_simulation_service.py
+   - simulate_all_panels(branch_id, chapter_index) → ReaderSatisfactionScore
+   - 4 类读者面板：casual / veteran / satisfaction / editor
+   - 全部 heuristic，零 LLM 调用
 □ session_primary_verdicts 新增 reader_satisfaction_score
 □ retirement gate：reader_satisfaction_score < 0.6 时标记 reader-blocked
 □ operator surface：展示各 panel 的具体反馈
@@ -305,11 +305,11 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P2：多线叙事调度器**
 
 ```
-□ 新增 thread_scheduler_service.py
-   - analyze_thread_status(branch_id) → ThreadStatusReport
-     （active / dormant / overdue 三类线索分类）
+✅ 新增 thread_scheduler_service.py
+   - analyze_thread_status(branch_id, as_of_chapter) → ThreadStatusReport
+     （active ≤5章 / dormant ≤15章 / overdue >15章 三类线索分类）
    - suggest_thread_activation(branch_id, chapter_index) → ThreadActivationSignal
-□ preflight_imitation：线索调度建议
+□ preflight_imitation：线索调度建议（feature flag loom_character_enabled）
 □ tension 层：overdue_threads 触发 obstacle injection
 □ 验收：overdue_threads 比例下降 ≥ 30%
 ```
@@ -317,11 +317,12 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P3：长书自适应编排**
 
 ```
-□ 自动检测质量下滑信号（chapter_quality_score 连续 3 章下降）
-□ 触发 carry_over 重组（Working Memory 强制压缩 + Semantic Memory 重建）
-□ 自动建议 steering pack 更新
+✅ 新增 long_book_health_service.py
+   - compute_health(branch_id, as_of_chapter) → LongBookHealthReport
+   - detect_quality_decline(branch_id, as_of_chapter) → bool（连续 3 章下滑）
+   - quality_trend: stable | declining | recovering
 □ loom-status 展示 long_book_health_score
-□ operator surface：长书健康度仪表盘
+□ 自动建议 steering pack 更新（declining 时）
 □ 验收：100 章仿写的 chapter_quality_score 标准差 < 0.15
 ```
 
