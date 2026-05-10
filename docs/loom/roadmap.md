@@ -224,7 +224,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - to_style_signal() 输出供 operator surface 消费
    - 阈值：warn ≥ 0.15，critical ≥ 0.30
 ✅ loom-status 展示 style_drift_score（loom_style_enabled=True 时）
-□ preflight_imitation 接入 style_drift 检查（feature flag loom_style_enabled）
+✅ preflight_imitation 接入 style_drift 检查（feature flag loom_style_enabled，warn-only）
 □ session_loom_signals 新增 style_signal 字段
 □ 验收：style_drift_score 与人工风格评分 Pearson r ≥ 0.5
 ```
@@ -238,8 +238,8 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - pacing_type: slow_burn | action_heavy | balanced | episodic
    - climax_score: hook 事件占比
 ✅ loom-status 展示 rhythm_signal（loom_style_enabled=True 时）
-□ tension 层：rhythm_signal 与 tension_signal 联动
-□ preflight_imitation：节奏偏差警告
+✅ preflight_imitation：节奏偏差警告（loom_style_enabled=True 时，warn-only）
+□ tension 层：rhythm_signal 与 tension_signal 联动（自动 obstacle injection）
 □ 验收：hook_density 与读者留存率正相关（需真实数据）
 ```
 
@@ -265,7 +265,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - check_character_consistency(persona, draft_text, chapter_index) → CharacterConsistencySignal
    - 三维度 heuristic 检测：speech_consistency / behavior_consistency / relationship_consistency
    - 8 个单元测试，全部通过
-□ preflight_imitation：角色认知基一致性检查（feature flag loom_character_enabled）
+✅ preflight_imitation：角色认知基一致性检查（feature flag loom_character_enabled，warn-only）
 □ 验收：character_ooc 触发率在 Phase 3 基础上再下降 ≥10%
 ```
 
