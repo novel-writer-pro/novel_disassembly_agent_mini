@@ -1039,6 +1039,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     blocked_preview_text = legacy_retirement_preview_md.read_text(encoding='utf-8')
     assert 'preview_status: quality-blocked' in blocked_preview_text
     assert 'status: quality-blocked' in blocked_preview_text
+
+    loom_payload['chapter_quality_score'] = 0.82
+    loom_payload_path.write_text(json.dumps(loom_payload, ensure_ascii=False, indent=2), encoding='utf-8')
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
     control_surface_registry_payload = json.loads(control_surface_registry_json.read_text(encoding='utf-8'))
     assert control_surface_registry_payload['contract_version'] == 'writer-imitate-control-surface-registry.v1'
     assert control_surface_registry_payload['registry_status'] == 'active'
@@ -1173,10 +1181,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert live_control_state_payload['live_state_status'] == 'preview-backed-pending-live-mutation'
     assert live_control_state_payload['pending_checkpoint_writeback']
     assert live_control_state_payload['live_mutation_readiness']['status'] == 'not-ready'
+    assert live_control_state_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert live_control_state_payload['live_mutation_plan']['execution_order']
     assert live_control_state_payload['live_mutation_pilot_wave']['wave_id'] == 'live-mutation-wave-01'
     live_control_state_text = live_control_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Live Control State' in live_control_state_text
+    assert '## Consumer Migration Telemetry' in live_control_state_text
     assert '## Live Mutation Readiness' in live_control_state_text
     assert '## Live Mutation Plan' in live_control_state_text
     assert '## Live Mutation Pilot Wave' in live_control_state_text
@@ -1256,9 +1266,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_readiness_payload = json.loads(external_runtime_readiness_json.read_text(encoding='utf-8'))
     assert external_runtime_readiness_payload['contract_version'] == 'writer-imitate-external-runtime-executor-readiness.v1'
     assert external_runtime_readiness_payload['readiness']['next_action'] == 'implement external runtime checkpoint executor'
+    assert external_runtime_readiness_payload['readiness']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_readiness_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert external_runtime_readiness_payload['external_runtime_executor_pilot_wave']['wave_id'] == 'external-runtime-wave-01'
     external_runtime_readiness_text = external_runtime_readiness_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Readiness' in external_runtime_readiness_text
+    assert '## Primary Verdicts' in external_runtime_readiness_text
+    assert '## Consumer Migration Telemetry' in external_runtime_readiness_text
     assert '## Readiness' in external_runtime_readiness_text
     assert '## External Runtime Executor Plan' in external_runtime_readiness_text
     assert '## External Runtime Executor Pilot Wave' in external_runtime_readiness_text

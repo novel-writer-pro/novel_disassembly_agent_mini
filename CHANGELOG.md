@@ -1,5 +1,7 @@
 ## Unreleased
 
+- feat(loom/runtime-readiness): `writer-imitate-live-control-state` 与 `writer-imitate-external-runtime-executor-readiness` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 live/runtime readiness 面在进入真实执行器前即可感知 Loom 质量与迁移状态。
+
 - feat(loom/telemetry): 新增 `session_consumer_migration_telemetry`，在 session/operator/legacy/retirement preview 产物中标记 primary-ready 与 legacy-remaining 消费方，为后续 legacy 收口提供最小迁移可见性。
 
 - feat(loom/retirement-gate): writer retirement readiness / preview 接入最小 Loom quality gate，当聚合 `chapter_quality_score < 0.7` 时标记 `quality-blocked`，并把阻断原因写入 `blocking_reasons` 与 preview `projected_effect`。

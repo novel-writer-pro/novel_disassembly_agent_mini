@@ -3878,6 +3878,7 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": primary_verdicts if isinstance(primary_verdicts, dict) else {},
         "session_primary_digests": primary_digests if isinstance(primary_digests, dict) else {},
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": session_state.get("session_consumer_migration_telemetry", {}),
         "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "action_backlog": backlog,
         "ready_items": ready_items,
@@ -4548,6 +4549,7 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": session_state.get("session_primary_verdicts", {}),
         "session_primary_digests": session_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": session_state.get("session_consumer_migration_telemetry", {}),
         "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "execution_ticket_count": len(execution_tickets),
         "ready_count": ready_count,
@@ -4739,6 +4741,7 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": execution_state.get("session_primary_verdicts", {}),
         "session_primary_digests": execution_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": execution_state.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": execution_state.get("session_consumer_migration_telemetry", {}),
         "session_legacy_contract_layer": execution_state.get("session_legacy_contract_layer", {}),
         "current_run_status": execution_state.get("run_status", ""),
         "next_run_status": next_run_status,
@@ -4882,6 +4885,7 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": replay.get("session_primary_verdicts", {}),
         "session_primary_digests": replay.get("session_primary_digests", {}),
         "session_primary_contract_hints": replay.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": replay.get("session_consumer_migration_telemetry", {}),
         "session_legacy_contract_layer": replay.get("session_legacy_contract_layer", {}),
         "apply_status": apply_status,
         "applied_tickets": applied_tickets,
@@ -4948,22 +4952,36 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = apply_preview.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = apply_preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     applied_checkpoints_obj = apply_preview.get("applied_checkpoints", [])
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
     applied_transitions_obj = apply_preview.get("applied_transitions", [])
     applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
     live_mutation_readiness = {
-        "status": "not-ready",
+        "status": "quality-blocked" if quality_verdict == "quality-hold" else "not-ready",
         "required_conditions": [
             "checkpoint writeback executor implemented",
             "transition apply executor implemented",
             "rollback path verified against live mutation",
+            "loom quality gate passes before live mutation",
+            "consumer migration telemetry reviewed before live mutation",
         ],
         "blocking_reasons": [
             "apply preview is still non-mutating",
             "live checkpoint writeback has not been wired",
+            *(
+                [f"loom quality gate blocks live mutation (quality_verdict={quality_verdict})"]
+                if quality_verdict == "quality-hold"
+                else []
+            ),
         ],
-        "next_action": "implement checkpoint writeback executor",
+        "next_action": (
+            "raise chapter quality before live mutation"
+            if quality_verdict == "quality-hold"
+            else "implement checkpoint writeback executor"
+        ),
     }
     live_mutation_plan = {
         "phase": "pre-live-mutation",
@@ -5011,6 +5029,7 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
         "pending_checkpoint_writeback": applied_checkpoints,
         "pending_transition_apply": applied_transitions,
         "next_live_mutation_step": "checkpoint-writeback",
@@ -5031,6 +5050,11 @@ def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
     lines.append(f"- next_live_mutation_step: {payload.get('next_live_mutation_step', '')}")
     _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("live_mutation_readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Live Mutation Readiness")
@@ -5177,6 +5201,8 @@ def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, ob
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = live_control_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-live-checkpoint-state.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -5186,6 +5212,7 @@ def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, ob
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
         "applied_checkpoints": applied_checkpoints,
     }
 
@@ -5232,6 +5259,8 @@ def _build_writer_output_live_transition_state(output_dir: Path) -> dict[str, ob
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = live_control_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-live-transition-state.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -5241,6 +5270,7 @@ def _build_writer_output_live_transition_state(output_dir: Path) -> dict[str, ob
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
         "applied_transitions": applied_transitions,
     }
 
@@ -5278,6 +5308,8 @@ def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, ob
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = live_transition_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = live_transition_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
 
     validation_checks = [
         {"check": "checkpoint_writeback_applied", "passed": bool(checkpoints)},
@@ -5295,6 +5327,7 @@ def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, ob
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
         "validation_checks": validation_checks,
         "next_live_mutation_step": "external-runtime-executor",
     }
@@ -5321,19 +5354,41 @@ def _writer_output_live_validation_state_markdown(output_dir: Path) -> str:
 def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -> dict[str, object]:
     live_validation_state = _build_writer_output_live_validation_state(output_dir)
     validation_status = str(live_validation_state.get("live_validation_status", "")).strip()
+    primary_verdicts_obj = live_validation_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = live_validation_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
     readiness = {
-        "status": "not-ready" if validation_status != "validated-local" else "bridge-ready-runtime-not-wired",
+        "status": (
+            "quality-blocked"
+            if quality_verdict == "quality-hold"
+            else "not-ready"
+            if validation_status != "validated-local"
+            else "bridge-ready-runtime-not-wired"
+        ),
         "required_conditions": [
             "external runtime checkpoint executor implemented",
             "external runtime transition executor implemented",
             "runtime-side rollback path verified",
             "consumer migration telemetry connected",
+            "loom quality gate passes before runtime executor launch",
         ],
         "blocking_reasons": [
             "local bridge stops at output artifacts only",
             "external runtime mutation path not wired yet",
+            *(
+                [f"loom quality gate blocks runtime executor launch (quality_verdict={quality_verdict})"]
+                if quality_verdict == "quality-hold"
+                else []
+            ),
         ],
-        "next_action": "implement external runtime checkpoint executor",
+        "next_action": (
+            "raise chapter quality before wiring runtime executor"
+            if quality_verdict == "quality-hold"
+            else "implement external runtime checkpoint executor"
+        ),
+        "quality_verdict": quality_verdict,
     }
     runtime_executor_plan = {
         "phase": "pre-runtime-executor",
@@ -5369,6 +5424,8 @@ def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -
         "contract_version": "writer-imitate-external-runtime-executor-readiness.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "live_validation_state_entrypoint": "writer-imitate-live-validation-state.json",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
         "readiness": readiness,
         "external_runtime_executor_plan": runtime_executor_plan,
         "external_runtime_executor_pilot_wave": runtime_executor_pilot_wave,
@@ -5381,6 +5438,12 @@ def _writer_output_external_runtime_executor_readiness_markdown(output_dir: Path
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
     lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append("- live_validation_state_entrypoint: writer-imitate-live-validation-state.md")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5425,11 +5488,17 @@ def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> 
     plan = plan_obj if isinstance(plan_obj, dict) else {}
     pilot_wave_obj = readiness.get("external_runtime_executor_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = readiness.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = readiness.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-external-runtime-executor-preview.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_readiness_entrypoint": "writer-imitate-external-runtime-executor-readiness.json",
         "preview_status": "planned-not-executed",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
         "readiness": readiness_payload,
         "external_runtime_executor_plan": plan,
         "external_runtime_executor_pilot_wave": pilot_wave,
