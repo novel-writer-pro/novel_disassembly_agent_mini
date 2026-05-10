@@ -86,8 +86,9 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 | 文档 | 说明 |
 |------|------|
-| `docs/loom/overview.md` | 架构全景 + SOTA 对比 |
-| `docs/loom/roadmap.md` | Phase 状态与后续任务 |
+| `docs/loom/overview.md` | 架构全景 + SOTA 对比（已更新 Phase 4/5 维度） |
+| `docs/loom/roadmap.md` | Phase 1-5 状态与任务清单 |
+| `docs/loom/gap-analysis-and-evolution.md` | 商业水准差距分析 + Phase 4/5 演进规划（新增） |
 | `docs/loom/arch-diff-and-alignment.md` | Loom vs 0509 对比 |
 | `docs/loom/memory/carry-over-migration.md` | 迁移路径与实验记录 |
 | `docs/loom/tension/README.md` | 张力指标设计 |
