@@ -3798,7 +3798,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     _hook = float(avg_hook_density_obj) if isinstance(avg_hook_density_obj, (int, float)) else None
     _tension = float(avg_tension_obj) if isinstance(avg_tension_obj, (int, float)) else None
     _drift = float(avg_style_drift_obj) if isinstance(avg_style_drift_obj, (int, float)) else None
-    if _hook is not None or _tension is not None:
+    if _hook is not None and _tension is not None:
         _hook_score = min(1.0, (_hook or 0.0) / 2.0)
         _tension_score = _tension or 0.0
         _style_score = max(0.0, 1.0 - (_drift or 0.0) * 2)
