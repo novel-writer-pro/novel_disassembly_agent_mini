@@ -121,6 +121,8 @@ Loom（新增层，叠加在上方）
 | Phase 1（记忆） | 同一本书连续 20 章，旧链路 vs Loom 链路 | `character_ooc` 触发率下降 ≥ 20%，人工一致性评分提升 | feature flag 关闭，回到原 carry_over_state |
 | Phase 2（张力） | 批量仿写 10 章，有/无张力调节对比 | `plot_similarity_score` 方差扩大，人工"情节吸引力"评分提升 | 关闭 preflight 张力检查 |
 | Phase 3（评估） | pairwise 评估 vs 现有 checker，与人工判断对比 | Kendall's τ ≥ 0.5（参考 EvolvR 的 0.55） | 回到纯规则 checker |
+| Phase 4（文风/节奏/对话） | 有/无 style_drift + rhythm_signal 对比 | style_drift Pearson r ≥ 0.5；综合评分 5/10 → 7/10 | feature flag 关闭各信号 |
+| Phase 5（读者模拟/多线） | reader_sim_score vs 真实读者评分对比 | Pearson r ≥ 0.6；综合评分 7/10 → 8.5/10 | 关闭 reader_simulation_service |
 
 ---
 
