@@ -331,12 +331,15 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ --output-file outpu
 ## 6. 代码诊断速查
 
 ### CMD
-- 测试 Loom Phase 1+2: `python3 -m pytest tests/test_loom_phase1.py tests/test_loom_phase2.py -v`
+- 测试 Loom Phase 1+2+3: `python3 -m pytest tests/test_loom_phase1.py tests/test_loom_phase2.py tests/test_loom_phase3.py -v`
 - 全部测试: `python3 -m pytest tests/ -v`
 - Migration: `alembic upgrade head`
 - Loom CLI: `python3 -m novel_analyzer loom-status --branch-id <id>`
 - Loom Consolidate: `python3 -m novel_analyzer loom-consolidate --branch-id <id>`
 - Loom Assemble: `python3 -m novel_analyzer loom-assemble --branch-id <id>`
+- Pairwise 采集（manual eval）: `novel-analyzer loom-collect-pairs-from-manual --manual-eval-dir runs/manual_eval/ --pairs-file output/loom-pairs.jsonl`
+- Pairwise 采集（harness 产物）: `novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl`
+- Pairwise 进度: `novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl`
 - DB direct: `PGPASSWORD=*** psql -h 127.0.0.1 -p 5432 -U d2 -d novel_analyzer -c "SELECT..."`
 
 ### 变量速查
