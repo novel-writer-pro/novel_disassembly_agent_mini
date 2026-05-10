@@ -52,6 +52,7 @@
 | [risk-audit-completion-status.md](./risk-audit-completion-status.md) | 风险审查完成度 / 测试 / 使用说明 |
 | [risk-audit-semantic-enhancement.md](./risk-audit-semantic-enhancement.md) | 语义增强设计（为什么分层、如何演进） |
 | [risk-audit-embedding-pgvector-implementation-spec.md](./risk-audit-embedding-pgvector-implementation-spec.md) | ONNX embedding + pgvector 实现规范 |
+| [../risk-audit-production-readiness.md](../risk-audit-production-readiness.md) | 风险审查生产就绪状态 |
 
 ---
 

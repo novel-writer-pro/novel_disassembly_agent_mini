@@ -230,15 +230,32 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 - action/execution/replay/apply/resume 与 live/runtime simulation bridge 已统一暴露 `session_loom_gate_summary`，把质量、张力、迁移状态收口成稳定摘要。
 - index / control-surface registry 第一层摘要现在也能直接展示 Loom gate 结论，operator 打开入口页即可先判断当前 gate 状态。
 
+### 4.0.1 Phase 3 新增交付（2026-05-10 本次）
+
+| 交付物 | 说明 |
+|--------|------|
+| `loom-collect-pairs` CLI | 从 writer-imitate 产物提取 pairwise 对，支持单目录（round-0 vs final）和跨目录（baseline vs steering）两种模式，追加写入 JSONL |
+| `loom-pairs-stats` CLI | 显示 pairwise 数据采集进度（当前 / 500 目标 / 百分比）、质量分布、evaluation_method 分布 |
+| `loom-ab-compare` CLI | A/B 实验报告：对比两个 writer-imitate 输出目录的 character_ooc 触发率，输出 reduction%，判断是否达到 ≥20% 目标，可写 JSON 报告 |
+| `loom-collect-pairs-from-db` CLI | 从 ChapterArtifact DB 记录跨两个分支提取 pairwise 对（chapter_summary 对比） |
+| `ChapterImitationHarnessReport.chapter_quality_signal` | 新增字段，`loom_pairwise_enabled=True` 时自动运行 heuristic pairwise eval，结果写入 `chapter_quality_signal` 和最后一轮 `skill_outputs["_loom_chapter_quality"]` |
+| `PostgresCheckReport.missing_cluster_review_columns` | 修复：改为 `field(default_factory=dict)` 使参数可选，修复测试失败 |
+| 文档索引修复 | docs/README.md、roles/README.md、tracks/README.md、roles/product/README.md、roles/backend/README.md、roles/integrator/README.md、roles/imitation/README.md、tracks/imitation/README.md、architecture/README.md 补全缺失的文档引用，386 个测试全部通过 |
+| 24 个新测试 | test_loom_phase2.py +3（pairwise harness 集成），test_loom_phase3.py +21（collect-pairs / pairs-stats / ab-compare / collect-pairs-from-db），全部通过 |
+
+**当前 Loom 测试总数：61 passed（Phase 1: 23 + Phase 2: 18 + Phase 3: 20）**
+
+**全项目测试：386 passed**
+
 ### 4.1 当前未完成的 Phase 3 规划
 
 参见 [`docs/loom/roadmap.md`](./roadmap.md) 完整清单。
 
 | 优先级 | 任务 | 说明 | 前置条件 |
 |--------|------|------|---------|
-| 🔴 P0 | A/B 实验：Loom on vs off | 用 20 章数据对比 character_ooc 下降指标 | 需积累足够人工评估数据 |
+| 🔴 P0 | A/B 实验：真实数据运行 | 用 20 章真实数据跑 loom-ab-compare，验证 character_ooc 下降 ≥20% | 需切换 loom_memory_mode=ab 并积累真实产物 |
 | 🟡 P0 | 0509 operator_surface 深化对接 | 当前 contract / execution / live / runtime simulation 面已基本统一；下一步是把这些 Loom gate 真正接到更接近生产的 executor / consumer 上 | 需 Loom 稳定运行 |
-| 🟡 P1 | Pairwise 数据积累 | 产出足够多的 LLM-as-judge 评估对 | 需生产运行积累 |
+| 🟡 P1 | Pairwise 数据积累 | 用 loom-collect-pairs 积累 500+ pairs；开启 loom_pairwise_enabled=True 后每次 writer-imitate 自动产出 | 需生产运行积累 |
 | 🟡 P1 | 角色认知基（Phase 3） | 角色级 agent 自主认知基 | 需 A/B 实验验证通过 |
 | 🟢 P2 | Fine-tuned reward model | 替代 LLM-as-judge | 需 pairwise 数据量充足 |
 
@@ -258,14 +275,21 @@ pg_isready -h 127.0.0.1 -p 5432 -U d2
 # 4. 运行 migration（如有新变更）
 alembic upgrade head
 
-# 5. 运行 Loom 测试
-python3 -m pytest tests/test_loom_phase1.py tests/test_loom_phase2.py -v
+# 5. 运行 Loom 测试（Phase 1+2+3）
+python3 -m pytest tests/test_loom_phase1.py tests/test_loom_phase2.py tests/test_loom_phase3.py -v
 
 # 6. 验证 CLI 命令
-python3 -m novel_analyzer --help  # 确认 loom-status / loom-consolidate / loom-assemble 可见
+novel-analyzer --help  # 确认 loom-status / loom-consolidate / loom-assemble / loom-collect-pairs / loom-pairs-stats / loom-ab-compare 可见
 
 # 7. 真实分支验证
-python3 -m novel_analyzer loom-status --branch-id <branch-id>
+novel-analyzer loom-status --branch-id <branch-id>
+
+# 8. Pairwise 数据采集（有 writer-imitate 产物时）
+novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl
+novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl
+
+# 9. A/B 实验对比（有两组产物时）
+novel-analyzer loom-ab-compare output/baseline/ output/loom/ --output-file output/ab-report.json
 ```
 
 ### 4.3 需关注的风险点

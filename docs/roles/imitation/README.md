@@ -47,6 +47,7 @@
 9. [whole-book-imitation-docs-index.md](../../whole-book-imitation-docs-index.md) — 全书仿写文档索引
 10. [whole-book-imitation-integration-quickstart.md](../../whole-book-imitation-integration-quickstart.md) — 接入快速入门
 11. [whole-book-imitation-api-stability-summary.md](../../whole-book-imitation-api-stability-summary.md) — API 稳定字段收口
+12. [examples/whole-book-imitation-run.sample.json](../../examples/whole-book-imitation-run.sample.json) — 运行样例
 
 ### 第五步：商业 Agent 控制层（0509 最新）
 

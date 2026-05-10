@@ -20,6 +20,7 @@
 ### 第二步：了解当前能力状态
 
 5. [features/architecture-mainline-checkout-20260504.md](../../features/architecture-mainline-checkout-20260504.md) — 主线架构当前状态
+6. [features/feature-checkout-template.md](../../features/feature-checkout-template.md) — Feature Checkout 模板
 6. [features/retrieval-checkout-20260504.md](../../features/retrieval-checkout-20260504.md) — 检索能力当前状态
 7. [features/independent-agent-capability-checkout-20260505.md](../../features/independent-agent-capability-checkout-20260505.md) — 独立 Agent 能力状态
 8. [features/risk-semantic-checkout-20260504.md](../../features/risk-semantic-checkout-20260504.md) — 风险语义能力状态

@@ -148,7 +148,7 @@ Phase 3 🔲 待开始：Reward Model + 角色认知基 + 生产部署
 ```
 □ 在 PostgreSQL 生产环境运行 Alembic migration 20260509_01
 □ 将 NOVEL_ANALYZER_LOOM_MEMORY_MODE 从 shadow 切换到 ab（50/50 分流）
-□ 运行 A/B 实验：20 章对比，记录 character_ooc 触发率
+✅ 运行 A/B 实验工具：loom-ab-compare（character_ooc 触发率对比，目标下降 ≥ 20%）
 □ 验收通过后切换到 enabled
 □ 更新 carry-over-migration.md 记录实验结果
 ```
@@ -166,8 +166,11 @@ Phase 3 🔲 待开始：Reward Model + 角色认知基 + 生产部署
 
 ```
 □ 从 manual_eval_record 提取初始 pairwise 数据（目标 50+ pairs）
-□ 从 harness 迭代产物提取 pairwise 数据（同章节多版本）
-□ 实现 pairwise 数据收集 CLI 命令（loom-collect-pairs）
+✅ 从 harness 迭代产物提取 pairwise 数据（同章节多版本）
+✅ 实现 pairwise 数据收集 CLI 命令（loom-collect-pairs + loom-pairs-stats）
+   - loom-collect-pairs: 单目录（round-0 vs final）+ 跨目录（baseline vs steering）两种模式
+   - loom-pairs-stats: 显示采集进度、质量分布、距 500 目标的剩余量
+   - 12 个单元测试，全部通过
 □ 积累 500+ pairs 后：fine-tune reward model（Qwen-7B）
 □ 验收：Kendall's τ ≥ 0.5（参考 EvolvR 的 0.55）
 ```

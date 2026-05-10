@@ -11,6 +11,8 @@
 | **仿写能力** | 章节仿写、全书仿写、创新导向、商业 Agent 控制层（0509 最新） | [→ imitation/README.md](./imitation/README.md) |
 | **读者体验** | 读者模拟、反馈收集、体验规划 | [→ reader-experience/README.md](./reader-experience/README.md) |
 
+参见 [api-current-surface.md](../api-current-surface.md) 了解当前已实现 API surface。
+
 ---
 
 返回 [文档中心](../README.md)

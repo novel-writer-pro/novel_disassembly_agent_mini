@@ -64,7 +64,16 @@
 | [strategy/ai-novel-system-benchmark.md](./strategy/ai-novel-system-benchmark.md) | 系统基准对比 |
 | [strategy/capability-roadmap-and-deliverables.md](./strategy/capability-roadmap-and-deliverables.md) | 能力路线图与交付物 |
 | [whitepaper/ai-novel-system-whitepaper-v2.md](./whitepaper/ai-novel-system-whitepaper-v2.md) | 系统白皮书 v2（最新） |
+| [whitepaper/ai-novel-system-whitepaper.md](./whitepaper/ai-novel-system-whitepaper.md) | 系统白皮书 v1 |
 | [features/README.md](./features/README.md) | Feature Checkout 入口（各能力线当前状态） |
+| [features/feature-checkout-template.md](./features/feature-checkout-template.md) | Feature Checkout 模板 |
+| [features/architecture-mainline-checkout-20260504.md](./features/architecture-mainline-checkout-20260504.md) | 架构主线 Checkout（2026-05-04） |
+| [features/retrieval-checkout-20260504.md](./features/retrieval-checkout-20260504.md) | 检索能力 Checkout（2026-05-04） |
+| [features/risk-semantic-checkout-20260504.md](./features/risk-semantic-checkout-20260504.md) | 风险语义 Checkout（2026-05-04） |
+| [features/imitation-checkout-20260504.md](./features/imitation-checkout-20260504.md) | 仿写能力 Checkout（2026-05-04） |
+| [features/eval-governance-checkout-20260504.md](./features/eval-governance-checkout-20260504.md) | Eval/Governance Checkout（2026-05-04） |
+| [features/independent-agent-capability-checkout-20260505.md](./features/independent-agent-capability-checkout-20260505.md) | 独立 Agent 能力 Checkout（2026-05-05） |
+| [process/README.md](./process/README.md) | 开发流程入口 |
 
 ### C 层 — 技术实现（开发与接入参考）
 
@@ -73,12 +82,29 @@
 | [risk-audit-system-overview.md](./risk-audit-system-overview.md) | 风险审查系统总览 |
 | [risk-audit-runtime-architecture.md](./risk-audit-runtime-architecture.md) | 风险审查运行时架构 |
 | [risk-audit-capability.md](./risk-audit-capability.md) | 风险审查能力说明 |
+| [./risk-audit-production-readiness.md](./risk-audit-production-readiness.md) | 风险审查生产就绪状态 |
 | [review-workflow-api.md](./review-workflow-api.md) | Review Workflow API |
 | [review-api-stability-summary.md](./review-api-stability-summary.md) | Review API 稳定字段收口 |
 | [whole-book-imitation-docs-index.md](./whole-book-imitation-docs-index.md) | 全书仿写文档索引 |
 | [whole-book-imitation-integration-quickstart.md](./whole-book-imitation-integration-quickstart.md) | 全书仿写接入快速入门 |
+| [whole-book-imitation-api-stability-summary.md](./whole-book-imitation-api-stability-summary.md) | 全书仿写 API 稳定性摘要 |
+| [whole-book-imitation-api-versioning.md](./whole-book-imitation-api-versioning.md) | 全书仿写 API 版本管理 |
+| [whole-book-imitation-api-freeze-readiness.md](./whole-book-imitation-api-freeze-readiness.md) | 全书仿写 API 冻结就绪状态 |
+| [whole-book-imitation-freeze-evidence-20260503.md](./whole-book-imitation-freeze-evidence-20260503.md) | 全书仿写冻结证据（2026-05-03） |
+| [whole-book-imitation-provider-recovery-checklist.md](./whole-book-imitation-provider-recovery-checklist.md) | 全书仿写 Provider 恢复 Checklist |
+| [whole-book-imitation-sample-coverage-matrix.md](./whole-book-imitation-sample-coverage-matrix.md) | 全书仿写样例覆盖矩阵 |
+| [whole-book-imitation-handoff-brief.md](./whole-book-imitation-handoff-brief.md) | 全书仿写交接简报 |
+| [examples/whole-book-imitation-run.sample.json](./examples/whole-book-imitation-run.sample.json) | 全书仿写运行样例 |
+| [examples/whole-book-imitation-readiness.sample.json](./examples/whole-book-imitation-readiness.sample.json) | 全书仿写就绪状态样例 |
+| [examples/whole-book-imitation-run.request.sample.json](./examples/whole-book-imitation-run.request.sample.json) | 全书仿写请求样例 |
+| [examples/whole-book-imitation-run.provider-success-20260504.sample.json](./examples/whole-book-imitation-run.provider-success-20260504.sample.json) | 全书仿写 Provider 成功样例 |
+| [examples/whole-book-imitation-run.error.provider-billing.sample.json](./examples/whole-book-imitation-run.error.provider-billing.sample.json) | 全书仿写 Provider 计费错误样例 |
 | [chapter-imitation-method.md](./chapter-imitation-method.md) | 章节仿写方法论 |
 | [eval-governance-sample-release-contract.md](./eval-governance-sample-release-contract.md) | Eval/Governance 冻结口径 |
+| [./imitation-control-plane-glossary.md](./imitation-control-plane-glossary.md) | 控制层术语表（control plane / runtime / governance 等） |
+| [./novel-assistant-manual-eval-handbook-20260505.md](./novel-assistant-manual-eval-handbook-20260505.md) | 人工评估操作手册 |
+| [./manual-eval-record-template.md](./manual-eval-record-template.md) | 人工评估记录模板 |
+| [../runs/manual_eval/_template/README.md](../runs/manual_eval/_template/README.md) | 人工评估工作区模板（bootstrap_manual_eval_workspace.py） |
 
 ### D 层 — 历史证据 / 样例（归档参考）
 
@@ -89,6 +115,12 @@
 | [risk-audit-fresh10-verification-20260502.md](./risk-audit-fresh10-verification-20260502.md) | 前10章风险核验 |
 | [chapter-imitation-ch3-live-report-20260502.md](./chapter-imitation-ch3-live-report-20260502.md) | 第3章仿写 live 报告 |
 | [release-delivery-archive-index-20260505.md](./release-delivery-archive-index-20260505.md) | Release 交付归档索引 |
+| [../.omx/reports/sample-novel-first-10-risk-check-20260502.md](../.omx/reports/sample-novel-first-10-risk-check-20260502.md) | 样例小说前10章风险核验报告 |
+| [./examples/sample-branch-report.post-migration-20260504.sample.md](./examples/sample-branch-report.post-migration-20260504.sample.md) | 样例分支报告（迁移后） |
+| [./examples/sample-branch-search-diagnostics-20260505.sample.json](./examples/sample-branch-search-diagnostics-20260505.sample.json) | 样例搜索诊断 |
+| [./examples/sample-branch-author-knowledge-20260505.sample.json](./examples/sample-branch-author-knowledge-20260505.sample.json) | 样例作者知识 |
+| [./examples/sample-branch-novel-assistant-20260505.sample.json](./examples/sample-branch-novel-assistant-20260505.sample.json) | 样例小说助手 |
+| [./chapter-planning-capability-proposal.md](./chapter-planning-capability-proposal.md) | 章节规划能力提案 |
 
 ---
 
@@ -165,3 +197,18 @@ model: gpt-5.4-mini
 3. [../apps/web/README.md](../apps/web/README.md) — 前端启动
 4. [../apps/api/README.md](../apps/api/README.md) — 后端启动
 5. [../CHANGELOG.md](../CHANGELOG.md) — 最近几轮改了什么
+
+---
+
+## 后端 / 开发者建议阅读顺序
+
+- [roles/backend/README.md](./roles/backend/README.md) — 后端角色入口
+- [interface-manifest.md](./interface-manifest.md) — 稳定接口结构
+- 3. [`./api-current-surface.md`](./api-current-surface.md) — 第 3 步：再看当前已实现 API surface
+
+---
+
+## 接入者建议阅读顺序
+
+- [roles/integrator/README.md](./roles/integrator/README.md) — 接入者角色入口
+- [`./api-current-surface.md`](./api-current-surface.md) — 第 2 步：再看当前已实现 API surface
