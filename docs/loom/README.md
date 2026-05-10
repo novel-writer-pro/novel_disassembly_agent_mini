@@ -27,7 +27,9 @@ novel-analyzer（现有，保持不变）
 Loom（新增层，叠加在上方）
 ├── memory/          分层记忆 + 冲突代谢（对接 0509 session_state，填补 live writeback 缺口）
 ├── reward/          学习型评估（补充规则化 checker，填补 automated gate 缺口）
-└── tension/         叙事张力自动调节（补充人工 steering，填补 full control console 缺口）
+├── tension/         叙事张力自动调节（补充人工 steering，填补 full control console 缺口）
+├── style/           文风量化 + 节奏分析 + 对话质量信号（Phase 4 规划）
+└── character/       角色认知基（Phase 4 规划，深化 OOC checker）
 ```
 
 **原则**：
