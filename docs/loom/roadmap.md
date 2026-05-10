@@ -246,23 +246,26 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P3：对话质量信号**
 
 ```
-□ ChapterImitationHarnessReport 新增 dialogue_signal 字段
+✅ ChapterImitationHarnessReport 新增 dialogue_signal 字段
    - character_voice_consistency: dict[str, float]
    - dialogue_efficiency: float
    - conflict_dialogue_density: float
-□ pairwise 评估新增第五个维度 dialogue_quality
-□ reward 层：dialogue_signal 进入 chapter_quality_score 计算
+✅ pairwise 评估新增第五个维度 dialogue_quality（_JUDGE_PROMPT + _DIMENSIONS 已更新）
+✅ loom_style_enabled=True 时 run_harness 自动计算 dialogue_signal
+□ reward 层：dialogue_signal 进入 chapter_quality_score 计算（待 reward model fine-tune）
 □ 验收：dialogue_signal 与人工对话评分 Kendall's τ ≥ 0.4
 ```
 
 **P4：角色认知基深化**
 
 ```
-□ 新增 character_agent_service.py
+✅ 新增 character_agent_service.py
    - build_character_persona(branch_id, character_name) → CharacterPersona
-     （从 Loom memory 层切片 + graph_nodes 关系网络 + fact_records 行为模式）
-   - check_character_consistency(persona, draft_text) → ConsistencySignal
-□ preflight_imitation：角色认知基一致性检查（补充/替代现有 OOC checker）
+     （FactRecord 行为标签 + GraphNode/GraphEdge 关系网络 + ChunkEmbedding 说话风格向量）
+   - check_character_consistency(persona, draft_text, chapter_index) → CharacterConsistencySignal
+   - 三维度 heuristic 检测：speech_consistency / behavior_consistency / relationship_consistency
+   - 8 个单元测试，全部通过
+□ preflight_imitation：角色认知基一致性检查（feature flag loom_character_enabled）
 □ 验收：character_ooc 触发率在 Phase 3 基础上再下降 ≥10%
 ```
 
