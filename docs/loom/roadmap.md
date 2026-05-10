@@ -239,7 +239,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - climax_score: hook 事件占比
 ✅ loom-status 展示 rhythm_signal（loom_style_enabled=True 时）
 ✅ preflight_imitation：节奏偏差警告（loom_style_enabled=True 时，warn-only）
-□ tension 层：rhythm_signal 与 tension_signal 联动（自动 obstacle injection）
+✅ tension 层：rhythm_signal 与 tension_signal 联动（double_flat / low_hook_density 复合告警）
 □ 验收：hook_density 与读者留存率正相关（需真实数据）
 ```
 
