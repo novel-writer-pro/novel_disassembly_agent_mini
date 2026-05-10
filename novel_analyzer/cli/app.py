@@ -8533,6 +8533,23 @@ def loom_status(
             echo(f"dormant_threads:     {len(thread_report.dormant_threads)}")
             echo(f"overdue_threads:     {len(thread_report.overdue_threads)}")
             echo(f"overdue_ratio:       {thread_report.overdue_ratio:.4f}")
+            if health.quality_trend == "declining":
+                try:
+                    from novel_analyzer.services.steering_library_service import SteeringLibraryService
+                    steering_svc = SteeringLibraryService()
+                    payload_result = steering_svc.retrieve_pack(query_text="质量下滑 情节平淡 角色漂移")
+                    pack = payload_result.get("steering_pack", {})
+                    trope_axes = pack.get("trope_axes", [])
+                    innovation_directives = pack.get("innovation_directives", [])
+                    if trope_axes or innovation_directives:
+                        echo("")
+                        echo("=== Loom Steering Pack Suggestion (quality declining) ===")
+                        for axis in trope_axes[:3]:
+                            echo(f"  trope: {axis}")
+                        for directive in innovation_directives[:2]:
+                            echo(f"  directive: {directive}")
+                except Exception:  # noqa: BLE001
+                    pass
 
 
 @app.command()
