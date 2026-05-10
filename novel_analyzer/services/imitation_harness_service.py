@@ -1323,6 +1323,19 @@ class HarnessControllerService:
         steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationHarnessReport:
         skill_contracts = self.list_skill_contracts()
+
+        if steering_pack is None and self.settings.loom_character_enabled:
+            try:
+                from novel_analyzer.services.steering_library_service import SteeringLibraryService
+                auto_retrieval = SteeringLibraryService().retrieve_pack(query_text=target_goal)
+                auto_pack = auto_retrieval.get("steering_pack")
+                if auto_pack and any(
+                    auto_pack.get(k) for k in ("trope_axes", "worldview_capsule", "innovation_directives")
+                ):
+                    steering_pack = auto_pack
+            except Exception:  # noqa: BLE001
+                pass
+
         draft = (
             self.chapter_imitation.build_llm_draft(
                 branch_id,
