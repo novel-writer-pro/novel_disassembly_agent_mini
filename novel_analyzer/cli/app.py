@@ -3792,6 +3792,29 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         else "quality-pass"
     )
 
+    avg_hook_density_obj = session_loom_signals.get("average_hook_density")
+    avg_tension_obj = session_loom_signals.get("average_tension_score")
+    avg_style_drift_obj = session_loom_signals.get("average_style_drift_score")
+    _hook = float(avg_hook_density_obj) if isinstance(avg_hook_density_obj, (int, float)) else None
+    _tension = float(avg_tension_obj) if isinstance(avg_tension_obj, (int, float)) else None
+    _drift = float(avg_style_drift_obj) if isinstance(avg_style_drift_obj, (int, float)) else None
+    if _hook is not None or _tension is not None:
+        _hook_score = min(1.0, (_hook or 0.0) / 2.0)
+        _tension_score = _tension or 0.0
+        _style_score = max(0.0, 1.0 - (_drift or 0.0) * 2)
+        reader_satisfaction_score: float | None = round(
+            _hook_score * 0.35 + _tension_score * 0.40 + _style_score * 0.25, 4
+        )
+    else:
+        reader_satisfaction_score = None
+    reader_satisfaction_verdict = (
+        "reader-blocked"
+        if reader_satisfaction_score is not None and reader_satisfaction_score < 0.6
+        else "reader-pass"
+        if reader_satisfaction_score is not None
+        else "reader-signal-missing"
+    )
+
     session_operator_contract = {
         "contract_version": "writer-imitate-operator-surface.v1",
         "status": {
@@ -3831,6 +3854,8 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "quality_verdict": quality_verdict,
         "average_chapter_quality_score": avg_quality_score,
         "chapter_quality_signal_count": quality_signal_count,
+        "reader_satisfaction_score": reader_satisfaction_score,
+        "reader_satisfaction_verdict": reader_satisfaction_verdict,
     }
     session_primary_digests = {
         "runtime_contract": session_runtime_contract,
@@ -3907,7 +3932,11 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     }
     session_legacy_retirement_readiness = {
         "contract_version": "writer-imitate-legacy-retirement-readiness.v1",
-        "status": "quality-blocked" if quality_verdict == "quality-hold" else "not-ready",
+        "status": (
+            "quality-blocked"
+            if quality_verdict == "quality-hold" or reader_satisfaction_verdict == "reader-blocked"
+            else "not-ready"
+        ),
         "required_conditions": [
             "downstream consumers switched to session_primary_verdicts",
             "downstream consumers switched to session_primary_digests",
@@ -3927,6 +3956,13 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
                     "loom quality signal missing for retirement gate"
                 ]
                 if quality_verdict == "quality-signal-missing"
+                else []
+            ),
+            *(
+                [
+                    f"reader satisfaction gate blocks retirement (reader_satisfaction_score={reader_satisfaction_score:.3f})"
+                ]
+                if reader_satisfaction_verdict == "reader-blocked" and reader_satisfaction_score is not None
                 else []
             ),
         ],
