@@ -16,7 +16,7 @@ from novel_analyzer.database.models import (
     GraphNode,
     WindowArtifact,
 )
-from novel_analyzer.services.run_service import RunService
+from novel_analyzer.services.run_service import RunService, default_readable_artifact_clause
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +60,7 @@ class StatusService:
             select(func.count())
             .select_from(ChapterArtifact)
             .where(ChapterArtifact.branch_id == branch.id)
-            .where(ChapterArtifact.visibility == 'active')
+            .where(default_readable_artifact_clause())
         ) or 0
         failed_jobs = self.session.scalar(
             select(func.count())

@@ -56,3 +56,26 @@ def test_context_service_exposes_prior_summary_facts_window_and_graph(tmp_path: 
         assert bundle['graph_context']['nodes']
         assert 'overview' in bundle['graph_context']
         assert 'state_summary' in bundle
+
+
+def test_previous_summary_ignores_non_downstream_active_companion(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n第2章 二\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session).create_run(novel.id, manifest.id)
+        run_service = RunService(session)
+        run_service.record_chapter_artifact(
+            branch.id,
+            1,
+            {'chapter_summary': 'canonical summary'},
+        )
+        run_service.record_chapter_artifact(
+            branch.id,
+            1,
+            {'chapter_summary': 'companion summary'},
+            source_kind='manual',
+            participates_in_downstream=False,
+        )
+
+        assert ContextService(session).previous_summary(branch.id, 2) == 'canonical summary'

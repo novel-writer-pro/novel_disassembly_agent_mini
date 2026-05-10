@@ -73,6 +73,40 @@ def test_manual_artifact_defaults_out_of_downstream(tmp_path) -> None:
         assert snapshot["manual_excluded_chapters"] == [1]
 
 
+def test_non_downstream_artifact_does_not_hide_canonical_active_artifact(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session)
+        _, branch = service.create_run(novel.id, manifest.id)
+        canonical = service.record_chapter_artifact(
+            branch.id,
+            1,
+            {"chapter_summary": "canonical"},
+        )
+        companion = service.record_chapter_artifact(
+            branch.id,
+            1,
+            {"chapter_summary": "companion"},
+            source_kind="manual",
+            participates_in_downstream=False,
+        )
+
+        artifacts = session.scalars(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .order_by(ChapterArtifact.created_at)
+        ).all()
+
+        assert canonical.visibility == "active"
+        assert companion.visibility == "active"
+        assert [artifact.source_kind for artifact in artifacts] == ["model", "manual"]
+        assert [artifact.participates_in_downstream for artifact in artifacts] == [True, False]
+
+
 def test_chapter_job_lifecycle(tmp_path) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\nA\n', encoding='utf-8')

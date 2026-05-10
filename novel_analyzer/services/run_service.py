@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import and_, select, update
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings, get_settings
@@ -22,6 +22,15 @@ from novel_analyzer.database.models import (
     RunCheckpoint,
 )
 from novel_analyzer.services.job_event_service import JobEventService
+
+
+def default_readable_artifact_clause() -> object:
+    """Return the canonical active-artifact filter used by default readers."""
+
+    return and_(
+        ChapterArtifact.visibility == "active",
+        ChapterArtifact.participates_in_downstream.is_(True),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,7 +165,7 @@ class RunService:
         completed = self.session.scalars(
             select(ChapterArtifact.chapter_index)
             .where(ChapterArtifact.branch_id == branch.id)
-            .where(ChapterArtifact.visibility == "active")
+            .where(default_readable_artifact_clause())
             .order_by(ChapterArtifact.chapter_index)
         ).all()
         done = set(completed)
@@ -214,7 +223,11 @@ class RunService:
             .where(ChapterJob.branch_id == branch_id)
             .where(ChapterJob.status == "running")
             .where(
-                (ChapterJob.heartbeat_at.is_(None) & ChapterJob.started_at.is_not(None) & (ChapterJob.started_at < cutoff))
+                (
+                    ChapterJob.heartbeat_at.is_(None)
+                    & ChapterJob.started_at.is_not(None)
+                    & (ChapterJob.started_at < cutoff)
+                )
                 | (ChapterJob.heartbeat_at.is_not(None) & (ChapterJob.heartbeat_at < cutoff))
             )
             .order_by(ChapterJob.chapter_index)
@@ -238,7 +251,11 @@ class RunService:
                 stage=job.current_stage,
                 level="warning",
                 message=job.last_error or "job stalled",
-                payload_json={"failure_class": "stalled", "failure_code": "heartbeat_timeout", "timeout_seconds": timeout},
+                payload_json={
+                    "failure_class": "stalled",
+                    "failure_code": "heartbeat_timeout",
+                    "timeout_seconds": timeout,
+                },
             )
         return len(jobs)
 
@@ -432,7 +449,11 @@ class RunService:
             stage=job.current_stage,
             level="error",
             message=error,
-            payload_json={"failure_class": failure_class, "failure_code": failure_code, "attempts": job.attempts},
+            payload_json={
+                "failure_class": failure_class,
+                "failure_code": failure_code,
+                "attempts": job.attempts,
+            },
         )
 
     def record_raw_output(
@@ -483,13 +504,15 @@ class RunService:
         if branch is None:
             raise ValueError(f"Unknown branch_id: {branch_id}")
 
-        self.session.execute(
-            update(ChapterArtifact)
-            .where(ChapterArtifact.branch_id == branch_id)
-            .where(ChapterArtifact.chapter_index == chapter_index)
-            .where(ChapterArtifact.visibility == "active")
-            .values(visibility="hidden")
-        )
+        if participates_in_downstream:
+            self.session.execute(
+                update(ChapterArtifact)
+                .where(ChapterArtifact.branch_id == branch_id)
+                .where(ChapterArtifact.chapter_index == chapter_index)
+                .where(ChapterArtifact.visibility == "active")
+                .where(ChapterArtifact.participates_in_downstream.is_(True))
+                .values(visibility="hidden")
+            )
 
         checkpoint = self.session.scalar(
             select(RunCheckpoint)
@@ -596,7 +619,7 @@ class RunService:
             select(ChapterArtifact)
             .where(ChapterArtifact.branch_id == source_branch.id)
             .where(ChapterArtifact.chapter_index <= keep_through)
-            .where(ChapterArtifact.visibility == "active")
+            .where(default_readable_artifact_clause())
             .order_by(ChapterArtifact.chapter_index)
         ).all()
         for artifact in artifacts:
