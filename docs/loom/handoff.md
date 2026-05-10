@@ -261,6 +261,15 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 🟡 P1 | 角色认知基（Phase 3） | 角色级 agent 自主认知基 | 需 A/B 实验验证通过 |
 | 🟢 P2 | Fine-tuned reward model | 替代 LLM-as-judge | 需 pairwise 数据量充足 |
 
+### 4.1.1 Phase 4/5 规划概览（Phase 3 完成后）
+
+详见 [`docs/loom/gap-analysis-and-evolution.md`](./gap-analysis-and-evolution.md)。
+
+| Phase | 目标 | 核心交付 | 前提 |
+|-------|------|---------|------|
+| Phase 4 | 5/10 → 7/10 商业可用 | style_calibration + rhythm_analysis + dialogue_signal + character_agent | Phase 3 A/B 验证通过 |
+| Phase 5 | 7/10 → 8.5/10 头部水准 | reader_simulation + thread_scheduler + long_book_adaptive + external_rag | Phase 4 信号稳定 |
+
 ### 4.2 下次继续开发时的标准启动步骤
 
 ```bash
