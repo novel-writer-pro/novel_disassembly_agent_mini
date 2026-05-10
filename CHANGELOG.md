@@ -1352,6 +1352,12 @@ Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEd
 - 同步补充拆书开发/使用文档，明确 active companion 不能天然进入默认读路径
 
 
+### 拆书 contract：ChapterAnalysisOutput 既有键名保持不变
+- 核查 `ChapterAnalysisOutput` schema 与 `analysis_service` 序列化路径，确认 `_deconstruction_profile` 只作为附加 metadata 写入
+- 确认当前输出仍保持 canonical keys：`chapter_summary`、`key_entities`、`key_events`、`continuity_notes`、`writer_learning_notes`、`unsupported_inferences`、`ambiguous_points`、`quality_gate_notes`
+- 补开发/使用日志，明确后续 quick/deep 扩展只能新增 shadow metadata，不能重命名主输出 contract keys
+
+
 ### 问答区可见性增强
 - 将阅读页内的“小说问答 / 检索台”上移为前部主入口，并增加 hero 说明区与能力标签
 - 补充文档说明问答区默认优先显示，减少“功能已接入但不易被看到”的问题
