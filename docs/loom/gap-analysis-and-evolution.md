@@ -210,6 +210,14 @@ thread_scheduler = {
 
 **前提**：Phase 3 A/B 实验验证通过（character_ooc 下降 ≥20%）。
 
+**详细设计文档**：
+- [style/README.md](./style/README.md) — 文风/节奏/对话层入口
+- [style/style-vector-design.md](./style/style-vector-design.md) — 风格向量化与漂移检测
+- [style/rhythm-analysis-design.md](./style/rhythm-analysis-design.md) — 节奏分析器
+- [style/dialogue-signal-design.md](./style/dialogue-signal-design.md) — 对话质量信号
+- [character/README.md](./character/README.md) — 角色认知基层入口
+- [character/character-persona-design.md](./character/character-persona-design.md) — CharacterPersona 设计
+
 ### P1：风格向量化与漂移检测
 
 ```
