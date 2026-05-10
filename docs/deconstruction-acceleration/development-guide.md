@@ -166,6 +166,15 @@ writer 可以延后，但 facts/evidence/analysis/guard 不能一起塌掉。
 - default readers 只读 canonical-ready
 - window summary 不读 enrichment companion
 
+### 5.2.1 当前实现进度（reader isolation）
+- 已将默认 reader 的 canonical 过滤显式化为：`visibility='active'` 且 `participates_in_downstream=true`
+- 已修复 `record_chapter_artifact()`：当写入 non-downstream companion 时，不再把当前 canonical active artifact 隐藏掉
+- 已覆盖回归：
+  - `previous_summary` 忽略 non-downstream active companion
+  - fixed window 忽略 non-downstream active companion
+  - run status completed count 仅统计 canonical/default-readable artifact
+  - chapter index title / summary 仅读取 canonical/default-readable artifact
+
 ## 5.3 Benchmark
 - 10 章 baseline vs quick
 - 100 章 aspiration

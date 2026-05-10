@@ -1342,6 +1342,14 @@ Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEd
 - 后续所有 UI、API、运行时恢复与自动拆书推进相关修改，均按该约定执行
 
 
+### 拆书 reader isolation：active companion 不再默认可读
+- 为 `ChapterArtifact` 默认读路径新增 canonical/default-readable 过滤：`visibility='active'` 且 `participates_in_downstream=true`
+- 修复 `record_chapter_artifact()`：非 downstream 的 companion / manual artifact 不再隐藏当前 active canonical artifact
+- 收口 `previous_summary`、window materialization、status completed count、chapter index 等默认 reader，避免误读 active enrichment companion
+- 增补回归测试，覆盖 canonical artifact 保留、summary/status/index 忽略 non-downstream companion 的行为
+- 同步补充拆书开发/使用文档，明确 active companion 不能天然进入默认读路径
+
+
 ### 问答区可见性增强
 - 将阅读页内的“小说问答 / 检索台”上移为前部主入口，并增加 hero 说明区与能力标签
 - 补充文档说明问答区默认优先显示，减少“功能已接入但不易被看到”的问题
