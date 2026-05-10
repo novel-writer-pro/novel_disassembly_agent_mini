@@ -166,11 +166,15 @@ Phase 3 🔄 进行中：Reward Model + 角色认知基 + 生产部署
 
 ```
 ✅ 从 manual_eval_record 提取初始 pairwise 数据（loom-collect-pairs-from-manual，扫描 runs/manual_eval/ 工作区）
+   - 跳过 _template 目录，pair_source=manual_eval_workspace
+   - 8 个单元测试，全部通过
 ✅ 从 harness 迭代产物提取 pairwise 数据（同章节多版本）
-✅ 实现 pairwise 数据收集 CLI 命令（loom-collect-pairs + loom-pairs-stats）
+✅ 实现 pairwise 数据收集 CLI 命令（loom-collect-pairs + loom-pairs-stats + loom-ab-compare + loom-collect-pairs-from-db）
    - loom-collect-pairs: 单目录（round-0 vs final）+ 跨目录（baseline vs steering）两种模式
    - loom-pairs-stats: 显示采集进度、质量分布、距 500 目标的剩余量
-   - 12 个单元测试，全部通过
+   - loom-ab-compare: A/B 实验报告，character_ooc 触发率对比
+   - loom-collect-pairs-from-db: 跨两个 DB 分支提取 pairwise 对
+   - 20 个单元测试，全部通过
 □ 积累 500+ pairs 后：fine-tune reward model（Qwen-7B）
 □ 验收：Kendall's τ ≥ 0.5（参考 EvolvR 的 0.55）
 ```
