@@ -8396,6 +8396,26 @@ def loom_status(
             else:
                 echo("alerts:              none")
 
+        if latest_chapter and settings.loom_style_enabled:
+            from novel_analyzer.services.style_calibration_service import StyleCalibrationService
+            from novel_analyzer.services.rhythm_analysis_service import RhythmAnalysisService
+            style_svc = StyleCalibrationService(session)
+            rhythm_svc = RhythmAnalysisService(session)
+            style_result = style_svc.compute_style_drift(branch_id, latest_chapter)
+            rhythm_result = rhythm_svc.compute(branch_id, latest_chapter)
+            echo("")
+            echo(f"=== Loom Style (chapter {latest_chapter}) ===")
+            echo(f"style_drift_score:   {style_result.style_drift_score:.4f}")
+            echo(f"style_alert:         {style_result.alert_level}")
+            if style_result.suggestion:
+                echo(f"style_suggestion:    {style_result.suggestion}")
+            echo(f"hook_density:        {rhythm_result.hook_density:.4f}")
+            echo(f"pacing_type:         {rhythm_result.pacing_type}")
+            echo(f"climax_score:        {rhythm_result.climax_score:.4f}")
+            echo(f"rhythm_alert:        {rhythm_result.alert_level}")
+            if rhythm_result.suggestion:
+                echo(f"rhythm_suggestion:   {rhythm_result.suggestion}")
+
 
 @app.command()
 def loom_consolidate(
