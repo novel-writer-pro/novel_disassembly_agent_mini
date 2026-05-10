@@ -54,13 +54,21 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 ### 2.2 核心文件清单
 
-#### 服务层（3 个核心服务）
+#### 服务层（Phase 1-5 服务）
 
-| 文件 | 职责 | 最后修改 |
-|------|------|---------|
-| `novel_analyzer/services/tension_service.py` | 张力指标计算（plot_similarity / conflict_density / surprise_index） | 已对齐真实 edge/node 类型 |
-| `novel_analyzer/services/memory_assembler_service.py` | 三层记忆组装（Working/Episodic/Semantic）→ carry_over_state | 已对齐 `entity/world_rule` |
-| `novel_analyzer/services/memory_consolidation_service.py` | 冲突代谢 + 重要性衰减 + 分类（evolution/contradiction/ambiguity） | 已修复 `is_active` bug + CONFLICT_EDGE_TYPES |
+| 文件 | 职责 | Phase |
+|------|------|-------|
+| `novel_analyzer/services/tension_service.py` | 张力指标（plot_similarity / conflict_density / surprise_index）+ rhythm/thread 联动 | Phase 2 |
+| `novel_analyzer/services/memory_assembler_service.py` | 三层记忆组装（Working/Episodic/Semantic）→ carry_over_state | Phase 1 |
+| `novel_analyzer/services/memory_consolidation_service.py` | 冲突代谢 + 重要性衰减 + 分类 | Phase 1 |
+| `novel_analyzer/services/pairwise_eval_service.py` | LLM-as-judge pairwise 评估（5 维度含 dialogue_quality） | Phase 2 |
+| `novel_analyzer/services/style_calibration_service.py` | 风格向量化 + 漂移检测（cosine 距离） | Phase 4 |
+| `novel_analyzer/services/rhythm_analysis_service.py` | 节奏分析（hook_density / pacing_type / climax_score） | Phase 4 |
+| `novel_analyzer/services/dialogue_signal_service.py` | 对话质量信号（voice_consistency / efficiency / conflict_density） | Phase 4 |
+| `novel_analyzer/services/character_agent_service.py` | 角色认知基（CharacterPersona + 一致性检测） | Phase 4 |
+| `novel_analyzer/services/thread_scheduler_service.py` | 多线叙事调度（active/dormant/overdue 分类 + 激活建议） | Phase 5 |
+| `novel_analyzer/services/reader_simulation_service.py` | 读者模拟评审（4 类面板：casual/veteran/satisfaction/editor） | Phase 5 |
+| `novel_analyzer/services/long_book_health_service.py` | 长书健康度监测（quality_trend + decline 检测） | Phase 5 |
 
 #### CLI 入口
 
@@ -79,8 +87,11 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 | 文件 | 数量 | 状态 |
 |------|------|------|
-| `tests/test_loom_phase1.py` | 23 tests | ✅ 全部通过 |
+| `tests/test_loom_phase1.py` | 27 tests | ✅ 全部通过 |
 | `tests/test_loom_phase2.py` | 18 tests | ✅ 全部通过 |
+| `tests/test_loom_phase3.py` | 28 tests | ✅ 全部通过 |
+| `tests/test_loom_phase4.py` | 29 tests | ✅ 全部通过 |
+| `tests/test_loom_phase5.py` | 20 tests | ✅ 全部通过 |
 
 #### 文档
 
@@ -88,13 +99,13 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 |------|------|
 | `docs/loom/overview.md` | 架构全景 + SOTA 对比（已更新 Phase 4/5 维度） |
 | `docs/loom/roadmap.md` | Phase 1-5 状态与任务清单 |
-| `docs/loom/gap-analysis-and-evolution.md` | 商业水准差距分析 + Phase 4/5 演进规划（新增） |
+| `docs/loom/gap-analysis-and-evolution.md` | 商业水准差距分析 + Phase 4/5 演进规划 |
 | `docs/loom/arch-diff-and-alignment.md` | Loom vs 0509 对比 |
 | `docs/loom/memory/carry-over-migration.md` | 迁移路径与实验记录 |
 | `docs/loom/tension/README.md` | 张力指标设计 |
 | `docs/loom/reward/README.md` | Reward 模型规划 |
-| `docs/loom/style/README.md` | 文风/节奏/对话层设计（Phase 4 规划） |
-| `docs/loom/character/README.md` | 角色认知基层设计（Phase 4 规划） |
+| `docs/loom/style/README.md` | 文风/节奏/对话层设计（Phase 4） |
+| `docs/loom/character/README.md` | 角色认知基层设计（Phase 4） |
 | `docs/cli-operations-manual.md` | CLI 手册（第 12 节 Loom） |
 | `docs/real-run-checklist.md` | 试跑清单（第 8 节 Loom） |
 | `CHANGELOG.md` | 变更记录 |
@@ -247,9 +258,9 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 文档索引修复 | docs/README.md、roles/README.md、tracks/README.md、roles/product/README.md、roles/backend/README.md、roles/integrator/README.md、roles/imitation/README.md、tracks/imitation/README.md、architecture/README.md 补全缺失的文档引用，386 个测试全部通过 |
 | 24 个新测试 | test_loom_phase2.py +3（pairwise harness 集成），test_loom_phase3.py +21（collect-pairs / pairs-stats / ab-compare / collect-pairs-from-db），全部通过 |
 
-**当前 Loom 测试总数：83 passed（Phase 1: 23 + Phase 2: 18 + Phase 3: 28 + Phase 4: 14）**
+**当前 Loom 测试总数：122 passed（Phase 1: 27 + Phase 2: 18 + Phase 3: 28 + Phase 4: 29 + Phase 5: 20）**
 
-**全项目测试：394 passed（Phase 4 服务为纯内存测试，不影响全量计数）**
+**全项目测试：394 passed（Phase 4/5 服务为纯内存测试，不影响全量计数）**
 
 ### 4.1 当前未完成的 Phase 3 规划
 
