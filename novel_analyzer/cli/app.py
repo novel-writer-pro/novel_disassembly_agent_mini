@@ -130,6 +130,45 @@ def _loom_risk_verdict(payload: dict[str, object]) -> str:
     return str(payload.get("final_verdict", "unknown")).strip()
 
 
+def _loom_write_pairs_jsonl(
+    eval_svc: Any,
+    pairs_to_eval: list[dict[str, object]],
+    pairs_file: Path,
+    extra_keys: list[str],
+) -> int:
+    import datetime as _datetime
+
+    pairs_file.parent.mkdir(parents=True, exist_ok=True)
+    collected = 0
+    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
+    with pairs_file.open("a", encoding="utf-8") as fh:
+        for pair in pairs_to_eval:
+            result = eval_svc.evaluate(
+                pair_id=str(pair["pair_id"]),
+                branch_id=str(pair["branch_id"]),
+                chapter_index=int(pair["chapter_index"]),  # type: ignore[arg-type]
+                draft_a=str(pair["draft_a"]),
+                draft_b=str(pair["draft_b"]),
+                chapter_goal=str(pair["chapter_goal"]),
+                key_constraints=str(pair["key_constraints"]),
+                risk_verdict_a=str(pair["risk_verdict_a"]),
+                risk_verdict_b=str(pair["risk_verdict_b"]),
+            )
+            signal = result.to_chapter_quality_signal()
+            record: dict[str, object] = {
+                **signal,
+                "pair_id": pair["pair_id"],
+                "pair_source": pair["pair_source"],
+                "chapter_goal": pair["chapter_goal"],
+                "collected_at": collected_at,
+                "loom_collect_version": "1.0",
+                **{k: pair[k] for k in extra_keys if k in pair},
+            }
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            collected += 1
+    return collected
+
+
 def _list_skill_names(settings: Settings) -> list[str]:
     from novel_analyzer.skills.loader import list_skill_names
 
@@ -8475,35 +8514,7 @@ def loom_collect_pairs(
         raise typer.Exit(code=0)
 
     pairs_file.parent.mkdir(parents=True, exist_ok=True)
-    collected = 0
-    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
-
-    with pairs_file.open("a", encoding="utf-8") as fh:
-        for pair in pairs_to_eval:
-            result = eval_svc.evaluate(
-                pair_id=str(pair["pair_id"]),
-                branch_id=str(pair["branch_id"]),
-                chapter_index=int(pair["chapter_index"]),
-                draft_a=str(pair["draft_a"]),
-                draft_b=str(pair["draft_b"]),
-                chapter_goal=str(pair["chapter_goal"]),
-                key_constraints=str(pair["key_constraints"]),
-                risk_verdict_a=str(pair["risk_verdict_a"]),
-                risk_verdict_b=str(pair["risk_verdict_b"]),
-            )
-            signal = result.to_chapter_quality_signal()
-            record: dict[str, object] = {
-                **signal,
-                "pair_id": pair["pair_id"],
-                "pair_source": pair["pair_source"],
-                "dir_a": pair["dir_a"],
-                "dir_b": pair["dir_b"],
-                "chapter_goal": pair["chapter_goal"],
-                "collected_at": collected_at,
-                "loom_collect_version": "1.0",
-            }
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-            collected += 1
+    collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["dir_a", "dir_b"])
 
     echo(f"loom_collect_pairs: collected {collected} pair(s) → {pairs_file}")
     echo(f"  mode={'cross_dir' if compare_dir else 'single_dir_rounds'}")
@@ -8879,35 +8890,7 @@ def loom_collect_pairs_from_db(
         raise typer.Exit(code=0)
 
     pairs_file.parent.mkdir(parents=True, exist_ok=True)
-    collected = 0
-    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
-
-    with pairs_file.open("a", encoding="utf-8") as fh:
-        for pair in pairs_to_eval:
-            result = eval_svc.evaluate(
-                pair_id=str(pair["pair_id"]),
-                branch_id=str(pair["branch_id"]),
-                chapter_index=int(pair["chapter_index"]),
-                draft_a=str(pair["draft_a"]),
-                draft_b=str(pair["draft_b"]),
-                chapter_goal=str(pair["chapter_goal"]),
-                key_constraints=str(pair["key_constraints"]),
-                risk_verdict_a=str(pair["risk_verdict_a"]),
-                risk_verdict_b=str(pair["risk_verdict_b"]),
-            )
-            signal = result.to_chapter_quality_signal()
-            record: dict[str, object] = {
-                **signal,
-                "pair_id": pair["pair_id"],
-                "pair_source": pair["pair_source"],
-                "dir_a": pair["dir_a"],
-                "dir_b": pair["dir_b"],
-                "chapter_goal": pair["chapter_goal"],
-                "collected_at": collected_at,
-                "loom_collect_version": "1.0",
-            }
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-            collected += 1
+    collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["dir_a", "dir_b"])
 
     echo(f"loom_collect_pairs_from_db: collected {collected} pair(s) → {pairs_file}")
     echo(f"  branch_a={branch_a}")
@@ -9011,36 +8994,7 @@ def loom_collect_pairs_from_manual(
         echo(f"  manual_eval_dir={manual_eval_dir}")
         raise typer.Exit(code=0)
 
-    pairs_file.parent.mkdir(parents=True, exist_ok=True)
-    collected = 0
-    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
-
-    with pairs_file.open("a", encoding="utf-8") as fh:
-        for pair in pairs_to_eval:
-            result = eval_svc.evaluate(
-                pair_id=str(pair["pair_id"]),
-                branch_id=str(pair["branch_id"]),
-                chapter_index=int(pair["chapter_index"]),  # type: ignore[arg-type]
-                draft_a=str(pair["draft_a"]),
-                draft_b=str(pair["draft_b"]),
-                chapter_goal=str(pair["chapter_goal"]),
-                key_constraints=str(pair["key_constraints"]),
-                risk_verdict_a=str(pair["risk_verdict_a"]),
-                risk_verdict_b=str(pair["risk_verdict_b"]),
-            )
-            signal = result.to_chapter_quality_signal()
-            record: dict[str, object] = {
-                **signal,
-                "pair_id": pair["pair_id"],
-                "pair_source": pair["pair_source"],
-                "workspace": pair["workspace"],
-                "artifact_path": pair["artifact_path"],
-                "chapter_goal": pair["chapter_goal"],
-                "collected_at": collected_at,
-                "loom_collect_version": "1.0",
-            }
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-            collected += 1
+    collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["workspace", "artifact_path"])
 
     echo(f"loom_collect_pairs_from_manual: collected {collected} pair(s) → {pairs_file}")
     echo(f"  manual_eval_dir={manual_eval_dir}")
