@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -8454,8 +8455,6 @@ def loom_collect_pairs(
 
     Appends JSONL records to --pairs-file (one chapter_quality_signal per line).
     """
-    import uuid as _uuid
-
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
 
     llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
@@ -8474,7 +8473,7 @@ def loom_collect_pairs(
             if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
                 continue
             pairs_to_eval.append({
-                "pair_id": str(_uuid.uuid4()),
+                "pair_id": str(uuid.uuid4()),
                 "branch_id": str(b_payload.get("branch_id", "")).strip(),
                 "chapter_index": ch_idx,
                 "draft_a": draft_a,
@@ -8499,7 +8498,7 @@ def loom_collect_pairs(
             if draft_a == draft_b:
                 continue
             pairs_to_eval.append({
-                "pair_id": str(_uuid.uuid4()),
+                "pair_id": str(uuid.uuid4()),
                 "branch_id": str(payload.get("branch_id", "")).strip(),
                 "chapter_index": ch_idx,
                 "draft_a": draft_a,
@@ -8801,8 +8800,6 @@ def loom_collect_pairs_from_db(
     as the comparison text. Useful for comparing analysis quality between branches.
     Appends JSONL records to --pairs-file.
     """
-    import uuid as _uuid
-
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
 
     llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
@@ -8871,7 +8868,7 @@ def loom_collect_pairs_from_db(
         if text_a == text_b:
             continue
         pairs_to_eval.append({
-            "pair_id": str(_uuid.uuid4()),
+            "pair_id": str(uuid.uuid4()),
             "branch_id": branch_a,
             "chapter_index": ch_idx,
             "draft_a": text_a,
@@ -8916,8 +8913,6 @@ def loom_collect_pairs_from_manual(
 
     Appends JSONL records to --pairs-file with pair_source="manual_eval_workspace".
     """
-    import uuid as _uuid
-
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
 
     llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
@@ -8970,7 +8965,7 @@ def loom_collect_pairs_from_manual(
                 ch_idx = int(m.group(1)) if m else 0
 
             pairs_to_eval.append({
-                "pair_id": str(_uuid.uuid4()),
+                "pair_id": str(uuid.uuid4()),
                 "branch_id": str(payload.get("branch_id", "")).strip(),
                 "chapter_index": ch_idx,
                 "draft_a": draft_a,
