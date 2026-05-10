@@ -1,4 +1,4 @@
-"""Tests for Loom Phase 4: StyleCalibrationService and RhythmAnalysisService.
+"""Tests for Loom Phase 4: StyleCalibrationService, RhythmAnalysisService, and DialogueSignalService.
 
 All tests use SQLite in-memory so no PostgreSQL is required.
 """
@@ -14,10 +14,13 @@ from novel_analyzer.database.models import (
     ChapterArtifact,
     ChunkEmbedding,
     FactRecord,
+    GraphEdge,
+    GraphNode,
     RetrievalChunk,
     RetrievalDocument,
 )
 from novel_analyzer.database.session import create_schema
+from novel_analyzer.services.dialogue_signal_service import DialogueSignalService
 from novel_analyzer.services.rhythm_analysis_service import (
     PACING_ACTION_HEAVY,
     PACING_BALANCED,
@@ -297,5 +300,138 @@ def test_rhythm_to_signal_dict() -> None:
         assert "hook_density" in signal
         assert "pacing_type" in signal
         assert "climax_score" in signal
+        assert "alert_level" in signal
+        assert signal["chapter_index"] == 1
+
+
+def _add_graph_node(
+    session: Session,
+    branch_id: str,
+    chapter_index: int,
+    node_type: str,
+    label: str,
+) -> GraphNode:
+    node = GraphNode(
+        branch_id=branch_id,
+        node_type=node_type,
+        label=label,
+        chapter_first_seen=chapter_index,
+        chapter_last_seen=chapter_index,
+    )
+    session.add(node)
+    session.flush()
+    return node
+
+
+def _add_graph_edge(
+    session: Session,
+    branch_id: str,
+    chapter_index: int,
+    source_node: GraphNode,
+    target_node: GraphNode,
+    edge_type: str,
+) -> None:
+    session.add(GraphEdge(
+        branch_id=branch_id,
+        source_node_id=source_node.id,
+        target_node_id=target_node.id,
+        edge_type=edge_type,
+        chapter_first_seen=chapter_index,
+        chapter_last_seen=chapter_index,
+    ))
+    session.flush()
+
+
+# ===========================================================================
+# DialogueSignalService tests
+# ===========================================================================
+
+def test_dialogue_signal_no_data() -> None:
+    with _session() as session:
+        svc = DialogueSignalService(session)
+        result = svc.compute(_branch_id(), 1)
+        assert result.character_voice_consistency == 1.0
+        assert result.dialogue_efficiency == 0.0
+        assert result.conflict_dialogue_density == 0.0
+        assert result.alert_level in ("none", "warn")
+
+
+def test_dialogue_signal_no_entities() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        _add_chapter_artifact(session, bid, 1)
+        session.commit()
+        svc = DialogueSignalService(session)
+        result = svc.compute(bid, 1)
+        assert result.character_voice_consistency == 1.0
+
+
+def test_dialogue_efficiency_with_edges() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        entity = _add_graph_node(session, bid, 1, "entity", "张三")
+        event = _add_graph_node(session, bid, 1, "event", "战斗")
+        _add_graph_edge(session, bid, 1, entity, event, "participates_in")
+        _add_fact(session, bid, 1, "event", "战斗")
+        session.commit()
+        svc = DialogueSignalService(session)
+        result = svc.compute(bid, 1)
+        assert result.dialogue_efficiency > 0.0
+
+
+def test_dialogue_conflict_density_with_conflict_edges() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        entity_a = _add_graph_node(session, bid, 1, "entity", "张三")
+        entity_b = _add_graph_node(session, bid, 1, "entity", "李四")
+        conflict = _add_graph_node(session, bid, 1, "conflict", "冲突")
+        _add_graph_edge(session, bid, 1, entity_a, conflict, "conflict_involves")
+        _add_graph_edge(session, bid, 1, entity_a, entity_b, "co_occurs")
+        session.commit()
+        svc = DialogueSignalService(session)
+        result = svc.compute(bid, 1)
+        assert result.conflict_dialogue_density > 0.0
+        assert result.conflict_dialogue_density < 1.0
+
+
+def test_dialogue_voice_consistency_with_embeddings() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        vec = [1.0, 0.0, 0.0]
+        for i in range(1, 4):
+            _add_chapter_embedding(session, bid, i, vec)
+            _add_fact(session, bid, i, "entity", "张三")
+        session.commit()
+        svc = DialogueSignalService(session)
+        result = svc.compute(bid, 3, lookback_n=2)
+        assert result.character_voice_consistency >= 0.9
+
+
+def test_dialogue_voice_drift_triggers_warn() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        for i in range(1, 4):
+            _add_chapter_embedding(session, bid, i, [1.0, 0.0])
+            _add_fact(session, bid, i, "entity", "张三")
+        _add_chapter_embedding(session, bid, 4, [0.0, 1.0])
+        _add_fact(session, bid, 4, "entity", "张三")
+        session.commit()
+        svc = DialogueSignalService(session)
+        result = svc.compute(bid, 4, lookback_n=3)
+        assert result.alert_level == "warn"
+        assert result.suggestion != ""
+
+
+def test_dialogue_signal_to_dict() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        _add_chapter_artifact(session, bid, 1)
+        session.commit()
+        svc = DialogueSignalService(session)
+        result = svc.compute(bid, 1)
+        signal = result.to_dialogue_signal()
+        assert "character_voice_consistency" in signal
+        assert "dialogue_efficiency" in signal
+        assert "conflict_dialogue_density" in signal
         assert "alert_level" in signal
         assert signal["chapter_index"] == 1
