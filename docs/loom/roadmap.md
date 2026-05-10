@@ -17,9 +17,10 @@ Phase 3 🔄 进行中：Reward Model + 角色认知基 + 生产部署
   目标：评估自进化，角色一致性进一步提升，PostgreSQL 生产启用
   前提：积累 500+ pairwise 对比数据；Alembic migration 在生产 PG 上运行
 
-Phase 4 🔲 规划中：文风 + 节奏 + 对话（5/10 → 7/10 商业可用）
+Phase 4 🔄 进行中：文风 + 节奏 + 对话（5/10 → 7/10 商业可用）
   目标：文风量化校准、节奏/爽点分析、对话质量信号、角色认知基深化
   前提：Phase 3 A/B 实验验证通过
+  当前：P1（style_calibration_service）✅ P2（rhythm_analysis_service）✅
 
 Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 → 8.5/10 头部水准）
   目标：读者模拟评审、多线叙事调度、长书自适应编排、外部知识 RAG
