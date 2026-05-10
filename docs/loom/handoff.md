@@ -66,7 +66,7 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 | 文件 | 职责 |
 |------|------|
-| `novel_analyzer/cli/app.py` | Loom CLI 命令注册（loom-status / loom-consolidate / loom-assemble）+ writer operator surface Loom signal 聚合 |
+| `novel_analyzer/cli/app.py` | Loom CLI 命令注册（loom-status / loom-consolidate / loom-assemble / loom-collect-pairs / loom-pairs-stats / loom-ab-compare / loom-collect-pairs-from-db / loom-collect-pairs-from-manual）+ writer operator surface Loom signal 聚合 |
 
 #### 数据模型
 
@@ -356,3 +356,4 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ --output-file outpu
 - 环境配置位置: `.env.local`（已 gitignore）
 - PG host/port/user/db: 见 `.env.local` 或 history
 - Alembic: `alembic/versions/20260509_01_loom_memory_fields.py`
+- Phase 4 flags（默认 False）: `NOVEL_ANALYZER_LOOM_STYLE_ENABLED` / `NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED`
