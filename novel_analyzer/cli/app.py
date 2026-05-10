@@ -4359,6 +4359,16 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(
             f"- average_chapter_quality_score: {loom_signals.get('average_chapter_quality_score', '')}"
         )
+        if loom_signals.get("average_style_drift_score") is not None:
+            lines.append(f"- average_style_drift_score: {loom_signals.get('average_style_drift_score', '')}")
+        if loom_signals.get("average_hook_density") is not None:
+            lines.append(f"- average_hook_density: {loom_signals.get('average_hook_density', '')}")
+        if loom_signals.get("style_signal_count", 0):
+            lines.append(f"- style_signal_count: {loom_signals.get('style_signal_count', 0)}")
+        if loom_signals.get("rhythm_signal_count", 0):
+            lines.append(f"- rhythm_signal_count: {loom_signals.get('rhythm_signal_count', 0)}")
+        if loom_signals.get("dialogue_signal_count", 0):
+            lines.append(f"- dialogue_signal_count: {loom_signals.get('dialogue_signal_count', 0)}")
         tension_alert_chapters = loom_signals.get("tension_alert_chapters", [])
         alert_text = "；".join(str(x) for x in tension_alert_chapters) if isinstance(tension_alert_chapters, list) else ""
         lines.append(f"- tension_alert_chapters: {alert_text}")
