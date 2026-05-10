@@ -484,7 +484,7 @@ python -m scripts.check_sample_branch <run_id> <branch_id> ./branch.md
 
 ---
 
-## 12. Loom 记忆与张力命令（Phase 1+2）
+## 12. Loom 记忆与张力命令（Phase 1+2+3）
 
 Loom 是叠加在现有系统之上的记忆代谢与质量评估层。默认以 `shadow` 模式运行（并行计算但不影响主链路）。
 
@@ -623,3 +623,83 @@ Loom 是非侵入式的叠加层：
 | 其他命令 | 完全不受影响 |
 
 `loom_memory_mode=disabled` 时，所有 Loom 逻辑完全跳过，行为与 Loom 引入前完全一致。
+
+---
+
+### 12.7 loom-collect-pairs — 从 writer-imitate 产物提取 pairwise 数据
+
+```bash
+# 单目录模式：同一目录内 round-0 vs final（默认）
+novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl
+
+# 跨目录模式：baseline vs steering 对比
+novel-analyzer loom-collect-pairs \
+  --output-dir output/baseline/ \
+  --compare-dir output/steering/ \
+  --pairs-file output/loom-pairs.jsonl
+
+# 使用 LLM-as-judge（需配置 LLM）
+novel-analyzer loom-collect-pairs --output-dir output/ --use-llm
+```
+
+扫描 `--output-dir` 下的 `writer-imitate-ch*.json` 文件，提取 pairwise 对并追加写入 JSONL。
+
+### 12.8 loom-collect-pairs-from-manual — 从人工评估工作区提取 pairwise 数据
+
+```bash
+novel-analyzer loom-collect-pairs-from-manual \
+  --manual-eval-dir runs/manual_eval/ \
+  --pairs-file output/loom-pairs.jsonl
+```
+
+扫描 `runs/manual_eval/` 下所有工作区（跳过 `_template`）的 `artifacts/writer-imitate-ch*.json`，提取 round-0 vs final pairwise 对，`pair_source=manual_eval_workspace`。
+
+### 12.9 loom-collect-pairs-from-db — 从 DB 分支提取 pairwise 数据
+
+```bash
+novel-analyzer loom-collect-pairs-from-db <branch_a_id> <branch_b_id> \
+  --pairs-file output/loom-pairs.jsonl
+```
+
+跨两个 DB 分支，按章节索引匹配 `ChapterArtifact` 记录，用 `chapter_summary` 作为对比文本。
+
+### 12.10 loom-pairs-stats — 查看 pairwise 数据采集进度
+
+```bash
+novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl
+```
+
+输出示例：
+```
+=== Loom Pairwise Data Stats ===
+pairs_file:        output/loom-pairs.jsonl
+total_pairs:       47
+target:            500
+progress:          9.4%
+avg_quality_score: 0.6823
+unique_chapters:   12
+chapter_range:     1–42
+
+preference distribution:
+  A: 21
+  B: 19
+  tie: 7
+
+evaluation_method distribution:
+  heuristic: 47
+
+pair_source distribution:
+  manual_eval_workspace: 12
+  single_dir_rounds: 35
+
+remaining_to_target: 453
+```
+
+### 12.11 loom-ab-compare — A/B 实验对比报告
+
+```bash
+novel-analyzer loom-ab-compare output/baseline/ output/loom/ \
+  --output-file output/ab-report.json
+```
+
+对比两个 writer-imitate 输出目录的 `character_ooc` 触发率，输出 reduction%，判断是否达到 ≥20% 目标。
