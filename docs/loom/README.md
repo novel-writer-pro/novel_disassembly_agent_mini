@@ -9,7 +9,7 @@
 
 > Loom 不是重写现有系统，而是在已有 GraphRAG 基础设施（`pg_trgm` + `pgvector` + `GraphNode/GraphEdge`）
 > 与 0509 仿写控制层（`session_state → operator_surface → action_queue → execution_state`）之上，
-> 填补三个关键缺口：**记忆代谢**、**评估自进化**、**叙事张力调节**。
+> 填补五个关键缺口：**记忆代谢**、**评估自进化**、**叙事张力调节**、**文风/节奏量化**（Phase 4）、**角色认知基**（Phase 4）。
 
 ---
 
