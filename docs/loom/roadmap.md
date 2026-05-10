@@ -329,12 +329,12 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P4：外部知识 RAG 接入**
 
 ```
-□ 读者预期 pack（从读者评论/书评提炼，新增）
-□ 题材 trope 库自动检索（复用 steering_library_service）
-□ 世界观 dossier 自动检索（复用 worldview_capsule）
-□ constraint_pack：外部知识作为软约束
-□ steering_pack：自动从 RAG 库检索相关 steering
-□ 验收：使用外部 RAG 的章节，reader_satisfaction_score 提升 ≥ 10%
+✅ 读者预期 pack：rag/audience-expectation-notes/ 已有商业钩子/节奏信号文档
+✅ 题材 trope 库自动检索：retrieve_pack() 自动查询 rag/trope-library/
+✅ 世界观 dossier 自动检索：retrieve_pack() 自动查询 rag/worldview-dossiers/
+✅ steering_pack 自动从 RAG 库检索：run_harness loom_character_enabled=True 时自动调用
+✅ constraint_pack：retrieved steering_pack 作为软约束传入 build_llm_draft / build_skeleton_draft
+□ 验收：使用外部 RAG 的章节，reader_satisfaction_score 提升 ≥ 10%（需真实数据）
 ```
 
 ### 验收标准
