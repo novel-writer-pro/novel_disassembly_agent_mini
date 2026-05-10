@@ -3584,6 +3584,22 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "reason": "根据 guarded/high-risk 状态自动选择",
         },
     ]
+    session_loom_signals = _collect_writer_output_loom_signals(output_dir)
+    avg_quality_score_obj = session_loom_signals.get("average_chapter_quality_score")
+    avg_quality_score = (
+        float(avg_quality_score_obj)
+        if isinstance(avg_quality_score_obj, (int, float))
+        else None
+    )
+    quality_signal_count = int(session_loom_signals.get("chapter_quality_signal_count", 0) or 0)
+    quality_verdict = (
+        "quality-signal-missing"
+        if quality_signal_count == 0
+        else "quality-hold"
+        if avg_quality_score is not None and avg_quality_score < 0.7
+        else "quality-pass"
+    )
+
     session_operator_contract = {
         "contract_version": "writer-imitate-operator-surface.v1",
         "status": {
@@ -3593,6 +3609,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "session_lane_status": session_lane_status,
             "session_execution_mode": session_execution_mode,
             "session_release_readiness": session_release_readiness,
+            "quality_verdict": quality_verdict,
         },
         "queues": {
             "priority_queue": session_priority_queue,
@@ -3614,15 +3631,23 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     }
     session_primary_verdicts = {
         "promotion_verdict": promotion_verdict,
-        "runtime_verdict": f"{session_execution_mode}:{session_ship_decision}:{risk_register}",
+        "runtime_verdict": (
+            f"{session_execution_mode}:{session_ship_decision}:{risk_register}:{quality_verdict}"
+        ),
         "control_verdict": f"{session_governor_mode}:{session_lane_status}",
-        "final_verdict": f"{session_ship_decision}:{session_release_readiness}",
+        "final_verdict": f"{session_ship_decision}:{session_release_readiness}:{quality_verdict}",
+        "quality_verdict": quality_verdict,
+        "average_chapter_quality_score": avg_quality_score,
+        "chapter_quality_signal_count": quality_signal_count,
     }
     session_primary_digests = {
         "runtime_contract": session_runtime_contract,
         "control_summary": f"ship={session_ship_decision};lane={session_lane_status};risk={risk_register}",
         "governance_checksum": f"checksum={len(session_escalation_path)}",
-        "operating_digest": f"ready={len(session_ready_queue)};blocked={len(session_blocked_queue)}",
+        "operating_digest": (
+            f"ready={len(session_ready_queue)};blocked={len(session_blocked_queue)};"
+            f"quality={avg_quality_score if avg_quality_score is not None else 'na'}"
+        ),
     }
     session_primary_contract_hints = {
         "preferred_verdict_source": "session_primary_verdicts",
@@ -3742,8 +3767,6 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         ],
         "display_policy": "primary-first-legacy-secondary",
     }
-
-    session_loom_signals = _collect_writer_output_loom_signals(output_dir)
 
     return {
         "contract_version": "writer-imitate-session-state.v3",
@@ -3926,6 +3949,13 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- runtime_verdict: {primary_verdicts.get('runtime_verdict', '')}")
         lines.append(f"- control_verdict: {primary_verdicts.get('control_verdict', '')}")
         lines.append(f"- final_verdict: {primary_verdicts.get('final_verdict', '')}")
+        lines.append(f"- quality_verdict: {primary_verdicts.get('quality_verdict', '')}")
+        lines.append(
+            f"- average_chapter_quality_score: {primary_verdicts.get('average_chapter_quality_score', '')}"
+        )
+        lines.append(
+            f"- chapter_quality_signal_count: {primary_verdicts.get('chapter_quality_signal_count', 0)}"
+        )
     primary_digests = payload.get("session_primary_digests", {})
     if isinstance(primary_digests, dict):
         lines.append("\n## Primary Digests")

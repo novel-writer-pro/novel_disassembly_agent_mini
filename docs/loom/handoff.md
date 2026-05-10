@@ -184,7 +184,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 - `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段。
 - 当前聚合源来自 `writer-imitate-ch*.json` 章节产物，已汇总 tension signal 与可选 chapter quality signal。
 - operator surface markdown 也新增 `Loom Signals` 小节，便于 operator 直接查看章节级 tension/quality 摘要。
-- 这次交付只补稳定消费合同，不改变 reward 主链；后续若 `chapter_quality_score` 进入主产线，将自动复用现有 surface 字段。
+- 第一轮交付先补稳定消费合同；随后已把 `chapter_quality_score` 聚合接入 `session_primary_verdicts`，当前 control surface 可直接输出 `quality_verdict` / `average_chapter_quality_score` / `chapter_quality_signal_count`。
 
 ### 4.1 当前未完成的 Phase 3 规划
 
@@ -193,7 +193,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 优先级 | 任务 | 说明 | 前置条件 |
 |--------|------|------|---------|
 | 🔴 P0 | A/B 实验：Loom on vs off | 用 20 章数据对比 character_ooc 下降指标 | 需积累足够人工评估数据 |
-| 🟡 P0 | 0509 operator_surface 深化对接 | 当前 writer operator surface 已聚合展示 `session_loom_signals`；下一步是让更多 0509 消费者直接依赖该稳定合同 | 需 Loom 稳定运行 |
+| 🟡 P0 | 0509 operator_surface 深化对接 | 当前 writer operator surface 已聚合展示 `session_loom_signals`，且 `session_primary_verdicts` 已吸收 quality 聚合；下一步是让更多 0509 消费者直接依赖该稳定合同 | 需 Loom 稳定运行 |
 | 🟡 P1 | Pairwise 数据积累 | 产出足够多的 LLM-as-judge 评估对 | 需生产运行积累 |
 | 🟡 P1 | 角色认知基（Phase 3） | 角色级 agent 自主认知基 | 需 A/B 实验验证通过 |
 | 🟢 P2 | Fine-tuned reward model | 替代 LLM-as-judge | 需 pairwise 数据量充足 |

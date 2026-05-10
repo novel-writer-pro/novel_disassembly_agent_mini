@@ -877,7 +877,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_operator_contract']['queues']['priority_queue']
     assert session_state['session_operator_contract']['owners']['session_recovery_owner']
     assert session_state['session_primary_verdicts']['final_verdict']
+    assert session_state['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert session_state['session_primary_verdicts']['average_chapter_quality_score'] == 0.82
+    assert session_state['session_primary_verdicts']['chapter_quality_signal_count'] == 1
+    assert session_state['session_primary_verdicts']['runtime_verdict'].endswith(':quality-pass')
+    assert session_state['session_primary_verdicts']['final_verdict'].endswith(':quality-pass')
     assert session_state['session_primary_digests']['runtime_contract']
+    assert session_state['session_primary_digests']['operating_digest'].endswith('quality=0.82')
     assert session_state['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
     assert session_state['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert session_state['session_legacy_retirement_plan']['phase'] == 'pre-retirement'
@@ -908,7 +914,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert operator_surface_payload['legacy_operator_entrypoint'] == 'writer-imitate-legacy-contract-surface.json'
     assert operator_surface_payload['session_operator_contract']['status']['session_execution_mode']
+    assert operator_surface_payload['session_operator_contract']['status']['quality_verdict'] == 'quality-pass'
     assert operator_surface_payload['session_primary_verdicts']['runtime_verdict']
+    assert operator_surface_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert operator_surface_payload['session_primary_verdicts']['average_chapter_quality_score'] == 0.82
+    assert operator_surface_payload['session_primary_verdicts']['chapter_quality_signal_count'] == 1
     assert operator_surface_payload['session_primary_digests']['operating_digest']
     assert operator_surface_payload['session_primary_contract_hints']['preferred_verdict_source'] == 'session_primary_verdicts'
     assert operator_surface_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
@@ -943,6 +953,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'primary_operator_role: default-operator-home' in operator_surface_text
     assert 'display_policy: primary-first-legacy-secondary' in operator_surface_text
     assert '## Primary Verdicts' in operator_surface_text
+    assert 'quality_verdict: quality-pass' in operator_surface_text
+    assert 'average_chapter_quality_score: 0.82' in operator_surface_text
+    assert 'chapter_quality_signal_count: 1' in operator_surface_text
     assert '## Primary Digests' in operator_surface_text
     assert operator_surface_text.index('## Primary Verdicts') < operator_surface_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in operator_surface_text
