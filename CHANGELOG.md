@@ -1,6 +1,8 @@
 ## Unreleased
 
-- docs(loom/gap-analysis): 新增 `docs/loom/gap-analysis-and-evolution.md`，系统分析当前仿写能力与商业水准 SOTA 的差距（综合评分 5/10，目标 7/10），规划 Phase 4（文风量化 + 节奏分析 + 对话质量信号 + 角色认知基深化）和 Phase 5（读者模拟评审 + 多线叙事调度 + 长书自适应编排 + 外部知识 RAG）完整任务清单与验收标准。
+- feat(loom/phase4-flags): 新增 `loom_style_enabled`（默认 False）和 `loom_character_enabled`（默认 False）两个 Phase 4 feature flag，接入 `loom-status` 输出，并在 CLI 操作手册 12.1 节补充环境变量说明。
+
+- docs(loom/phase4): 新增 Phase 4 设计文档层 `docs/loom/style/`（风格向量化 + 节奏分析 + 对话质量信号，全部零 LLM 调用）和 `docs/loom/character/`（CharacterPersona 构建 + 一致性检测，深化 OOC checker）。更新 `docs/loom/overview.md` 架构图、`docs/loom/README.md` 导航表与架构树。
 
 - docs(loom/roadmap): 更新 `docs/loom/roadmap.md`，新增 Phase 4/5 总览与完整任务清单（style_calibration_service / rhythm_analysis_service / dialogue_signal / character_agent_service / reader_simulation_service / thread_scheduler_service），补充两条新风险登记。
 
