@@ -121,6 +121,15 @@ def _loom_chapter_goal(payload: dict[str, object]) -> str:
     return str(payload.get("target_goal", "")).strip()
 
 
+def _loom_risk_verdict(payload: dict[str, object]) -> str:
+    fd = payload.get("final_draft", {})
+    if isinstance(fd, dict):
+        notes = fd.get("risk_gate_notes", [])
+        if isinstance(notes, list) and notes:
+            return "; ".join(str(n) for n in notes[:3])
+    return str(payload.get("final_verdict", "unknown")).strip()
+
+
 def _list_skill_names(settings: Settings) -> list[str]:
     from novel_analyzer.skills.loader import list_skill_names
 
@@ -8406,14 +8415,6 @@ def loom_collect_pairs(
     llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
     eval_svc = PairwiseEvalService(llm_client=llm_client)
 
-    def _risk_verdict(payload: dict[str, object]) -> str:
-        fd = payload.get("final_draft", {})
-        if isinstance(fd, dict):
-            notes = fd.get("risk_gate_notes", [])
-            if isinstance(notes, list) and notes:
-                return "; ".join(str(n) for n in notes[:3])
-        return str(payload.get("final_verdict", "unknown")).strip()
-
     pairs_to_eval: list[dict[str, object]] = []
 
     if compare_dir is not None:
@@ -8434,8 +8435,8 @@ def loom_collect_pairs(
                 "draft_b": draft_b,
                 "chapter_goal": _loom_chapter_goal(b_payload),
                 "key_constraints": "",
-                "risk_verdict_a": _risk_verdict(b_payload),
-                "risk_verdict_b": _risk_verdict(s_payload),
+                "risk_verdict_a": _loom_risk_verdict(b_payload),
+                "risk_verdict_b": _loom_risk_verdict(s_payload),
                 "pair_source": "cross_dir",
                 "dir_a": str(output_dir),
                 "dir_b": str(compare_dir),
@@ -8460,7 +8461,7 @@ def loom_collect_pairs(
                 "chapter_goal": _loom_chapter_goal(payload),
                 "key_constraints": "",
                 "risk_verdict_a": "unknown",
-                "risk_verdict_b": _risk_verdict(payload),
+                "risk_verdict_b": _loom_risk_verdict(payload),
                 "pair_source": "single_dir_rounds",
                 "dir_a": str(output_dir),
                 "dir_b": str(output_dir),
@@ -8948,9 +8949,6 @@ def loom_collect_pairs_from_manual(
         echo(f"loom_collect_pairs_from_manual: {manual_eval_dir} not found.")
         raise typer.Exit(code=1)
 
-    def _risk_verdict(payload: dict[str, object]) -> str:
-        return str(payload.get("final_verdict", "unknown")).strip()
-
     workspace_dirs: list[Path] = [
         d for d in sorted(manual_eval_dir.iterdir())
         if d.is_dir() and d.name != "_template"
@@ -9002,7 +9000,7 @@ def loom_collect_pairs_from_manual(
                 "chapter_goal": _loom_chapter_goal(payload),
                 "key_constraints": "",
                 "risk_verdict_a": "unknown",
-                "risk_verdict_b": _risk_verdict(payload),
+                "risk_verdict_b": _loom_risk_verdict(payload),
                 "pair_source": "manual_eval_workspace",
                 "workspace": workspace.name,
                 "artifact_path": str(artifact_path),
