@@ -3310,7 +3310,16 @@ def _extract_writer_output_loom_signal(
     quality_score = quality_signal.get("quality_score", payload.get("chapter_quality_score"))
     quality_confidence = quality_signal.get("confidence")
 
-    if not tension_signal and quality_score in (None, ""):
+    style_signal_obj = skill_outputs.get("_loom_style", payload.get("_loom_style"))
+    style_signal = style_signal_obj if isinstance(style_signal_obj, dict) else {}
+
+    rhythm_signal_obj = skill_outputs.get("_loom_rhythm", payload.get("_loom_rhythm"))
+    rhythm_signal = rhythm_signal_obj if isinstance(rhythm_signal_obj, dict) else {}
+
+    dialogue_signal_obj = payload.get("dialogue_signal")
+    dialogue_signal = dialogue_signal_obj if isinstance(dialogue_signal_obj, dict) else {}
+
+    if not tension_signal and quality_score in (None, "") and not style_signal and not rhythm_signal:
         return None
 
     tension_alerts = tension_signal.get("alerts", [])
@@ -3325,6 +3334,12 @@ def _extract_writer_output_loom_signal(
         "chapter_quality_score": quality_score,
         "chapter_quality_confidence": quality_confidence,
         "chapter_quality_signal": quality_signal,
+        "has_style_signal": bool(style_signal),
+        "style_signal": style_signal,
+        "has_rhythm_signal": bool(rhythm_signal),
+        "rhythm_signal": rhythm_signal,
+        "has_dialogue_signal": bool(dialogue_signal),
+        "dialogue_signal": dialogue_signal,
     }
 
 
@@ -3345,6 +3360,9 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
 
     tension_chapters = [item for item in chapter_signals if item.get("has_tension_signal")]
     quality_chapters = [item for item in chapter_signals if item.get("has_quality_signal")]
+    style_chapters = [item for item in chapter_signals if item.get("has_style_signal")]
+    rhythm_chapters = [item for item in chapter_signals if item.get("has_rhythm_signal")]
+    dialogue_chapters = [item for item in chapter_signals if item.get("has_dialogue_signal")]
     quality_scores = [
         float(item["chapter_quality_score"])
         for item in quality_chapters
@@ -3355,6 +3373,18 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
         for item in tension_chapters
         if isinstance(item.get("tension_signal"), dict)
         and isinstance(item["tension_signal"].get("tension_score"), (int, float))
+    ]
+    style_drift_scores = [
+        float(item["style_signal"]["style_drift_score"])
+        for item in style_chapters
+        if isinstance(item.get("style_signal"), dict)
+        and isinstance(item["style_signal"].get("style_drift_score"), (int, float))
+    ]
+    hook_densities = [
+        float(item["rhythm_signal"]["hook_density"])
+        for item in rhythm_chapters
+        if isinstance(item.get("rhythm_signal"), dict)
+        and isinstance(item["rhythm_signal"].get("hook_density"), (int, float))
     ]
     alert_chapters = [
         item["chapter_index"]
@@ -3368,9 +3398,14 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
         "chapter_count": len(chapter_signals),
         "tension_signal_count": len(tension_chapters),
         "chapter_quality_signal_count": len(quality_chapters),
+        "style_signal_count": len(style_chapters),
+        "rhythm_signal_count": len(rhythm_chapters),
+        "dialogue_signal_count": len(dialogue_chapters),
         "tension_alert_chapters": alert_chapters,
         "average_tension_score": round(sum(tension_scores) / len(tension_scores), 4) if tension_scores else None,
         "average_chapter_quality_score": round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None,
+        "average_style_drift_score": round(sum(style_drift_scores) / len(style_drift_scores), 4) if style_drift_scores else None,
+        "average_hook_density": round(sum(hook_densities) / len(hook_densities), 4) if hook_densities else None,
         "signals": chapter_signals,
     }
 
