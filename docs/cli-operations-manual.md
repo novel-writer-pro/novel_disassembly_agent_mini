@@ -505,6 +505,12 @@ export NOVEL_ANALYZER_LOOM_EPISODIC_TOP_K=20
 
 # 张力相似度回溯章节数
 export NOVEL_ANALYZER_LOOM_TENSION_LOOKBACK_N=3
+
+# Phase 4：文风量化 + 节奏分析（默认关闭，待 Phase 4 实现后启用）
+export NOVEL_ANALYZER_LOOM_STYLE_ENABLED=false
+
+# Phase 4：角色认知基（默认关闭，待 Phase 4 实现后启用）
+export NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED=false
 ```
 
 ### 12.2 loom-status — 查看分支记忆与张力状态
