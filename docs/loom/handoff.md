@@ -215,7 +215,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 闭环 | 未完成点 | 说明 |
 |---|---|---|
 | 生产验证闭环 | A/B 实验、shadow→ab→enabled 切换 | 仍停留在规划状态，缺真实对比数据 |
-| reward 数据闭环 | pairwise 数据采集 CLI、500+ pairs、reward model | 当前只有 LLM-as-judge 设计与接入点，没有数据飞轮 |
+| reward 数据闭环 | 500+ pairs 积累、reward model 训练 | CLI 工具已就绪（loom-collect-pairs / loom-collect-pairs-from-manual），缺生产运行数据 |
 | 真实 executor 闭环 | live writeback / external runtime 真执行器 | 当前仍是 preview / local simulation bridge，不是生产 mutation |
 | 真实 consumer telemetry 闭环 | 来自真实 consumer 的迁移上报 | 当前 telemetry 为 contract-derived，可用但不是 runtime truth |
 
