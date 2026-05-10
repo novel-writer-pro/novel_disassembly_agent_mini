@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -1366,10 +1367,9 @@ class HarnessControllerService:
         if self.settings.loom_pairwise_enabled and initial_draft is not None:
             try:
                 from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
-                import uuid as _uuid
                 pairwise_svc = PairwiseEvalService(llm_client=None)
                 pair_result = pairwise_svc.evaluate(
-                    pair_id=str(_uuid.uuid4()),
+                    pair_id=str(uuid.uuid4()),
                     branch_id=branch_id,
                     chapter_index=source_chapter_index,
                     draft_a=initial_draft.draft_text,
@@ -1379,6 +1379,16 @@ class HarnessControllerService:
                 chapter_quality_signal = pair_result.to_chapter_quality_signal()
                 if rounds:
                     rounds[-1].skill_outputs["_loom_chapter_quality"] = chapter_quality_signal
+            except Exception:  # noqa: BLE001
+                pass
+
+        dialogue_signal: dict[str, object] = {}
+        if self.settings.loom_style_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.dialogue_signal_service import DialogueSignalService
+                dialogue_svc = DialogueSignalService(session)
+                dialogue_result = dialogue_svc.compute(branch_id, source_chapter_index)
+                dialogue_signal = dialogue_result.to_dialogue_signal()
             except Exception:  # noqa: BLE001
                 pass
 
@@ -1395,6 +1405,7 @@ class HarnessControllerService:
             final_verdict=final_verdict,
             stop_reason=stop_reason,
             chapter_quality_signal=chapter_quality_signal,
+            dialogue_signal=dialogue_signal,
         )
 
     @staticmethod
