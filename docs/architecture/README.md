@@ -90,6 +90,17 @@
 
 ---
 
+## 拆书加速优化
+
+| 文档 | 说明 |
+|------|------|
+| [../deconstruction-acceleration/README.md](../deconstruction-acceleration/README.md) | 拆书加速优化专题入口 |
+| [../deconstruction-acceleration/architecture.md](../deconstruction-acceleration/architecture.md) | Quick / Deep 双档与 canonical / enrichment 边界 |
+| [../deconstruction-acceleration/development-guide.md](../deconstruction-acceleration/development-guide.md) | 开发顺序、代码触点、测试矩阵与落地约束 |
+| [../deconstruction-acceleration/critical-open-points.md](../deconstruction-acceleration/critical-open-points.md) | 当前方案下剩余关键点审查 |
+
+---
+
 ## 仿写 Harness（基础架构）
 
 | 文档 | 说明 |

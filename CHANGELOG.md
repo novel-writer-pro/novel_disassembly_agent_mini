@@ -1,5 +1,7 @@
 ## Unreleased
 
+- docs(deconstruction-acceleration): 新增 `docs/deconstruction-acceleration/` 专题目录，落地拆书加速优化入口、架构说明、开发文档与关键遗漏审查；同步把专题挂到 `docs/README.md` 与 `docs/architecture/README.md`，明确 Quick/Deep 双档、canonical-readable/downstream-driving 合同、reader isolation、fork inherited deferred completeness、stale/idempotency 守卫与 benchmark 口径。
+
 - feat(loom/phase4-flags): 新增 `loom_style_enabled`（默认 False）和 `loom_character_enabled`（默认 False）两个 Phase 4 feature flag，接入 `loom-status` 输出，并在 CLI 操作手册 12.1 节补充环境变量说明。
 
 - docs(loom/phase4): 新增 Phase 4 设计文档层 `docs/loom/style/`（风格向量化 + 节奏分析 + 对话质量信号，全部零 LLM 调用）和 `docs/loom/character/`（CharacterPersona 构建 + 一致性检测，深化 OOC checker）。更新 `docs/loom/overview.md` 架构图、`docs/loom/README.md` 导航表与架构树。

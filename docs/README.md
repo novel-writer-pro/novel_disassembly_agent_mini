@@ -37,6 +37,7 @@
 | **Review Workflow** | 批量 review、API 稳定性、DB 切换 | [→ tracks/review-workflow](./tracks/review-workflow/README.md) |
 | **仿写能力** | 章节仿写、全书仿写、创新导向 | [→ tracks/imitation](./tracks/imitation/README.md) |
 | **读者体验** | 读者模拟、反馈收集、体验规划 | [→ tracks/reader-experience](./tracks/reader-experience/README.md) |
+| **拆书加速优化** | Quick/Deep 双档、拆书提速、reader isolation、benchmark | [→ deconstruction-acceleration](./deconstruction-acceleration/README.md) |
 
 ---
 
@@ -129,6 +130,12 @@
 > 深入系统设计、模块边界、演进路线，看这里。
 
 → [architecture/README.md](./architecture/README.md)
+
+## 拆书加速优化专题
+
+> 关注章节拆书的 Quick / Deep 双档、加速主线、reader isolation 与开发落地。
+
+→ [deconstruction-acceleration/README.md](./deconstruction-acceleration/README.md)
 
 ---
 
