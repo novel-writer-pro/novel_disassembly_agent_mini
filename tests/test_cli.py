@@ -1050,6 +1050,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
         ['writer-imitate-index', '--output-dir', str(output_dir)],
     )
     assert result.exit_code == 0
+    index_text = index_md.read_text(encoding='utf-8')
     control_surface_registry_payload = json.loads(control_surface_registry_json.read_text(encoding='utf-8'))
     assert control_surface_registry_payload['contract_version'] == 'writer-imitate-control-surface-registry.v1'
     assert control_surface_registry_payload['registry_status'] == 'active'
