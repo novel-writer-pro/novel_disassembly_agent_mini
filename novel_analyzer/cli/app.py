@@ -8451,6 +8451,25 @@ def loom_status(
             if rhythm_result.suggestion:
                 echo(f"rhythm_suggestion:   {rhythm_result.suggestion}")
 
+        if latest_chapter and settings.loom_character_enabled:
+            from novel_analyzer.services.long_book_health_service import LongBookHealthService
+            from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
+            health_svc = LongBookHealthService(session)
+            thread_svc = ThreadSchedulerService(session)
+            health = health_svc.compute_health(branch_id, latest_chapter)
+            thread_report = thread_svc.analyze_thread_status(branch_id, latest_chapter)
+            echo("")
+            echo(f"=== Loom Long-Book Health (chapter {latest_chapter}) ===")
+            echo(f"health_score:        {health.health_score:.4f}")
+            echo(f"quality_trend:       {health.quality_trend}")
+            echo(f"health_alert:        {health.alert_level}")
+            if health.suggestion:
+                echo(f"health_suggestion:   {health.suggestion}")
+            echo(f"active_threads:      {len(thread_report.active_threads)}")
+            echo(f"dormant_threads:     {len(thread_report.dormant_threads)}")
+            echo(f"overdue_threads:     {len(thread_report.overdue_threads)}")
+            echo(f"overdue_ratio:       {thread_report.overdue_ratio:.4f}")
+
 
 @app.command()
 def loom_consolidate(
