@@ -13,7 +13,7 @@ Phase 2 ✅ 已完成（2026-05-09）：张力自动调节 + Pairwise 评估
   目标：情节质量可量化，评估维度可进化
   结果：feature flags + 3 个 CLI 命令 + 15 个集成测试，全部通过
 
-Phase 3 🔲 待开始：Reward Model + 角色认知基 + 生产部署
+Phase 3 🔄 进行中：Reward Model + 角色认知基 + 生产部署
   目标：评估自进化，角色一致性进一步提升，PostgreSQL 生产启用
   前提：积累 500+ pairwise 对比数据；Alembic migration 在生产 PG 上运行
 ```
@@ -165,7 +165,7 @@ Phase 3 🔲 待开始：Reward Model + 角色认知基 + 生产部署
 **P3：Pairwise 数据积累 + Reward Model**
 
 ```
-□ 从 manual_eval_record 提取初始 pairwise 数据（目标 50+ pairs）
+✅ 从 manual_eval_record 提取初始 pairwise 数据（loom-collect-pairs-from-manual，扫描 runs/manual_eval/ 工作区）
 ✅ 从 harness 迭代产物提取 pairwise 数据（同章节多版本）
 ✅ 实现 pairwise 数据收集 CLI 命令（loom-collect-pairs + loom-pairs-stats）
    - loom-collect-pairs: 单目录（round-0 vs final）+ 跨目录（baseline vs steering）两种模式
