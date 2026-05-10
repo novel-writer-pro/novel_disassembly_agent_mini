@@ -1,10 +1,12 @@
 ## Unreleased
 
-- feat(loom/phase3/collect-pairs-from-manual): 新增 `loom-collect-pairs-from-manual` CLI 命令，扫描 `runs/manual_eval/` 下所有工作区（跳过 `_template`）的 `artifacts/writer-imitate-ch*.json`，提取 round-0 vs final pairwise 对，追加写入 JSONL，`pair_source=manual_eval_workspace`。8 个单元测试全部通过。
+- docs(loom/gap-analysis): 新增 `docs/loom/gap-analysis-and-evolution.md`，系统分析当前仿写能力与商业水准 SOTA 的差距（综合评分 5/10，目标 7/10），规划 Phase 4（文风量化 + 节奏分析 + 对话质量信号 + 角色认知基深化）和 Phase 5（读者模拟评审 + 多线叙事调度 + 长书自适应编排 + 外部知识 RAG）完整任务清单与验收标准。
 
-- feat(loom/phase3/pairwise-infra): 新增四个 Phase 3 pairwise 数据收集 CLI 命令：`loom-collect-pairs`（单目录 round-0 vs final + 跨目录 baseline vs steering）、`loom-pairs-stats`（采集进度 / 质量分布 / 距 500 目标剩余量）、`loom-ab-compare`（A/B 实验 character_ooc 触发率对比，目标下降 ≥20%，支持 JSON 报告导出）、`loom-collect-pairs-from-db`（跨两个 DB 分支提取 pairwise 对）。新增 `ChapterImitationHarnessReport.chapter_quality_signal` 字段，`loom_pairwise_enabled=True` 时自动运行 heuristic pairwise eval。20 个单元测试全部通过。
+- docs(loom/roadmap): 更新 `docs/loom/roadmap.md`，新增 Phase 4/5 总览与完整任务清单（style_calibration_service / rhythm_analysis_service / dialogue_signal / character_agent_service / reader_simulation_service / thread_scheduler_service），补充两条新风险登记。
 
-- fix(loom/phase3): 修复 `PostgresCheckReport.missing_cluster_review_columns` 使用 `field(default_factory=dict)` 使参数可选，修复 test_postgres_checks.py 失败。
+- docs(loom/overview): 更新 `docs/loom/overview.md` SOTA 对比表，新增节奏/爽点、对话设计、读者模拟、多线调度四个维度，并更新已有维度的 Gap 状态以反映 Phase 1-3 进展。
+
+- refactor(loom/cli): 从 `loom_collect_pairs`、`loom_collect_pairs_from_db`、`loom_collect_pairs_from_manual`、`loom_ab_compare` 四个命令中提取 9 个模块级共享 helper（`_loom_build_llm_client`、`_loom_final_draft_text`、`_loom_round0_draft_text`、`_loom_extract_chapter_index`、`_loom_load_chapter_artifacts`、`_loom_chapter_goal`、`_loom_risk_verdict`、`_loom_write_pairs_jsonl`、`_loom_echo_total_pairs`），移除约 150 行重复代码，将 `uuid` 提升为模块级导入。69 个 Loom 测试全部通过。
 
 - docs(loom/phase3): 更新 `docs/loom/handoff.md`（Phase 3 交付物、测试计数 69/394、CMD 速查）、`docs/loom/roadmap.md`（Phase 3 进行中、P3 任务清单全部标记）、`docs/cli-operations-manual.md`（新增 12.7–12.11 节 Phase 3 命令文档）。
 
