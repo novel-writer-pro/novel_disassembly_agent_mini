@@ -225,7 +225,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - 阈值：warn ≥ 0.15，critical ≥ 0.30
 ✅ loom-status 展示 style_drift_score（loom_style_enabled=True 时）
 ✅ preflight_imitation 接入 style_drift 检查（feature flag loom_style_enabled，warn-only）
-□ session_loom_signals 新增 style_signal 字段
+✅ session_loom_signals 新增 style_signal / rhythm_signal / dialogue_signal 字段（average_style_drift_score / average_hook_density 聚合）
 □ 验收：style_drift_score 与人工风格评分 Pearson r ≥ 0.5
 ```
 
