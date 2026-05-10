@@ -932,6 +932,26 @@ class HarnessControllerService:
             except Exception:  # noqa: BLE001
                 pass  # Loom character is non-blocking
 
+        if self.settings.loom_character_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
+                thread_svc = ThreadSchedulerService(self.session)
+                thread_signal = thread_svc.suggest_thread_activation(branch_id, source_chapter_index)
+                if thread_signal.suggested_thread is not None:
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_thread_scheduler",
+                            status="warn",
+                            severity="low",
+                            priority=4,
+                            notes=[thread_signal.suggestion],
+                        )
+                    )
+                    if thread_signal.suggested_thread not in recommended_actions:
+                        recommended_actions.append(thread_signal.suggestion)
+            except Exception:  # noqa: BLE001
+                pass  # Loom thread scheduler is non-blocking
+
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
             source_chapter_index=source_chapter_index,

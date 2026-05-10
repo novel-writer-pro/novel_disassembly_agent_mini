@@ -321,8 +321,8 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - compute_health(branch_id, as_of_chapter) → LongBookHealthReport
    - detect_quality_decline(branch_id, as_of_chapter) → bool（连续 3 章下滑）
    - quality_trend: stable | declining | recovering
-□ loom-status 展示 long_book_health_score
-□ 自动建议 steering pack 更新（declining 时）
+✅ loom-status 展示 long_book_health_score（loom_character_enabled=True 时）
+□ 自动建议 steering pack 更新（declining 时，待 steering_library_service 集成）
 □ 验收：100 章仿写的 chapter_quality_score 标准差 < 0.15
 ```
 
