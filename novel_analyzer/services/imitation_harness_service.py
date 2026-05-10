@@ -822,10 +822,17 @@ class HarnessControllerService:
         # Loom: tension check (non-blocking, warn only)
         if self.settings.loom_tension_enabled:
             try:
+                rhythm_signal_for_tension: dict[str, object] | None = None
+                if self.settings.loom_style_enabled and self.session is not None:
+                    from novel_analyzer.services.rhythm_analysis_service import RhythmAnalysisService
+                    rhythm_signal_for_tension = RhythmAnalysisService(self.session).compute(
+                        branch_id, source_chapter_index
+                    ).to_rhythm_signal()
                 tension = self.tension_service.compute(
                     branch_id,
                     chapter_index=source_chapter_index,
                     lookback_n=self.settings.loom_tension_lookback_n,
+                    rhythm_signal=rhythm_signal_for_tension,
                 )
                 tension_sig = tension.to_operator_signal()
                 if tension.alerts:

@@ -113,6 +113,7 @@ class TensionService:
         branch_id: str,
         chapter_index: int,
         lookback_n: int = 3,
+        rhythm_signal: dict[str, object] | None = None,
     ) -> TensionScore:
         similarity = self._plot_similarity(branch_id, chapter_index, lookback_n)
         density = self._conflict_density(branch_id, chapter_index)
@@ -126,7 +127,7 @@ class TensionService:
         )
         tension = round(max(0.0, min(1.0, tension)), 4)
 
-        alerts = self._build_alerts(similarity, density, surprise, tension)
+        alerts = self._build_alerts(similarity, density, surprise, tension, rhythm_signal)
         return TensionScore(
             chapter_index=chapter_index,
             branch_id=branch_id,
@@ -296,6 +297,7 @@ class TensionService:
         density: float,
         surprise: float,
         tension: float,
+        rhythm_signal: dict[str, object] | None = None,
     ) -> list[TensionAlert]:
         alerts: list[TensionAlert] = []
 
@@ -329,6 +331,25 @@ class TensionService:
                 message=f"新颖度指数 {surprise:.2f}，几乎没有新元素",
                 suggestion="考虑引入新角色、新地点或新信息",
             ))
+
+        if rhythm_signal:
+            hook_density = rhythm_signal.get("hook_density")
+            rhythm_alert = rhythm_signal.get("alert_level", "none")
+            if rhythm_alert != "none" and isinstance(hook_density, (int, float)):
+                if density < _DENSITY_LOW:
+                    alerts.append(TensionAlert(
+                        alert_type="double_flat",
+                        severity="high",
+                        message=f"冲突密度（{density:.2f}）与爽点密度（{hook_density:.2f}/千字）双低，情节严重平淡",
+                        suggestion="建议同时增加冲突事件和情绪高点，或激活已有伏笔",
+                    ))
+                else:
+                    alerts.append(TensionAlert(
+                        alert_type="low_hook_density",
+                        severity="medium",
+                        message=f"爽点密度偏低（{hook_density:.2f}/千字），读者留存风险",
+                        suggestion="建议在本章增加情绪高点或意外反转",
+                    ))
 
         return alerts
 
