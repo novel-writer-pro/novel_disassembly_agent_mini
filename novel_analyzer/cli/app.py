@@ -62,6 +62,61 @@ def _safe_settings(database_url: str | None = None, *, require_admin: bool = Fal
         raise typer.Exit(code=1) from exc
 
 
+def _loom_build_llm_client(use_llm: bool, database_url: str | None, model_name: str) -> Any:
+    if not use_llm:
+        return None
+    from novel_analyzer.llm.client import build_chat_model
+    settings = _safe_settings(database_url)
+    raw_model = build_chat_model(settings, model_name=model_name or None)
+
+    class _Adapter:
+        def __init__(self, lc_model: Any) -> None:
+            self._model = lc_model
+
+        def chat(self, prompt: str) -> str:
+            from langchain_core.messages import HumanMessage
+            return str(self._model.invoke([HumanMessage(content=prompt)]).content)
+
+    return _Adapter(raw_model)
+
+
+def _loom_final_draft_text(payload: dict[str, object]) -> str:
+    fd = payload.get("final_draft", {})
+    if isinstance(fd, dict):
+        return str(fd.get("draft_text", "")).strip()
+    return ""
+
+
+def _loom_round0_draft_text(payload: dict[str, object]) -> str:
+    rounds = payload.get("rounds", [])
+    if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
+        draft = rounds[0].get("draft", {})
+        if isinstance(draft, dict):
+            return str(draft.get("draft_text", "")).strip()
+    return ""
+
+
+def _loom_load_chapter_artifacts(directory: Path) -> dict[int, dict[str, object]]:
+    result: dict[int, dict[str, object]] = {}
+    for path in sorted(directory.glob("writer-imitate-ch*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(payload, dict):
+            continue
+        try:
+            chapter_index = int(payload.get("source_chapter_index", 0))
+        except (TypeError, ValueError):
+            chapter_index = 0
+        if chapter_index == 0:
+            m = re.search(r"writer-imitate-ch(\d+)\.json$", path.name)
+            chapter_index = int(m.group(1)) if m else 0
+        if chapter_index > 0:
+            result[chapter_index] = payload
+    return result
+
+
 def _list_skill_names(settings: Settings) -> list[str]:
     from novel_analyzer.skills.loader import list_skill_names
 
@@ -8344,58 +8399,8 @@ def loom_collect_pairs(
 
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
 
-    llm_client = None
-    if use_llm:
-        from novel_analyzer.llm.client import build_chat_model
-        settings = _safe_settings(database_url)
-        raw_model = build_chat_model(settings, model_name=model_name or None)
-
-        class _LangChainAdapter:
-            def __init__(self, lc_model: Any) -> None:
-                self._model = lc_model
-
-            def chat(self, prompt: str) -> str:
-                from langchain_core.messages import HumanMessage
-                result = self._model.invoke([HumanMessage(content=prompt)])
-                return str(result.content)
-
-        llm_client = _LangChainAdapter(raw_model)
-
+    llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
     eval_svc = PairwiseEvalService(llm_client=llm_client)
-
-    def _load_chapter_artifacts(directory: Path) -> dict[int, dict[str, object]]:
-        result: dict[int, dict[str, object]] = {}
-        for path in sorted(directory.glob("writer-imitate-ch*.json")):
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except Exception:  # noqa: BLE001
-                continue
-            if not isinstance(payload, dict):
-                continue
-            try:
-                chapter_index = int(payload.get("source_chapter_index", 0))
-            except (TypeError, ValueError):
-                chapter_index = 0
-            if chapter_index == 0:
-                m = re.search(r"writer-imitate-ch(\d+)\.json$", path.name)
-                chapter_index = int(m.group(1)) if m else 0
-            if chapter_index > 0:
-                result[chapter_index] = payload
-        return result
-
-    def _final_draft_text(payload: dict[str, object]) -> str:
-        fd = payload.get("final_draft", {})
-        if isinstance(fd, dict):
-            return str(fd.get("draft_text", "")).strip()
-        return ""
-
-    def _round0_draft_text(payload: dict[str, object]) -> str:
-        rounds = payload.get("rounds", [])
-        if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
-            draft = rounds[0].get("draft", {})
-            if isinstance(draft, dict):
-                return str(draft.get("draft_text", "")).strip()
-        return ""
 
     def _chapter_goal(payload: dict[str, object]) -> str:
         return str(payload.get("target_goal", "")).strip()
@@ -8411,13 +8416,13 @@ def loom_collect_pairs(
     pairs_to_eval: list[dict[str, object]] = []
 
     if compare_dir is not None:
-        baseline_artifacts = _load_chapter_artifacts(output_dir)
-        steering_artifacts = _load_chapter_artifacts(compare_dir)
+        baseline_artifacts = _loom_load_chapter_artifacts(output_dir)
+        steering_artifacts = _loom_load_chapter_artifacts(compare_dir)
         for ch_idx in sorted(set(baseline_artifacts) & set(steering_artifacts)):
             b_payload = baseline_artifacts[ch_idx]
             s_payload = steering_artifacts[ch_idx]
-            draft_a = _final_draft_text(b_payload)
-            draft_b = _final_draft_text(s_payload)
+            draft_a = _loom_final_draft_text(b_payload)
+            draft_b = _loom_final_draft_text(s_payload)
             if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
                 continue
             pairs_to_eval.append({
@@ -8435,12 +8440,12 @@ def loom_collect_pairs(
                 "dir_b": str(compare_dir),
             })
     else:
-        for ch_idx, payload in sorted(_load_chapter_artifacts(output_dir).items()):
+        for ch_idx, payload in sorted(_loom_load_chapter_artifacts(output_dir).items()):
             rounds = payload.get("rounds", [])
             if not isinstance(rounds, list) or len(rounds) < 2:
                 continue
-            draft_a = _round0_draft_text(payload)
-            draft_b = _final_draft_text(payload)
+            draft_a = _loom_round0_draft_text(payload)
+            draft_b = _loom_final_draft_text(payload)
             if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
                 continue
             if draft_a == draft_b:
@@ -8786,23 +8791,7 @@ def loom_collect_pairs_from_db(
 
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
 
-    llm_client = None
-    if use_llm:
-        from novel_analyzer.llm.client import build_chat_model
-        settings = _safe_settings(database_url)
-        raw_model = build_chat_model(settings, model_name=model_name or None)
-
-        class _LangChainAdapter:
-            def __init__(self, lc_model: Any) -> None:
-                self._model = lc_model
-
-            def chat(self, prompt: str) -> str:
-                from langchain_core.messages import HumanMessage
-                result = self._model.invoke([HumanMessage(content=prompt)])
-                return str(result.content)
-
-        llm_client = _LangChainAdapter(raw_model)
-
+    llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
     eval_svc = PairwiseEvalService(llm_client=llm_client)
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
@@ -8951,42 +8940,12 @@ def loom_collect_pairs_from_manual(
 
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
 
-    llm_client = None
-    if use_llm:
-        from novel_analyzer.llm.client import build_chat_model
-        settings = _safe_settings(database_url)
-        raw_model = build_chat_model(settings, model_name=model_name or None)
-
-        class _LangChainAdapter:
-            def __init__(self, lc_model: Any) -> None:
-                self._model = lc_model
-
-            def chat(self, prompt: str) -> str:
-                from langchain_core.messages import HumanMessage
-                result = self._model.invoke([HumanMessage(content=prompt)])
-                return str(result.content)
-
-        llm_client = _LangChainAdapter(raw_model)
-
+    llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
     eval_svc = PairwiseEvalService(llm_client=llm_client)
 
     if not manual_eval_dir.exists():
         echo(f"loom_collect_pairs_from_manual: {manual_eval_dir} not found.")
         raise typer.Exit(code=1)
-
-    def _final_draft_text(payload: dict[str, object]) -> str:
-        fd = payload.get("final_draft", {})
-        if isinstance(fd, dict):
-            return str(fd.get("draft_text", "")).strip()
-        return ""
-
-    def _round0_draft_text(payload: dict[str, object]) -> str:
-        rounds = payload.get("rounds", [])
-        if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
-            d = rounds[0].get("draft", {})
-            if isinstance(d, dict):
-                return str(d.get("draft_text", "")).strip()
-        return ""
 
     def _chapter_goal(payload: dict[str, object]) -> str:
         return str(payload.get("target_goal", "")).strip()
@@ -9021,8 +8980,8 @@ def loom_collect_pairs_from_manual(
             if not isinstance(rounds, list) or len(rounds) < 2:
                 continue
 
-            draft_a = _round0_draft_text(payload)
-            draft_b = _final_draft_text(payload)
+            draft_a = _loom_round0_draft_text(payload)
+            draft_b = _loom_final_draft_text(payload)
             if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
                 continue
             if draft_a == draft_b:
