@@ -131,7 +131,7 @@ Loom（新增层，叠加在上方）
 | ✅ Action Queue / Execution State | memory/carry-over-migration | 对接 carry_over_state 迁移路径 |
 | ✅ Primary/Legacy 双层治理 | reward/eval-data-collection | 评估数据按 primary/legacy 分层收集 |
 | 🔴 Live Checkpoint Writeback | memory/conflict-metabolism | 冲突消解后的状态回写机制 |
-| 🟡 Consumer Migration Telemetry | reward/eval-data-collection | writer control surfaces、execution resume、live/runtime readiness 以及 external runtime simulation bridge 已输出最小迁移遥测；更细粒度真实 runtime 观测仍待后续扩展 |
+| 🟡 Consumer Migration Telemetry | reward/eval-data-collection | writer control surfaces、execution chain、execution resume、live/runtime readiness 以及 external runtime simulation bridge 已输出最小迁移遥测；更细粒度真实 runtime 观测仍待后续扩展 |
 | 🟡 Automated Retirement Gate | reward/pairwise-eval-design | writer retirement readiness/preview 已接入最小质量门控；完整 reward 驱动 gate 仍待后续扩展 |
 | 🟡 Loom Signal Surface | tension/tension-metrics + reward/pairwise-eval-design | `writer-imitate-operator-surface` 已暴露 `session_loom_signals`，`session_primary_verdicts` 也已吸收 quality 聚合；retirement gate 仍待后续接入 |
 

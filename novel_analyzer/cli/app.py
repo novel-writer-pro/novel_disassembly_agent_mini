@@ -3254,6 +3254,42 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
     }
 
 
+def _build_session_loom_gate_summary(
+    primary_verdicts: dict[str, object] | object,
+    consumer_migration: dict[str, object] | object,
+    loom_signals: dict[str, object] | object,
+) -> dict[str, object]:
+    primary_verdicts = primary_verdicts if isinstance(primary_verdicts, dict) else {}
+    consumer_migration = consumer_migration if isinstance(consumer_migration, dict) else {}
+    loom_signals = loom_signals if isinstance(loom_signals, dict) else {}
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
+    migration_status = str(consumer_migration.get("migration_status", "")).strip()
+    avg_quality = primary_verdicts.get("average_chapter_quality_score")
+    tension_signal_count = int(loom_signals.get("tension_signal_count", 0) or 0)
+    tension_alert_chapters = loom_signals.get("tension_alert_chapters", [])
+    tension_alert_count = len(tension_alert_chapters) if isinstance(tension_alert_chapters, list) else 0
+    if quality_verdict == "quality-hold":
+        gate_status = "blocked-on-quality"
+        next_gate_action = "raise chapter quality before continuing execution flow"
+    elif migration_status and migration_status != "primary-in-progress":
+        gate_status = "blocked-on-migration"
+        next_gate_action = "stabilize consumer migration before continuing execution flow"
+    else:
+        gate_status = "monitoring"
+        next_gate_action = "continue execution while monitoring Loom quality and migration telemetry"
+    return {
+        "contract_version": "loom-gate-summary.v1",
+        "quality_verdict": quality_verdict,
+        "average_chapter_quality_score": avg_quality,
+        "chapter_quality_signal_count": int(primary_verdicts.get("chapter_quality_signal_count", 0) or 0),
+        "tension_signal_count": tension_signal_count,
+        "tension_alert_chapter_count": tension_alert_count,
+        "migration_status": migration_status,
+        "gate_status": gate_status,
+        "next_gate_action": next_gate_action,
+    }
+
+
 def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     experiment_files = sorted(output_dir.glob("writer-innovation-experiment-*.json"))
     ledger_entries: list[dict[str, object]] = []
@@ -3867,6 +3903,9 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
     ]
     primary_verdicts = session_state.get("session_primary_verdicts", {})
     primary_digests = session_state.get("session_primary_digests", {})
+    consumer_migration = session_state.get("session_consumer_migration_telemetry", {})
+    loom_signals = session_state.get("session_loom_signals", {})
+    loom_gate_summary = _build_session_loom_gate_summary(primary_verdicts, consumer_migration, loom_signals)
     return {
         "contract_version": "writer-imitate-action-queue.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -3879,6 +3918,7 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
         "session_primary_digests": primary_digests if isinstance(primary_digests, dict) else {},
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
         "session_consumer_migration_telemetry": session_state.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": loom_gate_summary,
         "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "action_backlog": backlog,
         "ready_items": ready_items,
@@ -4046,6 +4086,23 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         legacy_text = "；".join(str(x) for x in legacy_consumers) if isinstance(legacy_consumers, list) else ""
         lines.append(f"- primary_consumers_ready: {primary_text}")
         lines.append(f"- legacy_consumers_remaining: {legacy_text}")
+    loom_gate_summary = payload.get("session_loom_gate_summary", {})
+    if isinstance(loom_gate_summary, dict):
+        lines.append("\n## Loom Gate Summary")
+        lines.append(f"- gate_status: {loom_gate_summary.get('gate_status', '')}")
+        lines.append(f"- quality_verdict: {loom_gate_summary.get('quality_verdict', '')}")
+        lines.append(
+            f"- average_chapter_quality_score: {loom_gate_summary.get('average_chapter_quality_score', '')}"
+        )
+        lines.append(
+            f"- chapter_quality_signal_count: {loom_gate_summary.get('chapter_quality_signal_count', 0)}"
+        )
+        lines.append(f"- tension_signal_count: {loom_gate_summary.get('tension_signal_count', 0)}")
+        lines.append(
+            f"- tension_alert_chapter_count: {loom_gate_summary.get('tension_alert_chapter_count', 0)}"
+        )
+        lines.append(f"- migration_status: {loom_gate_summary.get('migration_status', '')}")
+        lines.append(f"- next_gate_action: {loom_gate_summary.get('next_gate_action', '')}")
     legacy_layer = payload.get("session_legacy_contract_layer", {})
     if isinstance(legacy_layer, dict):
         lines.append("\n## Legacy Contract Layer")
@@ -4503,6 +4560,13 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
     ]
     execution_registry_obj = session_state.get("session_execution_registry", {})
     execution_registry = execution_registry_obj if isinstance(execution_registry_obj, dict) else {}
+    consumer_migration = session_state.get("session_consumer_migration_telemetry", {})
+    loom_signals = session_state.get("session_loom_signals", {})
+    loom_gate_summary = _build_session_loom_gate_summary(
+        session_state.get("session_primary_verdicts", {}),
+        consumer_migration,
+        loom_signals,
+    )
     recovery_cursor = {
         "blocked_ticket_ids": [
             str(item.get("ticket_id", ""))
@@ -4550,6 +4614,7 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
         "session_primary_digests": session_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
         "session_consumer_migration_telemetry": session_state.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": loom_gate_summary,
         "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "execution_ticket_count": len(execution_tickets),
         "ready_count": ready_count,
@@ -4742,6 +4807,7 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
         "session_primary_digests": execution_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": execution_state.get("session_primary_contract_hints", {}),
         "session_consumer_migration_telemetry": execution_state.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": execution_state.get("session_loom_gate_summary", {}),
         "session_legacy_contract_layer": execution_state.get("session_legacy_contract_layer", {}),
         "current_run_status": execution_state.get("run_status", ""),
         "next_run_status": next_run_status,
@@ -4886,6 +4952,7 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
         "session_primary_digests": replay.get("session_primary_digests", {}),
         "session_primary_contract_hints": replay.get("session_primary_contract_hints", {}),
         "session_consumer_migration_telemetry": replay.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": replay.get("session_loom_gate_summary", {}),
         "session_legacy_contract_layer": replay.get("session_legacy_contract_layer", {}),
         "apply_status": apply_status,
         "applied_tickets": applied_tickets,
@@ -5798,6 +5865,7 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
         "session_primary_digests": apply_preview.get("session_primary_digests", {}),
         "session_primary_contract_hints": apply_preview.get("session_primary_contract_hints", {}),
         "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": apply_preview.get("session_loom_gate_summary", {}),
         "session_legacy_contract_layer": apply_preview.get("session_legacy_contract_layer", {}),
         "resume_status": resume_status,
         "resume_targets": resume_targets,
