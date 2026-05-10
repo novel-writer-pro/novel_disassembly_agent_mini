@@ -20,6 +20,16 @@
    - 已收敛 vs 尚未完全闭合的问题
    - 后续是否需要再开新工作流的判断依据
 
+4. [benchmark-baseline-20260511.md](./benchmark-baseline-20260511.md)
+   - 当前 canonical 默认读路径的基线 benchmark
+   - 后续 Quick / Deep 优化的对照零点
+
+5. [development-log-20260511.md](./development-log-20260511.md)
+   - 本轮 regression / benchmark / docs lane 的开发记录
+
+6. [usage-log-20260511.md](./usage-log-20260511.md)
+   - 本轮命令、验证动作与使用证据
+
 ## 适合谁看
 - **架构师 / 后端负责人**：先看 [architecture.md](./architecture.md)
 - **直接开发者**：先看 [development-guide.md](./development-guide.md)

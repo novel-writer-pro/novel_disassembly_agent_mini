@@ -98,6 +98,7 @@
 | [../deconstruction-acceleration/architecture.md](../deconstruction-acceleration/architecture.md) | Quick / Deep 双档与 canonical / enrichment 边界 |
 | [../deconstruction-acceleration/development-guide.md](../deconstruction-acceleration/development-guide.md) | 开发顺序、代码触点、测试矩阵与落地约束 |
 | [../deconstruction-acceleration/critical-open-points.md](../deconstruction-acceleration/critical-open-points.md) | 当前方案下剩余关键点审查 |
+| [../deconstruction-acceleration/benchmark-baseline-20260511.md](../deconstruction-acceleration/benchmark-baseline-20260511.md) | 当前 canonical 默认读路径 benchmark 零点 |
 
 ---
 

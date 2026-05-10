@@ -1,6 +1,6 @@
 ## Unreleased
 
-- fix(materialization): when blocking retrieval/fact/graph/window materialization fails after persisting a replacement chapter artifact, restore the previous active artifact and keep the chapter job failed so downstream state never advances on partial materialization; add regression coverage for rollback + blocking semantics.
+- test(docs/deconstruction-acceleration): 为 `ContextService` 新增两条回归保护，验证 inactive/shadow companion artifact 与 shadow window artifact 不会改变默认 `previous_summary` / `window_summary` 读路径；同步新增 `docs/deconstruction-acceleration/benchmark-baseline-20260511.md`、`development-log-20260511.md`、`usage-log-20260511.md`，并把 baseline/log evidence 挂到 `docs/README.md` 与 `docs/architecture/README.md`。本次不改 imitation 默认行为，只补 regression/benchmark/docs 交付物。
 
 - docs(deconstruction-acceleration): 新增 `docs/deconstruction-acceleration/` 专题目录，落地拆书加速优化入口、架构说明、开发文档与关键遗漏审查；同步把专题挂到 `docs/README.md` 与 `docs/architecture/README.md`，明确 Quick/Deep 双档、canonical-readable/downstream-driving 合同、reader isolation、fork inherited deferred completeness、stale/idempotency 守卫与 benchmark 口径。
 

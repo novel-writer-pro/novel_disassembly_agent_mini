@@ -137,6 +137,11 @@
 
 → [deconstruction-acceleration/README.md](./deconstruction-acceleration/README.md)
 
+当前基线证据：
+- [deconstruction-acceleration/benchmark-baseline-20260511.md](./deconstruction-acceleration/benchmark-baseline-20260511.md)
+- [deconstruction-acceleration/development-log-20260511.md](./deconstruction-acceleration/development-log-20260511.md)
+- [deconstruction-acceleration/usage-log-20260511.md](./deconstruction-acceleration/usage-log-20260511.md)
+
 ---
 
 ## Loom 架构（下一代）
