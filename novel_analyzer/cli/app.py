@@ -8620,26 +8620,6 @@ def loom_ab_compare(
     character_ooc trigger rates, risk level distribution, and verdict distribution.
     Target: character_ooc trigger rate drops >= 20% with Loom enabled.
     """
-    def _load_artifacts(directory: Path) -> dict[int, dict[str, object]]:
-        result: dict[int, dict[str, object]] = {}
-        for path in sorted(directory.glob("writer-imitate-ch*.json")):
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except Exception:  # noqa: BLE001
-                continue
-            if not isinstance(payload, dict):
-                continue
-            try:
-                chapter_index = int(payload.get("source_chapter_index", 0))
-            except (TypeError, ValueError):
-                chapter_index = 0
-            if chapter_index == 0:
-                m = re.search(r"writer-imitate-ch(\d+)\.json$", path.name)
-                chapter_index = int(m.group(1)) if m else 0
-            if chapter_index > 0:
-                result[chapter_index] = payload
-        return result
-
     def _final_risk(payload: dict[str, object]) -> dict[str, object]:
         rounds = payload.get("rounds", [])
         if isinstance(rounds, list) and rounds:
@@ -8670,8 +8650,8 @@ def loom_ab_compare(
     def _final_verdict(payload: dict[str, object]) -> str:
         return str(payload.get("final_verdict", "unknown")).strip()
 
-    baseline_artifacts = _load_artifacts(baseline_dir)
-    loom_artifacts = _load_artifacts(loom_dir)
+    baseline_artifacts = _loom_load_chapter_artifacts(baseline_dir)
+    loom_artifacts = _loom_load_chapter_artifacts(loom_dir)
     common_chapters = sorted(set(baseline_artifacts) & set(loom_artifacts))
 
     if not common_chapters:
