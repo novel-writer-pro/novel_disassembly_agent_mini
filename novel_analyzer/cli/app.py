@@ -169,6 +169,14 @@ def _loom_write_pairs_jsonl(
     return collected
 
 
+def _loom_echo_total_pairs(pairs_file: Path) -> None:
+    try:
+        total = sum(1 for _ in pairs_file.open(encoding="utf-8"))
+        echo(f"  total_pairs_in_file={total}")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _list_skill_names(settings: Settings) -> list[str]:
     from novel_analyzer.skills.loader import list_skill_names
 
@@ -8519,11 +8527,7 @@ def loom_collect_pairs(
     echo(f"  mode={'cross_dir' if compare_dir else 'single_dir_rounds'}")
     echo(f"  use_llm={use_llm}")
     echo(f"  pairs_file={pairs_file}")
-    try:
-        total_lines = sum(1 for _ in pairs_file.open(encoding="utf-8"))
-        echo(f"  total_pairs_in_file={total_lines}")
-    except Exception:  # noqa: BLE001
-        pass
+    _loom_echo_total_pairs(pairs_file)
 
 
 @app.command()
@@ -8894,11 +8898,7 @@ def loom_collect_pairs_from_db(
     echo(f"  branch_a={branch_a}")
     echo(f"  branch_b={branch_b}")
     echo(f"  use_llm={use_llm}")
-    try:
-        total_lines = sum(1 for _ in pairs_file.open(encoding="utf-8"))
-        echo(f"  total_pairs_in_file={total_lines}")
-    except Exception:  # noqa: BLE001
-        pass
+    _loom_echo_total_pairs(pairs_file)
 
 
 @app.command()
@@ -8998,11 +8998,7 @@ def loom_collect_pairs_from_manual(
     echo(f"  workspaces_scanned={len(workspace_dirs)}")
     echo(f"  use_llm={use_llm}")
     echo(f"  pairs_file={pairs_file}")
-    try:
-        total_lines = sum(1 for _ in pairs_file.open(encoding="utf-8"))
-        echo(f"  total_pairs_in_file={total_lines}")
-    except Exception:  # noqa: BLE001
-        pass
+    _loom_echo_total_pairs(pairs_file)
 
 
 if __name__ == "__main__":
