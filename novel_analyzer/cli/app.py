@@ -3678,16 +3678,28 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     }
     session_legacy_retirement_readiness = {
         "contract_version": "writer-imitate-legacy-retirement-readiness.v1",
-        "status": "not-ready",
+        "status": "quality-blocked" if quality_verdict == "quality-hold" else "not-ready",
         "required_conditions": [
             "downstream consumers switched to session_primary_verdicts",
             "downstream consumers switched to session_primary_digests",
             "legacy contract surface reviewed by operators",
             "primary-first display policy validated in production-like workflow",
+            "loom quality gate passes for the current session",
         ],
         "blocking_reasons": [
             "legacy verdict fields still exposed for compatibility",
             "legacy digest fields still exposed for compatibility",
+            *(
+                [
+                    f"loom quality gate blocks retirement (quality_verdict={quality_verdict}, average_chapter_quality_score={avg_quality_score})"
+                ]
+                if quality_verdict == "quality-hold"
+                else [
+                    "loom quality signal missing for retirement gate"
+                ]
+                if quality_verdict == "quality-signal-missing"
+                else []
+            ),
         ],
     }
     session_legacy_retirement_plan = {
@@ -4192,7 +4204,7 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
         "retirement_readiness": readiness,
         "retirement_pilot_wave": pilot_wave,
         "legacy_contract_layer": legacy_layer,
-        "preview_status": "planned-not-executed",
+        "preview_status": "quality-blocked" if readiness.get("status") == "quality-blocked" else "planned-not-executed",
         "projected_effect": {
             "legacy_verdict_count_after_wave": max(int(legacy_layer.get("legacy_verdict_count", 0) or 0), 0),
             "legacy_digest_count_after_wave": max(
@@ -4202,6 +4214,7 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
                 0,
             ),
             "requires_rollback_on_mismatch": True,
+            "quality_gate": readiness.get("status", ""),
         },
     }
 

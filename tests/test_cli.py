@@ -936,6 +936,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_preview'] == 'runtime-executor-review-surface'
     assert operator_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
+    assert 'loom quality gate passes for the current session' in operator_surface_payload['session_legacy_retirement_readiness']['required_conditions']
     assert operator_surface_payload['session_legacy_retirement_plan']['pilot_candidates']
     assert operator_surface_payload['session_legacy_retirement_pilot_wave']['target_family'] == 'extra digest/checksum variants'
     assert operator_surface_payload['session_loom_signals']['chapter_count'] == 1
@@ -1007,6 +1008,25 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Retirement Readiness' in legacy_retirement_preview_text
     assert '## Retirement Pilot Wave' in legacy_retirement_preview_text
     assert '## Projected Effect' in legacy_retirement_preview_text
+
+    loom_payload['chapter_quality_score'] = 0.61
+    loom_payload_path.write_text(json.dumps(loom_payload, ensure_ascii=False, indent=2), encoding='utf-8')
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    blocked_operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
+    assert blocked_operator_surface_payload['session_primary_verdicts']['quality_verdict'] == 'quality-hold'
+    assert blocked_operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'quality-blocked'
+    blocking_reasons = blocked_operator_surface_payload['session_legacy_retirement_readiness']['blocking_reasons']
+    assert any('loom quality gate blocks retirement' in reason for reason in blocking_reasons)
+    blocked_preview_payload = json.loads(legacy_retirement_preview_json.read_text(encoding='utf-8'))
+    assert blocked_preview_payload['preview_status'] == 'quality-blocked'
+    assert blocked_preview_payload['projected_effect']['quality_gate'] == 'quality-blocked'
+    blocked_preview_text = legacy_retirement_preview_md.read_text(encoding='utf-8')
+    assert 'preview_status: quality-blocked' in blocked_preview_text
+    assert 'status: quality-blocked' in blocked_preview_text
     control_surface_registry_payload = json.loads(control_surface_registry_json.read_text(encoding='utf-8'))
     assert control_surface_registry_payload['contract_version'] == 'writer-imitate-control-surface-registry.v1'
     assert control_surface_registry_payload['registry_status'] == 'active'

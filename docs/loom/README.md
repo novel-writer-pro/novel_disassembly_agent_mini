@@ -132,7 +132,7 @@ Loom（新增层，叠加在上方）
 | ✅ Primary/Legacy 双层治理 | reward/eval-data-collection | 评估数据按 primary/legacy 分层收集 |
 | 🔴 Live Checkpoint Writeback | memory/conflict-metabolism | 冲突消解后的状态回写机制 |
 | 🔴 Consumer Migration Telemetry | reward/eval-data-collection | 谁在用哪个评估路径的可见性 |
-| 🔴 Automated Retirement Gate | reward/pairwise-eval-design | 自动质量门控，阻止不达标的 retirement |
+| 🟡 Automated Retirement Gate | reward/pairwise-eval-design | writer retirement readiness/preview 已接入最小质量门控；完整 reward 驱动 gate 仍待后续扩展 |
 | 🟡 Loom Signal Surface | tension/tension-metrics + reward/pairwise-eval-design | `writer-imitate-operator-surface` 已暴露 `session_loom_signals`，`session_primary_verdicts` 也已吸收 quality 聚合；retirement gate 仍待后续接入 |
 
 ---

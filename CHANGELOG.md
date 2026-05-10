@@ -1,5 +1,7 @@
 ## Unreleased
 
+- feat(loom/retirement-gate): writer retirement readiness / preview 接入最小 Loom quality gate，当聚合 `chapter_quality_score < 0.7` 时标记 `quality-blocked`，并把阻断原因写入 `blocking_reasons` 与 preview `projected_effect`。
+
 - feat(loom/quality): `session_primary_verdicts` 新增 `quality_verdict`、`average_chapter_quality_score`、`chapter_quality_signal_count`，并让 writer operator surface 在 primary verdict 层直接暴露章节质量聚合结果，减少下游对 sidecar Loom signal 的依赖。
 
 - feat(loom/control-surface): `writer-imitate-session-state.json` 与 `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段，从 `writer-imitate-ch*.json` 汇总 Loom tension signal 与可选 `chapter_quality_score`，并在 operator surface markdown 渲染 `Loom Signals` 小节，作为 0509 消费 Loom 信号的稳定入口。

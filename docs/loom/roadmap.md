@@ -158,7 +158,7 @@ Phase 3 🔲 待开始：Reward Model + 角色认知基 + 生产部署
 ```
 ✅ 0509 operator_surface 新增 Loom signal 聚合展示（writer operator surface 已暴露 `session_loom_signals`，包含 tension signal / chapter quality signal 汇总）
 ✅ 0509 session_primary_verdicts 已接入 chapter_quality_score 聚合（当前 writer control surface 已输出 `quality_verdict` / `average_chapter_quality_score` / `chapter_quality_signal_count`）
-🔲 0509 retirement gate 接入 Loom quality gate（quality_score < 0.7 时阻止 retirement）
+✅ 0509 retirement gate 已接入最小 Loom quality gate（当前 writer retirement readiness/preview 在 `quality_score < 0.7` 时标记 `quality-blocked`）
 🔲 Consumer Migration Telemetry：记录哪些消费者已迁到 primary
 ```
 

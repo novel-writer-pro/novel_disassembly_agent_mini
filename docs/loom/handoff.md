@@ -185,6 +185,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 - 当前聚合源来自 `writer-imitate-ch*.json` 章节产物，已汇总 tension signal 与可选 chapter quality signal。
 - operator surface markdown 也新增 `Loom Signals` 小节，便于 operator 直接查看章节级 tension/quality 摘要。
 - 第一轮交付先补稳定消费合同；随后已把 `chapter_quality_score` 聚合接入 `session_primary_verdicts`，当前 control surface 可直接输出 `quality_verdict` / `average_chapter_quality_score` / `chapter_quality_signal_count`。
+- 当前 writer retirement readiness / preview 也已接入最小质量门控：当 `quality_score < 0.7` 时会标记 `quality-blocked`，阻止 legacy retirement 预演误判为可推进。
 
 ### 4.1 当前未完成的 Phase 3 规划
 
