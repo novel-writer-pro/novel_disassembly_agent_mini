@@ -117,6 +117,8 @@ def test_settings_loom_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("NOVEL_ANALYZER_LOOM_MEMORY_MODE", "enabled")
     monkeypatch.setenv("NOVEL_ANALYZER_LOOM_TENSION_ENABLED", "false")
     monkeypatch.setenv("NOVEL_ANALYZER_LOOM_PAIRWISE_ENABLED", "true")
+    monkeypatch.setenv("NOVEL_ANALYZER_LOOM_STYLE_ENABLED", "true")
+    monkeypatch.setenv("NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED", "true")
     s = Settings(
         _env_file=None,  # type: ignore[call-arg]
         db_dialect="sqlite",
@@ -125,6 +127,8 @@ def test_settings_loom_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
     assert s.loom_memory_mode == "enabled"
     assert s.loom_tension_enabled is False
     assert s.loom_pairwise_enabled is True
+    assert s.loom_style_enabled is True
+    assert s.loom_character_enabled is True
 
 
 # ===========================================================================
