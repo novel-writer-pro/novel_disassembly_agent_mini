@@ -8520,7 +8520,6 @@ def loom_collect_pairs(
             echo(f"  compare_dir={compare_dir}")
         raise typer.Exit(code=0)
 
-    pairs_file.parent.mkdir(parents=True, exist_ok=True)
     collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["dir_a", "dir_b"])
 
     echo(f"loom_collect_pairs: collected {collected} pair(s) → {pairs_file}")
@@ -8891,7 +8890,6 @@ def loom_collect_pairs_from_db(
         echo(f"  common_chapters={len(common_chapters)}, min_summary_length={min_summary_length}")
         raise typer.Exit(code=0)
 
-    pairs_file.parent.mkdir(parents=True, exist_ok=True)
     collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["dir_a", "dir_b"])
 
     echo(f"loom_collect_pairs_from_db: collected {collected} pair(s) → {pairs_file}")
