@@ -432,3 +432,79 @@ def test_cli_loom_assemble_with_data(tmp_path: Path, monkeypatch: pytest.MonkeyP
     data = json.loads(result.output)
     assert "loom_version" in data
     assert "_legacy_compat" in data
+
+
+def test_harness_pairwise_disabled_by_default(tmp_path: Path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            db_dialect="sqlite",
+            database_url="sqlite+pysqlite:///:memory:",
+            loom_pairwise_enabled=False,
+        )
+        harness = HarnessControllerService(session, settings)
+        report = harness.run_harness(
+            branch_id,
+            source_chapter_index=1,
+            target_goal="测试目标",
+            max_rounds=1,
+            use_llm=False,
+        )
+        assert report.chapter_quality_signal == {}
+
+
+def test_harness_pairwise_enabled_single_round_produces_signal(tmp_path: Path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            db_dialect="sqlite",
+            database_url="sqlite+pysqlite:///:memory:",
+            loom_pairwise_enabled=True,
+        )
+        harness = HarnessControllerService(session, settings)
+        report = harness.run_harness(
+            branch_id,
+            source_chapter_index=1,
+            target_goal="测试目标",
+            max_rounds=1,
+            use_llm=False,
+        )
+        assert "quality_score" in report.chapter_quality_signal
+        assert "overall_preference" in report.chapter_quality_signal
+        assert report.chapter_quality_signal["evaluation_method"] == "heuristic"
+
+
+def test_harness_pairwise_enabled_signal_in_last_round_skill_outputs(tmp_path: Path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            db_dialect="sqlite",
+            database_url="sqlite+pysqlite:///:memory:",
+            loom_pairwise_enabled=True,
+        )
+        harness = HarnessControllerService(session, settings)
+        report = harness.run_harness(
+            branch_id,
+            source_chapter_index=1,
+            target_goal="测试目标",
+            max_rounds=2,
+            use_llm=False,
+        )
+        assert report.rounds
+        last_round = report.rounds[-1]
+        assert "_loom_chapter_quality" in last_round.skill_outputs
+        quality = last_round.skill_outputs["_loom_chapter_quality"]
+        assert isinstance(quality, dict)
+        assert "quality_score" in quality

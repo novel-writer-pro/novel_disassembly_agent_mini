@@ -8318,5 +8318,615 @@ def loom_assemble(
         echo(json.dumps(cos, ensure_ascii=False, indent=2))
 
 
+@app.command()
+def loom_collect_pairs(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    compare_dir: Path | None = typer.Option(None, "--compare-dir"),
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    min_draft_length: int = typer.Option(50, "--min-draft-length"),
+    database_url: str | None = None,
+) -> None:
+    """Collect pairwise evaluation data from writer-imitate output artifacts.
+
+    Single-dir mode (default): pairs round-0 vs final draft within each
+    writer-imitate-ch*.json that has 2+ rounds.
+
+    Cross-dir mode (--compare-dir): pairs final draft from --output-dir
+    (baseline) vs --compare-dir (steering) for matching chapter indices.
+
+    Appends JSONL records to --pairs-file (one chapter_quality_signal per line).
+    """
+    import datetime as _datetime
+    import uuid as _uuid
+
+    from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+
+    llm_client = None
+    if use_llm:
+        from novel_analyzer.llm.client import build_chat_model
+        settings = _safe_settings(database_url)
+        raw_model = build_chat_model(settings, model_name=model_name or None)
+
+        class _LangChainAdapter:
+            def __init__(self, lc_model: Any) -> None:
+                self._model = lc_model
+
+            def chat(self, prompt: str) -> str:
+                from langchain_core.messages import HumanMessage
+                result = self._model.invoke([HumanMessage(content=prompt)])
+                return str(result.content)
+
+        llm_client = _LangChainAdapter(raw_model)
+
+    eval_svc = PairwiseEvalService(llm_client=llm_client)
+
+    def _load_chapter_artifacts(directory: Path) -> dict[int, dict[str, object]]:
+        result: dict[int, dict[str, object]] = {}
+        for path in sorted(directory.glob("writer-imitate-ch*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(payload, dict):
+                continue
+            try:
+                chapter_index = int(payload.get("source_chapter_index", 0))
+            except (TypeError, ValueError):
+                chapter_index = 0
+            if chapter_index == 0:
+                m = re.search(r"writer-imitate-ch(\d+)\.json$", path.name)
+                chapter_index = int(m.group(1)) if m else 0
+            if chapter_index > 0:
+                result[chapter_index] = payload
+        return result
+
+    def _final_draft_text(payload: dict[str, object]) -> str:
+        fd = payload.get("final_draft", {})
+        if isinstance(fd, dict):
+            return str(fd.get("draft_text", "")).strip()
+        return ""
+
+    def _round0_draft_text(payload: dict[str, object]) -> str:
+        rounds = payload.get("rounds", [])
+        if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
+            draft = rounds[0].get("draft", {})
+            if isinstance(draft, dict):
+                return str(draft.get("draft_text", "")).strip()
+        return ""
+
+    def _chapter_goal(payload: dict[str, object]) -> str:
+        return str(payload.get("target_goal", "")).strip()
+
+    def _risk_verdict(payload: dict[str, object]) -> str:
+        fd = payload.get("final_draft", {})
+        if isinstance(fd, dict):
+            notes = fd.get("risk_gate_notes", [])
+            if isinstance(notes, list) and notes:
+                return "; ".join(str(n) for n in notes[:3])
+        return str(payload.get("final_verdict", "unknown")).strip()
+
+    pairs_to_eval: list[dict[str, object]] = []
+
+    if compare_dir is not None:
+        baseline_artifacts = _load_chapter_artifacts(output_dir)
+        steering_artifacts = _load_chapter_artifacts(compare_dir)
+        for ch_idx in sorted(set(baseline_artifacts) & set(steering_artifacts)):
+            b_payload = baseline_artifacts[ch_idx]
+            s_payload = steering_artifacts[ch_idx]
+            draft_a = _final_draft_text(b_payload)
+            draft_b = _final_draft_text(s_payload)
+            if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
+                continue
+            pairs_to_eval.append({
+                "pair_id": str(_uuid.uuid4()),
+                "branch_id": str(b_payload.get("branch_id", "")).strip(),
+                "chapter_index": ch_idx,
+                "draft_a": draft_a,
+                "draft_b": draft_b,
+                "chapter_goal": _chapter_goal(b_payload),
+                "key_constraints": "",
+                "risk_verdict_a": _risk_verdict(b_payload),
+                "risk_verdict_b": _risk_verdict(s_payload),
+                "pair_source": "cross_dir",
+                "dir_a": str(output_dir),
+                "dir_b": str(compare_dir),
+            })
+    else:
+        for ch_idx, payload in sorted(_load_chapter_artifacts(output_dir).items()):
+            rounds = payload.get("rounds", [])
+            if not isinstance(rounds, list) or len(rounds) < 2:
+                continue
+            draft_a = _round0_draft_text(payload)
+            draft_b = _final_draft_text(payload)
+            if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
+                continue
+            if draft_a == draft_b:
+                continue
+            pairs_to_eval.append({
+                "pair_id": str(_uuid.uuid4()),
+                "branch_id": str(payload.get("branch_id", "")).strip(),
+                "chapter_index": ch_idx,
+                "draft_a": draft_a,
+                "draft_b": draft_b,
+                "chapter_goal": _chapter_goal(payload),
+                "key_constraints": "",
+                "risk_verdict_a": "unknown",
+                "risk_verdict_b": _risk_verdict(payload),
+                "pair_source": "single_dir_rounds",
+                "dir_a": str(output_dir),
+                "dir_b": str(output_dir),
+            })
+
+    if not pairs_to_eval:
+        echo("loom_collect_pairs: no eligible pairs found.")
+        echo(f"  output_dir={output_dir}")
+        if compare_dir:
+            echo(f"  compare_dir={compare_dir}")
+        raise typer.Exit(code=0)
+
+    pairs_file.parent.mkdir(parents=True, exist_ok=True)
+    collected = 0
+    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
+
+    with pairs_file.open("a", encoding="utf-8") as fh:
+        for pair in pairs_to_eval:
+            result = eval_svc.evaluate(
+                pair_id=str(pair["pair_id"]),
+                branch_id=str(pair["branch_id"]),
+                chapter_index=int(pair["chapter_index"]),
+                draft_a=str(pair["draft_a"]),
+                draft_b=str(pair["draft_b"]),
+                chapter_goal=str(pair["chapter_goal"]),
+                key_constraints=str(pair["key_constraints"]),
+                risk_verdict_a=str(pair["risk_verdict_a"]),
+                risk_verdict_b=str(pair["risk_verdict_b"]),
+            )
+            signal = result.to_chapter_quality_signal()
+            record: dict[str, object] = {
+                **signal,
+                "pair_id": pair["pair_id"],
+                "pair_source": pair["pair_source"],
+                "dir_a": pair["dir_a"],
+                "dir_b": pair["dir_b"],
+                "chapter_goal": pair["chapter_goal"],
+                "collected_at": collected_at,
+                "loom_collect_version": "1.0",
+            }
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            collected += 1
+
+    echo(f"loom_collect_pairs: collected {collected} pair(s) → {pairs_file}")
+    echo(f"  mode={'cross_dir' if compare_dir else 'single_dir_rounds'}")
+    echo(f"  use_llm={use_llm}")
+    echo(f"  pairs_file={pairs_file}")
+    try:
+        total_lines = sum(1 for _ in pairs_file.open(encoding="utf-8"))
+        echo(f"  total_pairs_in_file={total_lines}")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+@app.command()
+def loom_pairs_stats(
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+) -> None:
+    """Show pairwise data collection progress toward the 500-pair Phase 3 target."""
+    TARGET = 500
+
+    if not pairs_file.exists():
+        echo(f"loom_pairs_stats: {pairs_file} not found — no pairs collected yet.")
+        echo(f"  total_pairs=0  target={TARGET}  progress=0.0%")
+        raise typer.Exit(code=0)
+
+    records: list[dict[str, object]] = []
+    for line in pairs_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            records.append(json.loads(line))
+        except Exception:  # noqa: BLE001
+            continue
+
+    total = len(records)
+    progress_pct = round(total / TARGET * 100, 1)
+
+    quality_scores = [
+        float(r["quality_score"])
+        for r in records
+        if isinstance(r.get("quality_score"), (int, float))
+    ]
+    avg_quality = round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None
+
+    preference_counts: dict[str, int] = {}
+    for r in records:
+        pref = str(r.get("overall_preference", "unknown"))
+        preference_counts[pref] = preference_counts.get(pref, 0) + 1
+
+    method_counts: dict[str, int] = {}
+    for r in records:
+        method = str(r.get("evaluation_method", "unknown"))
+        method_counts[method] = method_counts.get(method, 0) + 1
+
+    source_counts: dict[str, int] = {}
+    for r in records:
+        src = str(r.get("pair_source", "unknown"))
+        source_counts[src] = source_counts.get(src, 0) + 1
+
+    chapters = sorted({int(r["chapter_index"]) for r in records if isinstance(r.get("chapter_index"), int)})
+
+    echo(f"=== Loom Pairwise Data Stats ===")
+    echo(f"pairs_file:        {pairs_file}")
+    echo(f"total_pairs:       {total}")
+    echo(f"target:            {TARGET}")
+    echo(f"progress:          {progress_pct}%")
+    echo(f"avg_quality_score: {avg_quality}")
+    echo(f"unique_chapters:   {len(chapters)}")
+    if chapters:
+        echo(f"chapter_range:     {min(chapters)}–{max(chapters)}")
+    echo("")
+    echo("preference distribution:")
+    for pref, count in sorted(preference_counts.items()):
+        echo(f"  {pref}: {count}")
+    echo("")
+    echo("evaluation_method distribution:")
+    for method, count in sorted(method_counts.items()):
+        echo(f"  {method}: {count}")
+    echo("")
+    echo("pair_source distribution:")
+    for src, count in sorted(source_counts.items()):
+        echo(f"  {src}: {count}")
+    echo("")
+    remaining = max(0, TARGET - total)
+    echo(f"remaining_to_target: {remaining}")
+
+
+@app.command()
+def loom_ab_compare(
+    baseline_dir: Path = typer.Argument(..., help="Baseline output dir (Loom off)."),
+    loom_dir: Path = typer.Argument(..., help="Loom-enabled output dir (Loom on)."),
+    output_file: Path | None = typer.Option(None, "--output-file", help="Write JSON report to this path."),
+) -> None:
+    """A/B experiment: compare character_ooc trigger rate between baseline and Loom-enabled runs.
+
+    Reads writer-imitate-ch*.json from both dirs and reports per-chapter and aggregate
+    character_ooc trigger rates, risk level distribution, and verdict distribution.
+    Target: character_ooc trigger rate drops >= 20% with Loom enabled.
+    """
+    def _load_artifacts(directory: Path) -> dict[int, dict[str, object]]:
+        result: dict[int, dict[str, object]] = {}
+        for path in sorted(directory.glob("writer-imitate-ch*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(payload, dict):
+                continue
+            try:
+                chapter_index = int(payload.get("source_chapter_index", 0))
+            except (TypeError, ValueError):
+                chapter_index = 0
+            if chapter_index == 0:
+                m = re.search(r"writer-imitate-ch(\d+)\.json$", path.name)
+                chapter_index = int(m.group(1)) if m else 0
+            if chapter_index > 0:
+                result[chapter_index] = payload
+        return result
+
+    def _final_risk(payload: dict[str, object]) -> dict[str, object]:
+        rounds = payload.get("rounds", [])
+        if isinstance(rounds, list) and rounds:
+            last_round = rounds[-1]
+            if isinstance(last_round, dict):
+                risk = last_round.get("risk", {})
+                if isinstance(risk, dict):
+                    return risk
+        policy = payload.get("policy_summary", {})
+        if isinstance(policy, dict) and policy.get("risk_overall_level"):
+            return {"overall_risk_level": policy["risk_overall_level"], "checker_statuses": {}, "top_risk_types": []}
+        return {}
+
+    def _ooc_triggered(risk: dict[str, object]) -> bool:
+        checker_statuses = risk.get("checker_statuses", {})
+        if isinstance(checker_statuses, dict):
+            status = checker_statuses.get("character_ooc", "")
+            if str(status) in ("warn", "triggered", "fail"):
+                return True
+        top_risk_types = risk.get("top_risk_types", [])
+        if isinstance(top_risk_types, list) and "character_ooc" in top_risk_types:
+            return True
+        return False
+
+    def _risk_level(risk: dict[str, object]) -> str:
+        return str(risk.get("overall_risk_level", "low")).strip()
+
+    def _final_verdict(payload: dict[str, object]) -> str:
+        return str(payload.get("final_verdict", "unknown")).strip()
+
+    baseline_artifacts = _load_artifacts(baseline_dir)
+    loom_artifacts = _load_artifacts(loom_dir)
+    common_chapters = sorted(set(baseline_artifacts) & set(loom_artifacts))
+
+    if not common_chapters:
+        echo("loom_ab_compare: no matching chapters found between the two directories.")
+        echo(f"  baseline_dir={baseline_dir} ({len(baseline_artifacts)} chapters)")
+        echo(f"  loom_dir={loom_dir} ({len(loom_artifacts)} chapters)")
+        raise typer.Exit(code=1)
+
+    chapter_results: list[dict[str, object]] = []
+    baseline_ooc_count = 0
+    loom_ooc_count = 0
+    baseline_risk_levels: dict[str, int] = {}
+    loom_risk_levels: dict[str, int] = {}
+    baseline_verdicts: dict[str, int] = {}
+    loom_verdicts: dict[str, int] = {}
+
+    for ch_idx in common_chapters:
+        b_payload = baseline_artifacts[ch_idx]
+        l_payload = loom_artifacts[ch_idx]
+        b_risk = _final_risk(b_payload)
+        l_risk = _final_risk(l_payload)
+        b_ooc = _ooc_triggered(b_risk)
+        l_ooc = _ooc_triggered(l_risk)
+        b_level = _risk_level(b_risk)
+        l_level = _risk_level(l_risk)
+        b_verdict = _final_verdict(b_payload)
+        l_verdict = _final_verdict(l_payload)
+
+        if b_ooc:
+            baseline_ooc_count += 1
+        if l_ooc:
+            loom_ooc_count += 1
+        baseline_risk_levels[b_level] = baseline_risk_levels.get(b_level, 0) + 1
+        loom_risk_levels[l_level] = loom_risk_levels.get(l_level, 0) + 1
+        baseline_verdicts[b_verdict] = baseline_verdicts.get(b_verdict, 0) + 1
+        loom_verdicts[l_verdict] = loom_verdicts.get(l_verdict, 0) + 1
+
+        chapter_results.append({
+            "chapter_index": ch_idx,
+            "baseline_ooc": b_ooc,
+            "loom_ooc": l_ooc,
+            "ooc_improved": b_ooc and not l_ooc,
+            "ooc_regressed": not b_ooc and l_ooc,
+            "baseline_risk_level": b_level,
+            "loom_risk_level": l_level,
+            "baseline_verdict": b_verdict,
+            "loom_verdict": l_verdict,
+        })
+
+    total = len(common_chapters)
+    baseline_ooc_rate = round(baseline_ooc_count / total, 4) if total else 0.0
+    loom_ooc_rate = round(loom_ooc_count / total, 4) if total else 0.0
+    ooc_rate_delta = round(loom_ooc_rate - baseline_ooc_rate, 4)
+    ooc_reduction_pct = round((baseline_ooc_rate - loom_ooc_rate) / baseline_ooc_rate * 100, 1) if baseline_ooc_rate > 0 else 0.0
+    target_met = ooc_reduction_pct >= 20.0
+
+    improved_chapters = [r["chapter_index"] for r in chapter_results if r["ooc_improved"]]
+    regressed_chapters = [r["chapter_index"] for r in chapter_results if r["ooc_regressed"]]
+
+    report: dict[str, object] = {
+        "contract_version": "loom-ab-compare.v1",
+        "baseline_dir": str(baseline_dir),
+        "loom_dir": str(loom_dir),
+        "total_chapters": total,
+        "baseline_ooc_count": baseline_ooc_count,
+        "loom_ooc_count": loom_ooc_count,
+        "baseline_ooc_rate": baseline_ooc_rate,
+        "loom_ooc_rate": loom_ooc_rate,
+        "ooc_rate_delta": ooc_rate_delta,
+        "ooc_reduction_pct": ooc_reduction_pct,
+        "target_met": target_met,
+        "target_threshold_pct": 20.0,
+        "improved_chapters": improved_chapters,
+        "regressed_chapters": regressed_chapters,
+        "baseline_risk_level_distribution": baseline_risk_levels,
+        "loom_risk_level_distribution": loom_risk_levels,
+        "baseline_verdict_distribution": baseline_verdicts,
+        "loom_verdict_distribution": loom_verdicts,
+        "chapter_results": chapter_results,
+    }
+
+    echo("=== Loom A/B Experiment Report ===")
+    echo(f"baseline_dir:        {baseline_dir}")
+    echo(f"loom_dir:            {loom_dir}")
+    echo(f"total_chapters:      {total}")
+    echo("")
+    echo("character_ooc trigger rate:")
+    echo(f"  baseline:          {baseline_ooc_count}/{total} ({baseline_ooc_rate*100:.1f}%)")
+    echo(f"  loom:              {loom_ooc_count}/{total} ({loom_ooc_rate*100:.1f}%)")
+    echo(f"  reduction:         {ooc_reduction_pct:.1f}%")
+    echo(f"  target (>=20%):    {'✓ MET' if target_met else '✗ NOT MET'}")
+    echo("")
+    if improved_chapters:
+        echo(f"improved chapters:   {improved_chapters}")
+    if regressed_chapters:
+        echo(f"regressed chapters:  {regressed_chapters}")
+    echo("")
+    echo("risk level distribution (baseline → loom):")
+    all_levels = sorted(set(list(baseline_risk_levels) + list(loom_risk_levels)))
+    for level in all_levels:
+        b_cnt = baseline_risk_levels.get(level, 0)
+        l_cnt = loom_risk_levels.get(level, 0)
+        echo(f"  {level}: {b_cnt} → {l_cnt}")
+    echo("")
+    echo("verdict distribution (baseline → loom):")
+    all_verdicts = sorted(set(list(baseline_verdicts) + list(loom_verdicts)))
+    for verdict in all_verdicts:
+        b_cnt = baseline_verdicts.get(verdict, 0)
+        l_cnt = loom_verdicts.get(verdict, 0)
+        echo(f"  {verdict}: {b_cnt} → {l_cnt}")
+
+    if output_file is not None:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"\nreport written to: {output_file}")
+
+
+@app.command()
+def loom_collect_pairs_from_db(
+    branch_a: str = typer.Argument(..., help="First branch ID (treated as draft A)."),
+    branch_b: str = typer.Argument(..., help="Second branch ID (treated as draft B)."),
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    min_summary_length: int = typer.Option(20, "--min-summary-length"),
+    database_url: str | None = None,
+) -> None:
+    """Collect pairwise evaluation data from ChapterArtifact DB records across two branches.
+
+    Pairs matching chapter indices from branch-a vs branch-b using chapter_summary
+    as the comparison text. Useful for comparing analysis quality between branches.
+    Appends JSONL records to --pairs-file.
+    """
+    import datetime as _datetime
+    import uuid as _uuid
+
+    from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+
+    llm_client = None
+    if use_llm:
+        from novel_analyzer.llm.client import build_chat_model
+        settings = _safe_settings(database_url)
+        raw_model = build_chat_model(settings, model_name=model_name or None)
+
+        class _LangChainAdapter:
+            def __init__(self, lc_model: Any) -> None:
+                self._model = lc_model
+
+            def chat(self, prompt: str) -> str:
+                from langchain_core.messages import HumanMessage
+                result = self._model.invoke([HumanMessage(content=prompt)])
+                return str(result.content)
+
+        llm_client = _LangChainAdapter(raw_model)
+
+    eval_svc = PairwiseEvalService(llm_client=llm_client)
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+
+    with factory() as session:
+        artifacts_a = session.execute(
+            select(
+                ChapterArtifact.chapter_index,
+                ChapterArtifact.payload_json,
+            )
+            .where(ChapterArtifact.branch_id == branch_a)
+            .where(ChapterArtifact.visibility == "active")
+            .where(ChapterArtifact.deleted_at.is_(None))
+            .order_by(ChapterArtifact.chapter_index)
+        ).all()
+
+        artifacts_b = session.execute(
+            select(
+                ChapterArtifact.chapter_index,
+                ChapterArtifact.payload_json,
+            )
+            .where(ChapterArtifact.branch_id == branch_b)
+            .where(ChapterArtifact.visibility == "active")
+            .where(ChapterArtifact.deleted_at.is_(None))
+            .order_by(ChapterArtifact.chapter_index)
+        ).all()
+
+    map_a: dict[int, dict[str, object]] = {
+        int(row.chapter_index): (row.payload_json if isinstance(row.payload_json, dict) else {})
+        for row in artifacts_a
+    }
+    map_b: dict[int, dict[str, object]] = {
+        int(row.chapter_index): (row.payload_json if isinstance(row.payload_json, dict) else {})
+        for row in artifacts_b
+    }
+    common_chapters = sorted(set(map_a) & set(map_b))
+
+    if not common_chapters:
+        echo(f"loom_collect_pairs_from_db: no matching chapters between branch_a={branch_a} and branch_b={branch_b}.")
+        echo(f"  branch_a chapters: {len(map_a)}, branch_b chapters: {len(map_b)}")
+        raise typer.Exit(code=0)
+
+    def _summary_text(payload: dict[str, object]) -> str:
+        summary = str(payload.get("chapter_summary", "")).strip()
+        events = payload.get("key_events", [])
+        if isinstance(events, list) and events:
+            events_text = "；".join(str(e).strip() for e in events if str(e).strip())
+            if events_text:
+                summary = f"{summary}。{events_text}" if summary else events_text
+        return summary
+
+    def _chapter_goal(payload: dict[str, object]) -> str:
+        return str(payload.get("normalized_title", "")).strip()
+
+    pairs_to_eval: list[dict[str, object]] = []
+    for ch_idx in common_chapters:
+        payload_a = map_a[ch_idx]
+        payload_b = map_b[ch_idx]
+        text_a = _summary_text(payload_a)
+        text_b = _summary_text(payload_b)
+        if len(text_a) < min_summary_length or len(text_b) < min_summary_length:
+            continue
+        if text_a == text_b:
+            continue
+        pairs_to_eval.append({
+            "pair_id": str(_uuid.uuid4()),
+            "branch_id": branch_a,
+            "chapter_index": ch_idx,
+            "draft_a": text_a,
+            "draft_b": text_b,
+            "chapter_goal": _chapter_goal(payload_a),
+            "key_constraints": "",
+            "risk_verdict_a": "unknown",
+            "risk_verdict_b": "unknown",
+            "pair_source": "db_branch_compare",
+            "dir_a": branch_a,
+            "dir_b": branch_b,
+        })
+
+    if not pairs_to_eval:
+        echo("loom_collect_pairs_from_db: no eligible pairs found.")
+        echo(f"  common_chapters={len(common_chapters)}, min_summary_length={min_summary_length}")
+        raise typer.Exit(code=0)
+
+    pairs_file.parent.mkdir(parents=True, exist_ok=True)
+    collected = 0
+    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
+
+    with pairs_file.open("a", encoding="utf-8") as fh:
+        for pair in pairs_to_eval:
+            result = eval_svc.evaluate(
+                pair_id=str(pair["pair_id"]),
+                branch_id=str(pair["branch_id"]),
+                chapter_index=int(pair["chapter_index"]),
+                draft_a=str(pair["draft_a"]),
+                draft_b=str(pair["draft_b"]),
+                chapter_goal=str(pair["chapter_goal"]),
+                key_constraints=str(pair["key_constraints"]),
+                risk_verdict_a=str(pair["risk_verdict_a"]),
+                risk_verdict_b=str(pair["risk_verdict_b"]),
+            )
+            signal = result.to_chapter_quality_signal()
+            record: dict[str, object] = {
+                **signal,
+                "pair_id": pair["pair_id"],
+                "pair_source": pair["pair_source"],
+                "dir_a": pair["dir_a"],
+                "dir_b": pair["dir_b"],
+                "chapter_goal": pair["chapter_goal"],
+                "collected_at": collected_at,
+                "loom_collect_version": "1.0",
+            }
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            collected += 1
+
+    echo(f"loom_collect_pairs_from_db: collected {collected} pair(s) → {pairs_file}")
+    echo(f"  branch_a={branch_a}")
+    echo(f"  branch_b={branch_b}")
+    echo(f"  use_llm={use_llm}")
+    try:
+        total_lines = sum(1 for _ in pairs_file.open(encoding="utf-8"))
+        echo(f"  total_pairs_in_file={total_lines}")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 if __name__ == "__main__":
     app()

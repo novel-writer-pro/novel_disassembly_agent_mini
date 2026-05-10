@@ -878,6 +878,7 @@ class ChapterImitationHarnessReport(BaseModel):
     policy_summary: dict[str, object] = Field(default_factory=dict)
     final_verdict: str = Field(default="needs_revision")
     stop_reason: str
+    chapter_quality_signal: dict[str, object] = Field(default_factory=dict)
 
 
 class MultiChapterImitationStep(BaseModel):

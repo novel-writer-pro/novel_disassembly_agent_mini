@@ -1244,8 +1244,11 @@ class HarnessControllerService:
         final_verdict = "needs_revision"
         final_actions: list[ChapterImitationHarnessAction] = []
         final_policy_summary: dict[str, object] = {}
+        initial_draft: ChapterImitationDraft | None = None
 
         for round_index in range(1, max_rounds + 1):
+            if initial_draft is None:
+                initial_draft = draft
             comparison = self.chapter_imitation.compare_with_source(
                 branch_id,
                 source_chapter_index=source_chapter_index,
@@ -1358,6 +1361,27 @@ class HarnessControllerService:
             )
 
         assert final_preflight is not None
+
+        chapter_quality_signal: dict[str, object] = {}
+        if self.settings.loom_pairwise_enabled and initial_draft is not None:
+            try:
+                from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+                import uuid as _uuid
+                pairwise_svc = PairwiseEvalService(llm_client=None)
+                pair_result = pairwise_svc.evaluate(
+                    pair_id=str(_uuid.uuid4()),
+                    branch_id=branch_id,
+                    chapter_index=source_chapter_index,
+                    draft_a=initial_draft.draft_text,
+                    draft_b=draft.draft_text,
+                    chapter_goal=target_goal,
+                )
+                chapter_quality_signal = pair_result.to_chapter_quality_signal()
+                if rounds:
+                    rounds[-1].skill_outputs["_loom_chapter_quality"] = chapter_quality_signal
+            except Exception:  # noqa: BLE001
+                pass
+
         return ChapterImitationHarnessReport(
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
@@ -1370,6 +1394,7 @@ class HarnessControllerService:
             policy_summary=final_policy_summary,
             final_verdict=final_verdict,
             stop_reason=stop_reason,
+            chapter_quality_signal=chapter_quality_signal,
         )
 
     @staticmethod
