@@ -61,7 +61,7 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 | 文件 | 职责 |
 |------|------|
-| `novel_analyzer/cli/app.py` | Loom CLI 命令注册（loom-status / loom-consolidate / loom-assemble） |
+| `novel_analyzer/cli/app.py` | Loom CLI 命令注册（loom-status / loom-consolidate / loom-assemble）+ writer operator surface Loom signal 聚合 |
 
 #### 数据模型
 
@@ -179,6 +179,13 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 
 ## 4. 剩余工作与下一步
 
+### 4.0 最近新增交付（2026-05-10）
+
+- `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段。
+- 当前聚合源来自 `writer-imitate-ch*.json` 章节产物，已汇总 tension signal 与可选 chapter quality signal。
+- operator surface markdown 也新增 `Loom Signals` 小节，便于 operator 直接查看章节级 tension/quality 摘要。
+- 这次交付只补稳定消费合同，不改变 reward 主链；后续若 `chapter_quality_score` 进入主产线，将自动复用现有 surface 字段。
+
 ### 4.1 当前未完成的 Phase 3 规划
 
 参见 [`docs/loom/roadmap.md`](./roadmap.md) 完整清单。
@@ -186,7 +193,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 优先级 | 任务 | 说明 | 前置条件 |
 |--------|------|------|---------|
 | 🔴 P0 | A/B 实验：Loom on vs off | 用 20 章数据对比 character_ooc 下降指标 | 需积累足够人工评估数据 |
-| 🔴 P0 | 0509 operator_surface 对接 | 在 0509 会话中消费 Loom 输出的 operator_signal | 需 Loom 稳定运行 |
+| 🟡 P0 | 0509 operator_surface 深化对接 | 当前 writer operator surface 已聚合展示 `session_loom_signals`；下一步是让更多 0509 消费者直接依赖该稳定合同 | 需 Loom 稳定运行 |
 | 🟡 P1 | Pairwise 数据积累 | 产出足够多的 LLM-as-judge 评估对 | 需生产运行积累 |
 | 🟡 P1 | 角色认知基（Phase 3） | 角色级 agent 自主认知基 | 需 A/B 实验验证通过 |
 | 🟢 P2 | Fine-tuned reward model | 替代 LLM-as-judge | 需 pairwise 数据量充足 |

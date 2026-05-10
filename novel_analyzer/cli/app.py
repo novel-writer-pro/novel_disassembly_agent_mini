@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -3154,6 +3155,105 @@ def _writer_review_markdown(
     return "\n".join(lines).strip() + "\n"
 
 
+def _extract_writer_output_loom_signal(
+    payload: dict[str, object],
+    *,
+    artifact_name: str,
+) -> dict[str, object] | None:
+    chapter_index_obj = payload.get("source_chapter_index")
+    try:
+        chapter_index = int(chapter_index_obj)
+    except (TypeError, ValueError):
+        match = re.search(r"writer-imitate-ch(\d+)\.json$", artifact_name)
+        chapter_index = int(match.group(1)) if match else 0
+
+    branch_id = str(payload.get("branch_id", "")).strip()
+    rounds = payload.get("rounds", [])
+    latest_round = (
+        rounds[-1]
+        if isinstance(rounds, list) and rounds and isinstance(rounds[-1], dict)
+        else {}
+    )
+    skill_outputs = latest_round.get("skill_outputs", {}) if isinstance(latest_round, dict) else {}
+    skill_outputs = skill_outputs if isinstance(skill_outputs, dict) else {}
+
+    tension_signal_obj = skill_outputs.get("_loom_tension", payload.get("_loom_tension"))
+    tension_signal = tension_signal_obj if isinstance(tension_signal_obj, dict) else {}
+
+    quality_signal_obj = (
+        payload.get("_loom_chapter_quality")
+        or payload.get("chapter_quality_signal")
+        or skill_outputs.get("_loom_chapter_quality")
+    )
+    quality_signal = quality_signal_obj if isinstance(quality_signal_obj, dict) else {}
+    quality_score = quality_signal.get("quality_score", payload.get("chapter_quality_score"))
+    quality_confidence = quality_signal.get("confidence")
+
+    if not tension_signal and quality_score in (None, ""):
+        return None
+
+    tension_alerts = tension_signal.get("alerts", [])
+    return {
+        "artifact": artifact_name,
+        "branch_id": branch_id,
+        "chapter_index": chapter_index,
+        "has_tension_signal": bool(tension_signal),
+        "tension_signal": tension_signal,
+        "tension_alert_count": len(tension_alerts) if isinstance(tension_alerts, list) else 0,
+        "has_quality_signal": quality_score not in (None, ""),
+        "chapter_quality_score": quality_score,
+        "chapter_quality_confidence": quality_confidence,
+        "chapter_quality_signal": quality_signal,
+    }
+
+
+def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
+    chapter_files = sorted(output_dir.glob("writer-imitate-ch*.json"))
+    chapter_signals: list[dict[str, object]] = []
+
+    for path in chapter_files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(payload, dict):
+            continue
+        signal = _extract_writer_output_loom_signal(payload, artifact_name=path.name)
+        if signal is not None:
+            chapter_signals.append(signal)
+
+    tension_chapters = [item for item in chapter_signals if item.get("has_tension_signal")]
+    quality_chapters = [item for item in chapter_signals if item.get("has_quality_signal")]
+    quality_scores = [
+        float(item["chapter_quality_score"])
+        for item in quality_chapters
+        if isinstance(item.get("chapter_quality_score"), (int, float))
+    ]
+    tension_scores = [
+        float(item["tension_signal"]["tension_score"])
+        for item in tension_chapters
+        if isinstance(item.get("tension_signal"), dict)
+        and isinstance(item["tension_signal"].get("tension_score"), (int, float))
+    ]
+    alert_chapters = [
+        item["chapter_index"]
+        for item in tension_chapters
+        if isinstance(item.get("chapter_index"), int) and int(item.get("tension_alert_count", 0)) > 0
+    ]
+
+    return {
+        "contract_version": "loom-operator-signals.v1",
+        "signal_source": "writer-imitate chapter artifacts",
+        "chapter_count": len(chapter_signals),
+        "tension_signal_count": len(tension_chapters),
+        "chapter_quality_signal_count": len(quality_chapters),
+        "tension_alert_chapters": alert_chapters,
+        "average_tension_score": round(sum(tension_scores) / len(tension_scores), 4) if tension_scores else None,
+        "average_chapter_quality_score": round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None,
+        "signals": chapter_signals,
+    }
+
+
 def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     experiment_files = sorted(output_dir.glob("writer-innovation-experiment-*.json"))
     ledger_entries: list[dict[str, object]] = []
@@ -3643,6 +3743,8 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "display_policy": "primary-first-legacy-secondary",
     }
 
+    session_loom_signals = _collect_writer_output_loom_signals(output_dir)
+
     return {
         "contract_version": "writer-imitate-session-state.v3",
         "output_dir": str(output_dir),
@@ -3673,6 +3775,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_legacy_retirement_plan": session_legacy_retirement_plan,
         "session_legacy_retirement_pilot_wave": session_legacy_retirement_pilot_wave,
         "session_control_surface_entrypoints": session_control_surface_entrypoints,
+        "session_loom_signals": session_loom_signals,
         "experiments": ledger_entries,
     }
 
@@ -3740,6 +3843,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     retirement_pilot_wave = retirement_pilot_wave_obj if isinstance(retirement_pilot_wave_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
+    loom_signals_obj = session_state.get("session_loom_signals", {})
+    loom_signals = loom_signals_obj if isinstance(loom_signals_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -3752,6 +3857,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
         "session_legacy_retirement_pilot_wave": retirement_pilot_wave,
+        "session_loom_signals": loom_signals,
         "session_control_surface_entrypoints": entrypoints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -3886,6 +3992,34 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         targets = retirement_pilot_wave.get("target_fields", [])
         target_text = "；".join(str(x) for x in targets) if isinstance(targets, list) else ""
         lines.append(f"- target_fields: {target_text}")
+    loom_signals = payload.get("session_loom_signals", {})
+    if isinstance(loom_signals, dict):
+        lines.append("\n## Loom Signals")
+        lines.append(f"- signal_source: {loom_signals.get('signal_source', '')}")
+        lines.append(f"- chapter_count: {loom_signals.get('chapter_count', 0)}")
+        lines.append(f"- tension_signal_count: {loom_signals.get('tension_signal_count', 0)}")
+        lines.append(
+            f"- chapter_quality_signal_count: {loom_signals.get('chapter_quality_signal_count', 0)}"
+        )
+        lines.append(f"- average_tension_score: {loom_signals.get('average_tension_score', '')}")
+        lines.append(
+            f"- average_chapter_quality_score: {loom_signals.get('average_chapter_quality_score', '')}"
+        )
+        tension_alert_chapters = loom_signals.get("tension_alert_chapters", [])
+        alert_text = "；".join(str(x) for x in tension_alert_chapters) if isinstance(tension_alert_chapters, list) else ""
+        lines.append(f"- tension_alert_chapters: {alert_text}")
+        signals = loom_signals.get("signals", [])
+        if isinstance(signals, list) and signals:
+            lines.append("\n### Loom Chapter Signals")
+            for item in signals[:8]:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"- chapter {item.get('chapter_index', '')}: "
+                    f"tension={item.get('tension_signal', {}).get('tension_score', '') if isinstance(item.get('tension_signal'), dict) else ''} | "
+                    f"quality={item.get('chapter_quality_score', '')} | "
+                    f"alerts={item.get('tension_alert_count', 0)}"
+                )
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:

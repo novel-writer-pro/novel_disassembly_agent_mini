@@ -133,7 +133,7 @@ Loom（新增层，叠加在上方）
 | 🔴 Live Checkpoint Writeback | memory/conflict-metabolism | 冲突消解后的状态回写机制 |
 | 🔴 Consumer Migration Telemetry | reward/eval-data-collection | 谁在用哪个评估路径的可见性 |
 | 🔴 Automated Retirement Gate | reward/pairwise-eval-design | 自动质量门控，阻止不达标的 retirement |
-| 🔴 Full Control Console | tension/tension-metrics | 张力信号作为控制台实时质量指标 |
+| 🟡 Loom Signal Surface | tension/tension-metrics + reward/pairwise-eval-design | `writer-imitate-operator-surface` 已暴露 `session_loom_signals`，统一展示 tension / quality 汇总；retirement gate 仍待后续接入 |
 
 ---
 

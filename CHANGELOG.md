@@ -1,5 +1,7 @@
 ## Unreleased
 
+- feat(loom/control-surface): `writer-imitate-session-state.json` 与 `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段，从 `writer-imitate-ch*.json` 汇总 Loom tension signal 与可选 `chapter_quality_score`，并在 operator surface markdown 渲染 `Loom Signals` 小节，作为 0509 消费 Loom 信号的稳定入口。
+
 - docs: 创建 Loom handoff 交接文档 `docs/loom/handoff.md`，更新 `docs/session-handoff-manual.md` 引用入口。handoff 文档覆盖架构定位、工作状态、决策记录、剩余工作、启动步骤、风险点、文档索引、命令速查，不包含任何敏感凭据。
 
 - fix(loom): 对齐 Loom 服务层 node/edge type 查询与真实 PostgreSQL 生产数据：MemoryAssemblerService 的 `_count_active_characters` 兼容 `entity`/`character`，`_get_active_rule_labels` 兼容 `world_rule`/`rule`，`_get_key_relationship_labels` 兼容 `relates_to`/`relationship`；MemoryConsolidationService 的 CONFLICT_EDGE_TYPES 补充 `conflict_centers_on`/`conflict_involves`/`pressured_by`；移除 `_mark_evolution` 中对 GraphNode 不存在的 `is_active` 赋值。38/38 tests passing。

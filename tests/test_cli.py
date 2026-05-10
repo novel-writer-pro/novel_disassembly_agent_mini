@@ -466,6 +466,26 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Side-by-side Review' in review_text
     assert '## Action Queue' in review_text
 
+    loom_payload_path = output_dir / 'writer-imitate-ch1.json'
+    loom_payload = json.loads(loom_payload_path.read_text(encoding='utf-8'))
+    loom_payload['branch_id'] = run_lines['branch_id']
+    loom_payload['chapter_quality_score'] = 0.82
+    rounds = loom_payload.get('rounds', [])
+    if isinstance(rounds, list) and rounds and isinstance(rounds[-1], dict):
+        skill_outputs = rounds[-1].setdefault('skill_outputs', {})
+        if isinstance(skill_outputs, dict):
+            skill_outputs['_loom_tension'] = {
+                'tension_score': 0.71,
+                'plot_similarity_score': 0.63,
+                'conflict_density': 0.52,
+                'surprise_index': 0.98,
+                'alerts': [
+                    {'message': 'recent beat similarity is rising', 'suggestion': 'inject a sharper reversal'}
+                ],
+                'loom_version': '1.0',
+            }
+    loom_payload_path.write_text(json.dumps(loom_payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
     result = runner.invoke(
         app,
         ['writer-imitate-index', '--output-dir', str(output_dir)],
@@ -875,6 +895,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_readiness'] == 'runtime-executor-gate-surface'
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_preview'] == 'runtime-executor-review-surface'
     assert session_state['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
+    assert session_state['session_loom_signals']['contract_version'] == 'loom-operator-signals.v1'
+    assert session_state['session_loom_signals']['chapter_count'] == 1
+    assert session_state['session_loom_signals']['tension_signal_count'] == 1
+    assert session_state['session_loom_signals']['chapter_quality_signal_count'] == 1
+    assert session_state['session_loom_signals']['average_tension_score'] == 0.71
+    assert session_state['session_loom_signals']['average_chapter_quality_score'] == 0.82
+    assert session_state['session_loom_signals']['tension_alert_chapters'] == [1]
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
     assert operator_surface_payload['contract_version'] == 'writer-imitate-operator-surface.v1'
@@ -901,6 +928,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
     assert operator_surface_payload['session_legacy_retirement_plan']['pilot_candidates']
     assert operator_surface_payload['session_legacy_retirement_pilot_wave']['target_family'] == 'extra digest/checksum variants'
+    assert operator_surface_payload['session_loom_signals']['chapter_count'] == 1
+    assert operator_surface_payload['session_loom_signals']['signals'][0]['chapter_quality_score'] == 0.82
+    assert operator_surface_payload['session_loom_signals']['signals'][0]['tension_signal']['tension_score'] == 0.71
     operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Operator Surface' in operator_surface_text
     assert 'legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md' in operator_surface_text
@@ -922,6 +952,11 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Legacy Retirement Readiness' in operator_surface_text
     assert '## Legacy Retirement Plan' in operator_surface_text
     assert '## Legacy Retirement Pilot Wave' in operator_surface_text
+    assert '## Loom Signals' in operator_surface_text
+    assert 'average_tension_score: 0.71' in operator_surface_text
+    assert 'average_chapter_quality_score: 0.82' in operator_surface_text
+    assert '### Loom Chapter Signals' in operator_surface_text
+    assert 'chapter 1: tension=0.71 | quality=0.82 | alerts=1' in operator_surface_text
     legacy_surface_payload = json.loads(legacy_surface_json.read_text(encoding='utf-8'))
     assert legacy_surface_payload['contract_version'] == 'writer-imitate-legacy-contract-surface.v1'
     assert legacy_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
