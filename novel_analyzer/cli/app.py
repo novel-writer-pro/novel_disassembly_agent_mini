@@ -97,6 +97,17 @@ def _loom_round0_draft_text(payload: dict[str, object]) -> str:
     return ""
 
 
+def _loom_extract_chapter_index(payload: dict[str, object], filename: str) -> int:
+    try:
+        ch_idx = int(payload.get("source_chapter_index", 0))
+    except (TypeError, ValueError):
+        ch_idx = 0
+    if ch_idx == 0:
+        m = re.search(r"writer-imitate-ch(\d+)\.json$", filename)
+        ch_idx = int(m.group(1)) if m else 0
+    return ch_idx
+
+
 def _loom_load_chapter_artifacts(directory: Path) -> dict[int, dict[str, object]]:
     result: dict[int, dict[str, object]] = {}
     for path in sorted(directory.glob("writer-imitate-ch*.json")):
@@ -106,13 +117,7 @@ def _loom_load_chapter_artifacts(directory: Path) -> dict[int, dict[str, object]
             continue
         if not isinstance(payload, dict):
             continue
-        try:
-            chapter_index = int(payload.get("source_chapter_index", 0))
-        except (TypeError, ValueError):
-            chapter_index = 0
-        if chapter_index == 0:
-            m = re.search(r"writer-imitate-ch(\d+)\.json$", path.name)
-            chapter_index = int(m.group(1)) if m else 0
+        chapter_index = _loom_extract_chapter_index(payload, path.name)
         if chapter_index > 0:
             result[chapter_index] = payload
     return result
@@ -8956,13 +8961,7 @@ def loom_collect_pairs_from_manual(
             if draft_a == draft_b:
                 continue
 
-            try:
-                ch_idx = int(payload.get("source_chapter_index", 0))
-            except (TypeError, ValueError):
-                ch_idx = 0
-            if ch_idx == 0:
-                m = re.search(r"writer-imitate-ch(\d+)\.json$", artifact_path.name)
-                ch_idx = int(m.group(1)) if m else 0
+            ch_idx = _loom_extract_chapter_index(payload, artifact_path.name)
 
             pairs_to_eval.append({
                 "pair_id": str(uuid.uuid4()),
