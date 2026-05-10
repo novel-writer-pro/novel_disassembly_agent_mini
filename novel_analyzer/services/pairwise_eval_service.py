@@ -84,11 +84,12 @@ _JUDGE_PROMPT = """\
 【草案 B】
 {draft_b}
 
-请从以下四个维度评估哪个草案更好：
+请从以下五个维度评估哪个草案更好：
 1. character_consistency（角色一致性）：角色行为是否符合其性格和动机
 2. plot_coherence（情节连贯性）：情节推进是否自然，有无逻辑跳跃
 3. style_fidelity（风格忠实度）：是否保持原著风格
 4. narrative_tension（叙事张力）：是否有足够的冲突和悬念
+5. dialogue_quality（对话质量）：角色说话风格是否有辨识度，对话是否推进情节
 
 严格按以下 JSON 格式输出，不要输出其他内容：
 {{
@@ -99,7 +100,8 @@ _JUDGE_PROMPT = """\
     "character_consistency": {{"winner": "A"或"B"或"tie", "reason": "...", "score_diff": 0.0到1.0}},
     "plot_coherence": {{"winner": "A"或"B"或"tie", "reason": "...", "score_diff": 0.0到1.0}},
     "style_fidelity": {{"winner": "A"或"B"或"tie", "reason": "...", "score_diff": 0.0到1.0}},
-    "narrative_tension": {{"winner": "A"或"B"或"tie", "reason": "...", "score_diff": 0.0到1.0}}
+    "narrative_tension": {{"winner": "A"或"B"或"tie", "reason": "...", "score_diff": 0.0到1.0}},
+    "dialogue_quality": {{"winner": "A"或"B"或"tie", "reason": "...", "score_diff": 0.0到1.0}}
   }}
 }}
 """
@@ -109,6 +111,7 @@ _DIMENSIONS = [
     "plot_coherence",
     "style_fidelity",
     "narrative_tension",
+    "dialogue_quality",
 ]
 
 
