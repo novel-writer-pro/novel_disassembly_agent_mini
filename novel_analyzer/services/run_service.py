@@ -598,6 +598,30 @@ class RunService:
         )
         return artifact
 
+    def restore_previous_active_artifact(
+        self,
+        branch_id: str,
+        chapter_index: int,
+        artifact_id: str,
+    ) -> None:
+        """Rollback a just-persisted artifact so failed downstream materialization stays blocking."""
+
+        self.session.execute(
+            update(ChapterArtifact)
+            .where(ChapterArtifact.id == artifact_id)
+            .values(visibility="hidden")
+        )
+        previous_artifact = self.session.scalar(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch_id)
+            .where(ChapterArtifact.chapter_index == chapter_index)
+            .where(ChapterArtifact.id != artifact_id)
+            .order_by(ChapterArtifact.created_at.desc())
+        )
+        if previous_artifact is not None:
+            previous_artifact.visibility = "active"
+        self.session.commit()
+
     def add_manual_artifact(
         self,
         branch_id: str,

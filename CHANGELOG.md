@@ -1,6 +1,6 @@
 ## Unreleased
 
-- feat(deconstruction-acceleration): 在章节 canonical artifact 持久化链路中新增 `_deconstruction_profile` shadow metadata（`profile/quick_ready/writer_lens_status/loom_status/risk_status/canonical_artifact_id/content_hash/idempotency_key/timing`），并保持 `ChapterAnalysisOutput` 既有键名完全不变；同时补充 analysis/run service 定向测试覆盖。
+- fix(materialization): when blocking retrieval/fact/graph/window materialization fails after persisting a replacement chapter artifact, restore the previous active artifact and keep the chapter job failed so downstream state never advances on partial materialization; add regression coverage for rollback + blocking semantics.
 
 - docs(deconstruction-acceleration): 新增 `docs/deconstruction-acceleration/` 专题目录，落地拆书加速优化入口、架构说明、开发文档与关键遗漏审查；同步把专题挂到 `docs/README.md` 与 `docs/architecture/README.md`，明确 Quick/Deep 双档、canonical-readable/downstream-driving 合同、reader isolation、fork inherited deferred completeness、stale/idempotency 守卫与 benchmark 口径。
 

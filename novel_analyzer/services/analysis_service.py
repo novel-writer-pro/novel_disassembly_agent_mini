@@ -1048,6 +1048,12 @@ class AnalysisService:
                 artifact_ids.append(artifact.id)
                 previous_summary = result.chapter_summary
             except Exception as exc:
+                if 'artifact' in locals() and artifact is not None:
+                    self.run_service.restore_previous_active_artifact(
+                        branch_id,
+                        segment.chapter_index,
+                        artifact.id,
+                    )
                 self.run_service.record_raw_output(
                     run_id,
                     branch_id,

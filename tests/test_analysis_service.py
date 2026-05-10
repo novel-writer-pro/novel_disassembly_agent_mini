@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
-from novel_analyzer.database.models import ChapterJob
+from novel_analyzer.database.models import ChapterArtifact, ChapterJob
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.domain.schemas import (
     AnalysisSummary,
@@ -442,3 +442,116 @@ def test_provider_unavailable_uses_local_heuristic_fallback(tmp_path: Path, monk
         )
         assert job is not None
         assert job.status == 'validated'
+
+
+def test_materialization_failure_restores_previous_active_artifact_and_blocks_job(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        previous = RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '旧版本',
+                'chapter_summary': '旧摘要',
+                'key_entities': ['卫图'],
+                'key_events': ['旧事件'],
+                'continuity_notes': ['旧衔接'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'quality_gate_notes': [],
+                'hook_score': 4.0,
+                'dimensions': [],
+            },
+        )
+        service = AnalysisService(session, Settings(llm_api_key='test-key', embedding_backend='stub'))
+
+        monkeypatch.setattr(
+            service,
+            '_invoke_stage',
+            lambda model, prompt, schema: schema.model_validate(
+                {
+                    'chapter_index': 1,
+                    'normalized_title': '一',
+                    'cleaned_text': '第1章 一\n卫图觉醒命格。',
+                    'paragraph_blocks': [{'order': 1, 'text': '卫图觉醒命格。'}],
+                }
+                if schema.__name__ == 'ChapterIntakeOutput'
+                else (
+                    {
+                        'characters': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                        'events': [{'label': '卫图觉醒命格', 'evidence': ['觉醒命格'], 'confidence': 0.9}],
+                        'relations': [],
+                        'conflicts': [],
+                        'foreshadowing': [],
+                        'worldbuilding_facts': [],
+                    }
+                    if schema.__name__ == 'ChapterFactExtractionOutput'
+                    else (
+                        {
+                            'retained_items': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                            'unsupported_items': [],
+                            'coverage_summary': 'ok',
+                        }
+                        if schema.__name__ == 'EvidenceBindingOutput'
+                        else (
+                            {
+                                'summary': {'short': '卫图觉醒命格。'},
+                                'themes': [],
+                                'pacing': {},
+                                'emotional_curve': {},
+                                'continuity_notes': ['主线开启。'],
+                            }
+                            if schema.__name__ == 'ChapterAnalysisLayerOutput'
+                            else (
+                                {
+                                    'hook_notes': [],
+                                    'conflict_notes': [],
+                                    'reveal_order_notes': [],
+                                    'scene_efficiency_notes': [],
+                                    'transferable_lessons': [],
+                                }
+                                if schema.__name__ == 'WriterLearningLensOutput'
+                                else {'overclaim_flags': [], 'ambiguous_points': [], 'needs_human_review': False}
+                            )
+                        )
+                    )
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            service.retrieval_service,
+            'materialize_for_artifact',
+            lambda artifact_id: (_ for _ in ()).throw(RuntimeError('retrieval boom')),
+        )
+
+        with pytest.raises(RuntimeError, match='retrieval boom'):
+            service.analyze_range(run.id, branch.id, 1, 1)
+
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'failed'
+
+        artifacts = session.scalars(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .order_by(ChapterArtifact.created_at)
+        ).all()
+        assert len(artifacts) == 2
+        active_ids = [artifact.id for artifact in artifacts if artifact.visibility == 'active']
+        assert active_ids == [previous.id]
+        assert artifacts[-1].visibility == 'hidden'
