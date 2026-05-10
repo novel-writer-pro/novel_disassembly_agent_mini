@@ -3668,6 +3668,38 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         ],
         "migration_status": "compatibility-layer-active",
     }
+    session_consumer_migration_telemetry = {
+        "contract_version": "writer-imitate-consumer-migration-telemetry.v1",
+        "migration_status": "primary-in-progress",
+        "preferred_verdict_source": session_primary_contract_hints["preferred_verdict_source"],
+        "preferred_digest_source": session_primary_contract_hints["preferred_digest_source"],
+        "primary_consumers_ready": [
+            "writer-imitate-operator-surface",
+            "writer-imitate-action-queue",
+            "writer-imitate-execution-state",
+            "writer-imitate-execution-replay",
+            "writer-imitate-execution-apply",
+            "writer-imitate-execution-resume",
+            "writer-imitate-live-control-state",
+            "writer-imitate-live-mutation-preview",
+            "writer-imitate-live-validation-state",
+            "writer-imitate-external-runtime-executor-readiness",
+            "writer-imitate-external-runtime-executor-preview",
+        ],
+        "legacy_consumers_remaining": [
+            "writer-imitate-legacy-contract-surface",
+            "writer-imitate-legacy-retirement-preview",
+            "writer-imitate-index full-session-field-surface",
+        ],
+        "legacy_verdict_fields_remaining": session_primary_contract_hints["legacy_verdict_fields"],
+        "legacy_digest_fields_remaining": session_primary_contract_hints["legacy_digest_fields"],
+        "next_migration_slice": "move legacy surfaces and index summaries to read primary telemetry first",
+        "evidence": [
+            "primary operator surface generated",
+            "action/execution surfaces expose session_primary_verdicts and session_primary_digests",
+            "legacy surfaces still present for compatibility",
+        ],
+    }
     session_legacy_contract_layer = {
         "contract_version": "writer-imitate-legacy-contract-layer.v1",
         "legacy_verdict_fields": session_primary_contract_hints["legacy_verdict_fields"],
@@ -3805,6 +3837,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": session_primary_verdicts,
         "session_primary_digests": session_primary_digests,
         "session_primary_contract_hints": session_primary_contract_hints,
+        "session_consumer_migration_telemetry": session_consumer_migration_telemetry,
         "session_legacy_contract_layer": session_legacy_contract_layer,
         "session_legacy_retirement_readiness": session_legacy_retirement_readiness,
         "session_legacy_retirement_plan": session_legacy_retirement_plan,
@@ -3868,6 +3901,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    consumer_migration_obj = session_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
@@ -3888,6 +3923,7 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_primary_contract_hints": primary_hints,
+        "session_consumer_migration_telemetry": consumer_migration,
         "session_legacy_contract_layer": legacy_layer,
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
@@ -3996,6 +4032,19 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- legacy_verdict_fields: {legacy_verdict_text}")
         lines.append(f"- legacy_digest_fields: {legacy_digest_text}")
         lines.append("- compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint")
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- preferred_verdict_source: {consumer_migration.get('preferred_verdict_source', '')}")
+        lines.append(f"- preferred_digest_source: {consumer_migration.get('preferred_digest_source', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
+        primary_consumers = consumer_migration.get("primary_consumers_ready", [])
+        legacy_consumers = consumer_migration.get("legacy_consumers_remaining", [])
+        primary_text = "；".join(str(x) for x in primary_consumers) if isinstance(primary_consumers, list) else ""
+        legacy_text = "；".join(str(x) for x in legacy_consumers) if isinstance(legacy_consumers, list) else ""
+        lines.append(f"- primary_consumers_ready: {primary_text}")
+        lines.append(f"- legacy_consumers_remaining: {legacy_text}")
     legacy_layer = payload.get("session_legacy_contract_layer", {})
     if isinstance(legacy_layer, dict):
         lines.append("\n## Legacy Contract Layer")
@@ -4109,6 +4158,8 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    consumer_migration_obj = session_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
     retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
     retirement_plan_obj = session_state.get("session_legacy_retirement_plan", {})
@@ -4123,6 +4174,7 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
         "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
         "session_legacy_contract_layer": legacy_layer,
         "session_primary_contract_hints": primary_hints,
+        "session_consumer_migration_telemetry": consumer_migration,
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
         "session_legacy_retirement_pilot_wave": retirement_pilot_wave,
@@ -4154,6 +4206,17 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
             lines.append(f"- external_runtime_executor_readiness_role: {entrypoint_roles.get('external_runtime_executor_readiness', '')}")
             lines.append(f"- external_runtime_executor_preview_role: {entrypoint_roles.get('external_runtime_executor_preview', '')}")
     _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
+        primary_consumers = consumer_migration.get("primary_consumers_ready", [])
+        legacy_consumers = consumer_migration.get("legacy_consumers_remaining", [])
+        primary_text = "；".join(str(x) for x in primary_consumers) if isinstance(primary_consumers, list) else ""
+        legacy_text = "；".join(str(x) for x in legacy_consumers) if isinstance(legacy_consumers, list) else ""
+        lines.append(f"- primary_consumers_ready: {primary_text}")
+        lines.append(f"- legacy_consumers_remaining: {legacy_text}")
     retirement_readiness = payload.get("session_legacy_retirement_readiness", {})
     if isinstance(retirement_readiness, dict):
         lines.append("\n## Legacy Retirement Readiness")
@@ -4197,6 +4260,8 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
     readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
     legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
+    consumer_migration_obj = session_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-legacy-retirement-preview.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -4204,6 +4269,7 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
         "retirement_readiness": readiness,
         "retirement_pilot_wave": pilot_wave,
         "legacy_contract_layer": legacy_layer,
+        "consumer_migration_telemetry": consumer_migration,
         "preview_status": "quality-blocked" if readiness.get("status") == "quality-blocked" else "planned-not-executed",
         "projected_effect": {
             "legacy_verdict_count_after_wave": max(int(legacy_layer.get("legacy_verdict_count", 0) or 0), 0),
@@ -4276,6 +4342,12 @@ def _writer_output_legacy_retirement_preview_markdown(output_dir: Path) -> str:
         blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
         lines.append(f"- required_conditions: {required_text}")
         lines.append(f"- blocking_reasons: {blocking_text}")
+
+    consumer_migration = payload.get("consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
 
     pilot_wave = payload.get("retirement_pilot_wave", {})
     if isinstance(pilot_wave, dict):

@@ -885,6 +885,10 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_primary_digests']['runtime_contract']
     assert session_state['session_primary_digests']['operating_digest'].endswith('quality=0.82')
     assert session_state['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert session_state['session_consumer_migration_telemetry']['contract_version'] == 'writer-imitate-consumer-migration-telemetry.v1'
+    assert session_state['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert 'writer-imitate-operator-surface' in session_state['session_consumer_migration_telemetry']['primary_consumers_ready']
+    assert 'writer-imitate-legacy-contract-surface' in session_state['session_consumer_migration_telemetry']['legacy_consumers_remaining']
     assert session_state['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert session_state['session_legacy_retirement_plan']['phase'] == 'pre-retirement'
     assert session_state['session_legacy_retirement_pilot_wave']['wave_id'] == 'legacy-retirement-wave-01'
@@ -921,6 +925,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_primary_verdicts']['chapter_quality_signal_count'] == 1
     assert operator_surface_payload['session_primary_digests']['operating_digest']
     assert operator_surface_payload['session_primary_contract_hints']['preferred_verdict_source'] == 'session_primary_verdicts'
+    assert operator_surface_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert operator_surface_payload['session_consumer_migration_telemetry']['next_migration_slice']
     assert operator_surface_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert operator_surface_payload['session_control_surface_entrypoints']['legacy_operator_entrypoint_markdown'] == 'writer-imitate-legacy-contract-surface.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['legacy_retirement_preview_markdown'] == 'writer-imitate-legacy-retirement-preview.md'
@@ -961,6 +967,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_text.index('## Primary Verdicts') < operator_surface_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in operator_surface_text
     assert '## Primary Contract Migration Hints' in operator_surface_text
+    assert '## Consumer Migration Telemetry' in operator_surface_text
+    assert 'migration_status: primary-in-progress' in operator_surface_text
     assert 'compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint' in operator_surface_text
     assert '## Legacy Contract Layer' in operator_surface_text
     assert '## Legacy Retirement Readiness' in operator_surface_text
@@ -985,6 +993,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert legacy_surface_payload['session_control_surface_entrypoints']['external_runtime_executor_preview_markdown'] == 'writer-imitate-external-runtime-executor-preview.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['legacy_operator_entrypoint'] == 'compatibility-governance-surface'
     assert legacy_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
+    assert legacy_surface_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert legacy_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
     assert legacy_surface_payload['session_legacy_retirement_plan']['second_wave_candidates']
     assert legacy_surface_payload['session_legacy_retirement_pilot_wave']['status'] == 'planned-not-executed'
@@ -997,15 +1006,18 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Legacy Contract Layer' in legacy_surface_text
     assert '## Legacy Retirement Readiness' in legacy_surface_text
     assert '## Legacy Retirement Plan' in legacy_surface_text
+    assert '## Consumer Migration Telemetry' in legacy_surface_text
     assert 'session_governance_checksum_v2' in legacy_surface_text
     assert 'session_operating_checksum' in legacy_surface_text
     legacy_retirement_preview_payload = json.loads(legacy_retirement_preview_json.read_text(encoding='utf-8'))
     assert legacy_retirement_preview_payload['contract_version'] == 'writer-imitate-legacy-retirement-preview.v1'
     assert legacy_retirement_preview_payload['preview_status'] == 'planned-not-executed'
+    assert legacy_retirement_preview_payload['consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert legacy_retirement_preview_payload['retirement_pilot_wave']['wave_id'] == 'legacy-retirement-wave-01'
     legacy_retirement_preview_text = legacy_retirement_preview_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Legacy Retirement Preview' in legacy_retirement_preview_text
     assert '## Retirement Readiness' in legacy_retirement_preview_text
+    assert '## Consumer Migration Telemetry' in legacy_retirement_preview_text
     assert '## Retirement Pilot Wave' in legacy_retirement_preview_text
     assert '## Projected Effect' in legacy_retirement_preview_text
 
