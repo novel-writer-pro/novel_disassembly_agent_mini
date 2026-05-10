@@ -20,6 +20,7 @@ from novel_analyzer.database.models import (
     RetrievalDocument,
 )
 from novel_analyzer.database.session import create_schema
+from novel_analyzer.services.character_agent_service import CharacterAgentService
 from novel_analyzer.services.dialogue_signal_service import DialogueSignalService
 from novel_analyzer.services.rhythm_analysis_service import (
     PACING_ACTION_HEAVY,
@@ -435,3 +436,110 @@ def test_dialogue_signal_to_dict() -> None:
         assert "conflict_dialogue_density" in signal
         assert "alert_level" in signal
         assert signal["chapter_index"] == 1
+
+
+# ===========================================================================
+# CharacterAgentService tests
+# ===========================================================================
+
+def test_character_persona_no_data() -> None:
+    with _session() as session:
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(_branch_id(), "张三", 5)
+        assert persona.character_id == "张三"
+        assert persona.behavior_labels == []
+        assert persona.episodic_anchors == []
+        assert persona.relationship_network == {}
+        assert persona.speech_style_vector == []
+        assert persona.chapter_appearances == []
+
+
+def test_character_persona_with_facts() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        for i in range(1, 4):
+            _add_fact(session, bid, i, "entity", "张三")
+        session.commit()
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(bid, "张三", 5)
+        assert persona.character_id == "张三"
+        assert len(persona.chapter_appearances) == 3
+        assert 1 in persona.chapter_appearances
+        assert 3 in persona.chapter_appearances
+
+
+def test_character_persona_to_dict() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        _add_fact(session, bid, 1, "entity", "张三")
+        session.commit()
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(bid, "张三", 3)
+        d = persona.to_dict()
+        assert "character_id" in d
+        assert "built_at_chapter" in d
+        assert "chapter_appearances" in d
+        assert d["character_id"] == "张三"
+
+
+def test_character_consistency_no_persona_data() -> None:
+    with _session() as session:
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(_branch_id(), "张三", 5)
+        result = svc.check_character_consistency(persona, "张三出场了", 6)
+        assert result.overall_consistency_score >= 0.0
+        assert result.alert_level in ("none", "warn", "critical")
+
+
+def test_character_consistency_present_in_draft() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        for i in range(1, 4):
+            _add_fact(session, bid, i, "entity", "张三")
+        session.commit()
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(bid, "张三", 3)
+        result = svc.check_character_consistency(persona, "张三今天出门了", 4)
+        assert result.character_id == "张三"
+        assert 0.0 <= result.overall_consistency_score <= 1.0
+
+
+def test_character_consistency_not_in_draft() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        _add_fact(session, bid, 1, "entity", "张三")
+        session.commit()
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(bid, "张三", 1)
+        result = svc.check_character_consistency(persona, "李四今天出门了", 2)
+        assert result.behavior_consistency == 1.0
+
+
+def test_character_consistency_signal_dict() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        _add_fact(session, bid, 1, "entity", "张三")
+        session.commit()
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(bid, "张三", 1)
+        result = svc.check_character_consistency(persona, "张三出场", 2)
+        signal = result.to_consistency_signal()
+        assert "character_id" in signal
+        assert "overall_consistency_score" in signal
+        assert "alert_level" in signal
+        assert signal["character_id"] == "张三"
+
+
+def test_character_persona_with_embeddings() -> None:
+    with _session() as session:
+        bid = _branch_id()
+        vec = [1.0, 0.0]
+        for i in range(1, 4):
+            _add_chapter_embedding(session, bid, i, vec)
+            _add_fact(session, bid, i, "entity", "张三")
+        session.commit()
+        svc = CharacterAgentService(session)
+        persona = svc.build_character_persona(bid, "张三", 3)
+        assert persona.speech_style_vector != []
+        result = svc.check_character_consistency(persona, "张三出场", 4)
+        assert result.speech_consistency >= 0.0
