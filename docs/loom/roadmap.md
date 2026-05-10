@@ -218,12 +218,12 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P1：风格向量化与漂移检测**
 
 ```
-□ 新增 style_calibration_service.py
-   - compute_style_vector(chapter_text) → 复用现有 ChunkEmbedding
-   - compute_style_drift(branch_id, chapter_index) → cosine 距离
-   - suggest_style_recalibration(drift_score) → StyleRecalibrationSignal
+✅ 新增 style_calibration_service.py
+   - compute_style_drift(branch_id, chapter_index) → StyleDriftResult（cosine 距离）
+   - to_style_signal() 输出供 operator surface 消费
+   - 阈值：warn ≥ 0.15，critical ≥ 0.30
+✅ loom-status 展示 style_drift_score（loom_style_enabled=True 时）
 □ preflight_imitation 接入 style_drift 检查（feature flag loom_style_enabled）
-□ loom-status 展示 style_drift_score
 □ session_loom_signals 新增 style_signal 字段
 □ 验收：style_drift_score 与人工风格评分 Pearson r ≥ 0.5
 ```
@@ -231,13 +231,14 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 **P2：节奏分析器**
 
 ```
-□ 新增 rhythm_analysis_service.py
-   - compute_hook_density(chapter_text) → float（每千字钩子数）
-   - detect_climax_position(branch_id) → list[int]
-   - classify_pacing_type(branch_id, chapter_index) → str
+✅ 新增 rhythm_analysis_service.py
+   - compute(branch_id, chapter_index) → RhythmSignal
+   - hook_density: HOOK_FACT_TYPES 事件数 / 千字
+   - pacing_type: slow_burn | action_heavy | balanced | episodic
+   - climax_score: hook 事件占比
+✅ loom-status 展示 rhythm_signal（loom_style_enabled=True 时）
 □ tension 层：rhythm_signal 与 tension_signal 联动
 □ preflight_imitation：节奏偏差警告
-□ loom-status 展示 rhythm_signal
 □ 验收：hook_density 与读者留存率正相关（需真实数据）
 ```
 
