@@ -8371,6 +8371,8 @@ def loom_status(
         echo(f"loom_memory_mode:    {settings.loom_memory_mode}")
         echo(f"loom_tension_enabled:{settings.loom_tension_enabled}")
         echo(f"loom_pairwise_enabled:{settings.loom_pairwise_enabled}")
+        echo(f"loom_style_enabled:  {settings.loom_style_enabled}")
+        echo(f"loom_character_enabled:{settings.loom_character_enabled}")
 
         # Latest chapter for tension
         latest_chapter = session.scalar(

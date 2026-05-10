@@ -109,6 +109,8 @@ def test_settings_loom_defaults() -> None:
     assert s.loom_pairwise_enabled is False
     assert s.loom_episodic_top_k == 20
     assert s.loom_tension_lookback_n == 3
+    assert s.loom_style_enabled is False
+    assert s.loom_character_enabled is False
 
 
 def test_settings_loom_env_override(monkeypatch: pytest.MonkeyPatch) -> None:

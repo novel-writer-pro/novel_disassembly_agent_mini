@@ -74,6 +74,8 @@ class Settings(BaseSettings):
     loom_pairwise_enabled: bool = Field(default=False)
     loom_episodic_top_k: int = Field(default=20)
     loom_tension_lookback_n: int = Field(default=3)
+    loom_style_enabled: bool = Field(default=False)
+    loom_character_enabled: bool = Field(default=False)
 
     @property
     def resolved_database_url(self) -> str:
