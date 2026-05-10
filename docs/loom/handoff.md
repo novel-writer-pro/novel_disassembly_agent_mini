@@ -1,6 +1,6 @@
 # Loom 开发交接文档 / Handoff
 
-> 最后更新: 2026-05-09
+> 最后更新: 2026-05-10
 >
 > 本文件供下次打开项目时**不重新理解上下文**，直接按步骤继续开发。
 >
@@ -41,11 +41,16 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 | Commit | 描述 |
 |--------|------|
+| `115953c` | feat(loom): live/runtime bridge 统一接入 `session_loom_gate_summary` |
+| `f284df6` | feat(loom): execution chain 新增统一 `session_loom_gate_summary` |
+| `c004f19` | feat(loom): execution resume / recovery 继承 Loom gate |
+| `5d582ee` | feat(loom): external runtime simulation bridge 统一继承 Loom 状态 |
+| `4891fa9` | feat(loom): live/external runtime readiness 继承 Loom 质量与迁移状态 |
+| `4c7486a` | feat(loom): consumer migration telemetry 落到 control surfaces |
+| `3be4559` | feat(loom): retirement readiness / preview 接入最小 quality gate |
+| `f484150` | feat(loom): `chapter_quality_score` 聚合进入 `session_primary_verdicts` |
+| `500be6e` | feat(loom): `session_loom_signals` 进入 operator surface |
 | `edf1237` | feat(loom): Loom Phase 1+2 代码与测试（38 tests） |
-| `9a793a4` | docs+migration: 文档体系 + Alembic migration + roadmap/manual/checklist |
-| `0131636` | fix(loom): CLI 命令注册顺序（loom-status/loom-consolidate/loom-assemble） |
-| `bee4d89` | ops: DeepSeek + PostgreSQL 端到端验证通过 |
-| `54a7fbd` | fix(loom): node/edge type 查询对齐真实生产数据 |
 
 ### 2.2 核心文件清单
 
@@ -177,22 +182,53 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 
 ---
 
+## 3.5 规划闭环 vs 当前完成度（本次交接重点）
+
+### 原规划预期闭环
+
+根据 `docs/loom/roadmap.md` 与 `docs/loom/arch-diff-and-alignment.md`，当前这条 Loom→0509 对接主线，预期要完成 4 个连续闭环：
+
+1. **信号暴露闭环**
+   - tension / quality 信号进入 control surface
+   - operator 不再需要回到底层章节产物手工拼装
+2. **主 verdict 闭环**
+   - `chapter_quality_score` 进入 `session_primary_verdicts`
+   - quality gate 能直接参与 session 级判断
+3. **治理门控闭环**
+   - retirement / readiness / migration telemetry 能感知 Loom 质量与迁移状态
+   - legacy 收口时不会绕过 Loom gate
+4. **执行链继承闭环**
+   - action → execution → replay/apply/resume → live bridge → external runtime bridge
+   - 全链共享同一层 Loom gate 结论，不再分叉
+
+### 当前已经完成的闭环
+
+| 规划闭环 | 当前状态 | 证据 |
+|---|---|---|
+| 信号暴露闭环 | ✅ 已完成 | `session_loom_signals`、operator surface markdown、`500be6e` |
+| 主 verdict 闭环 | ✅ 已完成 | `quality_verdict` / `average_chapter_quality_score` / `chapter_quality_signal_count`、`f484150` |
+| 治理门控闭环 | ✅ 已完成最小可用版 | retirement quality gate、consumer migration telemetry、`3be4559` / `4c7486a` |
+| 执行链继承闭环 | ✅ 已完成到 simulation bridge | `session_loom_gate_summary` 覆盖 execution/live/external runtime simulation、`f284df6` / `115953c` / `c004f19` |
+
+### 当前尚未完成的闭环
+
+| 闭环 | 未完成点 | 说明 |
+|---|---|---|
+| 生产验证闭环 | A/B 实验、shadow→ab→enabled 切换 | 仍停留在规划状态，缺真实对比数据 |
+| reward 数据闭环 | pairwise 数据采集 CLI、500+ pairs、reward model | 当前只有 LLM-as-judge 设计与接入点，没有数据飞轮 |
+| 真实 executor 闭环 | live writeback / external runtime 真执行器 | 当前仍是 preview / local simulation bridge，不是生产 mutation |
+| 真实 consumer telemetry 闭环 | 来自真实 consumer 的迁移上报 | 当前 telemetry 为 contract-derived，可用但不是 runtime truth |
+
 ## 4. 剩余工作与下一步
 
 ### 4.0 最近新增交付（2026-05-10）
 
-- `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段。
-- 当前聚合源来自 `writer-imitate-ch*.json` 章节产物，已汇总 tension signal 与可选 chapter quality signal。
-- operator surface markdown 也新增 `Loom Signals` 小节，便于 operator 直接查看章节级 tension/quality 摘要。
-- 第一轮交付先补稳定消费合同；随后已把 `chapter_quality_score` 聚合接入 `session_primary_verdicts`，当前 control surface 可直接输出 `quality_verdict` / `average_chapter_quality_score` / `chapter_quality_signal_count`。
-- 当前 writer retirement readiness / preview 也已接入最小质量门控：当 `quality_score < 0.7` 时会标记 `quality-blocked`，阻止 legacy retirement 预演误判为可推进。
-- 当前 control surfaces 还会输出 `session_consumer_migration_telemetry`，明确哪些消费面已可读取 primary verdict/digest，哪些仍停留在 legacy 兼容层。
-- 当前 live control / external runtime readiness 面也已继承 `quality_verdict` 与迁移遥测，后续真实 runtime executor 接入时可直接复用这层 Loom 状态。
-- 当前 external runtime preview / checkpoint / transition / validation 这条 simulation bridge 也已统一继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，避免 runtime 预演链路与 operator surface 再次分叉。
-- 当前 execution resume / recovery 路径也已继承迁移遥测，并在质量不达标时优先提示先处理质量，再进入 resume/recovery。
-- 当前 action/execution/replay/apply/resume 整条执行链还新增了统一的 `session_loom_gate_summary`，把质量、张力与迁移状态收口成一层稳定执行摘要。
-- 当前 live/runtime simulation bridge 也统一接入了 `session_loom_gate_summary`，这样从 operator 到 runtime 预演链已经共享同一层 Loom gate 摘要。
-- 当前 index / control-surface registry 第一层摘要也已展示 `session_loom_gate_summary`，operator 打开入口页即可先看到 Loom gate 结论。
+- `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 已稳定暴露 `session_loom_signals`。
+- `session_primary_verdicts` 已吸收质量聚合，统一输出 `quality_verdict` / `average_chapter_quality_score` / `chapter_quality_signal_count`。
+- writer retirement readiness / preview 已接入最小 quality gate：`quality_score < 0.7` 时标记 `quality-blocked`。
+- control surfaces、execution chain、execution resume、live/runtime readiness、external runtime simulation bridge 已统一暴露 `session_consumer_migration_telemetry`。
+- action/execution/replay/apply/resume 与 live/runtime simulation bridge 已统一暴露 `session_loom_gate_summary`，把质量、张力、迁移状态收口成稳定摘要。
+- index / control-surface registry 第一层摘要现在也能直接展示 Loom gate 结论，operator 打开入口页即可先判断当前 gate 状态。
 
 ### 4.1 当前未完成的 Phase 3 规划
 
@@ -201,7 +237,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 优先级 | 任务 | 说明 | 前置条件 |
 |--------|------|------|---------|
 | 🔴 P0 | A/B 实验：Loom on vs off | 用 20 章数据对比 character_ooc 下降指标 | 需积累足够人工评估数据 |
-| 🟡 P0 | 0509 operator_surface 深化对接 | 当前 writer operator surface 已聚合展示 `session_loom_signals`，且 `session_primary_verdicts` 已吸收 quality 聚合；下一步是让更多 0509 消费者直接依赖该稳定合同 | 需 Loom 稳定运行 |
+| 🟡 P0 | 0509 operator_surface 深化对接 | 当前 contract / execution / live / runtime simulation 面已基本统一；下一步是把这些 Loom gate 真正接到更接近生产的 executor / consumer 上 | 需 Loom 稳定运行 |
 | 🟡 P1 | Pairwise 数据积累 | 产出足够多的 LLM-as-judge 评估对 | 需生产运行积累 |
 | 🟡 P1 | 角色认知基（Phase 3） | 角色级 agent 自主认知基 | 需 A/B 实验验证通过 |
 | 🟢 P2 | Fine-tuned reward model | 替代 LLM-as-judge | 需 pairwise 数据量充足 |
