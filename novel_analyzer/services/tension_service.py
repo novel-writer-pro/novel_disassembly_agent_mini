@@ -114,6 +114,7 @@ class TensionService:
         chapter_index: int,
         lookback_n: int = 3,
         rhythm_signal: dict[str, object] | None = None,
+        thread_status: dict[str, object] | None = None,
     ) -> TensionScore:
         similarity = self._plot_similarity(branch_id, chapter_index, lookback_n)
         density = self._conflict_density(branch_id, chapter_index)
@@ -127,7 +128,7 @@ class TensionService:
         )
         tension = round(max(0.0, min(1.0, tension)), 4)
 
-        alerts = self._build_alerts(similarity, density, surprise, tension, rhythm_signal)
+        alerts = self._build_alerts(similarity, density, surprise, tension, rhythm_signal, thread_status)
         return TensionScore(
             chapter_index=chapter_index,
             branch_id=branch_id,
@@ -298,6 +299,7 @@ class TensionService:
         surprise: float,
         tension: float,
         rhythm_signal: dict[str, object] | None = None,
+        thread_status: dict[str, object] | None = None,
     ) -> list[TensionAlert]:
         alerts: list[TensionAlert] = []
 
@@ -350,6 +352,19 @@ class TensionService:
                         message=f"爽点密度偏低（{hook_density:.2f}/千字），读者留存风险",
                         suggestion="建议在本章增加情绪高点或意外反转",
                     ))
+
+        if thread_status:
+            overdue = thread_status.get("overdue_threads", [])
+            if isinstance(overdue, list) and overdue:
+                best = max(overdue, key=lambda t: float(t.get("importance_score", 0)) if isinstance(t, dict) else 0)
+                label = str(best.get("label", "")) if isinstance(best, dict) else ""
+                dormant_n = int(best.get("chapters_since_last_seen", 0)) if isinstance(best, dict) else 0
+                alerts.append(TensionAlert(
+                    alert_type="overdue_thread",
+                    severity="medium",
+                    message=f"线索「{label}」已沉寂 {dormant_n} 章，建议本章激活",
+                    suggestion=f"激活线索「{label}」可提升情节新颖度和读者期待感",
+                ))
 
         return alerts
 

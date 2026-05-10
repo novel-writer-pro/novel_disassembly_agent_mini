@@ -828,11 +828,18 @@ class HarnessControllerService:
                     rhythm_signal_for_tension = RhythmAnalysisService(self.session).compute(
                         branch_id, source_chapter_index
                     ).to_rhythm_signal()
+                thread_status_for_tension: dict[str, object] | None = None
+                if self.settings.loom_character_enabled and self.session is not None:
+                    from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
+                    thread_status_for_tension = ThreadSchedulerService(self.session).analyze_thread_status(
+                        branch_id, source_chapter_index
+                    ).to_thread_status()
                 tension = self.tension_service.compute(
                     branch_id,
                     chapter_index=source_chapter_index,
                     lookback_n=self.settings.loom_tension_lookback_n,
                     rhythm_signal=rhythm_signal_for_tension,
+                    thread_status=thread_status_for_tension,
                 )
                 tension_sig = tension.to_operator_signal()
                 if tension.alerts:
