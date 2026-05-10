@@ -8446,7 +8446,6 @@ def loom_collect_pairs(
 
     Appends JSONL records to --pairs-file (one chapter_quality_signal per line).
     """
-    import datetime as _datetime
     import uuid as _uuid
 
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
@@ -8799,7 +8798,6 @@ def loom_collect_pairs_from_db(
     as the comparison text. Useful for comparing analysis quality between branches.
     Appends JSONL records to --pairs-file.
     """
-    import datetime as _datetime
     import uuid as _uuid
 
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
@@ -8920,7 +8918,6 @@ def loom_collect_pairs_from_manual(
 
     Appends JSONL records to --pairs-file with pair_source="manual_eval_workspace".
     """
-    import datetime as _datetime
     import uuid as _uuid
 
     from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
