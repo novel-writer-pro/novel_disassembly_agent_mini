@@ -21,6 +21,8 @@ flowchart TD
         L1["memory/\n分层记忆 + 冲突代谢\n对接 0509 SessionState\n填补 Live Writeback 缺口"]
         L2["reward/\n学习型评估\n补充规则化 Checker\n填补 Automated Gate 缺口"]
         L3["tension/\n叙事张力自动调节\n补充人工 Steering\n填补 Control Console 缺口"]
+        L4["style/（Phase 4）\n文风向量 + 节奏分析 + 对话质量\n补充风格漂移检测缺口"]
+        L5["character/（Phase 4）\n角色认知基 + 一致性检测\n深化 OOC Checker"]
     end
 
     A1 --> A2 --> A3 --> A4
@@ -34,9 +36,14 @@ flowchart TD
     A6 --> L2
     A4 --> L3
     A8 --> L3
+    A4 --> L4
+    A4 --> L5
+    L1 --> L5
 
     L1 --> L2
     L2 --> L3
+    L3 --> L4
+    L1 --> L4
 ```
 
 ---
