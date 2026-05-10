@@ -149,7 +149,11 @@ def test_writer_learning_lens_accepts_dict_transferable_lessons() -> None:
             'transferable_lessons': [
                 {'lesson': '通过未解线索制造后续期待', 'category': 'pacing'},
                 {'summary': '让人物关系在冲突中递进'},
-                {'lesson_id': 3, 'category': 'character_relationship', 'content': '把冲突线索埋入日常互动。'},
+                {
+                    'lesson_id': 3,
+                    'category': 'character_relationship',
+                    'content': '把冲突线索埋入日常互动。',
+                },
             ]
         }
     )
@@ -324,7 +328,10 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
             service.analyze_range(run.id, branch.id, 1, 1)
 
 
-def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_risk_audit_failure_does_not_break_main_chapter_commit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
 
@@ -347,7 +354,9 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, m
                 else (
                     {
                         'characters': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
-                        'events': [{'label': '卫图觉醒命格', 'evidence': ['觉醒命格'], 'confidence': 0.9}],
+                        'events': [
+                            {'label': '卫图觉醒命格', 'evidence': ['觉醒命格'], 'confidence': 0.9}
+                        ],
                         'relations': [],
                         'conflicts': [],
                         'foreshadowing': [],
@@ -356,7 +365,9 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, m
                     if schema.__name__ == 'ChapterFactExtractionOutput'
                     else (
                         {
-                            'retained_items': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                            'retained_items': [
+                                {'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}
+                            ],
                             'unsupported_items': [],
                             'coverage_summary': 'ok',
                         }
@@ -379,7 +390,11 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, m
                                     'transferable_lessons': [],
                                 }
                                 if schema.__name__ == 'WriterLearningLensOutput'
-                                else {'overclaim_flags': [], 'ambiguous_points': [], 'needs_human_review': False}
+                                else {
+                                    'overclaim_flags': [],
+                                    'ambiguous_points': [],
+                                    'needs_human_review': False,
+                                }
                             )
                         )
                     )
@@ -418,9 +433,15 @@ def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() ->
     assert any('可信' in item or '解决' in item for item in lessons)
 
 
-def test_provider_unavailable_uses_local_heuristic_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_provider_unavailable_uses_local_heuristic_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     novel_path = tmp_path / 'novel.txt'
-    novel_path.write_text('第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n', encoding='utf-8')
+    novel_path.write_text(
+        '第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n',
+        encoding='utf-8',
+    )
 
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')

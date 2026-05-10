@@ -1,10 +1,8 @@
 ## Unreleased
 
-- feat(loom/phase5): 实现 Phase 5 三个核心服务（`thread_scheduler_service.py` / `reader_simulation_service.py` / `long_book_health_service.py`）及完整集成：overdue_threads 触发 tension 告警、reader_satisfaction_score 进入 session_primary_verdicts 和 retirement gate、loom-status 展示长书健康度、preflight 接入线索调度建议、operator surface 展示 Reader Simulation Panels、loom_character_enabled=True 时 run_harness 自动从 RAG 库检索 steering_pack。20 个单元测试全部通过。
+- chore(deconstruction): 对 analysis/run service 与相关测试做最小化格式整理，清理本 tranche 验证中暴露的长行 lint 问题，不改变行为。
 
-- feat(loom/phase4): 实现 Phase 4 四个核心服务（`style_calibration_service.py` / `rhythm_analysis_service.py` / `dialogue_signal_service.py` / `character_agent_service.py`）及完整集成：style/rhythm 信号接入 preflight + loom-status + session_loom_signals、dialogue_signal 接入 harness report + pairwise 第五维度、character_agent 接入 preflight + loom-status、rhythm_signal 与 tension_signal 联动（double_flat 复合告警）。29 个单元测试全部通过。
-
- 为 `ContextService` 新增两条回归保护，验证 inactive/shadow companion artifact 与 shadow window artifact 不会改变默认 `previous_summary` / `window_summary` 读路径；同步新增 `docs/deconstruction-acceleration/benchmark-baseline-20260511.md`、`development-log-20260511.md`、`usage-log-20260511.md`，并把 baseline/log evidence 挂到 `docs/README.md` 与 `docs/architecture/README.md`。本次不改 imitation 默认行为，只补 regression/benchmark/docs 交付物。
+- feat(deconstruction-acceleration): 在章节 canonical artifact 持久化链路中新增 `_deconstruction_profile` shadow metadata（`profile/quick_ready/writer_lens_status/loom_status/risk_status/canonical_artifact_id/content_hash/idempotency_key/timing`），并保持 `ChapterAnalysisOutput` 既有键名完全不变；同时补充 analysis/run service 定向测试覆盖。
 
 - docs(deconstruction-acceleration): 新增 `docs/deconstruction-acceleration/` 专题目录，落地拆书加速优化入口、架构说明、开发文档与关键遗漏审查；同步把专题挂到 `docs/README.md` 与 `docs/architecture/README.md`，明确 Quick/Deep 双档、canonical-readable/downstream-driving 合同、reader isolation、fork inherited deferred completeness、stale/idempotency 守卫与 benchmark 口径。
 

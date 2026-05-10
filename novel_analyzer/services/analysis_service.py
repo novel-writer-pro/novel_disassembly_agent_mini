@@ -73,14 +73,16 @@ class AnalysisService:
 
     @staticmethod
     def _stage_chapter_content(chapter_content: str, max_chars: int = 3600) -> str:
-        """Trim oversized chapter text for small-model staged prompts while preserving head/tail context."""
+        """Trim oversized chapter text for small-model staged prompts while preserving
+        head/tail context."""
 
         text = chapter_content.strip()
         if len(text) <= max_chars:
             return text
         head = text[:2200].rstrip()
         tail = text[-1200:].lstrip()
-        return f"{head}\n\n[... 中间内容已为阶段模型省略 {len(text) - len(head) - len(tail)} 字 ...]\n\n{tail}"
+        omitted = len(text) - len(head) - len(tail)
+        return f"{head}\n\n[... 中间内容已为阶段模型省略 {omitted} 字 ...]\n\n{tail}"
 
     @classmethod
     def _extract_json_payload(cls, message: BaseMessage) -> dict[str, object]:
@@ -336,7 +338,10 @@ class AnalysisService:
     @staticmethod
     def _heuristic_entities(chapter_content: str, limit: int = 5) -> list[str]:
         candidates = re.findall(r"[一-龥]{2,4}", chapter_content)
-        stop_words = {"第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个", "没有", "可以", "自己", "什么", "这样"}
+        stop_words = {
+            "第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个",
+            "没有", "可以", "自己", "什么", "这样",
+        }
         seen: set[str] = set()
         results: list[str] = []
         for item in candidates:
@@ -357,7 +362,11 @@ class AnalysisService:
     ) -> ChapterAnalysisOutput:
         content = chapter_content.strip()
         summary_source = re.split(r"[。！？\n]", content, maxsplit=1)[0].strip()
-        chapter_summary = summary_source[:120] if summary_source else f"本章围绕《{normalized_title}》展开。"
+        chapter_summary = (
+            summary_source[:120]
+            if summary_source
+            else f"本章围绕《{normalized_title}》展开。"
+        )
         key_entities = cls._heuristic_entities(content)
         key_events = [chapter_summary] if chapter_summary else []
         continuity_notes = [

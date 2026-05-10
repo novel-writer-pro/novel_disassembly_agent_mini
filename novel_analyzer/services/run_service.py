@@ -263,7 +263,10 @@ class RunService:
                     & ChapterJob.started_at.is_not(None)
                     & (ChapterJob.started_at < cutoff)
                 )
-                | (ChapterJob.heartbeat_at.is_not(None) & (ChapterJob.heartbeat_at < cutoff))
+                | (
+                    ChapterJob.heartbeat_at.is_not(None)
+                    & (ChapterJob.heartbeat_at < cutoff)
+                )
             )
             .order_by(ChapterJob.chapter_index)
         ).all()
