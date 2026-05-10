@@ -1,6 +1,14 @@
 ## Unreleased
 
-- feat(loom/index-summary): `writer-imitate-control-surface-registry` 与 `writer-imitate-index` 第一层摘要接入 `session_loom_gate_summary`，让 operator 在入口面即可看到 Loom gate 结论。
+- feat(loom/phase3/collect-pairs-from-manual): 新增 `loom-collect-pairs-from-manual` CLI 命令，扫描 `runs/manual_eval/` 下所有工作区（跳过 `_template`）的 `artifacts/writer-imitate-ch*.json`，提取 round-0 vs final pairwise 对，追加写入 JSONL，`pair_source=manual_eval_workspace`。8 个单元测试全部通过。
+
+- feat(loom/phase3/pairwise-infra): 新增四个 Phase 3 pairwise 数据收集 CLI 命令：`loom-collect-pairs`（单目录 round-0 vs final + 跨目录 baseline vs steering）、`loom-pairs-stats`（采集进度 / 质量分布 / 距 500 目标剩余量）、`loom-ab-compare`（A/B 实验 character_ooc 触发率对比，目标下降 ≥20%，支持 JSON 报告导出）、`loom-collect-pairs-from-db`（跨两个 DB 分支提取 pairwise 对）。新增 `ChapterImitationHarnessReport.chapter_quality_signal` 字段，`loom_pairwise_enabled=True` 时自动运行 heuristic pairwise eval。20 个单元测试全部通过。
+
+- fix(loom/phase3): 修复 `PostgresCheckReport.missing_cluster_review_columns` 使用 `field(default_factory=dict)` 使参数可选，修复 test_postgres_checks.py 失败。
+
+- docs(loom/phase3): 更新 `docs/loom/handoff.md`（Phase 3 交付物、测试计数 69/394、CMD 速查）、`docs/loom/roadmap.md`（Phase 3 进行中、P3 任务清单全部标记）、`docs/cli-operations-manual.md`（新增 12.7–12.11 节 Phase 3 命令文档）。
+
+ `writer-imitate-control-surface-registry` 与 `writer-imitate-index` 第一层摘要接入 `session_loom_gate_summary`，让 operator 在入口面即可看到 Loom gate 结论。
 
 - feat(loom/live-runtime-summary): `live_control_state`、`live_validation_state` 与 external runtime simulation bridge 统一继承 `session_loom_gate_summary`，让 operator/live/runtime 全链路共享同一层 Loom gate 摘要。
 
