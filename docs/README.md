@@ -143,7 +143,8 @@
 |------|------|
 | [loom/overview.md](./loom/overview.md) | 完整架构图、SOTA 对比、风险分析 |
 | [loom/arch-diff-and-alignment.md](./loom/arch-diff-and-alignment.md) | **0509 vs Loom 冲突点与对齐方案**（必读） |
-| [loom/roadmap.md](./loom/roadmap.md) | Phase 1/2/3 开发路线图 + 验收标准 |
+| [loom/roadmap.md](./loom/roadmap.md) | Phase 1-5 开发路线图 + 验收标准 |
+| [loom/gap-analysis-and-evolution.md](./loom/gap-analysis-and-evolution.md) | 商业水准差距分析 + Phase 4/5 演进规划 |
 
 核心文档：
 - [ai-novel-system-blueprint.md](./architecture/ai-novel-system-blueprint.md) — 系统蓝图
