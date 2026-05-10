@@ -296,8 +296,8 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - simulate_all_panels(branch_id, chapter_index) → ReaderSatisfactionScore
    - 4 类读者面板：casual / veteran / satisfaction / editor
    - 全部 heuristic，零 LLM 调用
-□ session_primary_verdicts 新增 reader_satisfaction_score
-□ retirement gate：reader_satisfaction_score < 0.6 时标记 reader-blocked
+✅ session_primary_verdicts 新增 reader_satisfaction_score（从 average_hook_density + average_tension_score + average_style_drift_score 聚合）
+✅ retirement gate：reader_satisfaction_score < 0.6 时标记 reader-blocked（session_legacy_retirement_readiness）
 □ operator surface：展示各 panel 的具体反馈
 □ 验收：reader_satisfaction_score 与真实读者评分 Pearson r ≥ 0.6
 ```
