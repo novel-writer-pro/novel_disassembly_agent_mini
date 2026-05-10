@@ -80,7 +80,7 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 | 文件 | 数量 | 状态 |
 |------|------|------|
 | `tests/test_loom_phase1.py` | 23 tests | ✅ 全部通过 |
-| `tests/test_loom_phase2.py` | 15 tests | ✅ 全部通过 |
+| `tests/test_loom_phase2.py` | 18 tests | ✅ 全部通过 |
 
 #### 文档
 
@@ -93,6 +93,8 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 | `docs/loom/memory/carry-over-migration.md` | 迁移路径与实验记录 |
 | `docs/loom/tension/README.md` | 张力指标设计 |
 | `docs/loom/reward/README.md` | Reward 模型规划 |
+| `docs/loom/style/README.md` | 文风/节奏/对话层设计（Phase 4 规划） |
+| `docs/loom/character/README.md` | 角色认知基层设计（Phase 4 规划） |
 | `docs/cli-operations-manual.md` | CLI 手册（第 12 节 Loom） |
 | `docs/real-run-checklist.md` | 试跑清单（第 8 节 Loom） |
 | `CHANGELOG.md` | 变更记录 |
