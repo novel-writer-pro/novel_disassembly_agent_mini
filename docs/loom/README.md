@@ -40,7 +40,7 @@ Loom（新增层，叠加在上方）
 
 ---
 
-## 三大升级方向
+## 五大升级方向（Phase 1-4）
 
 ### A. 分层记忆 + 冲突代谢（Memory）
 
@@ -89,6 +89,40 @@ Loom（新增层，叠加在上方）
 **SOTA 参考**：Long Story Generation via KG + Literary Theory（2025）obstacle framework
 
 → [tension/README.md](./tension/README.md)
+
+---
+
+### D. 文风量化 + 节奏分析 + 对话质量（Style）🔲 Phase 4 规划
+
+**解决的问题**：
+- 文风漂移无检测：100 章后风格悄悄偏移，系统无法感知
+- 节奏/爽点无量化：批量仿写时爽点密度不稳定，读者留存率下降
+- 对话质量无信号：角色说话风格漂移，对话填充过多
+
+**核心思路**：
+复用现有 `ChunkEmbedding` 计算风格向量，检测漂移；
+从 `FactRecord` 统计钩子密度，识别节奏类型；
+从对话 chunk 计算角色声音一致性。全部零 LLM 调用。
+
+**SOTA 参考**：StyleRPA（2024）风格向量评估、CharacterBench（2024）对话一致性
+
+→ [style/README.md](./style/README.md)
+
+---
+
+### E. 角色认知基（Character）🔲 Phase 4 规划
+
+**解决的问题**：
+- 角色状态是 snapshot，不是持续演化的认知基
+- OOC checker 是规则检测，不能感知角色内在动机和说话风格
+
+**核心思路**：
+从 Loom memory 层切片构建 `CharacterPersona`（价值观/目标/恐惧/说话风格向量），
+在每次仿写前检测草案是否符合角色认知基，补充而非替代现有 OOC checker。
+
+**SOTA 参考**：BookWorld（2025）角色 agent 自主认知基、Deep Persona Alignment（2025）
+
+→ [character/README.md](./character/README.md)
 
 ---
 
