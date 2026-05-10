@@ -515,3 +515,163 @@ def test_collect_pairs_from_db_identical_summaries_skipped(tmp_path: Path, monke
     ])
     assert result.exit_code == 0
     assert "no eligible pairs found" in result.output
+
+
+# ---------------------------------------------------------------------------
+# loom-collect-pairs-from-manual tests
+# ---------------------------------------------------------------------------
+
+def _make_manual_workspace(
+    manual_eval_dir: Path,
+    workspace_name: str,
+    chapter_index: int,
+    *,
+    round0_text: str = _LONG_TEXT_A,
+    final_text: str = _LONG_TEXT_B,
+    num_rounds: int = 2,
+    branch_id: str = "test-branch",
+) -> Path:
+    workspace = manual_eval_dir / workspace_name
+    artifacts_dir = workspace / "artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    _make_artifact(
+        artifacts_dir,
+        chapter_index,
+        branch_id=branch_id,
+        round0_text=round0_text,
+        final_text=final_text,
+        num_rounds=num_rounds,
+    )
+    return workspace
+
+
+def test_collect_pairs_from_manual_dir_not_found(tmp_path: Path) -> None:
+    missing_dir = tmp_path / "nonexistent_manual_eval"
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(missing_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 1
+    assert "not found" in result.output
+
+
+def test_collect_pairs_from_manual_no_workspaces(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    assert "no workspace directories found" in result.output
+    assert not pairs_file.exists()
+
+
+def test_collect_pairs_from_manual_template_skipped(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    template_artifacts = manual_eval_dir / "_template" / "artifacts"
+    template_artifacts.mkdir(parents=True)
+    _make_artifact(template_artifacts, 1)
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    assert "no workspace directories found" in result.output
+    assert not pairs_file.exists()
+
+
+def test_collect_pairs_from_manual_collects_pair(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    _make_manual_workspace(manual_eval_dir, "novel-001", chapter_index=3)
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    assert "collected 1 pair" in result.output
+    assert pairs_file.exists()
+    records = [json.loads(line) for line in pairs_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(records) == 1
+    assert records[0]["pair_source"] == "manual_eval_workspace"
+    assert records[0]["workspace"] == "novel-001"
+    assert records[0]["chapter_index"] == 3
+
+
+def test_collect_pairs_from_manual_single_round_skipped(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    _make_manual_workspace(manual_eval_dir, "novel-001", chapter_index=1, num_rounds=1)
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    assert "no eligible pairs found" in result.output
+    assert not pairs_file.exists()
+
+
+def test_collect_pairs_from_manual_multiple_workspaces(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    _make_manual_workspace(manual_eval_dir, "novel-001", chapter_index=1)
+    _make_manual_workspace(manual_eval_dir, "novel-002", chapter_index=2)
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    assert "collected 2 pair" in result.output
+    assert "workspaces_scanned=2" in result.output
+    records = [json.loads(line) for line in pairs_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(records) == 2
+    workspaces = {r["workspace"] for r in records}
+    assert workspaces == {"novel-001", "novel-002"}
+
+
+def test_collect_pairs_from_manual_no_artifacts_dir(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    (manual_eval_dir / "novel-001" / "notes").mkdir(parents=True)
+    pairs_file = tmp_path / "pairs.jsonl"
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    assert "no eligible pairs found" in result.output
+    assert not pairs_file.exists()
+
+
+def test_collect_pairs_from_manual_appends_to_existing(tmp_path: Path) -> None:
+    manual_eval_dir = tmp_path / "manual_eval"
+    manual_eval_dir.mkdir()
+    _make_manual_workspace(manual_eval_dir, "novel-001", chapter_index=1)
+    pairs_file = tmp_path / "pairs.jsonl"
+    existing_record = {"pair_source": "existing", "chapter_index": 99}
+    pairs_file.write_text(json.dumps(existing_record) + "\n", encoding="utf-8")
+    result = runner.invoke(app, [
+        "loom-collect-pairs-from-manual",
+        "--manual-eval-dir", str(manual_eval_dir),
+        "--pairs-file", str(pairs_file),
+    ])
+    assert result.exit_code == 0
+    records = [json.loads(line) for line in pairs_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(records) == 2
+    assert records[0]["pair_source"] == "existing"
+    assert records[1]["pair_source"] == "manual_eval_workspace"

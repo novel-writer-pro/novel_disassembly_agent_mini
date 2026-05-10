@@ -8929,5 +8929,175 @@ def loom_collect_pairs_from_db(
         pass
 
 
+@app.command()
+def loom_collect_pairs_from_manual(
+    manual_eval_dir: Path = typer.Option(Path("runs/manual_eval"), "--manual-eval-dir"),
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    min_draft_length: int = typer.Option(50, "--min-draft-length"),
+    database_url: str | None = None,
+) -> None:
+    """Collect pairwise evaluation data from manual_eval workspace artifacts.
+
+    Scans all subdirectories of --manual-eval-dir (excluding _template) for
+    artifacts/writer-imitate-ch*.json files. For each artifact with 2+ rounds,
+    pairs round-0 vs final draft and runs pairwise eval.
+
+    Appends JSONL records to --pairs-file with pair_source="manual_eval_workspace".
+    """
+    import datetime as _datetime
+    import uuid as _uuid
+
+    from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+
+    llm_client = None
+    if use_llm:
+        from novel_analyzer.llm.client import build_chat_model
+        settings = _safe_settings(database_url)
+        raw_model = build_chat_model(settings, model_name=model_name or None)
+
+        class _LangChainAdapter:
+            def __init__(self, lc_model: Any) -> None:
+                self._model = lc_model
+
+            def chat(self, prompt: str) -> str:
+                from langchain_core.messages import HumanMessage
+                result = self._model.invoke([HumanMessage(content=prompt)])
+                return str(result.content)
+
+        llm_client = _LangChainAdapter(raw_model)
+
+    eval_svc = PairwiseEvalService(llm_client=llm_client)
+
+    if not manual_eval_dir.exists():
+        echo(f"loom_collect_pairs_from_manual: {manual_eval_dir} not found.")
+        raise typer.Exit(code=1)
+
+    def _final_draft_text(payload: dict[str, object]) -> str:
+        fd = payload.get("final_draft", {})
+        if isinstance(fd, dict):
+            return str(fd.get("draft_text", "")).strip()
+        return ""
+
+    def _round0_draft_text(payload: dict[str, object]) -> str:
+        rounds = payload.get("rounds", [])
+        if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
+            d = rounds[0].get("draft", {})
+            if isinstance(d, dict):
+                return str(d.get("draft_text", "")).strip()
+        return ""
+
+    def _chapter_goal(payload: dict[str, object]) -> str:
+        return str(payload.get("target_goal", "")).strip()
+
+    def _risk_verdict(payload: dict[str, object]) -> str:
+        return str(payload.get("final_verdict", "unknown")).strip()
+
+    workspace_dirs: list[Path] = [
+        d for d in sorted(manual_eval_dir.iterdir())
+        if d.is_dir() and d.name != "_template"
+    ]
+
+    if not workspace_dirs:
+        echo(f"loom_collect_pairs_from_manual: no workspace directories found in {manual_eval_dir}.")
+        raise typer.Exit(code=0)
+
+    pairs_to_eval: list[dict[str, object]] = []
+
+    for workspace in workspace_dirs:
+        artifacts_dir = workspace / "artifacts"
+        if not artifacts_dir.exists():
+            continue
+        for artifact_path in sorted(artifacts_dir.glob("writer-imitate-ch*.json")):
+            try:
+                payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(payload, dict):
+                continue
+
+            rounds = payload.get("rounds", [])
+            if not isinstance(rounds, list) or len(rounds) < 2:
+                continue
+
+            draft_a = _round0_draft_text(payload)
+            draft_b = _final_draft_text(payload)
+            if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
+                continue
+            if draft_a == draft_b:
+                continue
+
+            try:
+                ch_idx = int(payload.get("source_chapter_index", 0))
+            except (TypeError, ValueError):
+                ch_idx = 0
+            if ch_idx == 0:
+                m = re.search(r"writer-imitate-ch(\d+)\.json$", artifact_path.name)
+                ch_idx = int(m.group(1)) if m else 0
+
+            pairs_to_eval.append({
+                "pair_id": str(_uuid.uuid4()),
+                "branch_id": str(payload.get("branch_id", "")).strip(),
+                "chapter_index": ch_idx,
+                "draft_a": draft_a,
+                "draft_b": draft_b,
+                "chapter_goal": _chapter_goal(payload),
+                "key_constraints": "",
+                "risk_verdict_a": "unknown",
+                "risk_verdict_b": _risk_verdict(payload),
+                "pair_source": "manual_eval_workspace",
+                "workspace": workspace.name,
+                "artifact_path": str(artifact_path),
+            })
+
+    if not pairs_to_eval:
+        echo("loom_collect_pairs_from_manual: no eligible pairs found.")
+        echo(f"  manual_eval_dir={manual_eval_dir}")
+        raise typer.Exit(code=0)
+
+    pairs_file.parent.mkdir(parents=True, exist_ok=True)
+    collected = 0
+    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
+
+    with pairs_file.open("a", encoding="utf-8") as fh:
+        for pair in pairs_to_eval:
+            result = eval_svc.evaluate(
+                pair_id=str(pair["pair_id"]),
+                branch_id=str(pair["branch_id"]),
+                chapter_index=int(pair["chapter_index"]),  # type: ignore[arg-type]
+                draft_a=str(pair["draft_a"]),
+                draft_b=str(pair["draft_b"]),
+                chapter_goal=str(pair["chapter_goal"]),
+                key_constraints=str(pair["key_constraints"]),
+                risk_verdict_a=str(pair["risk_verdict_a"]),
+                risk_verdict_b=str(pair["risk_verdict_b"]),
+            )
+            signal = result.to_chapter_quality_signal()
+            record: dict[str, object] = {
+                **signal,
+                "pair_id": pair["pair_id"],
+                "pair_source": pair["pair_source"],
+                "workspace": pair["workspace"],
+                "artifact_path": pair["artifact_path"],
+                "chapter_goal": pair["chapter_goal"],
+                "collected_at": collected_at,
+                "loom_collect_version": "1.0",
+            }
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            collected += 1
+
+    echo(f"loom_collect_pairs_from_manual: collected {collected} pair(s) → {pairs_file}")
+    echo(f"  manual_eval_dir={manual_eval_dir}")
+    echo(f"  workspaces_scanned={len(workspace_dirs)}")
+    echo(f"  use_llm={use_llm}")
+    echo(f"  pairs_file={pairs_file}")
+    try:
+        total_lines = sum(1 for _ in pairs_file.open(encoding="utf-8"))
+        echo(f"  total_pairs_in_file={total_lines}")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 if __name__ == "__main__":
     app()
