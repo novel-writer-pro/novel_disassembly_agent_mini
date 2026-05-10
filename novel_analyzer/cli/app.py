@@ -5512,6 +5512,12 @@ def _writer_output_external_runtime_executor_preview_markdown(output_dir: Path) 
     lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append("- external_runtime_executor_readiness_entrypoint: writer-imitate-external-runtime-executor-readiness.md")
     lines.append(f"- preview_status: {payload.get('preview_status', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5541,6 +5547,10 @@ def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> 
     readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
     pilot_wave_obj = preview.get("external_runtime_executor_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     live_checkpoint_state = _build_writer_output_live_checkpoint_state(output_dir)
     applied_checkpoints_obj = live_checkpoint_state.get("applied_checkpoints", [])
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
@@ -5564,6 +5574,8 @@ def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> 
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
         "checkpoint_state_status": "external-runtime-checkpoint-simulated-local",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
         "readiness": readiness,
         "pilot_wave": pilot_wave,
         "applied_runtime_checkpoints": simulated_runtime_checkpoints,
@@ -5579,6 +5591,12 @@ def _writer_output_external_runtime_checkpoint_state_markdown(output_dir: Path) 
     lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
     lines.append(f"- checkpoint_state_status: {payload.get('checkpoint_state_status', '')}")
     lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5605,6 +5623,10 @@ def _build_writer_output_external_runtime_transition_state(output_dir: Path) -> 
     readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
     pilot_wave_obj = preview.get("external_runtime_executor_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     live_transition_state = _build_writer_output_live_transition_state(output_dir)
     applied_transitions_obj = live_transition_state.get("applied_transitions", [])
     applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
@@ -5628,6 +5650,8 @@ def _build_writer_output_external_runtime_transition_state(output_dir: Path) -> 
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
         "transition_state_status": "external-runtime-transition-simulated-local",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
         "readiness": readiness,
         "pilot_wave": pilot_wave,
         "applied_runtime_transitions": simulated_runtime_transitions,
@@ -5643,6 +5667,12 @@ def _writer_output_external_runtime_transition_state_markdown(output_dir: Path) 
     lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
     lines.append(f"- transition_state_status: {payload.get('transition_state_status', '')}")
     lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5670,6 +5700,10 @@ def _build_writer_output_external_runtime_validation_state(output_dir: Path) -> 
     checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
     transitions_obj = transition_state.get("applied_runtime_transitions", [])
     transitions = transitions_obj if isinstance(transitions_obj, list) else []
+    primary_verdicts_obj = transition_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = transition_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     validation_checks = [
         {"check": "runtime_checkpoint_simulated", "passed": bool(checkpoints)},
         {"check": "runtime_transition_simulated", "passed": bool(transitions)},
@@ -5680,6 +5714,8 @@ def _build_writer_output_external_runtime_validation_state(output_dir: Path) -> 
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
         "validation_status": validation_status,
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
         "validation_checks": validation_checks,
         "next_runtime_step": "external-runtime-executor-implementation",
     }
@@ -5693,6 +5729,12 @@ def _writer_output_external_runtime_validation_state_markdown(output_dir: Path) 
     lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
     lines.append(f"- validation_status: {payload.get('validation_status', '')}")
     lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     lines.append("\n## Validation Checks")
     checks = payload.get("validation_checks", [])
     for item in checks if isinstance(checks, list) else []:

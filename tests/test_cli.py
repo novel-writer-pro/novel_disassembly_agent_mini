@@ -1287,9 +1287,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_preview_payload = json.loads(external_runtime_preview_json.read_text(encoding='utf-8'))
     assert external_runtime_preview_payload['contract_version'] == 'writer-imitate-external-runtime-executor-preview.v1'
     assert external_runtime_preview_payload['preview_status'] == 'planned-not-executed'
+    assert external_runtime_preview_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_preview_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert external_runtime_preview_payload['external_runtime_executor_pilot_wave']['status'] == 'planned-not-executed'
     external_runtime_preview_text = external_runtime_preview_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Preview' in external_runtime_preview_text
+    assert '## Primary Verdicts' in external_runtime_preview_text
+    assert '## Consumer Migration Telemetry' in external_runtime_preview_text
     assert '## Readiness' in external_runtime_preview_text
     assert '## External Runtime Executor Plan' in external_runtime_preview_text
     assert '## External Runtime Executor Pilot Wave' in external_runtime_preview_text
@@ -1304,9 +1308,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_checkpoint_payload = json.loads(external_runtime_checkpoint_json.read_text(encoding='utf-8'))
     assert external_runtime_checkpoint_payload['contract_version'] == 'writer-imitate-external-runtime-checkpoint-state.v1'
     assert external_runtime_checkpoint_payload['checkpoint_state_status'] == 'external-runtime-checkpoint-simulated-local'
+    assert external_runtime_checkpoint_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_checkpoint_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert external_runtime_checkpoint_payload['applied_runtime_checkpoints']
     external_runtime_checkpoint_text = external_runtime_checkpoint_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Checkpoint State' in external_runtime_checkpoint_text
+    assert '## Primary Verdicts' in external_runtime_checkpoint_text
+    assert '## Consumer Migration Telemetry' in external_runtime_checkpoint_text
     assert '## Applied Runtime Checkpoints' in external_runtime_checkpoint_text
 
     result = runner.invoke(
@@ -1319,9 +1327,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_transition_payload = json.loads(external_runtime_transition_json.read_text(encoding='utf-8'))
     assert external_runtime_transition_payload['contract_version'] == 'writer-imitate-external-runtime-transition-state.v1'
     assert external_runtime_transition_payload['transition_state_status'] == 'external-runtime-transition-simulated-local'
+    assert external_runtime_transition_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_transition_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert external_runtime_transition_payload['applied_runtime_transitions']
     external_runtime_transition_text = external_runtime_transition_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Transition State' in external_runtime_transition_text
+    assert '## Primary Verdicts' in external_runtime_transition_text
+    assert '## Consumer Migration Telemetry' in external_runtime_transition_text
     assert '## Applied Runtime Transitions' in external_runtime_transition_text
 
     result = runner.invoke(
@@ -1334,9 +1346,13 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_validation_payload = json.loads(external_runtime_validation_json.read_text(encoding='utf-8'))
     assert external_runtime_validation_payload['contract_version'] == 'writer-imitate-external-runtime-validation-state.v1'
     assert external_runtime_validation_payload['validation_status'] == 'validated-runtime-simulation'
+    assert external_runtime_validation_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_validation_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert external_runtime_validation_payload['validation_checks']
     external_runtime_validation_text = external_runtime_validation_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Validation State' in external_runtime_validation_text
+    assert '## Primary Verdicts' in external_runtime_validation_text
+    assert '## Consumer Migration Telemetry' in external_runtime_validation_text
     assert '## Validation Checks' in external_runtime_validation_text
 
     result = runner.invoke(
