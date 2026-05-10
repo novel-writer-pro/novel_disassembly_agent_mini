@@ -238,14 +238,15 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | `loom-pairs-stats` CLI | 显示 pairwise 数据采集进度（当前 / 500 目标 / 百分比）、质量分布、evaluation_method 分布 |
 | `loom-ab-compare` CLI | A/B 实验报告：对比两个 writer-imitate 输出目录的 character_ooc 触发率，输出 reduction%，判断是否达到 ≥20% 目标，可写 JSON 报告 |
 | `loom-collect-pairs-from-db` CLI | 从 ChapterArtifact DB 记录跨两个分支提取 pairwise 对（chapter_summary 对比） |
+| `loom-collect-pairs-from-manual` CLI | 从 runs/manual_eval/ 工作区 artifacts/writer-imitate-ch*.json 提取 pairwise 对，跳过 _template，pair_source=manual_eval_workspace |
 | `ChapterImitationHarnessReport.chapter_quality_signal` | 新增字段，`loom_pairwise_enabled=True` 时自动运行 heuristic pairwise eval，结果写入 `chapter_quality_signal` 和最后一轮 `skill_outputs["_loom_chapter_quality"]` |
 | `PostgresCheckReport.missing_cluster_review_columns` | 修复：改为 `field(default_factory=dict)` 使参数可选，修复测试失败 |
 | 文档索引修复 | docs/README.md、roles/README.md、tracks/README.md、roles/product/README.md、roles/backend/README.md、roles/integrator/README.md、roles/imitation/README.md、tracks/imitation/README.md、architecture/README.md 补全缺失的文档引用，386 个测试全部通过 |
 | 24 个新测试 | test_loom_phase2.py +3（pairwise harness 集成），test_loom_phase3.py +21（collect-pairs / pairs-stats / ab-compare / collect-pairs-from-db），全部通过 |
 
-**当前 Loom 测试总数：61 passed（Phase 1: 23 + Phase 2: 18 + Phase 3: 20）**
+**当前 Loom 测试总数：69 passed（Phase 1: 23 + Phase 2: 18 + Phase 3: 28）**
 
-**全项目测试：386 passed**
+**全项目测试：394 passed**
 
 ### 4.1 当前未完成的 Phase 3 规划
 
@@ -279,7 +280,7 @@ alembic upgrade head
 python3 -m pytest tests/test_loom_phase1.py tests/test_loom_phase2.py tests/test_loom_phase3.py -v
 
 # 6. 验证 CLI 命令
-novel-analyzer --help  # 确认 loom-status / loom-consolidate / loom-assemble / loom-collect-pairs / loom-pairs-stats / loom-ab-compare 可见
+novel-analyzer --help  # 确认 loom-status / loom-consolidate / loom-assemble / loom-collect-pairs / loom-pairs-stats / loom-ab-compare / loom-collect-pairs-from-db / loom-collect-pairs-from-manual 可见
 
 # 7. 真实分支验证
 novel-analyzer loom-status --branch-id <branch-id>
