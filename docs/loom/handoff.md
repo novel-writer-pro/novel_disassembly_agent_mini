@@ -18,7 +18,7 @@ Loom 是 novel-analyzer 的 **跨章节仿写记忆与质量基础设施**，叠
 |---|------|------|
 | **memory/** | 三层记忆（Working/Episodic/Semantic）+ 冲突代谢 | ✅ Phase 1+2 完成 |
 | **tension/** | 叙事张力指标（plot_similarity / conflict_density / surprise_index） | ✅ Phase 1+2 完成 |
-| **reward/** | 学习型 pairwise 评估 | 🔲 Phase 3 规划 |
+| **reward/** | 学习型 pairwise 评估 | 🔄 Phase 3 进行中（CLI 工具已就绪，待积累数据）|
 
 ### 与 0509 控制层的关系
 
