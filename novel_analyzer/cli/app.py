@@ -3736,6 +3736,11 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "legacy surfaces still present for compatibility",
         ],
     }
+    session_loom_gate_summary = _build_session_loom_gate_summary(
+        session_primary_verdicts,
+        session_consumer_migration_telemetry,
+        session_loom_signals,
+    )
     session_legacy_contract_layer = {
         "contract_version": "writer-imitate-legacy-contract-layer.v1",
         "legacy_verdict_fields": session_primary_contract_hints["legacy_verdict_fields"],
@@ -3874,6 +3879,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_digests": session_primary_digests,
         "session_primary_contract_hints": session_primary_contract_hints,
         "session_consumer_migration_telemetry": session_consumer_migration_telemetry,
+        "session_loom_gate_summary": session_loom_gate_summary,
         "session_legacy_contract_layer": session_legacy_contract_layer,
         "session_legacy_retirement_readiness": session_legacy_retirement_readiness,
         "session_legacy_retirement_plan": session_legacy_retirement_plan,
@@ -4349,10 +4355,13 @@ def _build_writer_output_control_surface_registry(output_dir: Path) -> dict[str,
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     operator_contract_obj = session_state.get("session_operator_contract", {})
     operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    loom_gate_summary_obj = session_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-control-surface-registry.v1",
         "session_control_surface_entrypoints": entrypoints,
         "session_operator_contract": operator_contract,
+        "session_loom_gate_summary": loom_gate_summary,
         "registry_status": "active",
     }
 
@@ -4371,14 +4380,15 @@ def _writer_output_control_surface_registry_markdown(output_dir: Path) -> str:
         lines.append(f"- live_control_state: {entrypoints.get('live_control_state_markdown', '')}")
         lines.append(f"- display_policy: {entrypoints.get('display_policy', '')}")
         roles = entrypoints.get("entrypoint_roles", {})
-        if isinstance(roles, dict):
-            lines.append("\n## EntryPoint Roles")
-            lines.append(f"- primary_operator_entrypoint: {roles.get('primary_operator_entrypoint', '')}")
-            lines.append(f"- legacy_operator_entrypoint: {roles.get('legacy_operator_entrypoint', '')}")
-            lines.append(f"- legacy_retirement_preview: {roles.get('legacy_retirement_preview', '')}")
-            lines.append(f"- live_control_state: {roles.get('live_control_state', '')}")
+    if isinstance(roles, dict):
+        lines.append("\n## EntryPoint Roles")
+        lines.append(f"- primary_operator_entrypoint: {roles.get('primary_operator_entrypoint', '')}")
+        lines.append(f"- legacy_operator_entrypoint: {roles.get('legacy_operator_entrypoint', '')}")
+        lines.append(f"- legacy_retirement_preview: {roles.get('legacy_retirement_preview', '')}")
+        lines.append(f"- live_control_state: {roles.get('live_control_state', '')}")
     operator_contract = payload.get("session_operator_contract", {})
     _append_operator_contract_lines(lines, operator_contract, include_queues=True, include_actions=True)
+    _append_primary_surface_lines(lines, payload)
     return "\n".join(lines).strip() + "\n"
 
 
@@ -7011,6 +7021,20 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "session_ship_decision",
             "session_recovery_owner",
         ]
+        loom_gate_summary = _build_session_loom_gate_summary(
+            {
+                "quality_verdict": "quality-hold" if risk_register == "high-risk" else "quality-pass",
+                "average_chapter_quality_score": None,
+                "chapter_quality_signal_count": 0,
+            },
+            {
+                "migration_status": "primary-in-progress",
+            },
+            {
+                "tension_signal_count": 0,
+                "tension_alert_chapters": [],
+            },
+        )
         lines.append("\n### Control Surface EntryPoints")
         lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
         lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
@@ -7057,6 +7081,18 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(
             f"- session_digest_registry: runtime={session_runtime_contract}；summary={session_control_summary[0]}"
         )
+        if loom_gate_summary:
+            lines.append("\n### Loom Gate Summary")
+            lines.append(f"- gate_status: {loom_gate_summary.get('gate_status', '')}")
+            lines.append(f"- quality_verdict: {loom_gate_summary.get('quality_verdict', '')}")
+            lines.append(
+                f"- average_chapter_quality_score: {loom_gate_summary.get('average_chapter_quality_score', '')}"
+            )
+            lines.append(
+                f"- tension_alert_chapter_count: {loom_gate_summary.get('tension_alert_chapter_count', 0)}"
+            )
+            lines.append(f"- migration_status: {loom_gate_summary.get('migration_status', '')}")
+            lines.append(f"- next_gate_action: {loom_gate_summary.get('next_gate_action', '')}")
 
         lines.append("\n### Full Session Field Surface")
         lines.append(f"- promotion_verdict: {promotion_verdict}")

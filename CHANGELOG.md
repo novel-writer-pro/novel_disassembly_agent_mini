@@ -1,5 +1,7 @@
 ## Unreleased
 
+- feat(loom/index-summary): `writer-imitate-control-surface-registry` 与 `writer-imitate-index` 第一层摘要接入 `session_loom_gate_summary`，让 operator 在入口面即可看到 Loom gate 结论。
+
 - feat(loom/live-runtime-summary): `live_control_state`、`live_validation_state` 与 external runtime simulation bridge 统一继承 `session_loom_gate_summary`，让 operator/live/runtime 全链路共享同一层 Loom gate 摘要。
 
 - feat(loom/gate-summary): 为 `action_queue`、`execution_state`、`execution_replay`、`execution_apply`、`execution_resume` 新增统一 `session_loom_gate_summary`，把质量 verdict、张力计数与迁移状态收口成稳定执行摘要。

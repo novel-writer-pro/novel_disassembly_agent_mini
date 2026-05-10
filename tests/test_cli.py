@@ -654,6 +654,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'external_runtime_executor_preview_role: runtime-executor-review-surface' in index_text
     assert 'display_policy: primary-first-legacy-secondary' in index_text
     assert '### Operator-Facing Stable Contract' in index_text
+    assert '### Loom Gate Summary' in index_text
+    assert 'gate_status: monitoring' in index_text
+    assert 'quality_verdict: quality-pass' in index_text
     assert '### Full Session Field Surface' in index_text
     assert 'promotion_verdict:' in index_text
     assert 'risk_register:' in index_text
@@ -1051,10 +1054,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert control_surface_registry_payload['contract_version'] == 'writer-imitate-control-surface-registry.v1'
     assert control_surface_registry_payload['registry_status'] == 'active'
     assert control_surface_registry_payload['session_control_surface_entrypoints']['entrypoint_roles']['primary_operator_entrypoint'] == 'default-operator-home'
+    assert control_surface_registry_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     control_surface_registry_text = control_surface_registry_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Control Surface Registry' in control_surface_registry_text
     assert '## EntryPoints' in control_surface_registry_text
     assert '## EntryPoint Roles' in control_surface_registry_text
+    assert '## Loom Gate Summary' in control_surface_registry_text
     assert '## Legacy Retirement Pilot Wave' in legacy_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
