@@ -4243,6 +4243,13 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(
             f"- chapter_quality_signal_count: {primary_verdicts.get('chapter_quality_signal_count', 0)}"
         )
+        if primary_verdicts.get("reader_satisfaction_score") is not None:
+            lines.append(
+                f"- reader_satisfaction_score: {primary_verdicts.get('reader_satisfaction_score', '')}"
+            )
+            lines.append(
+                f"- reader_satisfaction_verdict: {primary_verdicts.get('reader_satisfaction_verdict', '')}"
+            )
     primary_digests = payload.get("session_primary_digests", {})
     if isinstance(primary_digests, dict):
         lines.append("\n## Primary Digests")
