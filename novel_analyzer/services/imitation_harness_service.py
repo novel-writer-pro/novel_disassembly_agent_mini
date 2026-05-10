@@ -858,6 +858,73 @@ class HarnessControllerService:
             except Exception:  # noqa: BLE001
                 pass  # Loom tension is non-blocking
 
+        if self.settings.loom_style_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.style_calibration_service import StyleCalibrationService
+                from novel_analyzer.services.rhythm_analysis_service import RhythmAnalysisService
+                style_svc = StyleCalibrationService(self.session)
+                rhythm_svc = RhythmAnalysisService(self.session)
+                style_result = style_svc.compute_style_drift(branch_id, source_chapter_index)
+                rhythm_result = rhythm_svc.compute(branch_id, source_chapter_index)
+                outputs["_loom_style"] = style_result.to_style_signal()  # type: ignore[index]
+                outputs["_loom_rhythm"] = rhythm_result.to_rhythm_signal()  # type: ignore[index]
+                if style_result.alert_level != "none":
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_style_drift",
+                            status="warn",
+                            severity="medium",
+                            priority=3,
+                            notes=[style_result.suggestion or f"style_drift={style_result.style_drift_score:.3f}"],
+                        )
+                    )
+                if rhythm_result.alert_level != "none":
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_rhythm",
+                            status="warn",
+                            severity="medium",
+                            priority=3,
+                            notes=[rhythm_result.suggestion or f"hook_density={rhythm_result.hook_density:.3f}"],
+                        )
+                    )
+            except Exception:  # noqa: BLE001
+                pass  # Loom style is non-blocking
+
+        if self.settings.loom_character_enabled and self.session is not None:
+            try:
+                from sqlalchemy import select as _select
+                from novel_analyzer.database.models import FactRecord as _FactRecord
+                from novel_analyzer.services.character_agent_service import CharacterAgentService
+                char_svc = CharacterAgentService(self.session)
+                main_chars = self.session.scalars(
+                    _select(_FactRecord.label)
+                    .where(_FactRecord.branch_id == branch_id)
+                    .where(_FactRecord.chapter_index == source_chapter_index)
+                    .where(_FactRecord.fact_type == "entity")
+                    .where(_FactRecord.deleted_at.is_(None))
+                    .limit(3)
+                ).all()
+                for char_name in main_chars:
+                    persona = char_svc.build_character_persona(
+                        branch_id, char_name, source_chapter_index - 1
+                    )
+                    consistency = char_svc.check_character_consistency(
+                        persona, draft.draft_text, source_chapter_index
+                    )
+                    if consistency.alert_level != "none":
+                        checks.append(
+                            ChapterImitationPreflightCheck(
+                                check_name="loom_character_consistency",
+                                status="warn",
+                                severity="medium",
+                                priority=3,
+                                notes=[consistency.suggestion or f"{char_name} consistency={consistency.overall_consistency_score:.3f}"],
+                            )
+                        )
+            except Exception:  # noqa: BLE001
+                pass  # Loom character is non-blocking
+
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
             source_chapter_index=source_chapter_index,
