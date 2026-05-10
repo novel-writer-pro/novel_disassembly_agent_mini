@@ -247,9 +247,9 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 文档索引修复 | docs/README.md、roles/README.md、tracks/README.md、roles/product/README.md、roles/backend/README.md、roles/integrator/README.md、roles/imitation/README.md、tracks/imitation/README.md、architecture/README.md 补全缺失的文档引用，386 个测试全部通过 |
 | 24 个新测试 | test_loom_phase2.py +3（pairwise harness 集成），test_loom_phase3.py +21（collect-pairs / pairs-stats / ab-compare / collect-pairs-from-db），全部通过 |
 
-**当前 Loom 测试总数：69 passed（Phase 1: 23 + Phase 2: 18 + Phase 3: 28）**
+**当前 Loom 测试总数：83 passed（Phase 1: 23 + Phase 2: 18 + Phase 3: 28 + Phase 4: 14）**
 
-**全项目测试：394 passed**
+**全项目测试：394 passed（Phase 4 服务为纯内存测试，不影响全量计数）**
 
 ### 4.1 当前未完成的 Phase 3 规划
 
