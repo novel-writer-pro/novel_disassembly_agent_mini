@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import re
 import time
 from collections.abc import Sequence
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from langchain_core.messages import BaseMessage
 from sqlalchemy import select
@@ -396,6 +397,51 @@ class AnalysisService:
             and not result.key_events
             and not result.continuity_notes
         )
+
+    @staticmethod
+    def _content_hash(chapter_content: str) -> str:
+        return hashlib.sha256(chapter_content.encode('utf-8')).hexdigest()
+
+    @classmethod
+    def _build_deconstruction_profile(
+        cls,
+        *,
+        chapter_content: str,
+        stage_payload: dict[str, object],
+        writer_deferred: bool,
+    ) -> dict[str, Any]:
+        fallback = str(stage_payload.get('fallback') or '').strip()
+        stage_error = str(stage_payload.get('stage_error') or '').strip()
+        profile = 'quick'
+        writer_lens_status = 'deferred' if writer_deferred else 'complete'
+        timing = {
+            'commit_phase': 'sync',
+            'enrichment_phase': 'deferred' if writer_deferred else 'inline',
+        }
+        if fallback:
+            timing['fallback_mode'] = fallback
+        if stage_error:
+            timing['stage_error'] = stage_error
+        return {
+            'profile': profile,
+            'quick_ready': True,
+            'writer_lens_status': writer_lens_status,
+            'loom_status': 'pending',
+            'risk_status': 'pending',
+            'canonical_artifact_id': None,
+            'content_hash': cls._content_hash(chapter_content),
+            'idempotency_key': None,
+            'timing': timing,
+        }
+
+    @staticmethod
+    def _with_deconstruction_profile(
+        payload: dict[str, Any],
+        profile: dict[str, Any],
+    ) -> dict[str, Any]:
+        enriched = dict(payload)
+        enriched['_deconstruction_profile'] = profile
+        return enriched
 
     @staticmethod
     def _merge_stage_outputs(
@@ -903,10 +949,19 @@ class AnalysisService:
                     progress_percent=90,
                     emit_event=True,
                 )
+                writer_deferred = not bool(result.writer_learning_notes)
+                deconstruction_profile = self._build_deconstruction_profile(
+                    chapter_content=chapter_content,
+                    stage_payload=stage_payload,
+                    writer_deferred=writer_deferred,
+                )
                 artifact = self.run_service.record_chapter_artifact(
                     branch_id,
                     segment.chapter_index,
-                    result.model_dump(mode='json'),
+                    self._with_deconstruction_profile(
+                        result.model_dump(mode='json'),
+                        deconstruction_profile,
+                    ),
                     source_kind='model',
                     participates_in_downstream=True,
                 )

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -46,6 +48,39 @@ class FailedJobInfo:
 
 class RunService:
     """Handles analysis run lifecycle."""
+
+    @staticmethod
+    def _chapter_payload_with_profile_metadata(
+        payload: dict[str, Any],
+        *,
+        branch_id: str,
+        chapter_index: int,
+        artifact_id: str,
+        source_kind: str,
+    ) -> dict[str, Any]:
+        enriched = dict(payload)
+        profile = dict(enriched.get('_deconstruction_profile') or {})
+        if not profile:
+            return enriched
+        profile['canonical_artifact_id'] = artifact_id
+        if not profile.get('idempotency_key'):
+            profile_name = str(profile.get('profile') or 'quick')
+            content_hash = str(profile.get('content_hash') or '')
+            seed = json.dumps(
+                {
+                    'branch_id': branch_id,
+                    'chapter_index': chapter_index,
+                    'artifact_id': artifact_id,
+                    'profile': profile_name,
+                    'content_hash': content_hash,
+                    'source_kind': source_kind,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            profile['idempotency_key'] = hashlib.sha256(seed.encode('utf-8')).hexdigest()
+        enriched['_deconstruction_profile'] = profile
+        return enriched
 
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
@@ -544,6 +579,14 @@ class RunService:
             participates_in_downstream=participates_in_downstream,
         )
         self.session.add(artifact)
+        self.session.flush()
+        artifact.payload_json = self._chapter_payload_with_profile_metadata(
+            payload,
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            artifact_id=artifact.id,
+            source_kind=source_kind,
+        )
         self.session.commit()
         self.session.refresh(artifact)
         self.record_job_event(

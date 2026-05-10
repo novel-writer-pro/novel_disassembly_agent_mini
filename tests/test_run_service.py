@@ -136,3 +136,36 @@ def test_next_chapter_index_tracks_progress(tmp_path) -> None:
         assert service.next_chapter_index(run.id, branch.id) == 2
         service.record_chapter_artifact(branch.id, 2, {'chapter_index': 2})
         assert service.next_chapter_index(run.id, branch.id) == 3
+
+
+def test_record_chapter_artifact_backfills_deconstruction_profile_metadata(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session)
+        _, branch = service.create_run(novel.id, manifest.id)
+        artifact = service.record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                "chapter_index": 1,
+                "chapter_summary": "A",
+                "_deconstruction_profile": {
+                    "profile": "quick",
+                    "quick_ready": True,
+                    "writer_lens_status": "deferred",
+                    "loom_status": "pending",
+                    "risk_status": "pending",
+                    "canonical_artifact_id": None,
+                    "content_hash": "abc",
+                    "idempotency_key": None,
+                    "timing": {"commit_phase": "sync", "enrichment_phase": "deferred"},
+                },
+            },
+        )
+        profile = artifact.payload_json["_deconstruction_profile"]
+        assert profile["canonical_artifact_id"] == artifact.id
+        assert profile["idempotency_key"]
+        assert artifact.payload_json["chapter_index"] == 1

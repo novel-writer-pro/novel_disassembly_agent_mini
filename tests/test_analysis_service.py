@@ -115,6 +115,34 @@ def test_stage_chapter_content_trims_large_input() -> None:
     assert trimmed.endswith("A")
 
 
+def test_build_deconstruction_profile_marks_deferred_writer_without_schema_rename() -> None:
+    payload = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_index": 1,
+            "normalized_title": "测试章",
+            "cleaned_text": "正文",
+        }
+    )
+    profile = AnalysisService._build_deconstruction_profile(
+        chapter_content=payload.cleaned_text,
+        stage_payload={},
+        writer_deferred=True,
+    )
+    base = {
+        "chapter_index": 1,
+        "normalized_title": "测试章",
+        "writer_learning_notes": [],
+        "unsupported_inferences": [],
+        "ambiguous_points": [],
+        "quality_gate_notes": [],
+    }
+    enriched = AnalysisService._with_deconstruction_profile(base, profile)
+    assert enriched["writer_learning_notes"] == []
+    assert enriched["_deconstruction_profile"]["writer_lens_status"] == "deferred"
+    assert "writer_learning_notes" in enriched
+    assert "unsupported_inferences" in enriched
+
+
 def test_writer_learning_lens_accepts_dict_transferable_lessons() -> None:
     output = WriterLearningLensOutput.model_validate(
         {
