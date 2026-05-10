@@ -4250,6 +4250,17 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
             lines.append(
                 f"- reader_satisfaction_verdict: {primary_verdicts.get('reader_satisfaction_verdict', '')}"
             )
+            loom_sigs = payload.get("session_loom_signals", {})
+            if isinstance(loom_sigs, dict):
+                _h = loom_sigs.get("average_hook_density")
+                _t = loom_sigs.get("average_tension_score")
+                _d = loom_sigs.get("average_style_drift_score")
+                if _h is not None or _t is not None:
+                    lines.append("\n### Reader Simulation Panels")
+                    lines.append(f"- casual (hook_density): {round(min(1.0, float(_h or 0)/2.0), 3) if _h is not None else 'n/a'}")
+                    lines.append(f"- veteran (tension+surprise): {round(float(_t or 0), 3) if _t is not None else 'n/a'}")
+                    lines.append(f"- satisfaction (climax+tension): {round(float(_t or 0), 3) if _t is not None else 'n/a'}")
+                    lines.append(f"- editor (tension+style): {round(max(0.0, 1.0 - float(_d or 0)*2)*0.5 + float(_t or 0)*0.5, 3) if _t is not None else 'n/a'}")
     primary_digests = payload.get("session_primary_digests", {})
     if isinstance(primary_digests, dict):
         lines.append("\n## Primary Digests")
