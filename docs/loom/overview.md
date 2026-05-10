@@ -63,15 +63,19 @@ Loom 直接复用以下已有能力，**不新建依赖**：
 
 | 维度 | 当前系统 | SOTA 方法 | Gap | Loom 方案 |
 |------|---------|----------|-----|---------|
-| **记忆机制** | `carry_over_state` 线性追加，无冲突消解 | EvoSpark（ACL 2026）Stratified Narrative Memory，动态代谢历史冲突 | 🔴 高 | 三层记忆（Working/Episodic/Semantic）+ 冲突代谢，复用现有 GraphNode/FactRecord |
-| **角色一致性** | snapshot 状态 + OOC checker | BookWorld（2025）角色 agent 自主认知基 | 🔴 高 | Phase 1 先做分层记忆，Phase 3 再考虑角色 agent |
-| **仿写评估** | 规则化 checker，固定维度 | EvolvR（2025-2026）学习型 pairwise reward model，SOTA on StoryER/HANNA/OpenMEVA | 🟡 中 | LLM-as-judge pairwise → fine-tuned reward model |
-| **情节张力** | 人工 steering pack | KG+Literary Theory（2025）obstacle framework + 相似度控制 | 🟡 中 | 三个张力指标（直接用现有 pgvector），自动 obstacle 注入 |
-| **历史压缩** | 全量 carry_over | StoryWriter（2025）动态事件相关压缩 | 🟡 中 | Working Memory 按事件相关性压缩，而非时间顺序 |
-| **风格量化** | 风格轴文本描述 | StyleRPA（2024）风格向量 + 相似度评估 | 🟡 中 | Phase 2 用现有 embedding 做风格向量，接入 style-calibrator |
+| **记忆机制** | `carry_over_state` 线性追加，无冲突消解 | EvoSpark（ACL 2026）Stratified Narrative Memory，动态代谢历史冲突 | 🔴 高 → 🟡 Phase 1 架构就绪 | 三层记忆（Working/Episodic/Semantic）+ 冲突代谢，复用现有 GraphNode/FactRecord |
+| **角色一致性** | snapshot 状态 + OOC checker | BookWorld（2025）角色 agent 自主认知基 | 🔴 高 → 🟡 Phase 3 进行中 | Phase 1 分层记忆 + Phase 3/4 角色认知基（character_agent_service） |
+| **仿写评估** | 规则化 checker，固定维度 | EvolvR（2025-2026）学习型 pairwise reward model，SOTA on StoryER/HANNA/OpenMEVA | 🟡 中 → 🟢 Phase 3 工具就绪 | LLM-as-judge pairwise → fine-tuned reward model（待数据积累） |
+| **情节张力** | 人工 steering pack | KG+Literary Theory（2025）obstacle framework + 相似度控制 | 🟡 中 → 🟢 Phase 2 已实现 | 三个张力指标（直接用现有 pgvector），自动 obstacle 注入 |
+| **历史压缩** | 全量 carry_over | StoryWriter（2025）动态事件相关压缩 | 🟡 中 → 🟢 Phase 1 已实现 | Working Memory 按事件相关性压缩，而非时间顺序 |
+| **风格量化** | 风格轴文本描述，无向量化 | StyleRPA（2024）风格向量 + 相似度评估 | 🟡 中 → Phase 4 规划 | style_calibration_service：复用 ChunkEmbedding 做风格向量 + 漂移检测 |
+| **节奏/爽点** | hook_score + scene_beats，无密度模型 | 网文商业实践：爽点密度模型 + 高潮点检测 | 🔴 高 → Phase 4 规划 | rhythm_analysis_service：hook_density + climax_position + pacing_type |
+| **对话设计** | 只能抽取 dialogue candidates | CharacterBench（2024）角色对话一致性评估 | 🔴 高 → Phase 4 规划 | dialogue_signal：character_voice_consistency + dialogue_efficiency |
+| **读者模拟** | 系统级 review，无读者视角 | HANNA benchmark（2023）多维度读者评估 | 🔴 高 → Phase 5 规划 | reader_simulation_service：4 类读者面板（casual/veteran/satisfaction/editor） |
+| **多线调度** | unresolved_threads 列表，无调度器 | 叙事学多线平衡理论 | 🟡 中 → Phase 5 规划 | thread_scheduler_service：active/dormant/overdue 三类线索分类 |
 | **GraphRAG 基础** | ✅ pg_trgm + pgvector + GraphNode/GraphEdge | 学术系统大多无生产级 GraphRAG | **领先** | 直接复用，不需要升级 |
 | **控制层治理** | ✅ 0509 Primary/Legacy 双层 + retirement preview | 学术系统无此能力 | **领先** | Loom 对接 0509，填补 live writeback 缺口 |
-| **fine-tuning** | 无，纯 in-context | Living the Novel（2025）角色/风格专用 SFT | 🟢 低（当前阶段可接受） | Phase 3 后续考虑 |
+| **fine-tuning** | 无，纯 in-context | Living the Novel（2025）角色/风格专用 SFT | 🟢 低（当前阶段可接受） | Phase 3 reward model fine-tune → Phase 4/5 风格/对话专用 SFT |
 
 ---
 
@@ -150,4 +154,4 @@ Loom 直接复用以下已有能力，**不新建依赖**：
 
 ---
 
-返回 [Loom 入口](./README.md) | [文档中心](../README.md)
+返回 [Loom 入口](./README.md) | [文档中心](../README.md) | [差距分析与演进](./gap-analysis-and-evolution.md)

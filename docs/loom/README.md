@@ -107,7 +107,8 @@ Loom（新增层，叠加在上方）
 | [tension/tension-metrics.md](./tension/tension-metrics.md) | 三个张力指标计算方法 |
 | [tension/obstacle-injection.md](./tension/obstacle-injection.md) | Obstacle 自动注入机制 |
 | [tension/trope-integration.md](./tension/trope-integration.md) | 与现有 trope/worldview RAG 库集成 |
-| [roadmap.md](./roadmap.md) | Phase 1/2/3 开发路线图 + 验收标准 |
+| [roadmap.md](./roadmap.md) | Phase 1-5 开发路线图 + 验收标准 |
+| [gap-analysis-and-evolution.md](./gap-analysis-and-evolution.md) | 商业水准差距分析 + Phase 4/5 演进规划 |
 
 ---
 
