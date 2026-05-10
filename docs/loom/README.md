@@ -107,6 +107,12 @@ Loom（新增层，叠加在上方）
 | [tension/tension-metrics.md](./tension/tension-metrics.md) | 三个张力指标计算方法 |
 | [tension/obstacle-injection.md](./tension/obstacle-injection.md) | Obstacle 自动注入机制 |
 | [tension/trope-integration.md](./tension/trope-integration.md) | 与现有 trope/worldview RAG 库集成 |
+| [style/README.md](./style/README.md) | 文风/节奏/对话层入口（Phase 4 规划） |
+| [style/style-vector-design.md](./style/style-vector-design.md) | 风格向量化与漂移检测设计 |
+| [style/rhythm-analysis-design.md](./style/rhythm-analysis-design.md) | 节奏分析器设计 |
+| [style/dialogue-signal-design.md](./style/dialogue-signal-design.md) | 对话质量信号设计 |
+| [character/README.md](./character/README.md) | 角色认知基层入口（Phase 4 规划） |
+| [character/character-persona-design.md](./character/character-persona-design.md) | CharacterPersona 构建与一致性检测设计 |
 | [roadmap.md](./roadmap.md) | Phase 1-5 开发路线图 + 验收标准 |
 | [gap-analysis-and-evolution.md](./gap-analysis-and-evolution.md) | 商业水准差距分析 + Phase 4/5 演进规划 |
 
