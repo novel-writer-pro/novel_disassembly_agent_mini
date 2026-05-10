@@ -298,7 +298,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - 全部 heuristic，零 LLM 调用
 ✅ session_primary_verdicts 新增 reader_satisfaction_score（从 average_hook_density + average_tension_score + average_style_drift_score 聚合）
 ✅ retirement gate：reader_satisfaction_score < 0.6 时标记 reader-blocked（session_legacy_retirement_readiness）
-□ operator surface：展示各 panel 的具体反馈
+✅ operator surface：展示各 panel 的具体反馈（Reader Simulation Panels 小节，含 casual/veteran/satisfaction/editor 代理分数）
 □ 验收：reader_satisfaction_score 与真实读者评分 Pearson r ≥ 0.6
 ```
 
@@ -322,7 +322,7 @@ Phase 5 🔲 规划中：读者模拟 + 多线调度 + 自适应编排（7/10 �
    - detect_quality_decline(branch_id, as_of_chapter) → bool（连续 3 章下滑）
    - quality_trend: stable | declining | recovering
 ✅ loom-status 展示 long_book_health_score（loom_character_enabled=True 时）
-□ 自动建议 steering pack 更新（declining 时，待 steering_library_service 集成）
+✅ 自动建议 steering pack 更新（declining 时，loom-status 调用 SteeringLibraryService 输出 trope_axes + innovation_directives）
 □ 验收：100 章仿写的 chapter_quality_score 标准差 < 0.15
 ```
 
