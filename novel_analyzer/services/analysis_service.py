@@ -178,6 +178,25 @@ class AnalysisService:
     def _contains_transition_claim(text: str, keywords: list[str]) -> bool:
         return any(keyword in text for keyword in keywords)
 
+    @staticmethod
+    def _compact_state_summary_json(
+        state_summary: dict[str, object],
+        *,
+        max_items: int = 3,
+    ) -> str:
+        compact: dict[str, object] = {}
+        for key in (
+            'paid_off_foreshadowing',
+            'escalated_conflicts',
+            'evolved_relations',
+            'constraining_world_rules',
+            'unresolved_threads',
+        ):
+            value = state_summary.get(key)
+            if isinstance(value, list) and value:
+                compact[key] = [str(item).strip() for item in value[:max_items] if str(item).strip()]
+        return json.dumps(compact, ensure_ascii=False, indent=2) if compact else '{}'
+
     @classmethod
     def _derive_state_progression(
         cls,
@@ -730,6 +749,7 @@ class AnalysisService:
                         progress_percent=50,
                         emit_event=True,
                     )
+                    compact_state_summary_json = self._compact_state_summary_json(state_summary)
                     analysis_prompt_map = build_agent_stage_prompts(
                         ChapterAgentContext(
                             chapter_index=segment.chapter_index,
@@ -738,8 +758,8 @@ class AnalysisService:
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
-                            graph_context_json=graph_context_json,
-                            state_summary_json=state_summary_json,
+                            graph_context_json='{}',
+                            state_summary_json=compact_state_summary_json,
                             cleaned_text=intake.cleaned_text,
                             window_summary=window_summary,
                             fact_json=facts.model_dump_json(indent=2),
@@ -804,8 +824,8 @@ class AnalysisService:
                         previous_summary=previous_summary,
                         intake_json=intake.model_dump_json(indent=2),
                         prior_context_json=prior_context_json,
-                        graph_context_json=graph_context_json,
-                        state_summary_json=state_summary_json,
+                        graph_context_json='{}',
+                        state_summary_json=compact_state_summary_json,
                         window_summary=window_summary,
                         cleaned_text=intake.cleaned_text,
                         fact_json=facts.model_dump_json(indent=2),

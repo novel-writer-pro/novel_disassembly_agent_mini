@@ -467,3 +467,12 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 - 真实长跑可完成性；
 - 基本恢复/兜底能力；
 - 可继续在完整链路上做性能对照优化。
+
+### 6.9 当前已落地的加速动作（第 3 刀）
+当前 `analysis_generator` 与 `anti_fabrication_guard` 已不再默认消费完整图谱 JSON，而是改为：
+- 不传完整 `graph_context_json`
+- 只传 compact `state_summary_json`
+
+这意味着：
+- continuity / guard 仍能参考关键前情状态；
+- 但会显著减少阶段 prompt 的上下文体积，降低 token 成本。

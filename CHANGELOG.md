@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- perf(deconstruction/analysis-prompt-slimming): `analysis_generator` 与 `anti_fabrication_guard` 不再携带完整图谱上下文，改为只消费 compact 前情状态摘要，减少同步 stage prompt 体积且不改输出契约；扩展回归 13/13 通过。另：卫图 20 章 branch 在 provider 402 场景下，`ask-branch` 仍能降级返回保守 QA 结果。
+
+
 - perf(deconstruction/quick-risk-deferral): quick 拆书主链默认将 `risk_aggregation` 从同步尾部工作改为 deferred non-blocking event，避免 risk card 聚合拖慢章节完成后的主链返回；相关分析/上下文/QA 回归 11/11 通过。另：卫图真实 20 章样例已完整跑通，`failed_jobs=0`。
 
 
@@ -104,6 +107,26 @@
   结论：
   - 已证明 enhanced 信号开始真正回流到决策链
   - 尚未证明这一步已经让卫图样例正文质量稳定提升
+
+- fix(loom/llm-fallback): `writer-imitate --use-llm` 在 provider 失败时不再整条命令中断。
+
+  解决问题：
+  - chapter 4 / 5 的卫图 enhanced LLM 复跑曾被上游 provider 402（余额不足）直接打断
+  - 这会让验证链无法继续，也拿不到可审计的 fallback 产物
+
+  本轮改动：
+  - `run_harness()` 在 LLM draft 失败时回退到 `build_skeleton_draft()`
+  - artifact 中显式记录：
+    - `LLM draft unavailable -> skeleton fallback: APIStatusError`
+    - `当前章节因上游 provider 不可用，使用 skeleton fallback 保底生成。`
+
+  验证：
+  - `tests/test_loom_phase2.py` → 21/21 通过
+  - 手工执行 chapter 4 enhanced `writer-imitate --use-llm` 后，确认 `writer-imitate-ch4.json/.md` 已生成，且包含 fallback 痕迹、`_loom_character_consistency` 与 `chapter_quality_signal`
+
+  结论：
+  - provider 失败不再让验证链直接断掉
+  - 余额问题本身仍存在，但现在至少能产出可审计、可继续比较的 fallback artifact
 
 - ops(loom/post-feedback-rerun): 在 feedback-loop 修复后继续尝试扩样重跑 enhanced LLM 正文。
 

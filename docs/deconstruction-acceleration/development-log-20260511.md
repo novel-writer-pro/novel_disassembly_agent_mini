@@ -57,3 +57,7 @@
 
 - 性能优化第 2 刀已落地：将 `risk_aggregation` 从 quick 同步尾部移出，改为 deferred non-blocking event，避免章节完成后仍在主请求里继续做 risk card 聚合。
 - 卫图真实样例基线已完整跑到 20 章且 0 failed_jobs，说明在当前稳定性修复基础上，后续性能优化已经可以围绕完整链路做对照，而不是只看 5 章 / 9 章的中途样本。
+
+- 性能优化第 3 刀已落地：针对 `analysis_generator` / `anti_fabrication_guard` 输入做 token 缩减，不改输出 schema，只减少同步 stage 看到的大 JSON 上下文。
+- 具体策略：去掉完整 graph context，state summary 压缩到关键状态列表；优先保留对 continuity/guard 判断最关键的前情状态，而不是全量图谱信息。
+- 这是典型的“缩 prompt 体积而不改 contract”的中低风险优化，适合作为前两刀 stage deferral 之后的第三步。

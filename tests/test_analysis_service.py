@@ -645,3 +645,74 @@ def test_quick_profile_defers_risk_aggregation_stage(tmp_path: Path) -> None:
         ).all()
         labels = [f"{item.event_type}:{item.stage}:{item.message}" for item in events]
         assert any('stage_deferred:risk_aggregation:' in item for item in labels)
+
+
+def test_compact_state_summary_json_keeps_only_key_lists() -> None:
+    payload = AnalysisService._compact_state_summary_json(
+        {
+            'paid_off_foreshadowing': ['A', 'B', 'C', 'D'],
+            'escalated_conflicts': ['X'],
+            'evolved_relations': [],
+            'constraining_world_rules': ['R1', 'R2'],
+            'active_conflicts': ['should-drop'],
+            'misc': {'ignored': True},
+        }
+    )
+    assert 'should-drop' not in payload
+    assert 'misc' not in payload
+    assert 'A' in payload and 'C' in payload
+    assert 'D' not in payload
+    assert 'R1' in payload
+
+
+def test_analysis_and_guard_prompts_use_compact_state_and_no_graph_context(monkeypatch, tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        captured: list[str] = []
+        real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
+        original = real_build.build_agent_stage_prompts
+
+        def _capture(context):
+            prompts = original(context)
+            if context.evidence_bound_json != '{}' or context.analysis_json != '{}':
+                captured.append(prompts['analysis_generator'])
+                captured.append(prompts['anti_fabrication_guard'])
+            return prompts
+
+        monkeypatch.setattr('novel_analyzer.services.analysis_service.build_agent_stage_prompts', _capture)
+        monkeypatch.setattr(service.context_service, 'previous_summary', lambda *args, **kwargs: '前情')
+        monkeypatch.setattr(service.context_service, 'fact_context_json', lambda *args, **kwargs: {'facts': []})
+        monkeypatch.setattr(service.context_service, 'graph_context_json', lambda *args, **kwargs: {'overview': {'node_count': 999}, 'central_nodes': ['GRAPH-BIG']})
+        monkeypatch.setattr(service.context_service, 'state_summary_json', lambda *args, **kwargs: {
+            'paid_off_foreshadowing': ['伏笔A', '伏笔B', '伏笔C', '伏笔D'],
+            'escalated_conflicts': ['冲突X'],
+            'constraining_world_rules': ['规则R'],
+            'active_conflicts': ['不应进入analysis/guard prompt'],
+        })
+        monkeypatch.setattr(service.context_service, 'window_summary', lambda *args, **kwargs: '窗口摘要')
+
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        joined = '\n'.join(captured)
+        assert 'GRAPH-BIG' not in joined
+        assert '不应进入analysis/guard prompt' not in joined
+        assert '伏笔A' in joined
+        assert '伏笔D' not in joined
