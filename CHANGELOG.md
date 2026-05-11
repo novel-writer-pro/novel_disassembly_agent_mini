@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-bundle-exporter): 新增 `scripts/export_deconstruction_benchmark_bundle.py`，可从 baseline/candidate benchmark JSON 自动导出完整交付包（baseline/candidate/compare/summary）；扩展回归 29/29 通过。
+
+
 - feat(deconstruction/fallback-aware-benchmark): `benchmark_deconstruction_run.py` 现已识别并汇总 `fallback_modes` / `fallback_chapter_count` / `is_pure_primary_provider_run`，避免后续对照时把混入 fallback/heuristic 的 run 误当成纯 provider 性能结果；扩展回归 28/28 通过。
 
 

@@ -97,3 +97,6 @@
 - 尽管本次 smoke 只跑 1 章，且 prompt metrics totals 为空（provider 返回路径未产出新 totals），但“从建库到 compare 输出”的整个执行面已经打通。
 
 - 已把 benchmark summary 升级为 fallback-aware：后续对照时可以直接区分“纯 primary provider run”和“混入 fallback/heuristic 的 run”，避免把降级路径误当成真实模型性能结果。
+
+- 已补 benchmark bundle exporter：未来 funded-provider 对照跑完成后，可以直接导出完整 evidence bundle，而不需要手工拼 baseline/candidate/compare/summary 文件。
+- 这意味着 benchmark 结果已经接近“可直接交付”的 artifact 水平。

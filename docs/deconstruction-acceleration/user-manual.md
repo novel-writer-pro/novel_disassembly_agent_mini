@@ -590,3 +590,17 @@ python3 scripts/run_deconstruction_benchmark.py <novel_path> --title <title> --d
 
 这意味着：
 - 后续 funded-provider 对照时，可以明确知道某次 run 是否混入了 fallback / heuristic 路径。
+
+### 6.21 benchmark bundle exporter 已就位
+当前已经提供：
+```bash
+python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidate.json out_dir
+```
+
+它会直接输出：
+- `baseline.json`
+- `candidate.json`
+- `compare.json`
+- `summary.md`
+
+因此新的 funded-provider 对照 run 完成后，可以一键导出完整交付包。

@@ -182,3 +182,14 @@ python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.jso
 - 工具链可用性证据 / 兜底稳定性证据
 - 而不是纯粹的 primary provider 性能证据
 
+## 完整交付包导出命令
+```bash
+python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidate.json out_dir
+```
+
+输出：
+- `out_dir/baseline.json`
+- `out_dir/candidate.json`
+- `out_dir/compare.json`
+- `out_dir/summary.md`
+
