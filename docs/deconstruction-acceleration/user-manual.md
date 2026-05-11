@@ -449,3 +449,21 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这意味着：
 - 默认 status/context/search/QA 链路不受影响；
 - 每章会少一次同步模型调用，是当前版本最安全的提速动作之一。
+
+### 6.7 当前已落地的加速动作（第 2 刀）
+当前 quick 主链已把 `risk_aggregation` 从同步尾部工作中移出，改为 deferred。
+
+这意味着：
+- 章节主产物、context/search/QA 主链先完成；
+- risk card 聚合不再拖慢当前章的返回与下一章推进。
+
+### 6.8 卫图完整 20 章真实验证结论
+当前卫图前 20 章真实拆书已经完整跑通：
+- `completed_chapters=20`
+- `failed_jobs=0`
+- `running_jobs=0`
+
+说明当前版本已经具备：
+- 真实长跑可完成性；
+- 基本恢复/兜底能力；
+- 可继续在完整链路上做性能对照优化。

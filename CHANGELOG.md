@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- perf(deconstruction/quick-risk-deferral): quick 拆书主链默认将 `risk_aggregation` 从同步尾部工作改为 deferred non-blocking event，避免 risk card 聚合拖慢章节完成后的主链返回；相关分析/上下文/QA 回归 11/11 通过。另：卫图真实 20 章样例已完整跑通，`failed_jobs=0`。
+
+
 - perf(deconstruction/quick-writer-deferral): quick 拆书主链默认将 `writer_learning_lens` 从同步 LLM stage 改为 deferred，占位保留 `writer_learning_notes=[]` 与 `_deconstruction_profile.writer_lens_status=deferred`，直接减少一次串行模型调用；定向回归 8/8 通过，且 fallback smoke 未受破坏。
 
 

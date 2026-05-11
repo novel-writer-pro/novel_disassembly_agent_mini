@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
-from novel_analyzer.database.models import ChapterArtifact, ChapterJob
+from novel_analyzer.database.models import ChapterArtifact, ChapterJob, ChapterJobEvent
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.domain.schemas import (
     AnalysisSummary,
@@ -607,3 +607,41 @@ def test_quick_profile_defers_writer_lens_stage_and_preserves_profile(tmp_path: 
         assert artifact is not None
         assert artifact.payload_json['writer_learning_notes'] == []
         assert artifact.payload_json['_deconstruction_profile']['writer_lens_status'] == 'deferred'
+
+
+def test_quick_profile_defers_risk_aggregation_stage(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        events = session.scalars(
+            select(ChapterJobEvent)
+            .where(ChapterJobEvent.branch_id == branch.id)
+            .where(ChapterJobEvent.chapter_index == 1)
+        ).all()
+        labels = [f"{item.event_type}:{item.stage}:{item.message}" for item in events]
+        assert any('stage_deferred:risk_aggregation:' in item for item in labels)

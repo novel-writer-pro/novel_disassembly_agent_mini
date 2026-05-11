@@ -54,3 +54,6 @@
 - 性能优化第 1 刀已落地：将 `writer_learning_lens` 从 quick 同步主链中移出，改为 deferred stub，从而直接减少一次串行 LLM 调用。
 - 契约保持不变：`writer_learning_notes` 仍保留为空数组，`_deconstruction_profile.writer_lens_status` 标记为 `deferred`，consumer 无需改读路径。
 - 这是一种“先削 stage 数，再谈 prompt 缩短”的低风险提速策略，适合作为真实瓶颈优化的第一步。
+
+- 性能优化第 2 刀已落地：将 `risk_aggregation` 从 quick 同步尾部移出，改为 deferred non-blocking event，避免章节完成后仍在主请求里继续做 risk card 聚合。
+- 卫图真实样例基线已完整跑到 20 章且 0 failed_jobs，说明在当前稳定性修复基础上，后续性能优化已经可以围绕完整链路做对照，而不是只看 5 章 / 9 章的中途样本。

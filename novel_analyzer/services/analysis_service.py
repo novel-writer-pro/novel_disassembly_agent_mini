@@ -1010,40 +1010,18 @@ class AnalysisService:
                             payload_json={"non_blocking": True},
                         )
                 self.run_service.complete_chapter_job(branch_id, segment.chapter_index)
-                try:
-                    self.run_service.record_job_event(
-                        branch_id=branch_id,
-                        chapter_index=segment.chapter_index,
-                        event_type="stage_started",
-                        stage="risk_aggregation",
-                        message=f"chapter {segment.chapter_index} entered risk_aggregation",
-                    )
-                    risk_card = self.risk_audit_service.generate_for_chapter(
-                        branch_id,
-                        segment.chapter_index,
-                    )
-                    self.run_service.record_job_event(
-                        branch_id=branch_id,
-                        chapter_index=segment.chapter_index,
-                        event_type="stage_completed",
-                        stage="risk_aggregation",
-                        message=f"chapter {segment.chapter_index} risk card generated",
-                        payload_json={
-                            "overall_risk_level": risk_card.overall_risk_level,
-                            "top_risk_count": len(risk_card.top_risks),
-                            "checker_statuses": risk_card.checker_statuses,
-                        },
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    self.run_service.record_job_event(
-                        branch_id=branch_id,
-                        chapter_index=segment.chapter_index,
-                        event_type="stage_failed",
-                        stage="risk_aggregation",
-                        level="warning",
-                        message=str(exc),
-                        payload_json={"non_blocking": True},
-                    )
+                self.run_service.record_job_event(
+                    branch_id=branch_id,
+                    chapter_index=segment.chapter_index,
+                    event_type="stage_deferred",
+                    stage="risk_aggregation",
+                    level="info",
+                    message=(
+                        f"chapter {segment.chapter_index} risk_aggregation deferred "
+                        "from quick sync path"
+                    ),
+                    payload_json={"non_blocking": True, "deferred": True},
+                )
                 artifact_ids.append(artifact.id)
                 previous_summary = result.chapter_summary
             except Exception as exc:
