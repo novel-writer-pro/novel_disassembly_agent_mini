@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-runner): 新增 `scripts/run_deconstruction_benchmark.py`，可一键串联 init-db/ingest/start-run/analyze-range/benchmark 汇总，为 funded-provider 新对照 run 提供直接执行入口；扩展回归 27/27 通过。
+
+
 - feat(deconstruction/benchmark-compare-cli): 新增 `scripts/compare_deconstruction_benchmarks.py`，可直接比较两份真实拆书 benchmark JSON 的 wall-clock、avg/chapter、failed_jobs 与 prompt_char_totals；扩展回归 26/26 通过。
 
 

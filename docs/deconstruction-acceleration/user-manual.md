@@ -558,3 +558,18 @@ python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.jso
 - `prompt_char_totals`
 
 所以 funded-provider 新 run 跑完后，可以立即做结构化对照，而不必手工算差值。
+
+### 6.18 一键 benchmark runner 已就位
+当前已经提供：
+```bash
+python3 scripts/run_deconstruction_benchmark.py <novel_path> --title <title> --database-url <dburl> --end-chapter 20 --ensure-db --json
+```
+
+它会自动执行：
+- init-db（可选）
+- ingest
+- start-run
+- analyze-range
+- benchmark 汇总
+
+因此 provider 可用后，可以直接跑一条新的真实 20 章对照链路。

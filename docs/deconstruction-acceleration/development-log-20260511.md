@@ -89,3 +89,6 @@
 
 - 已补 benchmark compare CLI：未来 funded-provider 新 run 完成后，可直接与当前卫图旧基线 JSON 做结构化对比，不需要再手工计算 delta。
 - 这使得下一阶段的工作重心，真正从“继续改 quick 主链代码”切换到了“跑真实对照并读结果”。
+
+- 已补 end-to-end benchmark runner：下一次 funded-provider 可用时，不必再手工拼接多条 CLI，而是可以一条脚本跑完整个对照链。
+- 这意味着当前性能优化工作，已经从“代码优化阶段”推进到了“具备可重复 benchmark 执行能力”的阶段。

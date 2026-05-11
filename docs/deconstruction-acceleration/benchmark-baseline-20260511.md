@@ -147,3 +147,13 @@ python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.jso
 - `failed_jobs.delta`
 - `prompt_char_totals.*.delta_pct`
 
+## 一键执行入口（新对照 run）
+```bash
+python3 scripts/run_deconstruction_benchmark.py /path/to/novel.txt   --title 'benchmark'   --database-url <dburl>   --end-chapter 20   --ensure-db   --json > candidate.json
+```
+
+再与旧基线对比：
+```bash
+python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.json --json
+```
+
