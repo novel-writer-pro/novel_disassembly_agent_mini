@@ -51,3 +51,6 @@
 
 9. QA 分层证据与保守回答策略
    - 已补 `chapter/window/graph` 三层证据面，以及按问题类型做 rerank / 降级的 QA 精化路径
+
+10. 卫图真实旧基线 artifact
+   - `docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.md`

@@ -157,3 +157,6 @@ python3 scripts/run_deconstruction_benchmark.py /path/to/novel.txt   --title 'be
 python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.json --json
 ```
 
+## 固定旧基线 artifact
+- JSON: `docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.json`
+- Markdown: `docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.md`

@@ -81,3 +81,40 @@ def test_compare_benchmarks_plain_output(tmp_path: Path, capsys) -> None:
     assert 'baseline_run_id=run-base' in out
     assert 'candidate_run_id=run-new' in out
     assert 'elapsed_delta_seconds=100.0' in out
+
+
+def test_compare_benchmarks_can_consume_repo_style_json_files(tmp_path: Path, capsys) -> None:
+    baseline = {
+        'run_id': 'baseline-run',
+        'completed_chapters': 20,
+        'failed_jobs': 0,
+        'elapsed_seconds': 4728.32721,
+        'avg_seconds_per_completed_chapter': 236.4163605,
+        'prompt_char_totals': {},
+    }
+    candidate = {
+        'run_id': 'candidate-run',
+        'completed_chapters': 20,
+        'failed_jobs': 0,
+        'elapsed_seconds': 3000.0,
+        'avg_seconds_per_completed_chapter': 150.0,
+        'prompt_char_totals': {
+            'fact_extractor_chars': 50000,
+        },
+    }
+    base = tmp_path / 'weitu-baseline-20260511.json'
+    cand = tmp_path / 'weitu-candidate.json'
+    base.write_text(json.dumps(baseline, ensure_ascii=False, indent=2), encoding='utf-8')
+    cand.write_text(json.dumps(candidate, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    import sys
+    argv = sys.argv[:]
+    sys.argv = ['compare_deconstruction_benchmarks.py', str(base), str(cand), '--json']
+    try:
+        assert compare_main() == 0
+    finally:
+        sys.argv = argv
+    payload = json.loads(capsys.readouterr().out)
+    assert payload['baseline_run_id'] == 'baseline-run'
+    assert payload['candidate_run_id'] == 'candidate-run'
+    assert payload['elapsed_seconds']['delta'] < 0
