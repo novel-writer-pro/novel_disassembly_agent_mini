@@ -111,3 +111,6 @@
 - 当前 compare 结果被正确判定为 `is_strictly_comparable=false`，也证明可比性语义不只是写在代码里，而是在真实 smoke 中生效了。
 
 - 已补 benchmark bundle validator：后续 funded-provider 对照跑生成 bundle 后，可以先自动校验交付包结构，再对外发送，避免 compare/summary 缺字段时误交付。
+
+- 已补最终 readiness checker：它把“现在到底还差什么”从文档描述变成了脚本化判定。
+- 当前脚本结果已经明确给出：仓内资产全部就绪，只剩 funded-provider 可用性这一外部条件。

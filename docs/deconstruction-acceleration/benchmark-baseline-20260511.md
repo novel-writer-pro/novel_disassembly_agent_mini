@@ -230,3 +230,13 @@ python3 scripts/check_deconstruction_benchmark_bundle.py out_dir --json
 建议：
 - 只有在 validator 返回 `ok=true` 时，才把该 bundle 当作正式交付物发送。
 
+## 最终 readiness 检查命令
+```bash
+python3 scripts/check_deconstruction_benchmark_readiness.py --json
+```
+
+当前预期结果应类似：
+- `all_files_ready=true`
+- `ready_for_funded_rerun_once_provider_is_available=true`
+- blocker 只剩 provider 可用性
+

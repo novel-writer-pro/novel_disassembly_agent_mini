@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-readiness-checker): 新增 `scripts/check_deconstruction_benchmark_readiness.py`，可脚本化判定 repo 是否已具备 funded-provider 对照 run 所需资产；当前真实执行结果显示 `all_files_ready=true`，唯一剩余 blocker 为 provider 可用性；扩展回归 35/35 通过。
+
+
 - feat(deconstruction/benchmark-bundle-validator): 新增 `scripts/check_deconstruction_benchmark_bundle.py`，可自动校验 benchmark bundle 的文件完整性与 compare/comparability 字段完整性；扩展回归 33/33 通过。
 
 

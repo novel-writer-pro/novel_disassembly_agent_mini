@@ -657,3 +657,14 @@ python3 scripts/check_deconstruction_benchmark_bundle.py out_dir --json
 - bundle 文件是否齐全
 - compare 关键字段是否齐全
 - comparability 字段是否齐全
+
+### 6.27 funded benchmark readiness checker 已就位
+当前已经提供：
+```bash
+python3 scripts/check_deconstruction_benchmark_readiness.py --json
+```
+
+它会回答：
+- 当前 repo 内 benchmark 资产是否齐全
+- 是否已经 ready for funded rerun
+- 剩余 blocker 是什么
