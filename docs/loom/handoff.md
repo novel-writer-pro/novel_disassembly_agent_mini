@@ -41,6 +41,7 @@ Loom memory 层      →  carry_over_state 的 "组装器"（新增）
 
 | Commit | 描述 |
 |--------|------|
+| `CL-loom-whole-book-bridge-01` | feat(loom): whole-book imitation report 接入 `session_loom_signals` / `session_loom_gate_summary`（当前工作区改动，待提交） |
 | `115953c` | feat(loom): live/runtime bridge 统一接入 `session_loom_gate_summary` |
 | `f284df6` | feat(loom): execution chain 新增统一 `session_loom_gate_summary` |
 | `c004f19` | feat(loom): execution resume / recovery 继承 Loom gate |
@@ -230,7 +231,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 |---|---|---|
 | 生产验证闭环 | A/B 实验、shadow→ab→enabled 切换 | 仍停留在规划状态，缺真实对比数据 |
 | reward 数据闭环 | 500+ pairs 积累、reward model 训练 | CLI 工具已就绪（loom-collect-pairs / loom-collect-pairs-from-manual），缺生产运行数据 |
-| 真实 executor 闭环 | live writeback / external runtime 真执行器 | 当前仍是 preview / local simulation bridge，不是生产 mutation |
+| 真实 executor 闭环 | live writeback / external runtime 真执行器 | whole-book report 已继承 `session_loom_signals` / `session_loom_gate_summary`；当前剩余真实生产 mutation executor 未接入 |
 | 真实 consumer telemetry 闭环 | 来自真实 consumer 的迁移上报 | 当前 telemetry 为 contract-derived，可用但不是 runtime truth |
 
 ## 4. 剩余工作与下一步
@@ -243,6 +244,57 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 - control surfaces、execution chain、execution resume、live/runtime readiness、external runtime simulation bridge 已统一暴露 `session_consumer_migration_telemetry`。
 - action/execution/replay/apply/resume 与 live/runtime simulation bridge 已统一暴露 `session_loom_gate_summary`，把质量、张力、迁移状态收口成稳定摘要。
 - index / control-surface registry 第一层摘要现在也能直接展示 Loom gate 结论，operator 打开入口页即可先判断当前 gate 状态。
+- whole-book imitation sandbox/export report 现在也统一暴露 `session_loom_signals` / `session_loom_gate_summary`，让更接近执行器的产物不再绕开 Loom gate。
+
+### 4.0.2 本次继续优化（未提交 changelist）
+
+**Changelist marker**：`CL-loom-whole-book-bridge-01`
+
+**这次解决了什么：**
+
+1. **解决 whole-book export 产物绕开 Loom gate 的问题**
+   - 之前：`writer-imitate-*` control surfaces 已暴露 Loom 质量/张力摘要，但 `export-whole-book-imitation-run` 导出的 whole-book report 仍缺少统一 Loom 视图。
+   - 现在：whole-book sandbox/export report 已新增：
+     - `session_loom_signals`
+     - `session_loom_gate_summary`
+     - `executed_steps[*].loom_signals`
+
+2. **解决 service 层有数据、CLI 导出边界无合同验证的问题**
+   - 新增 CLI 测试，直接验证 `export-whole-book-imitation-run --execute` 产物 JSON 含上述 Loom 字段。
+
+3. **解决测试误用浅分支初始化导致 whole-book execute 失败的问题**
+   - 原因：仅 `ingest/start-run` 的浅初始化不足以满足 `whole-book` 执行所需的章节上下文。
+   - 修复：CLI 测试改为复用 whole-book 专用 seed fixture，确保验证的是正确执行前提，而不是绕过真实约束。
+
+**本次定向验证：**
+- `tests/test_whole_book_imitation_service.py` → 4 passed
+- `tests/test_cli.py` → 7 passed
+- 合计：11 passed（本次改动定向验证）
+
+### 4.0.3 卫图真实验证执行入口（未提交 changelist）
+
+**Changelist marker**：`CL-loom-weitu-validation-bootstrap-01`
+
+**这次解决了什么：**
+
+1. **解决卫图验证工作区需要手工拼导出步骤的问题**
+   - 新增：`scripts/bootstrap_weitu_validation_workspace.py`
+   - 一次执行即可创建 manual_eval workspace、导出 branch bundle、branch report、whole-book report，并回填 mailbox-style notes。
+
+2. **解决“有验证文档，但没有统一执行入口”的问题**
+   - 现在卫图样例真实验证有了一个可重复运行的命令入口，而不是散在 CLI、手册和手工操作里。
+
+3. **解决人工兜底与 resume 链说明分散的问题**
+   - 生成的工作区内直接包含：
+     - `manual-review-notes.md`
+     - `next-actions.md`
+     - `problem-trace.md`
+   - 人工处理后可直接回到 `writer-imitate-execution-resume.*` / `resume-run` / `/api/recovery`。
+
+4. **已经做过一轮 baseline vs enhanced smoke 对比**
+   - baseline: `quality-pass`、`style_signal_count=0`、`chapter_quality_signal_count=0`
+   - enhanced: `quality-hold`、`style_signal_count=2`、`chapter_quality_signal_count=2`
+   - 这证明 enhanced 会真实改变执行器侧产物，但还不能证明最终仿写效果提升。
 
 ### 4.0.1 Phase 3 新增交付（2026-05-10 本次）
 
@@ -333,6 +385,7 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ --output-file outpu
 - [`docs/loom/overview.md`](./overview.md) — 架构全景 + SOTA 对比 + 资产盘点
 - [`docs/loom/arch-diff-and-alignment.md`](./arch-diff-and-alignment.md) — Loom vs 0509 对比
 - [`docs/loom/roadmap.md`](./roadmap.md) — Phase 计划与任务清单
+- [`docs/loom/sota-imitation-progression-checklist.md`](./sota-imitation-progression-checklist.md) — 主链路 SOTA 仿写推进 checklist
 - [`docs/loom/tension/README.md`](./tension/README.md) — 张力指标设计文档
 - [`docs/loom/reward/README.md`](./reward/README.md) — Reward 模型规划
 
@@ -342,6 +395,8 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ --output-file outpu
 ### 操作与验证
 - [`docs/cli-operations-manual.md`](../cli-operations-manual.md) — CLI 手册（第 12 节 Loom）
 - [`docs/real-run-checklist.md`](../real-run-checklist.md) — 试跑清单（第 8 节 Loom）
+- [`docs/loom/weitu-real-effect-validation.md`](./weitu-real-effect-validation.md) — 卫图样例真实效果验证工作流
+- [`docs/loom/weitu-validation-log-20260511.md`](./weitu-validation-log-20260511.md) — 本轮已执行的卫图验证证据日志
 
 ### 变更记录
 - [`CHANGELOG.md`](../../CHANGELOG.md) — 完整变更历史

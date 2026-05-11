@@ -163,6 +163,33 @@ Phase 5 🔄 进行中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 □ 更新 carry-over-migration.md 记录实验结果
 ```
 
+### 当前真实验证进展（2026-05-11）
+
+- ✅ 已锁定真实卫图样例验证目标：
+  - `run_id=ac9449b9-7326-474f-bb72-4416375a7491`
+  - `branch_id=62e636f0-c901-4167-aa1c-aff3da9c83ef`
+- ✅ 已实际执行：
+  - `loom-status`
+  - `loom-assemble`
+  - `loom-consolidate`
+  - `export-whole-book-imitation-run --execute`
+  - `writer-imitate` baseline / enhanced（chapter 2–5）
+  - `loom-collect-pairs`
+  - `loom-pairs-stats`
+  - `loom-ab-compare`
+- ✅ 已建立 mailbox-style 人工工作区：`runs/manual_eval/weitu-sample/`
+- ✅ 已新增一键复现脚本：`scripts/bootstrap_weitu_validation_workspace.py`
+
+### 当前证据结论
+
+- 已证明：Loom enhanced 会真实改变 whole-book / writer-imitate 产物中的质量与风格信号
+- 尚未证明：Loom enhanced 在卫图样例 2–5 章抽样中稳定优于 baseline
+- 当前 4 章结果：
+  - pairwise：`A=1, tie=3`
+  - `avg_quality_score=0.4875`
+  - `character_ooc`: `0 → 0`
+  - 阶段判断：baseline 略占优或至少未被 enhanced 反超
+
 **P2：0509 对接**
 
 ```

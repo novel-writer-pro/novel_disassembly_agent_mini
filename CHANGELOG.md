@@ -23,6 +23,37 @@
   - 已证明打开 Loom enhanced flags 会真实改变 whole-book 执行侧产物与 gate 结论
   - 但尚未证明“卫图样例仿写效果提升”，因为当前结果更接近“增强后暴露了问题”，而不是“增强后质量已上升”
 
+- ops(loom/weitu-writer-ab): 已在卫图样例上执行第一轮 writer-imitate 真实对比。
+
+  实际执行：
+  - baseline / enhanced 各生成 chapter 2 和 chapter 3 的 `writer-imitate-ch*.json`
+  - `loom-collect-pairs` 成功采集 2 对 cross-dir pairwise 记录
+  - `loom-pairs-stats` 显示：`total_pairs=2`, `avg_quality_score=0.5`, `evaluation_method=heuristic:2`, `overall_preference=tie:2`
+  - `loom-ab-compare` 显示：`baseline_ooc_count=0`, `loom_ooc_count=0`, `ooc_reduction_pct=0.0`, `target_met=False`
+
+  结论：
+  - 已证明 pairwise / A-B 工具链在卫图样例上真正跑通
+  - enhanced 路径会新增单章 Loom 信号（如 `chapter_quality_signal`、`_loom_style`）
+  - 但当前还没有证据表明 enhanced 结果优于 baseline，且评估仍以 heuristic 为主
+
+- ops(loom/weitu-writer-ab-expand): 已把卫图样例的 LLM writer-imitate 对比从 chapter 2–3 扩到 chapter 2–5。
+
+  实际结果：
+  - baseline / enhanced 已生成 4 章 LLM prose 样本
+  - `loom-collect-pairs` → 4 pairs
+  - `loom-pairs-stats` → `A=1, tie=3`, `avg_quality_score=0.4875`, `evaluation_method=heuristic`
+  - `loom-ab-compare` → `baseline_ooc_count=0`, `loom_ooc_count=0`, `ooc_reduction_pct=0.0`
+
+  人工对读趋势：
+  - chapter 2：baseline 更强
+  - chapter 3：enhanced 更强
+  - chapter 4：baseline 略强
+  - chapter 5：baseline 更强
+
+  阶段结论：
+  - enhanced 稳定改变了信号层与文本风格取向
+  - 但在卫图样例 2–5 章抽样里，正文效果暂时仍是 baseline 略占优或至少未被反超
+
 - ops(loom/weitu-validation): 已开始卫图样例的真实验证执行，不再停留在纯规划。
 
   本轮已执行证据：

@@ -1,0 +1,1389 @@
+{
+  "contract_version": "whole-book-imitation.v1",
+  "stable_contract_version": "whole-book-imitation-pre-v1",
+  "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+  "project_title": "卫图验证项目",
+  "queue": [
+    {
+      "order": 1,
+      "source_chapter_index": 2,
+      "target_goal": "延续卫图求养生功线索",
+      "prerequisites": [],
+      "carry_over_inputs": {},
+      "expected_outputs": [
+        "chapter plan",
+        "imitation draft",
+        "comparison report",
+        "review/gate/risk report",
+        "revised draft"
+      ],
+      "risk_focus": [
+        "character_ooc",
+        "plot_logic_consistency",
+        "world_rule_consistency"
+      ],
+      "scheduling_priority": 4,
+      "scheduling_reason": "常规章节顺序"
+    },
+    {
+      "order": 2,
+      "source_chapter_index": 3,
+      "target_goal": "延续卫图得法与初练",
+      "prerequisites": [
+        "完成上一章节仿写并确认 carry-over：第2章"
+      ],
+      "carry_over_inputs": {
+        "previous_generated_summary": [
+          "第2章 的 final draft 摘要"
+        ],
+        "previous_generated_relationship_state": [
+          "第2章 的关系推进结果"
+        ],
+        "previous_generated_unresolved_threads": [
+          "第2章 遗留的未解线程"
+        ],
+        "previous_generated_rule_state": [
+          "第2章 形成的规则/约束变化"
+        ],
+        "previous_goal": [
+          "延续卫图求养生功线索"
+        ]
+      },
+      "expected_outputs": [
+        "chapter plan",
+        "imitation draft",
+        "comparison report",
+        "review/gate/risk report",
+        "revised draft"
+      ],
+      "risk_focus": [
+        "character_ooc",
+        "plot_logic_consistency",
+        "world_rule_consistency"
+      ],
+      "scheduling_priority": 2,
+      "scheduling_reason": "承接上一章节 第2章 的 carry-over 与策略反馈"
+    }
+  ],
+  "carry_over_notes": [
+    "第3章生成前，应继承上一生成章节的关系/规则/未解线程快照。"
+  ],
+  "execution_mode": "sandbox_execute",
+  "executed_steps": [
+    {
+      "order": 1,
+      "source_chapter_index": 2,
+      "target_goal": "延续卫图求养生功线索",
+      "stop_reason": "critical_action_required",
+      "overall_score": 80,
+      "overall_risk_level": "low",
+      "draft_title": "二姑卫荭",
+      "draft_excerpt": "第2章 二姑卫荭\n\n【章节目标】延续卫图求养生功线索\n\n场景1：承接上一章结果并明确当前需求/目标\n场景2：通过一次身份/资源/关系阻力制造推进成本\n场景3：让主角给出克制但更坚定的行动回应\n场景4：章尾给出下一步可执行钩子\n\n【硬约束】\n- 不要无铺垫升级战力\n- 不要引入未准备的大设定\n【软约束】\n- 保持家庭与婚后协作稳定\n- chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代",
+      "carry_over_state": {
+        "source_chapter_index": 2,
+        "generated_summary": "第2章 二姑卫荭\n\n【章节目标】延续卫图求养生功线索\n\n场景1：承接上一章结果并明确当前需求/目标\n场景2：通过一次身份/资源/关系阻力制造推进成本\n场景3：让主角给出克制但更坚定的行动回应\n场景4：章尾给出下一步可执行钩子\n\n【硬约束】\n- 不要无铺垫升级战力\n- 不要引入未准备的大设定\n【软约束】\n- 保持家庭与婚后协作稳定\n- chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后",
+        "relationship_state": [
+          "生成后必须过 character_ooc / plot_logic_consistency 门控。",
+          "如涉及规则推进，还应补 world_rule_consistency 复核。",
+          "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+        ],
+        "unresolved_threads": [
+          "character_ooc:skipped",
+          "world_rule_consistency:skipped",
+          "relationship_consistency:skipped"
+        ],
+        "rule_state": [],
+        "next_constraints": [
+          "生成后必须过 character_ooc / plot_logic_consistency 门控。",
+          "如涉及规则推进，还应补 world_rule_consistency 复核。",
+          "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+          "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+        ]
+      },
+      "action_queue": [
+        {
+          "action_type": "expand_middle",
+          "target": "draft_body",
+          "severity": "high",
+          "priority": 1,
+          "instructions": [
+            "补足中段阻力、行动选择与章尾钩子承接。"
+          ]
+        },
+        {
+          "action_type": "repair_rhythm",
+          "target": "rhythm",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+          ]
+        },
+        {
+          "action_type": "reinforce_ending_hook",
+          "target": "ending_hook",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补出清晰的下一步驱动与未完成目标。"
+          ]
+        },
+        {
+          "action_type": "repair_character_motivation",
+          "target": "character_motivation",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足人物为何做出当前选择的支撑证据与过渡。"
+          ]
+        },
+        {
+          "action_type": "repair_relationship_transition",
+          "target": "relationship_transition",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足关系变化前后的中间事件与态度转折。"
+          ]
+        },
+        {
+          "action_type": "repair_world_rule_support",
+          "target": "world_rule_support",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足越界动作前的规则来源、限制与代价。"
+          ]
+        },
+        {
+          "action_type": "repair_dialogue_design",
+          "target": "dialogue",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补充说话人区分与高信息密度对话。"
+          ]
+        },
+        {
+          "action_type": "repair_reader_engagement",
+          "target": "reader_engagement",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补清读者易卡住的信息点，增强代入感与续读欲。"
+          ]
+        },
+        {
+          "action_type": "repair_relation_evidence",
+          "target": "fact_relations",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足人物互动、态度变化与关系状态证据。"
+          ]
+        },
+        {
+          "action_type": "repair_research_alignment",
+          "target": "research_pack",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+          ]
+        },
+        {
+          "action_type": "repair_rule_evidence",
+          "target": "fact_rules",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足世界规则、资源限制与动作代价证据。"
+          ]
+        }
+      ],
+      "revise_payload": {
+        "ordered_actions": [
+          {
+            "action_type": "expand_middle",
+            "issue_family": "general",
+            "target": "draft_body",
+            "severity": "high",
+            "priority": 1,
+            "instructions": [
+              "补足中段阻力、行动选择与章尾钩子承接。"
+            ]
+          },
+          {
+            "action_type": "repair_rhythm",
+            "issue_family": "rhythm",
+            "target": "rhythm",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+            ]
+          },
+          {
+            "action_type": "reinforce_ending_hook",
+            "issue_family": "hook",
+            "target": "ending_hook",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补出清晰的下一步驱动与未完成目标。"
+            ]
+          },
+          {
+            "action_type": "repair_character_motivation",
+            "issue_family": "motivation",
+            "target": "character_motivation",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足人物为何做出当前选择的支撑证据与过渡。"
+            ]
+          },
+          {
+            "action_type": "repair_relationship_transition",
+            "issue_family": "relationship",
+            "target": "relationship_transition",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足关系变化前后的中间事件与态度转折。"
+            ]
+          },
+          {
+            "action_type": "repair_world_rule_support",
+            "issue_family": "rule",
+            "target": "world_rule_support",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足越界动作前的规则来源、限制与代价。"
+            ]
+          },
+          {
+            "action_type": "repair_dialogue_design",
+            "issue_family": "dialogue",
+            "target": "dialogue",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补充说话人区分与高信息密度对话。"
+            ]
+          },
+          {
+            "action_type": "repair_reader_engagement",
+            "issue_family": "reader_sim",
+            "target": "reader_engagement",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补清读者易卡住的信息点，增强代入感与续读欲。"
+            ]
+          },
+          {
+            "action_type": "repair_relation_evidence",
+            "issue_family": "relationship",
+            "target": "fact_relations",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足人物互动、态度变化与关系状态证据。"
+            ]
+          },
+          {
+            "action_type": "repair_research_alignment",
+            "issue_family": "research",
+            "target": "research_pack",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+            ]
+          },
+          {
+            "action_type": "repair_rule_evidence",
+            "issue_family": "rule",
+            "target": "fact_rules",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足世界规则、资源限制与动作代价证据。"
+            ]
+          }
+        ],
+        "blocking_issues": [
+          "draft_too_short_for_gate"
+        ],
+        "recommended_actions": [
+          "补足中段阻力、行动转向与章尾钩子之间的承接。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "补少量高信息密度对话，增强人物辨识度。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。"
+        ],
+        "gate_verdict": "aligned_but_needs_revision",
+        "risk_overall_level": "low",
+        "issue_families": [
+          "general",
+          "rhythm",
+          "hook",
+          "motivation",
+          "relationship",
+          "rule",
+          "dialogue",
+          "reader_sim",
+          "relationship",
+          "research",
+          "rule"
+        ]
+      },
+      "strategy_input": {},
+      "scheduling_priority": 4,
+      "scheduling_reason": "常规连续推进",
+      "policy_summary": {
+        "final_verdict": "needs_revision",
+        "stop_reason": "critical_action_required",
+        "highest_action_priority": 1,
+        "highest_action_severity": "high",
+        "action_count": 11,
+        "weak_lane_action_count": 3,
+        "blocking_issue_count": 1,
+        "recommended_action_count": 15,
+        "gate_verdict": "aligned_but_needs_revision",
+        "risk_overall_level": "low",
+        "overall_score": 80,
+        "issue_families": [
+          "general",
+          "rhythm",
+          "hook",
+          "motivation",
+          "relationship",
+          "rule",
+          "dialogue",
+          "reader_sim",
+          "relationship",
+          "research",
+          "rule"
+        ]
+      },
+      "loom_signals": {
+        "chapter_quality": {},
+        "dialogue": {},
+        "tension": {
+          "chapter_index": 2,
+          "tension_score": 0.9789,
+          "status": "ok",
+          "alerts": [],
+          "metrics": {
+            "plot_similarity": 0.0286,
+            "conflict_density": 160.7143,
+            "surprise_index": 0.9615
+          },
+          "loom_version": "1.0"
+        },
+        "rhythm": {},
+        "style": {},
+        "character": {}
+      }
+    },
+    {
+      "order": 2,
+      "source_chapter_index": 3,
+      "target_goal": "延续卫图得法与初练",
+      "stop_reason": "critical_action_required",
+      "overall_score": 84,
+      "overall_risk_level": "low",
+      "draft_title": "养生功法",
+      "draft_excerpt": "第3章 养生功法\n\n【章节目标】延续卫图得法与初练｜承接上一生成状态：第2章 二姑卫荭\n\n【章节目标】延续卫图求养生功线索\n\n场景1：承接上一章结果并明确当前需求/目标\n场景2：通过一次身份/资源/关系阻力制造推进成本\n场景3：让主角给出克制但更坚定的行动回应\n场景4：章尾给出下一步可执行钩子\n\n【硬约束】\n- 不要无铺垫升级战力\n- 不要引入未准备的大设定\n【软约束】\n- 保持家庭与婚后协作稳定\n- chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:",
+      "carry_over_state": {
+        "source_chapter_index": 3,
+        "generated_summary": "第3章 养生功法\n\n【章节目标】延续卫图得法与初练｜承接上一生成状态：第2章 二姑卫荭\n\n【章节目标】延续卫图求养生功线索\n\n场景1：承接上一章结果并明确当前需求/目标\n场景2：通过一次身份/资源/关系阻力制造推进成本\n场景3：让主角给出克制但更坚定的行动回应\n场景4：章尾给出下一步可执行钩子\n\n【硬约束】\n- 不要无铺垫升级战力\n- 不要引入未准备的大设定\n【软约束】\n- 保持家庭与婚后协作稳定\n- chapter_outline:9",
+        "relationship_state": [
+          "生成后必须过 character_ooc / plot_logic_consistency 门控。",
+          "如涉及规则推进，还应补 world_rule_consistency 复核。",
+          "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+        ],
+        "unresolved_threads": [
+          "character_ooc:skipped",
+          "world_rule_consistency:skipped",
+          "relationship_consistency:skipped"
+        ],
+        "rule_state": [],
+        "next_constraints": [
+          "生成后必须过 character_ooc / plot_logic_consistency 门控。",
+          "如涉及规则推进，还应补 world_rule_consistency 复核。",
+          "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+          "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+        ]
+      },
+      "action_queue": [
+        {
+          "action_type": "repair_rhythm",
+          "target": "rhythm",
+          "severity": "medium",
+          "priority": 1,
+          "instructions": [
+            "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+          ]
+        },
+        {
+          "action_type": "repair_character_motivation",
+          "target": "character_motivation",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足人物为何做出当前选择的支撑证据与过渡。"
+          ]
+        },
+        {
+          "action_type": "repair_relationship_transition",
+          "target": "relationship_transition",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足关系变化前后的中间事件与态度转折。"
+          ]
+        },
+        {
+          "action_type": "repair_world_rule_support",
+          "target": "world_rule_support",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足越界动作前的规则来源、限制与代价。"
+          ]
+        },
+        {
+          "action_type": "repair_dialogue_design",
+          "target": "dialogue",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补充说话人区分与高信息密度对话。"
+          ]
+        },
+        {
+          "action_type": "repair_reader_engagement",
+          "target": "reader_engagement",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补清读者易卡住的信息点，增强代入感与续读欲。"
+          ]
+        },
+        {
+          "action_type": "repair_relation_evidence",
+          "target": "fact_relations",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足人物互动、态度变化与关系状态证据。"
+          ]
+        },
+        {
+          "action_type": "repair_research_alignment",
+          "target": "research_pack",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+          ]
+        },
+        {
+          "action_type": "repair_rule_evidence",
+          "target": "fact_rules",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足世界规则、资源限制与动作代价证据。"
+          ]
+        }
+      ],
+      "revise_payload": {
+        "ordered_actions": [
+          {
+            "action_type": "repair_rhythm",
+            "issue_family": "rhythm",
+            "target": "rhythm",
+            "severity": "medium",
+            "priority": 1,
+            "instructions": [
+              "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+            ]
+          },
+          {
+            "action_type": "repair_character_motivation",
+            "issue_family": "motivation",
+            "target": "character_motivation",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足人物为何做出当前选择的支撑证据与过渡。"
+            ]
+          },
+          {
+            "action_type": "repair_relationship_transition",
+            "issue_family": "relationship",
+            "target": "relationship_transition",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足关系变化前后的中间事件与态度转折。"
+            ]
+          },
+          {
+            "action_type": "repair_world_rule_support",
+            "issue_family": "rule",
+            "target": "world_rule_support",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足越界动作前的规则来源、限制与代价。"
+            ]
+          },
+          {
+            "action_type": "repair_dialogue_design",
+            "issue_family": "dialogue",
+            "target": "dialogue",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补充说话人区分与高信息密度对话。"
+            ]
+          },
+          {
+            "action_type": "repair_reader_engagement",
+            "issue_family": "reader_sim",
+            "target": "reader_engagement",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补清读者易卡住的信息点，增强代入感与续读欲。"
+            ]
+          },
+          {
+            "action_type": "repair_relation_evidence",
+            "issue_family": "relationship",
+            "target": "fact_relations",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足人物互动、态度变化与关系状态证据。"
+            ]
+          },
+          {
+            "action_type": "repair_research_alignment",
+            "issue_family": "research",
+            "target": "research_pack",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+            ]
+          },
+          {
+            "action_type": "repair_rule_evidence",
+            "issue_family": "rule",
+            "target": "fact_rules",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足世界规则、资源限制与动作代价证据。"
+            ]
+          }
+        ],
+        "blocking_issues": [],
+        "recommended_actions": [
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "本章优先优化节奏起伏与章尾收束。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "补少量高信息密度对话，增强人物辨识度。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。"
+        ],
+        "gate_verdict": "aligned_but_needs_revision",
+        "risk_overall_level": "low",
+        "issue_families": [
+          "rhythm",
+          "motivation",
+          "relationship",
+          "rule",
+          "dialogue",
+          "reader_sim",
+          "relationship",
+          "research",
+          "rule"
+        ]
+      },
+      "strategy_input": {
+        "prioritized_targets": [
+          "draft_body",
+          "rhythm",
+          "ending_hook"
+        ],
+        "prioritized_action_types": [
+          "expand_middle",
+          "repair_rhythm",
+          "reinforce_ending_hook"
+        ],
+        "prioritized_families": [
+          "general",
+          "rhythm",
+          "hook"
+        ],
+        "blocking_issues": [
+          "draft_too_short_for_gate"
+        ],
+        "recommended_actions": [
+          "补足中段阻力、行动转向与章尾钩子之间的承接。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "补少量高信息密度对话，增强人物辨识度。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。",
+          "优先处理上一章高优先级能力族：general、rhythm",
+          "承接上一轮 top-priority families：general、rhythm",
+          "承接上一轮 top-risk families：general、rhythm"
+        ],
+        "priority_bias": 1,
+        "risk_bias": "low",
+        "top_priority_families": [
+          "general",
+          "rhythm",
+          "hook"
+        ],
+        "high_risk_families": [
+          "general",
+          "rhythm",
+          "hook"
+        ]
+      },
+      "scheduling_priority": 1,
+      "scheduling_reason": "承接上一章高优先级/高风险信号",
+      "policy_summary": {
+        "final_verdict": "needs_revision",
+        "stop_reason": "critical_action_required",
+        "highest_action_priority": 1,
+        "highest_action_severity": "medium",
+        "action_count": 9,
+        "weak_lane_action_count": 3,
+        "blocking_issue_count": 0,
+        "recommended_action_count": 15,
+        "gate_verdict": "aligned_but_needs_revision",
+        "risk_overall_level": "low",
+        "overall_score": 84,
+        "issue_families": [
+          "rhythm",
+          "motivation",
+          "relationship",
+          "rule",
+          "dialogue",
+          "reader_sim",
+          "relationship",
+          "research",
+          "rule"
+        ]
+      },
+      "loom_signals": {
+        "chapter_quality": {},
+        "dialogue": {},
+        "tension": {
+          "chapter_index": 3,
+          "tension_score": 0.9623,
+          "status": "ok",
+          "alerts": [],
+          "metrics": {
+            "plot_similarity": 0.0442,
+            "conflict_density": 360.3774,
+            "surprise_index": 0.92
+          },
+          "loom_version": "1.0"
+        },
+        "rhythm": {},
+        "style": {},
+        "character": {}
+      }
+    }
+  ],
+  "final_carry_over_state": {
+    "source_chapter_index": 3,
+    "generated_summary": "第3章 养生功法\n\n【章节目标】延续卫图得法与初练｜承接上一生成状态：第2章 二姑卫荭\n\n【章节目标】延续卫图求养生功线索\n\n场景1：承接上一章结果并明确当前需求/目标\n场景2：通过一次身份/资源/关系阻力制造推进成本\n场景3：让主角给出克制但更坚定的行动回应\n场景4：章尾给出下一步可执行钩子\n\n【硬约束】\n- 不要无铺垫升级战力\n- 不要引入未准备的大设定\n【软约束】\n- 保持家庭与婚后协作稳定\n- chapter_outline:9",
+    "relationship_state": [
+      "生成后必须过 character_ooc / plot_logic_consistency 门控。",
+      "如涉及规则推进，还应补 world_rule_consistency 复核。",
+      "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+    ],
+    "unresolved_threads": [
+      "character_ooc:skipped",
+      "world_rule_consistency:skipped",
+      "relationship_consistency:skipped"
+    ],
+    "rule_state": [],
+    "next_constraints": [
+      "生成后必须过 character_ooc / plot_logic_consistency 门控。",
+      "如涉及规则推进，还应补 world_rule_consistency 复核。",
+      "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+      "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+    ]
+  },
+  "policy_summary": {
+    "executed_step_count": 2,
+    "highest_action_priority": 1,
+    "max_overall_score": 84,
+    "min_overall_score": 80,
+    "risk_levels": [
+      "low",
+      "low"
+    ],
+    "stop_reasons": [
+      "critical_action_required",
+      "critical_action_required"
+    ],
+    "max_action_count": 11,
+    "verdicts": [
+      "needs_revision",
+      "needs_revision"
+    ],
+    "chapter_ranking": [
+      {
+        "source_chapter_index": 2,
+        "overall_score": 80,
+        "highest_action_priority": 1
+      },
+      {
+        "source_chapter_index": 3,
+        "overall_score": 84,
+        "highest_action_priority": 1
+      }
+    ],
+    "book_priority_ranking": [
+      {
+        "source_chapter_index": 3,
+        "priority": 1,
+        "severity": "medium",
+        "reason": "承接上一章高优先级/高风险信号"
+      },
+      {
+        "source_chapter_index": 2,
+        "priority": 4,
+        "severity": "high",
+        "reason": "常规连续推进"
+      }
+    ],
+    "severity_histogram": {
+      "high": 1,
+      "medium": 19,
+      "low": 0
+    },
+    "risk_bucket_histogram": {
+      "low": 2,
+      "medium": 0,
+      "high": 0
+    },
+    "repair_lane_diagnostics": {
+      "contract": "whole-book-repair-lane-diagnostics.v1",
+      "lane_order": [
+        "style",
+        "rhythm",
+        "dialogue",
+        "reader_sim"
+      ],
+      "lanes": {
+        "style": {
+          "action_count": 0,
+          "covered": false,
+          "top_actions": []
+        },
+        "rhythm": {
+          "action_count": 2,
+          "covered": true,
+          "top_actions": [
+            "repair_rhythm",
+            "repair_rhythm"
+          ]
+        },
+        "dialogue": {
+          "action_count": 2,
+          "covered": true,
+          "top_actions": [
+            "repair_dialogue_design",
+            "repair_dialogue_design"
+          ]
+        },
+        "reader_sim": {
+          "action_count": 2,
+          "covered": true,
+          "top_actions": [
+            "repair_reader_engagement",
+            "repair_reader_engagement"
+          ]
+        }
+      },
+      "missing_lanes": [
+        "style"
+      ],
+      "open_lane_count": 3
+    },
+    "long_book_consistency_diagnostics": {
+      "contract": "whole-book-consistency-diagnostics.v1",
+      "diagnostic_version": "long-book-consistency-diagnostics.v1",
+      "chapter_count": 2,
+      "continuity_gap_count": 0,
+      "continuity_gaps": [],
+      "carry_over_chapters": [
+        2,
+        3
+      ],
+      "requires_consistency_pass": true
+    },
+    "average_chapter_quality_score": null,
+    "chapter_quality_signal_count": 0,
+    "quality_verdict": "quality-pass",
+    "next_stage_focus": [
+      "优先处理能力族：relationship、rule",
+      "先回看第3章的高优先级修复链",
+      "先回看第2章的高优先级修复链"
+    ]
+  },
+  "dashboard_summary": {
+    "chapter_count": 2,
+    "highest_priority_chapters": [
+      3,
+      2
+    ],
+    "top_risk_chapters": [],
+    "strategy_targets": [
+      {
+        "source_chapter_index": 2,
+        "prioritized_targets": [],
+        "prioritized_families": [],
+        "top_priority_families": [],
+        "high_risk_families": []
+      },
+      {
+        "source_chapter_index": 3,
+        "prioritized_targets": [
+          "draft_body",
+          "rhythm",
+          "ending_hook"
+        ],
+        "prioritized_families": [
+          "general",
+          "rhythm",
+          "hook"
+        ],
+        "top_priority_families": [
+          "general",
+          "rhythm",
+          "hook"
+        ],
+        "high_risk_families": [
+          "general",
+          "rhythm",
+          "hook"
+        ]
+      }
+    ],
+    "issue_family_histogram": {
+      "constraint": 0,
+      "relationship": 4,
+      "rule": 4,
+      "motivation": 2,
+      "hook": 1,
+      "dialogue": 2,
+      "research": 2,
+      "rhythm": 2,
+      "reader_sim": 0,
+      "style": 0
+    },
+    "cluster_buckets": {
+      "critical": [
+        2,
+        3
+      ],
+      "attention": [],
+      "monitor": []
+    },
+    "issue_family_ranking": [
+      {
+        "family": "relationship",
+        "count": 4
+      },
+      {
+        "family": "rule",
+        "count": 4
+      },
+      {
+        "family": "dialogue",
+        "count": 2
+      },
+      {
+        "family": "motivation",
+        "count": 2
+      },
+      {
+        "family": "reader",
+        "count": 2
+      },
+      {
+        "family": "research",
+        "count": 2
+      },
+      {
+        "family": "rhythm",
+        "count": 2
+      },
+      {
+        "family": "hook",
+        "count": 1
+      },
+      {
+        "family": "constraint",
+        "count": 0
+      },
+      {
+        "family": "reader_sim",
+        "count": 0
+      },
+      {
+        "family": "style",
+        "count": 0
+      }
+    ],
+    "weak_family_counts": {
+      "dialogue": 2,
+      "research": 2,
+      "reader": 2,
+      "rhythm": 2
+    },
+    "family_priority_ranking": [
+      {
+        "source_chapter_index": 2,
+        "families": []
+      },
+      {
+        "source_chapter_index": 3,
+        "families": [
+          "general",
+          "rhythm",
+          "hook"
+        ]
+      }
+    ],
+    "weak_lane_priority_ranking": [
+      {
+        "source_chapter_index": 2,
+        "families": [],
+        "priority": 1
+      },
+      {
+        "source_chapter_index": 3,
+        "families": [
+          "rhythm"
+        ],
+        "priority": 1
+      }
+    ],
+    "top_weak_lane_chapters": [
+      3,
+      2
+    ],
+    "weak_lane_histogram": {
+      "dialogue": 0,
+      "research": 0,
+      "reader": 0,
+      "rhythm": 1
+    },
+    "weak_lane_top_actions": [
+      {
+        "source_chapter_index": 2,
+        "action_type": "repair_rhythm",
+        "priority": 2,
+        "severity": "medium"
+      },
+      {
+        "source_chapter_index": 2,
+        "action_type": "repair_dialogue_design",
+        "priority": 3,
+        "severity": "medium"
+      },
+      {
+        "source_chapter_index": 2,
+        "action_type": "repair_research_alignment",
+        "priority": 3,
+        "severity": "medium"
+      },
+      {
+        "source_chapter_index": 3,
+        "action_type": "repair_rhythm",
+        "priority": 1,
+        "severity": "medium"
+      },
+      {
+        "source_chapter_index": 3,
+        "action_type": "repair_dialogue_design",
+        "priority": 3,
+        "severity": "medium"
+      },
+      {
+        "source_chapter_index": 3,
+        "action_type": "repair_research_alignment",
+        "priority": 3,
+        "severity": "medium"
+      }
+    ],
+    "top_priority_summary": {
+      "chapter_indexes": [
+        3,
+        2
+      ],
+      "weak_lane_chapters": [
+        3,
+        2
+      ],
+      "weak_lane_action_count": 6,
+      "top_priority_families": [
+        "relationship",
+        "rule",
+        "dialogue",
+        "motivation"
+      ]
+    },
+    "top_risk_summary": {
+      "chapter_indexes": [],
+      "weak_lane_actions": [
+        {
+          "source_chapter_index": 2,
+          "action_type": "repair_rhythm",
+          "severity": "medium"
+        },
+        {
+          "source_chapter_index": 2,
+          "action_type": "repair_dialogue_design",
+          "severity": "medium"
+        },
+        {
+          "source_chapter_index": 2,
+          "action_type": "repair_research_alignment",
+          "severity": "medium"
+        },
+        {
+          "source_chapter_index": 3,
+          "action_type": "repair_rhythm",
+          "severity": "medium"
+        },
+        {
+          "source_chapter_index": 3,
+          "action_type": "repair_dialogue_design",
+          "severity": "medium"
+        },
+        {
+          "source_chapter_index": 3,
+          "action_type": "repair_research_alignment",
+          "severity": "medium"
+        }
+      ],
+      "weak_lane_families": [
+        "dialogue",
+        "reader",
+        "research",
+        "rhythm"
+      ],
+      "high_risk_families": []
+    },
+    "weak_lane_dominance": [
+      {
+        "family": "rhythm",
+        "count": 1
+      },
+      {
+        "family": "dialogue",
+        "count": 0
+      },
+      {
+        "family": "reader",
+        "count": 0
+      },
+      {
+        "family": "research",
+        "count": 0
+      }
+    ],
+    "repair_lane_diagnostics": {
+      "contract": "whole-book-repair-lane-diagnostics.v1",
+      "lane_order": [
+        "style",
+        "rhythm",
+        "dialogue",
+        "reader_sim"
+      ],
+      "lanes": {
+        "style": {
+          "action_count": 0,
+          "covered": false,
+          "top_actions": []
+        },
+        "rhythm": {
+          "action_count": 2,
+          "covered": true,
+          "top_actions": [
+            "repair_rhythm",
+            "repair_rhythm"
+          ]
+        },
+        "dialogue": {
+          "action_count": 2,
+          "covered": true,
+          "top_actions": [
+            "repair_dialogue_design",
+            "repair_dialogue_design"
+          ]
+        },
+        "reader_sim": {
+          "action_count": 2,
+          "covered": true,
+          "top_actions": [
+            "repair_reader_engagement",
+            "repair_reader_engagement"
+          ]
+        }
+      },
+      "missing_lanes": [
+        "style"
+      ],
+      "open_lane_count": 3
+    },
+    "long_book_consistency_diagnostics": {
+      "contract": "whole-book-consistency-diagnostics.v1",
+      "diagnostic_version": "long-book-consistency-diagnostics.v1",
+      "chapter_count": 2,
+      "continuity_gap_count": 0,
+      "continuity_gaps": [],
+      "carry_over_chapters": [
+        2,
+        3
+      ],
+      "requires_consistency_pass": true
+    },
+    "chapter_flags": [
+      {
+        "source_chapter_index": 2,
+        "highest_action_priority": 1,
+        "overall_risk_level": "low",
+        "scheduling_priority": 4,
+        "scheduling_reason": "常规连续推进",
+        "weak_families": []
+      },
+      {
+        "source_chapter_index": 3,
+        "highest_action_priority": 1,
+        "overall_risk_level": "low",
+        "scheduling_priority": 1,
+        "scheduling_reason": "承接上一章高优先级/高风险信号",
+        "weak_families": [
+          "rhythm"
+        ]
+      }
+    ],
+    "book_handoff_summary": {
+      "top_repair_recommendations": [
+        {
+          "action_type": "repair_rhythm",
+          "count": 2,
+          "highest_priority": 1,
+          "highest_severity": "medium",
+          "chapter_indexes": [
+            2,
+            3
+          ],
+          "targets": [
+            "rhythm"
+          ],
+          "issue_families": [
+            "rhythm"
+          ]
+        },
+        {
+          "action_type": "expand_middle",
+          "count": 1,
+          "highest_priority": 1,
+          "highest_severity": "high",
+          "chapter_indexes": [
+            2
+          ],
+          "targets": [
+            "draft_body"
+          ],
+          "issue_families": []
+        },
+        {
+          "action_type": "repair_character_motivation",
+          "count": 2,
+          "highest_priority": 2,
+          "highest_severity": "medium",
+          "chapter_indexes": [
+            2,
+            3
+          ],
+          "targets": [
+            "character_motivation"
+          ],
+          "issue_families": [
+            "motivation"
+          ]
+        },
+        {
+          "action_type": "repair_relationship_transition",
+          "count": 2,
+          "highest_priority": 2,
+          "highest_severity": "medium",
+          "chapter_indexes": [
+            2,
+            3
+          ],
+          "targets": [
+            "relationship_transition"
+          ],
+          "issue_families": [
+            "relationship"
+          ]
+        },
+        {
+          "action_type": "repair_world_rule_support",
+          "count": 2,
+          "highest_priority": 2,
+          "highest_severity": "medium",
+          "chapter_indexes": [
+            2,
+            3
+          ],
+          "targets": [
+            "world_rule_support"
+          ],
+          "issue_families": [
+            "rule"
+          ]
+        }
+      ],
+      "next_stage_focus": [
+        "优先处理能力族：relationship、rule",
+        "先回看第3章的高优先级修复链",
+        "先回看第2章的高优先级修复链"
+      ],
+      "highest_priority_chapters": [
+        3,
+        2
+      ],
+      "risk_chapters": [],
+      "final_verdicts": [
+        "needs_revision",
+        "needs_revision"
+      ]
+    },
+    "session_loom_signals": {
+      "contract_version": "whole-book-session-loom-signals.v1",
+      "chapter_quality_signal_count": 0,
+      "style_signal_count": 0,
+      "rhythm_signal_count": 0,
+      "dialogue_signal_count": 0,
+      "tension_signal_count": 2,
+      "tension_alert_chapters": [],
+      "average_tension_score": 0.9706,
+      "average_chapter_quality_score": null,
+      "average_style_drift_score": null,
+      "average_hook_density": null,
+      "signals": [
+        {
+          "source_chapter_index": 2,
+          "tension_score": 0.9789
+        },
+        {
+          "source_chapter_index": 3,
+          "tension_score": 0.9623
+        }
+      ]
+    },
+    "session_loom_gate_summary": {
+      "contract_version": "loom-gate-summary.v1",
+      "quality_verdict": "quality-pass",
+      "average_chapter_quality_score": null,
+      "chapter_quality_signal_count": 0,
+      "tension_signal_count": 2,
+      "tension_alert_chapter_count": 0,
+      "tension_alert_chapters": [],
+      "gate_status": "monitoring",
+      "next_gate_action": "continue whole-book execution while monitoring Loom quality and tension"
+    }
+  },
+  "session_loom_signals": {
+    "contract_version": "whole-book-session-loom-signals.v1",
+    "chapter_quality_signal_count": 0,
+    "style_signal_count": 0,
+    "rhythm_signal_count": 0,
+    "dialogue_signal_count": 0,
+    "tension_signal_count": 2,
+    "tension_alert_chapters": [],
+    "average_tension_score": 0.9706,
+    "average_chapter_quality_score": null,
+    "average_style_drift_score": null,
+    "average_hook_density": null,
+    "signals": [
+      {
+        "source_chapter_index": 2,
+        "tension_score": 0.9789
+      },
+      {
+        "source_chapter_index": 3,
+        "tension_score": 0.9623
+      }
+    ]
+  },
+  "session_loom_gate_summary": {
+    "contract_version": "loom-gate-summary.v1",
+    "quality_verdict": "quality-pass",
+    "average_chapter_quality_score": null,
+    "chapter_quality_signal_count": 0,
+    "tension_signal_count": 2,
+    "tension_alert_chapter_count": 0,
+    "tension_alert_chapters": [],
+    "gate_status": "monitoring",
+    "next_gate_action": "continue whole-book execution while monitoring Loom quality and tension"
+  },
+  "run_notes": [
+    "当前 whole-book runner 仍为 dry-run queue skeleton，不直接长跑整本生成。",
+    "后续应把 queue step 接入 sandbox branch / draft artifact / continuity carry-over。",
+    "sandbox_execute 模式会逐章跑 iterate-imitation，并显式产出 carry-over state。",
+    "当前仍是内存态 sandbox，不会把生成正文写入 live branch artifact。"
+  ]
+}
