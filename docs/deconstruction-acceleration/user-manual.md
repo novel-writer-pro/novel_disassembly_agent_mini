@@ -494,3 +494,11 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这意味着：
 - quick 主链的同步 prompt 体积已被系统性压缩；
 - 后续真实提速验证将更有意义，因为不是单点优化，而是多刀叠加后的主链瘦身结果。
+
+### 6.12 性能护栏已落地
+当前拆书 quick 主链的 prompt 缩减结果，已经被固化为测试护栏：
+- 检查真实卫图样本上的 prompt 长度上限；
+- 检查相对旧版 prompt 的缩减比例。
+
+这意味着：
+- 后续继续开发时，如果同步 prompt 又膨胀回去，会被测试直接拦住。

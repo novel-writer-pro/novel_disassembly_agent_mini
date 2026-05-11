@@ -850,3 +850,165 @@ def test_fact_analysis_and_guard_prompts_use_compact_prior_context(monkeypatch, 
         assert 'metadata' not in joined
         assert '卫图' in joined
         assert '觉醒命格' in joined
+
+
+def test_prompt_budget_guards_on_real_weitu_ch20_context() -> None:
+    from sqlalchemy import create_engine, select
+    from sqlalchemy.orm import Session
+    from novel_analyzer.database.models import RunBranch, ChapterManifest, ChapterSegment
+    from novel_analyzer.agent.pipeline import ChapterAgentContext, build_agent_stage_prompts
+    from novel_analyzer.services.context_service import ContextService
+
+    dburl = 'postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer_weitu_deconstruction_20260511'
+    engine = create_engine(dburl, future=True)
+    branch_id = '03c657c8-5389-4e42-9234-b14137c04125'
+    with Session(engine) as session:
+        branch = session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
+        assert branch is not None
+        manifest = session.scalar(select(ChapterManifest).where(ChapterManifest.id == branch.run.manifest_id))
+        assert manifest is not None
+        segment = session.scalar(
+            select(ChapterSegment)
+            .where(ChapterSegment.manifest_id == manifest.id)
+            .where(ChapterSegment.chapter_index == 20)
+        )
+        assert segment is not None
+        source_text = Path(branch.run.novel.source_path).read_text(encoding='utf-8')
+        chapter_content = source_text[segment.start_offset:segment.end_offset].strip()
+        staged = AnalysisService._stage_chapter_content(chapter_content)
+        ctx = ContextService(session)
+        previous_summary = ctx.previous_summary(branch_id, 20)
+        prior_context = ctx.fact_context_json(branch_id, 20)
+        state_summary = ctx.state_summary_json(branch_id, 20)
+        compact_prior_context_json = AnalysisService._compact_prior_context_json(prior_context)
+        compact_state_summary_json = AnalysisService._compact_state_summary_json(state_summary)
+
+        fact_prompt = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20,
+            normalized_title=segment.normalized_title,
+            chapter_content=staged,
+            previous_summary=previous_summary,
+            intake_json='{"chapter_index":20}',
+            prior_context_json=compact_prior_context_json,
+            graph_context_json='{}',
+            state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text',
+            window_summary=ctx.window_summary(branch_id, 20),
+        ))['fact_extractor']
+        analysis_prompt = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20,
+            normalized_title=segment.normalized_title,
+            chapter_content=staged,
+            previous_summary=previous_summary,
+            intake_json='{"chapter_index":20}',
+            prior_context_json=compact_prior_context_json,
+            graph_context_json='{}',
+            state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text',
+            window_summary=ctx.window_summary(branch_id, 20),
+            fact_json='{"events":[{"label":"x"}]}',
+            evidence_bound_json='{"retained_items":[{"label":"x"}]}',
+        ))['analysis_generator']
+        guard_prompt = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20,
+            normalized_title=segment.normalized_title,
+            chapter_content=staged,
+            previous_summary=previous_summary,
+            intake_json='{"chapter_index":20}',
+            prior_context_json=compact_prior_context_json,
+            graph_context_json='{}',
+            state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text',
+            window_summary=ctx.window_summary(branch_id, 20),
+            fact_json='{"events":[{"label":"x"}]}',
+            analysis_json='{"summary":{"short":"x"}}',
+            writer_json='{}',
+            chapter_json='{}',
+        ))['anti_fabrication_guard']
+
+        assert len(fact_prompt) < 3000
+        assert len(analysis_prompt) < 2000
+        assert len(guard_prompt) < 1200
+
+
+def test_prompt_budget_regression_ratios_on_real_weitu_ch20_context() -> None:
+    from sqlalchemy import create_engine, select
+    from sqlalchemy.orm import Session
+    from novel_analyzer.database.models import RunBranch, ChapterManifest, ChapterSegment
+    from novel_analyzer.agent.pipeline import ChapterAgentContext, build_agent_stage_prompts
+    from novel_analyzer.services.context_service import ContextService
+    import json
+
+    dburl = 'postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer_weitu_deconstruction_20260511'
+    engine = create_engine(dburl, future=True)
+    branch_id = '03c657c8-5389-4e42-9234-b14137c04125'
+    with Session(engine) as session:
+        branch = session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
+        assert branch is not None
+        manifest = session.scalar(select(ChapterManifest).where(ChapterManifest.id == branch.run.manifest_id))
+        assert manifest is not None
+        segment = session.scalar(
+            select(ChapterSegment)
+            .where(ChapterSegment.manifest_id == manifest.id)
+            .where(ChapterSegment.chapter_index == 20)
+        )
+        assert segment is not None
+        source_text = Path(branch.run.novel.source_path).read_text(encoding='utf-8')
+        chapter_content = source_text[segment.start_offset:segment.end_offset].strip()
+        staged = AnalysisService._stage_chapter_content(chapter_content)
+        ctx = ContextService(session)
+        previous_summary = ctx.previous_summary(branch_id, 20)
+        prior_context = ctx.fact_context_json(branch_id, 20)
+        graph_context = ctx.graph_context_json(branch_id, 20)
+        state_summary = ctx.state_summary_json(branch_id, 20)
+        window_summary = ctx.window_summary(branch_id, 20)
+        prior_context_json = json.dumps(prior_context, ensure_ascii=False, indent=2)
+        graph_context_json = json.dumps(graph_context, ensure_ascii=False, indent=2)
+        state_summary_json = json.dumps(state_summary, ensure_ascii=False, indent=2)
+        compact_prior_context_json = AnalysisService._compact_prior_context_json(prior_context)
+        compact_state_summary_json = AnalysisService._compact_state_summary_json(state_summary)
+
+        old_fact = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=prior_context_json,
+            graph_context_json=graph_context_json, state_summary_json=state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+        ))['fact_extractor']
+        new_fact = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=compact_prior_context_json,
+            graph_context_json='{}', state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+        ))['fact_extractor']
+        old_analysis = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=prior_context_json,
+            graph_context_json=graph_context_json, state_summary_json=state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', evidence_bound_json='{"retained_items":[{"label":"x"}]}'
+        ))['analysis_generator']
+        new_analysis = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=compact_prior_context_json,
+            graph_context_json='{}', state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', evidence_bound_json='{"retained_items":[{"label":"x"}]}'
+        ))['analysis_generator']
+        old_guard = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=prior_context_json,
+            graph_context_json=graph_context_json, state_summary_json=state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', analysis_json='{"summary":{"short":"x"}}', writer_json='{}', chapter_json='{}'
+        ))['anti_fabrication_guard']
+        new_guard = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=compact_prior_context_json,
+            graph_context_json='{}', state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', analysis_json='{"summary":{"short":"x"}}', writer_json='{}', chapter_json='{}'
+        ))['anti_fabrication_guard']
+
+        assert len(new_fact) / len(old_fact) < 0.12
+        assert len(new_analysis) / len(old_analysis) < 0.1
+        assert len(new_guard) / len(old_guard) < 0.1

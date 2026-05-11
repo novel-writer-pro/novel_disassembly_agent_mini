@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- test(deconstruction/prompt-budget-guards): 为 quick 拆书主链新增基于卫图第 20 章真实上下文的 prompt budget 护栏测试，覆盖绝对长度上限与相对旧版缩减比例，扩展回归 18/18 通过。
+
+
 - perf(deconstruction/prior-context-slimming): quick 拆书主链将 `prior_context_json` 压缩为 compact 版，仅保留小规模前情摘要与事实关键字段；扩展回归 16/16 通过。量化样本显示卫图第 20 章上 `fact_extractor` prompt 约下降 90.6%。
 
 

@@ -70,3 +70,6 @@
 
 - 性能优化第 5 刀已落地：继续压缩 `prior_context_json`，把前情事实输入从全量 JSON 缩为 compact 版，只保留 chapter_index / fact_type / label / confidence 等小字段。
 - 这一步进一步降低了 `fact_extractor` / `analysis_generator` / `anti_fabrication_guard` 的同步 prompt 体积，并且量化结果显示 `fact_extractor` 已从约 26k 字符降到约 2.5k 字符量级。
+
+- 已把当前 prompt 缩减成果固化为测试护栏：后续如果有人把 quick 主链 prompt 重新撑大，将直接在 `tests/test_analysis_service.py` 里暴露回退。
+- 这比单纯写文档更有价值，因为它把“提速成果”变成了可执行约束，而不是口头约定。
