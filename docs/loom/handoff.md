@@ -296,6 +296,30 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
    - enhanced: `quality-hold`、`style_signal_count=2`、`chapter_quality_signal_count=2`
    - 这证明 enhanced 会真实改变执行器侧产物，但还不能证明最终仿写效果提升。
 
+### 4.0.4 enhanced feedback-loop 最小优化（未提交 changelist）
+
+**Changelist marker**：`CL-loom-feedback-loop-01`
+
+**这次解决了什么：**
+
+1. **解决 enhanced 信号只出现在报告层、不稳定进入修订决策的问题**
+   - style / rhythm / character 的 Loom `suggestion` 现在会进入 `recommended_actions`
+   - enhanced 不再只是“多几个 signal 字段”，而是开始影响 revise 决策链
+
+2. **解决 character consistency 信号没有稳定落到 downstream payload 的问题**
+   - `_loom_character_consistency` 现在会写入 skill outputs，whole-book / writer artifact 都能消费
+
+3. **完成了自动验证 + 手工验证**
+   - `tests/test_loom_phase2.py` → 20/20 通过
+   - 实际跑卫图样例 enhanced writer-imitate 后，确认 `_loom_style`、`_loom_character_consistency`、`chapter_quality_signal` 都已出现
+
+**当前结论：**
+
+- 已证明 enhanced 信号开始真正回流到修订决策链
+- 尚未证明这一步已经让卫图样例正文质量稳定提升
+- post-feedback-loop 的 chapter 2 / 3 enhanced LLM 重跑成功，但 chapter 4 / 5 当前仍存在运行失败，扩样验证还未闭环
+- provider 失败时的 `writer-imitate --use-llm` 现已具备 skeleton fallback，验证链不会再因 402 直接中断
+
 ### 4.0.1 Phase 3 新增交付（2026-05-10 本次）
 
 | 交付物 | 说明 |
@@ -380,6 +404,18 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ --output-file outpu
 ---
 
 ## 5. 文档索引（快速跳转）
+
+### Canonical 5 份主文档
+
+如果你要继续 Loom 主线，只优先看这 5 份：
+
+1. [`docs/loom/sota-imitation-progression-checklist.md`](./sota-imitation-progression-checklist.md)
+2. [`docs/loom/weitu-real-effect-validation.md`](./weitu-real-effect-validation.md)
+3. [`docs/loom/weitu-validation-log-20260511.md`](./weitu-validation-log-20260511.md)
+4. [`docs/loom/handoff.md`](./handoff.md)
+5. [`docs/loom/roadmap.md`](./roadmap.md)
+
+其余文档默认视为设计细节或背景材料，不作为第一入口。
 
 ### 架构与设计
 - [`docs/loom/overview.md`](./overview.md) — 架构全景 + SOTA 对比 + 资产盘点

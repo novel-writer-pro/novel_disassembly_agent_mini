@@ -429,6 +429,14 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./loom/weitu-real-effect-validation.md`](./loom/weitu-real-effect-validation.md)
 - [`./loom/weitu-validation-log-20260511.md`](./loom/weitu-validation-log-20260511.md)
 
+默认阅读顺序建议：
+
+1. `cli-operations-manual.md`
+2. `direct-usage-guide.md`
+3. `loom/sota-imitation-progression-checklist.md`
+4. `loom/weitu-real-effect-validation.md`
+5. `loom/weitu-validation-log-20260511.md`
+
 ---
 
 ## 11. 当前维护建议（2026-04-28 之后）

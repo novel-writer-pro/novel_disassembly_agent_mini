@@ -42,17 +42,40 @@ Loom（新增层，叠加在上方）
 
 ## 五大升级方向（Phase 1-4）
 
-## 当前最重要的两份执行文档
+## Canonical 阅读顺序（只看这 5 份）
 
-如果你不是单纯看架构，而是要**继续把主链路仿写能力推向 SOTA**，先看这两份：
+如果你要继续 Loom，而不是泛读全部设计稿，固定按这个顺序：
 
-- [SOTA 仿写能力推进 Checklist](./sota-imitation-progression-checklist.md)
-- [卫图样例真实效果验证工作流](./weitu-real-effect-validation.md)
+1. [SOTA 仿写能力推进 Checklist](./sota-imitation-progression-checklist.md)
+2. [卫图样例真实效果验证工作流](./weitu-real-effect-validation.md)
+3. [卫图样例验证日志（已执行证据）](./weitu-validation-log-20260511.md)
+4. [Loom 开发交接文档](./handoff.md)
+5. [Loom 路线图](./roadmap.md)
 
-它们分别回答：
+它们分别负责：
 
-- 我们主链路到底在推进什么能力
-- 如何用卫图样例做真实验证，而不是只停留在“系统能跑”
+- **Checklist**：主链路目标与验收标准
+- **Validation workflow**：怎么复现跑验证
+- **Validation log**：已经真实跑过什么
+- **Handoff**：当前状态、已完成闭环、未完成闭环
+- **Roadmap**：未来 Phase 与剩余任务
+
+### Source of truth 约定
+
+- 想知道 **现在做到哪** → `handoff.md`
+- 想知道 **接下来做什么** → `roadmap.md`
+- 想知道 **主目标是不是跑偏了** → `sota-imitation-progression-checklist.md`
+- 想知道 **卫图验证怎么复现** → `weitu-real-effect-validation.md`
+- 想知道 **已经真实执行了哪些验证** → `weitu-validation-log-20260511.md`
+
+其余 Loom 文档默认属于：
+
+- 架构细节
+- 子模块设计
+- 阶段分析
+- 历史背景材料
+
+不应与这 5 份主文档争夺入口位置。
 
 ---
 

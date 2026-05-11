@@ -517,3 +517,119 @@ def test_harness_pairwise_enabled_signal_in_last_round_skill_outputs(tmp_path: P
         quality = last_round.skill_outputs["_loom_chapter_quality"]
         assert isinstance(quality, dict)
         assert "quality_score" in quality
+
+
+def test_harness_style_signal_adds_recommended_action(tmp_path: Path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            db_dialect="sqlite",
+            database_url="sqlite+pysqlite:///:memory:",
+            loom_style_enabled=True,
+        )
+        harness = HarnessControllerService(session, settings)
+
+        with patch(
+            "novel_analyzer.services.style_calibration_service.StyleCalibrationService.compute_style_drift"
+        ) as mock_style, patch(
+            "novel_analyzer.services.rhythm_analysis_service.RhythmAnalysisService.compute"
+        ) as mock_rhythm:
+            mock_style.return_value = MagicMock(
+                alert_level="medium",
+                suggestion="补足文风一致性，避免叙述腔调漂移。",
+                to_style_signal=lambda: {"style_drift_score": 0.82, "alert_level": "medium"},
+                style_drift_score=0.82,
+            )
+            mock_rhythm.return_value = MagicMock(
+                alert_level="none",
+                suggestion="",
+                to_rhythm_signal=lambda: {"hook_density": 0.3, "alert_level": "none"},
+                hook_density=0.3,
+            )
+            report = harness.run_harness(
+                branch_id,
+                source_chapter_index=1,
+                target_goal="测试目标",
+                max_rounds=1,
+                use_llm=False,
+            )
+
+        assert report.action_queue
+        assert any(action.action_type == "repair_style_calibration" for action in report.action_queue)
+        assert report.rounds
+        assert "_loom_style" in report.rounds[-1].skill_outputs
+
+
+def test_harness_character_signal_adds_recommended_action_and_output(tmp_path: Path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            db_dialect="sqlite",
+            database_url="sqlite+pysqlite:///:memory:",
+            loom_character_enabled=True,
+        )
+        harness = HarnessControllerService(session, settings)
+
+        with patch(
+            "novel_analyzer.services.character_agent_service.CharacterAgentService.build_character_persona"
+        ) as mock_persona, patch(
+            "novel_analyzer.services.character_agent_service.CharacterAgentService.check_character_consistency"
+        ) as mock_consistency, patch(
+            "novel_analyzer.services.thread_scheduler_service.ThreadSchedulerService.suggest_thread_activation"
+        ) as mock_thread:
+            mock_persona.return_value = MagicMock()
+            mock_consistency.return_value = MagicMock(
+                alert_level="medium",
+                suggestion="补足人物动机支撑，避免角色行为漂移。",
+                overall_consistency_score=0.41,
+            )
+            mock_thread.return_value = MagicMock(suggested_thread=None, suggestion="")
+            report = harness.run_harness(
+                branch_id,
+                source_chapter_index=1,
+                target_goal="测试目标",
+                max_rounds=1,
+                use_llm=False,
+            )
+
+        assert report.action_queue
+        assert any(action.action_type == "repair_character_motivation" for action in report.action_queue)
+        assert report.rounds
+        assert "_loom_character_consistency" in report.rounds[-1].skill_outputs
+        payload = report.rounds[-1].skill_outputs["_loom_character_consistency"]
+        assert isinstance(payload, dict)
+        assert "characters" in payload
+
+
+def test_harness_use_llm_falls_back_to_skeleton_when_provider_fails(tmp_path: Path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        harness = HarnessControllerService(session)
+
+        with patch.object(
+            harness.chapter_imitation,
+            "build_llm_draft",
+            side_effect=RuntimeError("provider unavailable"),
+        ):
+            report = harness.run_harness(
+                branch_id,
+                source_chapter_index=1,
+                target_goal="测试目标",
+                max_rounds=1,
+                use_llm=True,
+            )
+
+        assert report.final_draft.draft_text
+        assert any("LLM draft unavailable -> skeleton fallback" in item for item in report.final_draft.comparison_notes)
+        assert any("skeleton fallback 保底生成" in item for item in report.final_draft.risk_gate_notes)

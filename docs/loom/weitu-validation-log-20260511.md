@@ -520,6 +520,128 @@ python3 -m novel_analyzer.cli.app writer-imitate \
 
 > **Loom enhanced 已经稳定改变了信号层和部分文本风格，但在卫图样例 2–5 章抽样里，正文效果暂时仍是 baseline 略占优或至少未被反超。**
 
+### 5.8 feedback-loop 最小优化验证
+
+#### 修复点
+
+当前已确认一个关键问题：
+
+- `loom_style_enabled` / `loom_character_enabled` 之前主要产出 signal / preflight check
+- 但建议没有稳定回流为 revise decision
+- `_loom_character_consistency` 也没有稳定落到 downstream payload
+
+本轮已做的最小修复是：
+
+- style / rhythm / character 的 `suggestion` 进入 `recommended_actions`
+- character consistency payload 写入 `_loom_character_consistency`
+
+#### 自动验证
+
+已实际通过：
+
+- `tests/test_loom_phase2.py` → 20 passed
+
+其中新增验证：
+
+- style signal 会触发 `repair_style_calibration`
+- character signal 会触发 `repair_character_motivation`
+- `_loom_character_consistency` 会进入 skill outputs
+
+#### 手工验证
+
+已实际执行：
+
+```bash
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=enabled \
+NOVEL_ANALYZER_LOOM_PAIRWISE_ENABLED=true \
+NOVEL_ANALYZER_LOOM_STYLE_ENABLED=true \
+NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED=true \
+python3 -m novel_analyzer.cli.app writer-imitate \
+  62e636f0-c901-4167-aa1c-aff3da9c83ef 2 "延续卫图求养生功线索" \
+  --use-llm \
+  --output-dir /home/user/ai-books/runs/manual_eval/weitu-llm-enhanced-feedback/artifacts/writer-output
+```
+
+观察到：
+
+- `_loom_style` 已存在
+- `_loom_character_consistency` 已存在
+- `chapter_quality_signal` 已存在
+
+#### 当前结论
+
+这一步已经证明：
+
+> **enhanced 信号现在不再只是“算出来给人看”，而是开始真正回流到修订决策链。**
+
+但它还没有证明：
+
+> **回流之后，卫图样例的正文质量已经被稳定提升。**
+
+### 5.9 post-feedback-loop 扩样状态
+
+本轮尝试继续把 post-feedback-loop 的 enhanced LLM 样本扩到 chapter 4 / 5。
+
+实际结果：
+
+- chapter 2 / 3：重跑成功
+- chapter 4 / 5：当前在 `writer-imitate --use-llm` 路径上失败，未生成新 md/json 正文产物
+
+因此当前能够确认的是：
+
+- feedback-loop 修复已经在 chapter 2 的 enhanced 产物上生效
+- 但 post-feedback-loop 的 2–5 全量复跑证据 **尚未闭环**
+
+这意味着下一步如果继续，要优先解决 chapter 4 / 5 的 LLM writer-imitate 运行失败，再重新判断 2–5 章趋势是否变化。
+
+### 5.10 provider failure graceful fallback 已打通
+
+随后已完成一轮最小修复：
+
+- 当 `writer-imitate --use-llm` 遇到 provider 失败时，不再整条命令硬崩
+- 改为回退到 `build_skeleton_draft()`
+- 并在 artifact 中显式写明：
+  - `LLM draft unavailable -> skeleton fallback: APIStatusError`
+  - `当前章节因上游 provider 不可用，使用 skeleton fallback 保底生成。`
+
+### 自动验证
+
+- `tests/test_loom_phase2.py` → 21 passed
+
+新增验证：
+
+- `test_harness_use_llm_falls_back_to_skeleton_when_provider_fails`
+
+### 手工验证
+
+已实际执行：
+
+```bash
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=enabled \
+NOVEL_ANALYZER_LOOM_PAIRWISE_ENABLED=true \
+NOVEL_ANALYZER_LOOM_STYLE_ENABLED=true \
+NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED=true \
+python3 -m novel_analyzer.cli.app writer-imitate \
+  62e636f0-c901-4167-aa1c-aff3da9c83ef 4 "延续卫图苦练养生功并面临新身份变化" \
+  --use-llm \
+  --output-dir /home/user/ai-books/runs/manual_eval/weitu-llm-enhanced-feedback2/artifacts/writer-output
+```
+
+结果：
+
+- `writer-imitate-ch4.json` 已生成
+- `writer-imitate-ch4.md` 已生成
+- 产物中包含 `_loom_character_consistency`
+- 产物中包含 fallback 痕迹与 `chapter_quality_signal`
+
+### 当前结论
+
+这一步已经把之前“provider 余额不足就整条链断掉”的问题，收敛为：
+
+> **provider 失败时仍可产出可审计、可继续验证的 skeleton fallback artifact。**
+
+它没有解决 provider 余额本身，但已经解决了“验证链因为上游 402 完全中断”的问题。
+
 ### P0
 
 1. 为卫图样例建立 **baseline** 产物

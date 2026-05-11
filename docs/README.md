@@ -19,13 +19,14 @@
 
 ## 使用者快速入口
 
-> 只想跑起来、导入小说、看分析结果的人，按顺序看这几份文档。
+> 只想跑起来、导入小说、看分析结果的人，按顺序只看这 4 份；其余文档都视为补充阅读。
 
-1. [CLI 操作手册](./cli-operations-manual.md) — 所有命令一览，快速上手
-2. [日常使用指南](./direct-usage-guide.md) — 导入、切章、续传细节
-3. [导入与切章规范](./novel-ingest-chapter-standard.md) — 导入前必读
-4. [真实试跑清单](./real-run-checklist.md) — 正式跑前的 checklist
-5. [工作台说明](../apps/web/README.md) — 前端工作台启动与页面说明
+1. [CLI 操作手册](./cli-operations-manual.md) — **命令真相源**，所有 CLI 入口先看这里
+2. [日常使用指南](./direct-usage-guide.md) — **操作顺序真相源**，回答“平时怎么跑”
+3. [导入与切章规范](./novel-ingest-chapter-standard.md) — **导入前置真相源**
+4. [真实试跑清单](./real-run-checklist.md) — **上线/实跑前检查真相源**
+
+如果你只是使用系统，看到这里就够了。
 
 ---
 
@@ -152,6 +153,18 @@
 
 → [loom/README.md](./loom/README.md)
 
+### Loom 推荐阅读顺序（只看 5 份）
+
+如果你是为了继续 Loom 仿写主线，而不是泛泛浏览，按这个顺序读：
+
+1. [loom/README.md](./loom/README.md) — **Loom 导航入口**
+2. [loom/sota-imitation-progression-checklist.md](./loom/sota-imitation-progression-checklist.md) — **主链路目标真相源**
+3. [loom/weitu-real-effect-validation.md](./loom/weitu-real-effect-validation.md) — **怎么复现卫图验证**
+4. [loom/weitu-validation-log-20260511.md](./loom/weitu-validation-log-20260511.md) — **已经真实执行了什么**
+5. [loom/handoff.md](./loom/handoff.md) — **当前状态与剩余闭环**
+
+这 5 份之外的 Loom 文档默认都属于：架构细节、专项设计、阶段分析，不作为第一阅读入口。
+
 | 文档 | 说明 |
 |------|------|
 | [loom/overview.md](./loom/overview.md) | 完整架构图、SOTA 对比、风险分析 |
@@ -229,3 +242,6 @@ model: gpt-5.4-mini
 
 - [roles/integrator/README.md](./roles/integrator/README.md) — 接入者角色入口
 - [`./api-current-surface.md`](./api-current-surface.md) — 第 2 步：再看当前已实现 API surface
+
+- 拆书真实旧基线：`docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.md`
+- 拆书 funded-provider 对照 runbook：`docs/deconstruction-acceleration/funded-benchmark-runbook.md`

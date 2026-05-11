@@ -883,6 +883,8 @@ class HarnessControllerService:
                 outputs["_loom_style"] = style_result.to_style_signal()  # type: ignore[index]
                 outputs["_loom_rhythm"] = rhythm_result.to_rhythm_signal()  # type: ignore[index]
                 if style_result.alert_level != "none":
+                    if style_result.suggestion and style_result.suggestion not in recommended_actions:
+                        recommended_actions.append(style_result.suggestion)
                     checks.append(
                         ChapterImitationPreflightCheck(
                             check_name="loom_style_drift",
@@ -893,6 +895,8 @@ class HarnessControllerService:
                         )
                     )
                 if rhythm_result.alert_level != "none":
+                    if rhythm_result.suggestion and rhythm_result.suggestion not in recommended_actions:
+                        recommended_actions.append(rhythm_result.suggestion)
                     checks.append(
                         ChapterImitationPreflightCheck(
                             check_name="loom_rhythm",
@@ -911,6 +915,7 @@ class HarnessControllerService:
                 from novel_analyzer.database.models import FactRecord as _FactRecord
                 from novel_analyzer.services.character_agent_service import CharacterAgentService
                 char_svc = CharacterAgentService(self.session)
+                character_alerts: list[dict[str, object]] = []
                 main_chars = self.session.scalars(
                     _select(_FactRecord.label)
                     .where(_FactRecord.branch_id == branch_id)
@@ -926,7 +931,17 @@ class HarnessControllerService:
                     consistency = char_svc.check_character_consistency(
                         persona, draft.draft_text, source_chapter_index
                     )
+                    character_alerts.append(
+                        {
+                            "character": char_name,
+                            "alert_level": consistency.alert_level,
+                            "overall_consistency_score": consistency.overall_consistency_score,
+                            "suggestion": consistency.suggestion,
+                        }
+                    )
                     if consistency.alert_level != "none":
+                        if consistency.suggestion and consistency.suggestion not in recommended_actions:
+                            recommended_actions.append(consistency.suggestion)
                         checks.append(
                             ChapterImitationPreflightCheck(
                                 check_name="loom_character_consistency",
@@ -936,6 +951,9 @@ class HarnessControllerService:
                                 notes=[consistency.suggestion or f"{char_name} consistency={consistency.overall_consistency_score:.3f}"],
                             )
                         )
+                outputs["_loom_character_consistency"] = {
+                    "characters": character_alerts,
+                }  # type: ignore[index]
             except Exception:  # noqa: BLE001
                 pass  # Loom character is non-blocking
 
@@ -1336,22 +1354,43 @@ class HarnessControllerService:
             except Exception:  # noqa: BLE001
                 pass
 
-        draft = (
-            self.chapter_imitation.build_llm_draft(
+        llm_fallback_note = ""
+        if use_llm:
+            try:
+                draft = self.chapter_imitation.build_llm_draft(
+                    branch_id,
+                    source_chapter_index=source_chapter_index,
+                    target_goal=target_goal,
+                    model_name=model_name,
+                    steering_pack=steering_pack,
+                )
+            except Exception as exc:  # noqa: BLE001
+                draft = self.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=source_chapter_index,
+                    target_goal=target_goal,
+                    steering_pack=steering_pack,
+                )
+                llm_fallback_note = f"LLM draft unavailable -> skeleton fallback: {type(exc).__name__}"
+                draft = draft.model_copy(
+                    update={
+                        "comparison_notes": [
+                            *draft.comparison_notes,
+                            llm_fallback_note,
+                        ],
+                        "risk_gate_notes": [
+                            *draft.risk_gate_notes,
+                            "当前章节因上游 provider 不可用，使用 skeleton fallback 保底生成。",
+                        ],
+                    }
+                )
+        else:
+            draft = self.chapter_imitation.build_skeleton_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
-                model_name=model_name,
                 steering_pack=steering_pack,
             )
-            if use_llm
-            else self.chapter_imitation.build_skeleton_draft(
-                branch_id,
-                source_chapter_index=source_chapter_index,
-                target_goal=target_goal,
-                steering_pack=steering_pack,
-            )
-        )
 
         rounds: list[ChapterImitationHarnessRound] = []
         stop_reason = "max_rounds_reached"
