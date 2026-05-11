@@ -209,3 +209,16 @@ python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidat
 python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel.txt   --title 'benchmark'   --database-url <dburl>   --baseline-json docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.json   --output-dir out_dir   --end-chapter 20   --ensure-db
 ```
 
+## 最终链路 smoke 证据
+已验证：
+- candidate smoke run: `76acab25-c731-43a4-a479-5a66032c096b`
+- bundle dir: `/tmp/deconstruction-bundle-smoke`
+- compare 结果：
+  - `chapter_count_match=false`
+  - `provider_purity_match=false`
+  - `is_strictly_comparable=false`
+
+说明：
+- 最终一键交付链已真实可执行；
+- 但这只是工具链 smoke，不是正式 funded-provider 20 章对照结论。
+

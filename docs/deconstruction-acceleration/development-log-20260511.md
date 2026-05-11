@@ -106,3 +106,6 @@
 
 - 已补最终编排入口：未来 funded-provider 20 章对照跑可直接通过一条脚本生成完整交付包，进一步降低人工操作误差。
 - 到这一步，benchmark 工具链已经从“若干脚本”进化成“可直接交付的端到端流程”。
+
+- 已完成最终一键 bundle runner 的真实 smoke，说明 benchmark 交付链不仅有脚本、有测试，而且已经在真实 PostgreSQL 路径上验证过“从 candidate run 到 compare/bundle 输出”的全过程。
+- 当前 compare 结果被正确判定为 `is_strictly_comparable=false`，也证明可比性语义不只是写在代码里，而是在真实 smoke 中生效了。

@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- ops(deconstruction/final-benchmark-chain-smoke): 已在独立库上真实跑通 `run_and_export_deconstruction_benchmark_bundle.py` 的 1 章 smoke，并成功输出 compare/bundle；compare 结果正确标记 `is_strictly_comparable=false`，证明最终 benchmark 交付链执行面已闭环。
+
+
 - feat(deconstruction/benchmark-bundle-runner): 新增 `scripts/run_and_export_deconstruction_benchmark_bundle.py`，可一条命令串联 candidate run、benchmark summarize、compare 与完整 bundle export；扩展回归 31/31 通过。
 
 

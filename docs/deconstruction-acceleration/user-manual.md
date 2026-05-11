@@ -626,3 +626,14 @@ python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel
 - benchmark summarize
 - compare
 - bundle export
+
+### 6.24 最终一键对照链真实 smoke 已跑通
+当前已经真实验证：
+- `run_and_export_deconstruction_benchmark_bundle.py`
+会在真实数据库路径上自动完成：
+- candidate run
+- benchmark summarize
+- compare
+- bundle export
+
+并且对 1 章 smoke vs 20 章旧基线的结果，能正确判定为 `is_strictly_comparable=false`。
