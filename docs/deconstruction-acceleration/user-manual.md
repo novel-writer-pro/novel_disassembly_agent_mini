@@ -614,3 +614,15 @@ python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidat
 
 这意味着：
 - 后续看到 delta 之前，先能判断这次 baseline/candidate 对照是否真的严格成立。
+
+### 6.23 一键 benchmark bundle runner 已就位
+当前已经提供：
+```bash
+python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel.txt   --title 'benchmark'   --database-url <dburl>   --baseline-json docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.json   --output-dir out_dir   --end-chapter 20   --ensure-db
+```
+
+它会自动完成：
+- candidate run
+- benchmark summarize
+- compare
+- bundle export

@@ -204,3 +204,8 @@ python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidat
 - fallback 稳定性证据
 - 或非等价样本对照
 
+## 最终一键对照入口
+```bash
+python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel.txt   --title 'benchmark'   --database-url <dburl>   --baseline-json docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.json   --output-dir out_dir   --end-chapter 20   --ensure-db
+```
+

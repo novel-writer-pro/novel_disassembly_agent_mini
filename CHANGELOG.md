@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-bundle-runner): 新增 `scripts/run_and_export_deconstruction_benchmark_bundle.py`，可一条命令串联 candidate run、benchmark summarize、compare 与完整 bundle export；扩展回归 31/31 通过。
+
+
 - feat(deconstruction/benchmark-comparability): `compare_deconstruction_benchmarks.py` 现已输出 chapter-count/provider-purity 可比性判断，避免把 smoke run、fallback-heavy run 与严格 primary-provider 对照混为一谈；扩展回归 30/30 通过。
 
 

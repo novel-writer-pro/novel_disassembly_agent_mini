@@ -103,3 +103,6 @@
 
 - compare CLI 现在不只给 delta，还会判断“这两次 run 能不能拿来当严格性能对照”。
 - 这样可以避免把 1 章 smoke 与 20 章旧基线、或 fallback-heavy run 与 pure-provider run 直接当成同一类结果来解释。
+
+- 已补最终编排入口：未来 funded-provider 20 章对照跑可直接通过一条脚本生成完整交付包，进一步降低人工操作误差。
+- 到这一步，benchmark 工具链已经从“若干脚本”进化成“可直接交付的端到端流程”。
