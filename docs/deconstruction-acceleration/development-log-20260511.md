@@ -61,3 +61,9 @@
 - 性能优化第 3 刀已落地：针对 `analysis_generator` / `anti_fabrication_guard` 输入做 token 缩减，不改输出 schema，只减少同步 stage 看到的大 JSON 上下文。
 - 具体策略：去掉完整 graph context，state summary 压缩到关键状态列表；优先保留对 continuity/guard 判断最关键的前情状态，而不是全量图谱信息。
 - 这是典型的“缩 prompt 体积而不改 contract”的中低风险优化，适合作为前两刀 stage deferral 之后的第三步。
+
+- 性能优化第 4 刀已落地：继续缩减同步事实链路的 prompt 输入体积。
+- 具体包括：
+  - `fact_extractor` 去掉完整图谱上下文，仅保留 compact state summary；
+  - `evidence_binder` 回到最小必要输入（`cleaned_text + fact_json`），不再额外消费 graph/state/window。
+- 这是当前最符合 prompt 资产定义的瘦身动作，因为 evidence-binder 的技能说明本来就只依赖章节正文与事实 JSON。

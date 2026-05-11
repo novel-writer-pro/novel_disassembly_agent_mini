@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- perf(deconstruction/fact-evidence-prompt-slimming): 继续缩 quick 拆书主链 prompt 体积：`fact_extractor` 去掉完整图谱上下文，仅保留 compact 前情状态；`evidence_binder` 回到最小必要输入（cleaned_text + fact_json）。扩展回归 14/14 通过。
+
+
 - perf(deconstruction/analysis-prompt-slimming): `analysis_generator` 与 `anti_fabrication_guard` 不再携带完整图谱上下文，改为只消费 compact 前情状态摘要，减少同步 stage prompt 体积且不改输出契约；扩展回归 13/13 通过。另：卫图 20 章 branch 在 provider 402 场景下，`ask-branch` 仍能降级返回保守 QA 结果。
 
 

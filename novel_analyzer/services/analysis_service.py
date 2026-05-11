@@ -674,6 +674,7 @@ class AnalysisService:
                             ChapterIntakeOutput,
                         ),
                     )
+                    compact_state_summary_json = self._compact_state_summary_json(state_summary)
                     fact_prompt_map = build_agent_stage_prompts(
                         ChapterAgentContext(
                             chapter_index=segment.chapter_index,
@@ -682,8 +683,8 @@ class AnalysisService:
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
-                            graph_context_json=graph_context_json,
-                            state_summary_json=state_summary_json,
+                            graph_context_json='{}',
+                            state_summary_json=compact_state_summary_json,
                             cleaned_text=intake.cleaned_text,
                             window_summary=window_summary,
                         )
@@ -719,10 +720,10 @@ class AnalysisService:
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
                             prior_context_json=prior_context_json,
-                            graph_context_json=graph_context_json,
-                            state_summary_json=state_summary_json,
+                            graph_context_json='{}',
+                            state_summary_json='{}',
                             cleaned_text=intake.cleaned_text,
-                            window_summary=window_summary,
+                            window_summary='',
                             fact_json=facts.model_dump_json(indent=2),
                         )
                     )

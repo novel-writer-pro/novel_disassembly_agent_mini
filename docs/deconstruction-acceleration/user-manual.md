@@ -476,3 +476,12 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这意味着：
 - continuity / guard 仍能参考关键前情状态；
 - 但会显著减少阶段 prompt 的上下文体积，降低 token 成本。
+
+### 6.10 当前已落地的加速动作（第 4 刀）
+当前事实链路也已做 prompt 缩减：
+- `fact_extractor` 不再携带完整图谱摘要；
+- `evidence_binder` 只保留最小必要输入。
+
+这意味着：
+- 事实链路的同步 token 成本继续下降；
+- 而输出结构、context/search/QA 消费契约仍不变。
