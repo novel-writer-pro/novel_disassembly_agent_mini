@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- ops(deconstruction/benchmark-smoke): 已在独立库上真实跑通 `run_deconstruction_benchmark.py` 的 1 章 smoke，并成功用 `compare_deconstruction_benchmarks.py` 读取 repo 内旧基线 artifact 与 candidate JSON 输出结构化对比，证明 benchmark 工具链执行面可用。
+
+
 - feat(deconstruction/benchmark-runner): 新增 `scripts/run_deconstruction_benchmark.py`，可一键串联 init-db/ingest/start-run/analyze-range/benchmark 汇总，为 funded-provider 新对照 run 提供直接执行入口；扩展回归 27/27 通过。
 
 

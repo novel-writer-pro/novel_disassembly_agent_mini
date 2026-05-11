@@ -92,3 +92,6 @@
 
 - 已补 end-to-end benchmark runner：下一次 funded-provider 可用时，不必再手工拼接多条 CLI，而是可以一条脚本跑完整个对照链。
 - 这意味着当前性能优化工作，已经从“代码优化阶段”推进到了“具备可重复 benchmark 执行能力”的阶段。
+
+- 已完成 runner + compare 的真实 smoke，证明 benchmark 工具链不仅有单测，而且能在真实数据库/真实 CLI 路径上闭环执行。
+- 尽管本次 smoke 只跑 1 章，且 prompt metrics totals 为空（provider 返回路径未产出新 totals），但“从建库到 compare 输出”的整个执行面已经打通。

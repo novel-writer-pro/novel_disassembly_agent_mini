@@ -160,3 +160,16 @@ python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.jso
 ## 固定旧基线 artifact
 - JSON: `docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.json`
 - Markdown: `docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.md`
+
+## runner + compare smoke 证据
+已验证：
+- candidate smoke run: `38fc4606-eedd-495c-9370-9ff09ee4bf19`
+- candidate smoke branch: `6b4239db-875b-4862-8f2e-d628421023ad`
+- `completed_chapters=1`
+- `failed_jobs=0`
+- `elapsed_seconds=14.360999`
+
+说明：
+- 这是工具链执行面 smoke，不是正式 20 章 funded-provider 对照结果；
+- 但它证明 runner + summarize + compare 三段式已经可以在真实数据库上闭环使用。
+

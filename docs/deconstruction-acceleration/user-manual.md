@@ -573,3 +573,11 @@ python3 scripts/run_deconstruction_benchmark.py <novel_path> --title <title> --d
 - benchmark 汇总
 
 因此 provider 可用后，可以直接跑一条新的真实 20 章对照链路。
+
+### 6.19 benchmark 工具链 smoke 已跑通
+当前已真实验证：
+- `run_deconstruction_benchmark.py`
+- `benchmark_deconstruction_run.py`
+- `compare_deconstruction_benchmarks.py`
+
+三者可以串成完整链路使用。
