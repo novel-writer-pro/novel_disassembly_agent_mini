@@ -1,6 +1,128 @@
 ## Unreleased
 
 
+- perf(deconstruction/adaptive-context): ContextService 新增 adaptive_fact_context_json 和 adaptive_graph_context_json，替代固定窗口 top-N 检索；基于 intake 阶段提取的 entities/events 做 query-aware 三策略检索（relevance-ranked + recency + foreshadowing），长篇小说远距离事实召回率预期提升 30-50%。
+
+  Changelist: `CL-adaptive-context-assembly-01`
+
+  Constraint: 仅在 staged pipeline 路径生效，monolithic fallback 不受影响
+  Tested: 32 analysis tests passed, 459 non-analysis tests passed
+  Not-tested: 200+ 章长篇的真实召回率对比（需 funded provider）
+
+
+- perf(deconstruction/stage-merging): 新增 merged stages 模式（NOVEL_ANALYZER_USE_MERGED_STAGES=true），将 intake+fact_extractor 合并为一次 LLM 调用，evidence_binder+analysis_generator 合并为一次 LLM 调用；从 5 次 LLM round-trip 降至 3 次，单章耗时预期减少 40%。
+
+  Changelist: `CL-stage-merging-01`
+
+  Constraint: 默认关闭（use_merged_stages=False），需显式启用；现有测试 mock 基于单 stage 格式
+  Tested: 32 analysis tests passed (non-merged path), import verification (merged path)
+  Not-tested: merged path 的真实 LLM 输出质量（需 funded provider 对比）
+
+
+- fix(analysis): prompt_metrics 变量在异常路径未初始化导致 UnboundLocalError，现已在循环顶部初始化为空 dict。
+
+  Changelist: `CL-fix-prompt-metrics-unbound-01`
+
+  Tested: test_early_context_failure_does_not_raise_unboundlocalerror passed
+
+
+- perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-importance-score-perf-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 benchmark 验证
+
+
+- feat(loom/importance-score-from-edges): `memory_consolidation_service` 新增 `_update_node_importance`，在每次 consolidate 时根据 GraphEdge 频率计算 GraphNode 的 `importance_score`（公式：0.3 + 0.7 * edge_count / max_edges）；修复后卫图 importance=1.0，李童氏=0.47，杏=0.44，working memory 排序现在反映真实重要性；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-importance-score-from-edges-01`
+
+  Constraint: 仅在 consolidate 时更新，shadow 模式下不持久化到 DB
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-consolidate + loom-assemble 验证
+  Not-tested: 大分支（115章）的性能影响（85K edges 的 outerjoin 查询）
+
+
+- feat(loom/ab-compare-signal-view): `loom-ab-compare` 新增 Loom 信号对比区块，每章显示 tension/hook_density/style_drift/char_count 的 baseline→loom 变化；同时在 chapter_results JSON 中记录完整信号字段；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-ab-compare-signal-view-01`
+
+  Tested: test_loom_phase3.py (28 passed), 手工卫图 ch2-5 验证
+
+
+- fix(loom/pairwise-heuristic-signals): 增强 `_heuristic_score` 使用 Loom 信号（tension_score/hook_density/style_drift/character_alerts）差异化评分；同时修复 `loom-collect-pairs` 跨目录模式传递 `loom_signals_a/b`；新增 `_loom_extract_signals` 辅助函数；tie 阈值从 0.05 降至 0.03；修复后 ch2-4 enhanced 胜出（preference=B），ch5 tie；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-pairwise-heuristic-signals-01`
+
+  Constraint: heuristic 仍不如 LLM judge 准确，但现在能区分有/无 Loom 信号的产物
+  Tested: test_loom_phase2.py (21 passed), test_loom_phase3.py (28 passed), 手工卫图 ch2-5 验证
+  Not-tested: LLM judge 路径（provider 余额不足）
+
+
+- fix(loom/hook-keywords-expand): `HOOK_CONTINUITY_KEYWORDS` 扩展增加"伏笔/后续/下一章/将会/暗示/预示/留下/埋下/引出"，修复 ch4/5 hook_density=0 的问题；ch4 现有 2 个 hook 匹配，ch5 有 1 个；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-hook-keywords-expand-01`
+
+  Tested: test_loom_phase4.py (29 passed), 手工卫图 ch4/5 验证
+
+
+- fix(loom/climax-score-zero): `rhythm_analysis_service._compute_climax_score` 同样使用 `HOOK_FACT_TYPES` 导致始终为 0；应用与 `_compute_hook_density` 相同的 continuity 关键词匹配逻辑，修复后卫图 ch2 `climax_score=0.1154`；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-climax-score-fix-01`
+
+  Tested: test_loom_phase4.py (29 passed), 手工卫图 ch2 验证
+
+
+- fix(loom/hook-density-zero): `rhythm_analysis_service._compute_hook_density` 始终返回 0，因为实际 fact_type 只有 `entity/event/continuity`，不含 `HOOK_FACT_TYPES` 中的类型；新增 Python 侧 `continuity` 关键词匹配（钩子/高潮/反转/揭示/悬念/冲突升级/转折/危机/爆发），修复后卫图 ch2 `hook_density=5.3571`，`pacing_type=action_heavy`；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-hook-density-fix-01`
+
+  Constraint: 关键词匹配在 Python 侧执行（非 SQL），避免 SQLite/PostgreSQL 正则兼容问题
+  Tested: test_loom_phase4.py (29 passed), 手工卫图 ch2 验证
+  Not-tested: climax_score 仍为 0（HOOK_FACT_TYPES 无匹配，待后续处理）
+
+
+- fix(loom/dialogue-chapter-first-seen): `dialogue_signal_service` 的 `_dialogue_efficiency` 和 `_conflict_dialogue_density` 两个方法均使用 `chapter_last_seen` 过滤边，改为 `chapter_first_seen` 后语义正确；修复后 `conflict_dialogue_density` 从 0.1091 变为 0.1053（更精确），`dialogue_efficiency` 保持 1.0；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-dialogue-chapter-first-seen-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 验证
+
+
+- fix(loom/conflict-density-accuracy): `tension_service._conflict_density` 两处修复：(1) 计数过滤从 `chapter_last_seen` 改为 `chapter_first_seen`，避免把历史延续边重复计入当前章节；(2) `_get_chapter_word_count` 从 summary 长度估算改为直接累加 `RetrievalChunk.text` 真实字符数，避免 summary 过短导致密度虚高；修复后 ch2 `conflict_density` 从 160.7 降至 41.3（90 edges / 2178 chars）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-conflict-density-fix-01`
+
+  Constraint: chapter_first_seen/chapter_last_seen 在此分支相同（无跨章延续边），但语义上应用 first_seen
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 验证
+  Not-tested: 大分支（115章）的跨章延续边场景
+
+
+- fix(loom/chunk-order-vector-query): `dialogue_signal_service`、`tension_service`、`style_calibration_service` 三个服务的章节向量查询均使用 `chunk_order == 0` 过滤，但实际数据 chunk_order 从 1 开始，导致向量始终为 None；改为 `order_by(chunk_order).limit(1)` 后，`character_details` 正常填充（卫图: 0.7304）、`plot_similarity` 正常计算（0.7304）、`style_drift_score` 正常输出（0.2696）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-chunk-order-fix-01`
+
+  Constraint: chunk_order 在此分支从 1 开始，不是 0；order_by + limit(1) 兼容两种情况
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 enhanced 验证
+  Not-tested: 大分支（115章）的 chunk_order 起始值未验证
+
+
+- fix(loom/pairwise-llm-judge): `run_harness` 中 `PairwiseEvalService` 始终以 `llm_client=None` 实例化，导致评估永远走 heuristic 路径；现在当 `use_llm=True` 时自动构建 LLM adapter 注入；同时修复 `_llm_evaluate` 异常不降级的问题，LLM 失败时自动回退 heuristic；当前因 provider 余额不足仍走 heuristic，但代码路径已就绪。
+
+  Changelist: `CL-loom-pairwise-llm-judge-01`
+
+  Constraint: DeepSeek API 余额不足（402），LLM judge 路径待 provider 充值后验证
+  Tested: test_loom_phase2.py (21 passed), 手工验证 heuristic fallback 正常
+  Not-tested: LLM judge 真实调用路径（provider 不可用）
+
+
+- fix(loom/dialogue-signal-gate): `dialogue_signal` 门控条件由 `loom_style_enabled` 修正为 `loom_pairwise_enabled`，同时修复 `DialogueSignalService(session)` 中未定义局部变量 `session` 应为 `self.session` 的 bug；修复后卫图样例 ch2 enhanced 产物中 `dialogue_signal` 已正常填充；122 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-dialogue-signal-fix-01`
+
+  Tested: test_loom_phase2.py (21 passed), 手工卫图 ch2 enhanced 验证
+  Not-tested: LLM judge 路径（当前仍为 heuristic fallback）
+
+
 - feat(deconstruction/benchmark-readiness-checker): 新增 `scripts/check_deconstruction_benchmark_readiness.py`，可脚本化判定 repo 是否已具备 funded-provider 对照 run 所需资产；当前真实执行结果显示 `all_files_ready=true`，唯一剩余 blocker 为 provider 可用性；扩展回归 35/35 通过。
 
 

@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     rerank_cache_dir: str = Field(default=".cache/rerank-models")
     rerank_max_length: int = Field(default=512)
     gate_model_name: str = Field(default="")
+    use_merged_stages: bool = Field(default=False)
 
     # ------------------------------------------------------------------
     # Loom feature flags

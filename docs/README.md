@@ -222,11 +222,11 @@ model: gpt-5.4-mini
 
 如果你现在要接手当前 release，按此顺序：
 
-1. [release-handoff-brief.md](./release-handoff-brief.md) — 当前 release 到了什么程度
-2. [final-handoff.md](./final-handoff.md) — 完整交付边界与风险
-3. [../apps/web/README.md](../apps/web/README.md) — 前端启动
-4. [../apps/api/README.md](../apps/api/README.md) — 后端启动
-5. [../CHANGELOG.md](../CHANGELOG.md) — 最近几轮改了什么
+- [release-handoff-brief.md](./release-handoff-brief.md) — 当前 release 到了什么程度
+- [final-handoff.md](./final-handoff.md) — 完整交付边界与风险
+- [../apps/web/README.md](../apps/web/README.md) — 前端启动
+- [../apps/api/README.md](../apps/api/README.md) — 后端启动
+- [../CHANGELOG.md](../CHANGELOG.md) — 最近几轮改了什么
 
 ---
 

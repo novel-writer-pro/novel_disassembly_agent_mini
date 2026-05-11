@@ -158,6 +158,29 @@ class AnalysisService:
         raw = self._extract_json_payload(response)
         return schema.model_validate(raw)  # type: ignore[attr-defined]
 
+    def _invoke_merged_stage(
+        self,
+        model: object,
+        prompt: str,
+        key_a: str,
+        schema_a: type[object],
+        key_b: str,
+        schema_b: type[object],
+    ) -> tuple[object, object]:
+        """Invoke a merged prompt that returns {key_a: ..., key_b: ...} and parse both."""
+        response = self._invoke_with_retry(model, prompt)
+        raw = self._extract_json_payload(response)
+        part_a = raw.get(key_a, {})
+        part_b = raw.get(key_b, {})
+        if not isinstance(part_a, dict):
+            part_a = {}
+        if not isinstance(part_b, dict):
+            part_b = {}
+        return (
+            schema_a.model_validate(part_a),  # type: ignore[attr-defined]
+            schema_b.model_validate(part_b),  # type: ignore[attr-defined]
+        )
+
     @staticmethod
     def _should_skip_small_model_pipeline(job_attempts: int) -> bool:
         """Escalate repeated problem chapters directly to monolithic fallback."""
@@ -653,6 +676,7 @@ class AnalysisService:
             response_text = ""
             raw_result: dict[str, object] | None = None
             stage_payload: dict[str, object] = {}
+            prompt_metrics: dict[str, object] = {}
             try:
                 self.run_service.update_job_progress(
                     branch_id,
@@ -711,37 +735,66 @@ class AnalysisService:
                             window_summary=window_summary,
                         )
                     )
-                    intake = cast(
-                        ChapterIntakeOutput,
-                        self._invoke_stage(
+                    if self.settings.use_merged_stages:
+                        intake, facts = self._invoke_merged_stage(
                             stage_model,
-                            prompts['chapter_intake'],
-                            ChapterIntakeOutput,
-                        ),
-                    )
-                    compact_state_summary_json = self._compact_state_summary_json(state_summary)
-                    fact_prompt_map = build_agent_stage_prompts(
-                        ChapterAgentContext(
-                            chapter_index=segment.chapter_index,
-                            normalized_title=segment.normalized_title,
-                            chapter_content=stage_chapter_content,
-                            previous_summary=previous_summary,
-                            intake_json=intake.model_dump_json(indent=2),
-                            prior_context_json=compact_prior_context_json,
-                            graph_context_json='{}',
-                            state_summary_json=compact_state_summary_json,
-                            cleaned_text=intake.cleaned_text,
-                            window_summary=window_summary,
+                            prompts['intake_and_facts'],
+                            'intake', ChapterIntakeOutput,
+                            'facts', ChapterFactExtractionOutput,
                         )
+                        intake = cast(ChapterIntakeOutput, intake)
+                        facts = cast(ChapterFactExtractionOutput, facts).ensure_minimum_facts(
+                            intake.cleaned_text
+                        )
+                    else:
+                        intake = cast(
+                            ChapterIntakeOutput,
+                            self._invoke_stage(
+                                stage_model,
+                                prompts['chapter_intake'],
+                                ChapterIntakeOutput,
+                            ),
+                        )
+                    query_entities = self._heuristic_entities(
+                        intake.cleaned_text or stage_chapter_content, limit=8
                     )
-                    facts = cast(
-                        ChapterFactExtractionOutput,
-                        self._invoke_stage(
-                            stage_model,
-                            fact_prompt_map['fact_extractor'],
+                    query_events = [
+                        str(d).strip()
+                        for d in intake.dialogue_candidates[:3]
+                        if str(d).strip()
+                    ]
+                    adaptive_prior = self.context_service.adaptive_fact_context_json(
+                        branch_id, segment.chapter_index, query_entities, query_events,
+                    )
+                    adaptive_graph = self.context_service.adaptive_graph_context_json(
+                        branch_id, segment.chapter_index, query_entities,
+                    )
+                    adaptive_prior_json = json.dumps(adaptive_prior, ensure_ascii=False, indent=2)
+                    adaptive_graph_json = json.dumps(adaptive_graph, ensure_ascii=False, indent=2)
+                    compact_state_summary_json = self._compact_state_summary_json(state_summary)
+                    if not self.settings.use_merged_stages:
+                        fact_prompt_map = build_agent_stage_prompts(
+                            ChapterAgentContext(
+                                chapter_index=segment.chapter_index,
+                                normalized_title=segment.normalized_title,
+                                chapter_content=stage_chapter_content,
+                                previous_summary=previous_summary,
+                                intake_json=intake.model_dump_json(indent=2),
+                                prior_context_json=adaptive_prior_json,
+                                graph_context_json=adaptive_graph_json,
+                                state_summary_json=compact_state_summary_json,
+                                cleaned_text=intake.cleaned_text,
+                                window_summary=window_summary,
+                            )
+                        )
+                        facts = cast(
                             ChapterFactExtractionOutput,
-                        ),
-                    ).ensure_minimum_facts(intake.cleaned_text)
+                            self._invoke_stage(
+                                stage_model,
+                                fact_prompt_map['fact_extractor'],
+                                ChapterFactExtractionOutput,
+                            ),
+                        ).ensure_minimum_facts(intake.cleaned_text)
                     self.run_service.record_job_event(
                         branch_id=branch_id,
                         chapter_index=segment.chapter_index,
@@ -757,69 +810,96 @@ class AnalysisService:
                         progress_percent=30,
                         emit_event=True,
                     )
-                    evidence_prompt_map = build_agent_stage_prompts(
-                        ChapterAgentContext(
-                            chapter_index=segment.chapter_index,
-                            normalized_title=segment.normalized_title,
-                            chapter_content=stage_chapter_content,
-                            previous_summary=previous_summary,
-                            intake_json=intake.model_dump_json(indent=2),
-                            prior_context_json=prior_context_json,
-                            graph_context_json='{}',
-                            state_summary_json='{}',
-                            cleaned_text=intake.cleaned_text,
-                            window_summary='',
-                            fact_json=facts.model_dump_json(indent=2),
+                    if self.settings.use_merged_stages:
+                        ea_prompt_map = build_agent_stage_prompts(
+                            ChapterAgentContext(
+                                chapter_index=segment.chapter_index,
+                                normalized_title=segment.normalized_title,
+                                chapter_content=stage_chapter_content,
+                                previous_summary=previous_summary,
+                                intake_json=intake.model_dump_json(indent=2),
+                                prior_context_json=adaptive_prior_json,
+                                graph_context_json=adaptive_graph_json,
+                                state_summary_json=compact_state_summary_json,
+                                cleaned_text=intake.cleaned_text,
+                                window_summary=window_summary,
+                                fact_json=facts.model_dump_json(indent=2),
+                            )
                         )
-                    )
-                    evidence = cast(
-                        EvidenceBindingOutput,
-                        self._invoke_stage(
+                        evidence, analysis = self._invoke_merged_stage(
                             stage_model,
-                            evidence_prompt_map['evidence_binder'],
+                            ea_prompt_map['evidence_and_analysis'],
+                            'evidence', EvidenceBindingOutput,
+                            'analysis', ChapterAnalysisLayerOutput,
+                        )
+                        evidence = cast(EvidenceBindingOutput, evidence).ensure_from_facts(facts)
+                        analysis = cast(
+                            ChapterAnalysisLayerOutput, analysis
+                        ).ensure_minimum_analysis(segment.normalized_title, evidence)
+                    else:
+                        evidence_prompt_map = build_agent_stage_prompts(
+                            ChapterAgentContext(
+                                chapter_index=segment.chapter_index,
+                                normalized_title=segment.normalized_title,
+                                chapter_content=stage_chapter_content,
+                                previous_summary=previous_summary,
+                                intake_json=intake.model_dump_json(indent=2),
+                                prior_context_json=adaptive_prior_json,
+                                graph_context_json=adaptive_graph_json,
+                                state_summary_json='{}',
+                                cleaned_text=intake.cleaned_text,
+                                window_summary='',
+                                fact_json=facts.model_dump_json(indent=2),
+                            )
+                        )
+                        evidence = cast(
                             EvidenceBindingOutput,
-                        ),
-                    ).ensure_from_facts(facts)
-                    self.run_service.record_job_event(
-                        branch_id=branch_id,
-                        chapter_index=segment.chapter_index,
-                        job_id=job.id,
-                        event_type='stage_completed',
-                        stage='evidence_binder',
-                        message=f'chapter {segment.chapter_index} evidence_binder completed',
-                    )
-                    self.run_service.update_job_progress(
-                        branch_id,
-                        segment.chapter_index,
-                        current_stage='analysis_generator',
-                        progress_percent=50,
-                        emit_event=True,
-                    )
-                    compact_state_summary_json = self._compact_state_summary_json(state_summary)
-                    analysis_prompt_map = build_agent_stage_prompts(
-                        ChapterAgentContext(
+                            self._invoke_stage(
+                                stage_model,
+                                evidence_prompt_map['evidence_binder'],
+                                EvidenceBindingOutput,
+                            ),
+                        ).ensure_from_facts(facts)
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
                             chapter_index=segment.chapter_index,
-                            normalized_title=segment.normalized_title,
-                            chapter_content=stage_chapter_content,
-                            previous_summary=previous_summary,
-                            intake_json=intake.model_dump_json(indent=2),
-                            prior_context_json=compact_prior_context_json,
-                            graph_context_json='{}',
-                            state_summary_json=compact_state_summary_json,
-                            cleaned_text=intake.cleaned_text,
-                            window_summary=window_summary,
-                            fact_json=facts.model_dump_json(indent=2),
-                            evidence_bound_json=evidence.model_dump_json(indent=2),
+                            job_id=job.id,
+                            event_type='stage_completed',
+                            stage='evidence_binder',
+                            message=f'chapter {segment.chapter_index} evidence_binder completed',
                         )
-                    )
-                    analysis = cast(
-                        ChapterAnalysisLayerOutput,
-                        self._invoke_stage(
-                            stage_model,
-                            analysis_prompt_map['analysis_generator'],
+                        self.run_service.update_job_progress(
+                            branch_id,
+                            segment.chapter_index,
+                            current_stage='analysis_generator',
+                            progress_percent=50,
+                            emit_event=True,
+                        )
+                        compact_state_summary_json = self._compact_state_summary_json(state_summary)
+                        analysis_prompt_map = build_agent_stage_prompts(
+                            ChapterAgentContext(
+                                chapter_index=segment.chapter_index,
+                                normalized_title=segment.normalized_title,
+                                chapter_content=stage_chapter_content,
+                                previous_summary=previous_summary,
+                                intake_json=intake.model_dump_json(indent=2),
+                                prior_context_json=adaptive_prior_json,
+                                graph_context_json=adaptive_graph_json,
+                                state_summary_json=compact_state_summary_json,
+                                cleaned_text=intake.cleaned_text,
+                                window_summary=window_summary,
+                                fact_json=facts.model_dump_json(indent=2),
+                                evidence_bound_json=evidence.model_dump_json(indent=2),
+                            )
+                        )
+                        analysis = cast(
                             ChapterAnalysisLayerOutput,
-                        ),
-                    ).ensure_minimum_analysis(segment.normalized_title, evidence)
+                            self._invoke_stage(
+                                stage_model,
+                                analysis_prompt_map['analysis_generator'],
+                                ChapterAnalysisLayerOutput,
+                            ),
+                        ).ensure_minimum_analysis(segment.normalized_title, evidence)
                     self.run_service.record_job_event(
                         branch_id=branch_id,
                         chapter_index=segment.chapter_index,
@@ -869,8 +949,8 @@ class AnalysisService:
                         chapter_content=stage_chapter_content,
                         previous_summary=previous_summary,
                         intake_json=intake.model_dump_json(indent=2),
-                        prior_context_json=compact_prior_context_json,
-                        graph_context_json='{}',
+                        prior_context_json=adaptive_prior_json,
+                        graph_context_json=adaptive_graph_json,
                         state_summary_json=compact_state_summary_json,
                         window_summary=window_summary,
                         cleaned_text=intake.cleaned_text,
