@@ -179,6 +179,8 @@ def test_whole_book_imitation_service_builds_run_queue(tmp_path: Path) -> None:
         assert "queue_priority_preview" in report.dashboard_summary
         assert "top_queue_priority_chapters" in report.dashboard_summary
         assert "queue_next_actions" in report.dashboard_summary
+        assert report.session_loom_signals == {}
+        assert report.session_loom_gate_summary == {}
         assert report.run_notes
 
 
@@ -218,6 +220,7 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert report.executed_steps[1].scheduling_priority >= 1
         assert report.executed_steps[1].scheduling_reason
         assert report.executed_steps[0].policy_summary
+        assert report.executed_steps[0].loom_signals
         assert report.policy_summary["executed_step_count"] == 2
         assert "min_overall_score" in report.policy_summary
         assert "max_action_count" in report.policy_summary
@@ -264,6 +267,13 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "next_stage_focus" in report.policy_summary
         assert "book_handoff_summary" in report.dashboard_summary
         assert "top_repair_recommendations" in report.dashboard_summary["book_handoff_summary"]
+        assert report.session_loom_signals["contract_version"] == "whole-book-session-loom-signals.v1"
+        assert "signals" in report.session_loom_signals
+        assert report.session_loom_gate_summary["contract_version"] == "loom-gate-summary.v1"
+        assert report.session_loom_gate_summary["quality_verdict"] in {"quality-pass", "quality-hold"}
+        assert report.dashboard_summary["session_loom_signals"] == report.session_loom_signals
+        assert report.dashboard_summary["session_loom_gate_summary"] == report.session_loom_gate_summary
+        assert report.policy_summary["quality_verdict"] == report.session_loom_gate_summary["quality_verdict"]
         assert "weak_lane_action_count" in report.dashboard_summary["top_priority_summary"]
         assert "weak_lane_families" in report.dashboard_summary["top_risk_summary"]
         assert "top_priority_families" in report.dashboard_summary["top_priority_summary"]

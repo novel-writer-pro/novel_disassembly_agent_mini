@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 from novel_analyzer.cli.app import app
 from typing import Any
 from tests.cli_test_support import patch_cli_sqlite_runtime
+from tests.test_whole_book_imitation_service import _seed_branch
 
 runner = CliRunner()
 
@@ -1434,3 +1435,41 @@ def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) ->
     _json_path, md_path = _write_writer_imitation_outputs(output_dir, "empty-hit-doc-summaries", payload)
     md_text = md_path.read_text(encoding="utf-8")
     assert "### Hit Doc Summaries" not in md_text
+
+
+def test_export_whole_book_imitation_run_includes_loom_summaries(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    with _factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-source.txt")
+        session.commit()
+
+    output_path = tmp_path / "whole-book-report.json"
+    result = runner.invoke(
+        app,
+        [
+            "export-whole-book-imitation-run",
+            branch_id,
+            "测试项目",
+            "源作",
+            "目标作",
+            str(output_path),
+            "2:延续主线",
+            "3:加深冲突",
+            "--execute",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert result.exit_code == 0
+    assert output_path.exists()
+
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["execution_mode"] == "sandbox_execute"
+    assert payload["session_loom_gate_summary"]["contract_version"] == "loom-gate-summary.v1"
+    assert payload["session_loom_signals"]["contract_version"] == "whole-book-session-loom-signals.v1"
+    assert isinstance(payload["executed_steps"], list)
+    assert payload["executed_steps"]
+    assert "loom_signals" in payload["executed_steps"][0]
