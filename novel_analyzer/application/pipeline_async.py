@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import threading
 import time
 from dataclasses import asdict, dataclass
@@ -93,9 +94,19 @@ def _runner_loop(pipeline_run_id: str, runtime: Settings) -> None:
             if run.target_to_chapter is not None and next_chapter > run.target_to_chapter:
                 runs.mark_completed(pipeline_run_id)
                 break
+
+            batch_size = max(1, min(run.concurrency, 3))
+            end_chapter = next_chapter + batch_size - 1
+            if run.target_to_chapter is not None:
+                end_chapter = min(end_chapter, run.target_to_chapter)
+
             runs.patch_summary(
                 pipeline_run_id,
-                {"current_chapter": next_chapter, "last_tick_at": time.time()},
+                {
+                    "current_chapter": next_chapter,
+                    "batch_end_chapter": end_chapter,
+                    "last_tick_at": time.time(),
+                },
             )
 
         try:
@@ -105,11 +116,11 @@ def _runner_loop(pipeline_run_id: str, runtime: Settings) -> None:
                     run.run_id,
                     run.branch_id,
                     next_chapter,
-                    next_chapter,
+                    end_chapter,
                 )
                 PipelineRunService(session).patch_summary(
                     pipeline_run_id,
-                    {"last_completed_chapter": next_chapter},
+                    {"last_completed_chapter": end_chapter},
                 )
         except Exception as exc:  # noqa: BLE001
             with factory() as session:

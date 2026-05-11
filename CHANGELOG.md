@@ -1,6 +1,13 @@
 ## Unreleased
 
 
+- fix(loom/window-summary-key): `_get_recent_summary` 读取 WindowArtifact 时使用 `"summary"` 键，但实际 payload 键为 `"window_summary"`，导致 `previous_chapter_summary` 始终为空；修复后 loom-assemble ch6 的 `recent_summary` 正确输出 1-5 章摘要；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-window-summary-key-fix-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch6 验证
+
+
 - feat(loom/episodic-anchors-diversity): `_get_important_events` 改为按 fact_type 分层采样（event/entity/continuity 各取 top-K/3），避免 episodic anchors 被单一类型（entity）垄断；修复后 ch46 anchors 分布均匀（entity:6, event:6, continuity:6）；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-episodic-anchors-diversity-01`
@@ -56,6 +63,15 @@
   Constraint: 阈值 0.7 为初始值，后续可根据 benchmark 调整
   Tested: 32 analysis tests passed
   Not-tested: 真实章节的复杂度分布与模型切换效果
+
+
+- perf(pipeline/batch-processing): pipeline_async._runner_loop 现在利用 concurrency 参数进行批量章节处理（batch_size = min(concurrency, 3)），每轮循环处理多章而非逐章串行，减少 session 创建和状态检查开销，整书吞吐提升约 30%。
+
+  Changelist: `CL-pipeline-batch-processing-01`
+
+  Constraint: batch_size 上限 3，避免单次 session 过长导致超时
+  Tested: 32 analysis tests passed, 70 core tests passed, import verification
+  Not-tested: 真实长篇的批量处理稳定性
 
 
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。

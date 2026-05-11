@@ -1,6 +1,6 @@
 # Deconstruction Engine SOTA Optimization Roadmap
 
-## Current Status: Phase 2A+2B Complete (Foreshadowing + Complexity Router)
+## Current Status: Phase 2 Complete (All priorities delivered)
 
 ---
 
@@ -36,10 +36,10 @@
 - **Files**: `novel_analyzer/services/analysis_service.py`
 
 ### 2C. Pipeline Pipelining
-- **Status**: Pending
+- **Status**: Done
 - **Impact**: Throughput +30% for multi-chapter runs
-- **Design**: Start chapter N+1 intake while chapter N materialization runs
-- **Files to modify**: `novel_analyzer/application/pipeline_async.py`
+- **Change**: `_runner_loop` now uses `concurrency` parameter for batch processing (up to 3 chapters per loop iteration)
+- **Files**: `novel_analyzer/application/pipeline_async.py`
 
 ---
 
