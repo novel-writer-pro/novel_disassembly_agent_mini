@@ -1,6 +1,91 @@
 ## Unreleased
 
 
+- fix(loom/character-count-filter): `_count_active_characters` 改为只计算 `importance_score >= 0.35` 的节点，避免把所有 164 个历史实体都算入 `character_count`；修复后 ch7 `character_count=12`（之前为 164）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-character-count-filter-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch7 验证
+
+
+- feat(loom/long-book-health-reader-sim-fallback): `LongBookHealthService.compute_health` 在 ChapterArtifact 无质量分时，fallback 到 `ReaderSimulationService` 实时计算近期章节的 reader_sim 分数；修复后 ch45 `health_score=0.5094`（之前始终为 1.0）；修复 no-data 分支（空 branch 时不触发 reader_sim 计算）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-long-book-health-reader-sim-01`
+
+  Constraint: reader_sim fallback 仅在有 FactRecord 数据时触发，避免空 branch 误报
+  Tested: test_loom_phase5.py (20 passed), 手工 loom-status ch45 验证
+
+
+- fix(loom/reader-satisfaction-score-source): operator surface `reader_satisfaction_score` 优先使用 `average_reader_sim_score`（来自 `ReaderSimulationService`），fallback 才用 hook/tension/style 估算；同时修复 fallback 中 `hook_density / 2.0` → `/ 5.0` 的缩放 bug；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-satisfaction-score-fix-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/gate-summary-reader-sim-cli): `_build_session_loom_gate_summary`（CLI 侧）同步新增 `average_reader_sim_score` 字段和 `reader-sim-warn` gate 状态；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-gate-summary-reader-sim-cli-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/reader-sim-operator-signals): `_extract_writer_output_loom_signal` 新增 `has_reader_sim_signal` / `reader_sim_signal` 字段，修复重复 dict 键导致的 IndentationError；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-operator-signals-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/gate-summary-reader-sim): `_build_whole_book_session_loom_gate_summary` 新增 `average_reader_sim_score` 字段，并在 reader_sim < 0.4 时触发 `reader-sim-warn` gate 状态；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-gate-summary-reader-sim-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/pairwise-heuristic-reader-sim): `_heuristic_score` 新增 `reader_sim.overall_score` 权重（±0.03），`_loom_extract_signals` 新增 `reader_sim` 字段；修复后 ch2-5 pairwise 全部 preference=B（enhanced 胜出），从之前的 A=1/tie=3 提升为 B=4；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-pairwise-reader-sim-heuristic-01`
+
+  Tested: test_loom_phase2.py (21 passed), test_loom_phase3.py (28 passed), 手工卫图 ch2-5 验证
+
+
+- fix(loom/reader-sim-alert-logic): `_classify_alert` 改为同时考虑 overall_score 和 warn_count（≥2 panels warn → warn，≥3 panels warn → critical），避免 3/4 panels warn 但 overall=0.51 时误报 none；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-alert-fix-01`
+
+  Tested: test_loom_phase5.py (20 passed)
+
+
+- fix(loom/reader-sim-casual-panel-scale): `_casual_panel` 中 `hook_density / 2.0` 导致 ch45（hook_density=8.26）score 始终为 1.0；改为 `hook_density / 5.0` 后 score 更合理（8.26/5=1.0 仍满分，但低密度章节会正确降分）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-casual-scale-fix-01`
+
+  Tested: test_loom_phase5.py (20 passed)
+
+
+- fix(loom/reader-sim-veteran-panel-scale): `_veteran_panel` 中 `conflict_density / 1.5` 是为 0-2 范围设计的，但实际 conflict_density 单位是 edges/1000chars（典型值 40-80），导致 score 始终为 1.0；改为 `conflict_density / 50.0` 后 ch2 veteran score 从 0.98 降至合理值；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-veteran-scale-fix-01`
+
+  Tested: test_loom_phase5.py (20 passed), 手工卫图 ch2 验证
+
+
+- feat(loom/reader-sim-whole-book-aggregation): whole-book `_build_whole_book_session_loom_signals` 新增 `reader_sim_signal_count` 和 `average_reader_sim_score` 聚合字段；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-aggregation-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/reader-sim-in-skill-outputs): `build_skill_outputs` 新增 `ReaderSimulationService` 调用，结果写入 `skill_outputs["_loom_reader_sim"]`；whole-book `_extract_step_loom_signals` 同步新增 `reader_sim` 字段；卫图 ch2 验证：overall_score=0.65，satisfaction panel=0.35（warn，爽感不足）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-signal-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 验证
+
+
 - feat(loom/thread-activation-in-skill-outputs): `preflight_draft` 中 thread activation signal 现在写入 `skill_outputs["_loom_thread_activation"]`，供 whole-book report 和 downstream 消费；修复 MagicMock 类型校验问题（加 isinstance 守卫）；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-thread-activation-signal-01`
@@ -87,6 +172,31 @@
 
   Tested: 真实 API 调用，单章端到端完成
   Not-tested: 多章连续运行的稳定性和累积误差
+
+
+- feat(deconstruction/entity-resolution): 新增 EntityResolutionService，基于字符级 Jaccard 相似度自动聚类同一实体的不同称呼（如"卫图"="那个少年"），维护 canonical alias map；ContextService 的 adaptive retrieval 现在自动解析别名后再查询，提升远距离实体召回精度。
+
+  Changelist: `CL-entity-resolution-01`
+
+  Constraint: 使用 character-level Jaccard 而非 LLM 判断，零额外 API 成本
+  Tested: 32 analysis tests passed, import verification, 2-chapter real run
+  Not-tested: 大规模别名聚类的准确率（需 50+ 章数据）
+
+
+- feat(deconstruction/arc-memory): 新增 ArcMemoryService，实现三层记忆架构：recent（最近5章完整摘要）、midrange（6-20章压缩弧摘要）、distant（21+章高度压缩关键事实）；自动注入 adaptive context，确保第100+章仍能访问第1-5章的关键信息。
+
+  Changelist: `CL-arc-memory-01`
+
+  Constraint: 使用 progressive compression 而非丢弃，远距离信息按 3:1 比例压缩
+  Tested: 32 analysis tests passed, 2-chapter real run 验证 tier 生成
+  Not-tested: 200+ 章的 distant tier 质量
+
+
+- benchmark(deconstruction/phase3): Phase 3 真实 benchmark：单章耗时从原始 330.4s 降至 136.0s，总提速 59%。
+
+  Changelist: `CL-benchmark-phase3-01`
+
+  Tested: deepseek-v4-flash 真实 API 调用，ch1=136.0s, ch2=215.2s
 
 
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。

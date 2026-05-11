@@ -14,6 +14,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, FactRecord, GraphNode, WindowArtifact
+from novel_analyzer.services.arc_memory_service import ArcMemoryService
+from novel_analyzer.services.entity_resolution_service import EntityResolutionService
 from novel_analyzer.services.foreshadowing_service import ForeshadowingService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.run_service import default_readable_artifact_clause
@@ -104,9 +106,15 @@ class ContextService:
         if chapter_index <= 1:
             return {'facts': [], 'retrieval_mode': 'adaptive', 'query_terms': []}
 
+        er = EntityResolutionService(self.session)
+        resolved_entities = [
+            er.resolve_canonical(branch_id, e) for e in query_entities
+        ]
+        all_query_terms = list(set(query_entities + resolved_entities))
+
         queries = {
             q.strip().lower()
-            for q in (query_entities + query_events)
+            for q in (all_query_terms + query_events)
             if q.strip()
         }
 
@@ -176,6 +184,9 @@ class ContextService:
             'open_foreshadowing_threads': ForeshadowingService(
                 self.session
             ).open_threads_context_json(branch_id, chapter_index, limit=8),
+            'arc_memory': ArcMemoryService(
+                self.session
+            ).build_tiered_context(branch_id, chapter_index),
         }
 
     def adaptive_graph_context_json(

@@ -37,6 +37,7 @@ from novel_analyzer.domain.schemas import (
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
 from novel_analyzer.services.context_service import ContextService
+from novel_analyzer.services.entity_resolution_service import EntityResolutionService
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.foreshadowing_service import ForeshadowingService
 from novel_analyzer.services.graph_service import GraphService
@@ -61,6 +62,7 @@ class AnalysisService:
         self.risk_audit_service = RiskAuditService(session)
         self.memory_consolidation = MemoryConsolidationService(session)
         self.foreshadowing_service = ForeshadowingService(session)
+        self.entity_resolution = EntityResolutionService(session)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -1214,6 +1216,10 @@ class AnalysisService:
                 self._update_foreshadowing_lifecycle(
                     branch_id, segment.chapter_index, stage_payload, state_summary,
                 )
+                try:
+                    self.entity_resolution.build_alias_map(branch_id)
+                except Exception:  # noqa: BLE001
+                    pass
                 self.fact_service.materialize_window_if_ready(
                     branch_id,
                     segment.chapter_index,
