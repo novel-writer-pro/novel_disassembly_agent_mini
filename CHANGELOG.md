@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- docs(deconstruction/funded-benchmark-runbook): 新增 `docs/deconstruction-acceleration/funded-benchmark-runbook.md`，把 provider 恢复后的真实 20 章 candidate run、严格可比性判定、指标汇报与 bundle 交付流程整理成一份最终执行手册；并验证相关 CLI `--help` 入口可调用。
+
+
 - ops(deconstruction/final-benchmark-chain-smoke): 已在独立库上真实跑通 `run_and_export_deconstruction_benchmark_bundle.py` 的 1 章 smoke，并成功输出 compare/bundle；compare 结果正确标记 `is_strictly_comparable=false`，证明最终 benchmark 交付链执行面已闭环。
 
 

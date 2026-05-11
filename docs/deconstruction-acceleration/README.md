@@ -54,3 +54,6 @@
 
 10. 卫图真实旧基线 artifact
    - `docs/deconstruction-acceleration/benchmarks/weitu-baseline-20260511.md`
+
+11. funded-provider 真实对照 runbook
+   - `docs/deconstruction-acceleration/funded-benchmark-runbook.md`

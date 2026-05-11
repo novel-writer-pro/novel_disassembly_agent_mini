@@ -637,3 +637,12 @@ python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel
 - bundle export
 
 并且对 1 章 smoke vs 20 章旧基线的结果，能正确判定为 `is_strictly_comparable=false`。
+
+### 6.25 funded-provider 对照 runbook 已就位
+当前已经提供：
+- `docs/deconstruction-acceleration/funded-benchmark-runbook.md`
+
+它明确说明了：
+- provider 恢复后该如何执行新 20 章对照 run
+- 什么条件下结果才算严格可比
+- 最终应该汇报哪些指标
