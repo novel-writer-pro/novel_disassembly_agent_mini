@@ -646,3 +646,14 @@ python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel
 - provider 恢复后该如何执行新 20 章对照 run
 - 什么条件下结果才算严格可比
 - 最终应该汇报哪些指标
+
+### 6.26 benchmark bundle validator 已就位
+当前已经提供：
+```bash
+python3 scripts/check_deconstruction_benchmark_bundle.py out_dir --json
+```
+
+它会自动检查：
+- bundle 文件是否齐全
+- compare 关键字段是否齐全
+- comparability 字段是否齐全

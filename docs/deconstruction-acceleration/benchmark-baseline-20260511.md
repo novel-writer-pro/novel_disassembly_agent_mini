@@ -222,3 +222,11 @@ python3 scripts/run_and_export_deconstruction_benchmark_bundle.py /path/to/novel
 - 最终一键交付链已真实可执行；
 - 但这只是工具链 smoke，不是正式 funded-provider 20 章对照结论。
 
+## 交付前校验命令
+```bash
+python3 scripts/check_deconstruction_benchmark_bundle.py out_dir --json
+```
+
+建议：
+- 只有在 validator 返回 `ok=true` 时，才把该 bundle 当作正式交付物发送。
+

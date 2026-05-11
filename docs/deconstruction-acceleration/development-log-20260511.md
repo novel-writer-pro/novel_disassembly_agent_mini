@@ -109,3 +109,5 @@
 
 - 已完成最终一键 bundle runner 的真实 smoke，说明 benchmark 交付链不仅有脚本、有测试，而且已经在真实 PostgreSQL 路径上验证过“从 candidate run 到 compare/bundle 输出”的全过程。
 - 当前 compare 结果被正确判定为 `is_strictly_comparable=false`，也证明可比性语义不只是写在代码里，而是在真实 smoke 中生效了。
+
+- 已补 benchmark bundle validator：后续 funded-provider 对照跑生成 bundle 后，可以先自动校验交付包结构，再对外发送，避免 compare/summary 缺字段时误交付。

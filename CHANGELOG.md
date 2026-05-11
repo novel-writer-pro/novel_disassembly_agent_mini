@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-bundle-validator): 新增 `scripts/check_deconstruction_benchmark_bundle.py`，可自动校验 benchmark bundle 的文件完整性与 compare/comparability 字段完整性；扩展回归 33/33 通过。
+
+
 - docs(deconstruction/funded-benchmark-runbook): 新增 `docs/deconstruction-acceleration/funded-benchmark-runbook.md`，把 provider 恢复后的真实 20 章 candidate run、严格可比性判定、指标汇报与 bundle 交付流程整理成一份最终执行手册；并验证相关 CLI `--help` 入口可调用。
 
 
