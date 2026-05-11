@@ -27,3 +27,5 @@
 - `_deconstruction_profile` 真实 schema/写入/读隔离
 - canonical vs enrichment 计量拆分
 - 10章/100章真实 benchmark
+
+- 新增 `user-manual.md`，把当前已落地能力、未落地能力、推荐实跑顺序、默认 reader 口径和验证方式整理成用户手册。

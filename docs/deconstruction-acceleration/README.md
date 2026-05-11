@@ -30,6 +30,10 @@
 6. [usage-log-20260511.md](./usage-log-20260511.md)
    - 本轮命令、验证动作与使用证据
 
+7. [user-manual.md](./user-manual.md)
+   - 当前拆书加速优化版本的用户使用说明
+   - 已落地能力 / 未落地能力 / 推荐实跑顺序 / 验证口径
+
 ## 适合谁看
 - **架构师 / 后端负责人**：先看 [architecture.md](./architecture.md)
 - **直接开发者**：先看 [development-guide.md](./development-guide.md)

@@ -136,6 +136,7 @@
 > 关注章节拆书的 Quick / Deep 双档、加速主线、reader isolation 与开发落地。
 
 → [deconstruction-acceleration/README.md](./deconstruction-acceleration/README.md)
+- 推荐先看：[用户手册](./deconstruction-acceleration/user-manual.md)
 
 当前基线证据：
 - [deconstruction-acceleration/benchmark-baseline-20260511.md](./deconstruction-acceleration/benchmark-baseline-20260511.md)
@@ -157,6 +158,9 @@
 | [loom/arch-diff-and-alignment.md](./loom/arch-diff-and-alignment.md) | **0509 vs Loom 冲突点与对齐方案**（必读） |
 | [loom/roadmap.md](./loom/roadmap.md) | Phase 1-5 开发路线图 + 验收标准 |
 | [loom/gap-analysis-and-evolution.md](./loom/gap-analysis-and-evolution.md) | 商业水准差距分析 + Phase 4/5 演进规划 |
+| [loom/sota-imitation-progression-checklist.md](./loom/sota-imitation-progression-checklist.md) | **SOTA 仿写主链推进 checklist**（主线文档） |
+| [loom/weitu-real-effect-validation.md](./loom/weitu-real-effect-validation.md) | **卫图样例真实效果验证工作流**（复现手册） |
+| [loom/weitu-validation-log-20260511.md](./loom/weitu-validation-log-20260511.md) | **卫图样例已执行验证证据日志** |
 
 核心文档：
 - [ai-novel-system-blueprint.md](./architecture/ai-novel-system-blueprint.md) — 系统蓝图

@@ -1,5 +1,71 @@
 ## Unreleased
 
+- docs(deconstruction-acceleration): 补充 `user-manual.md`，把当前拆书加速优化版本的已落地能力、未落地范围、推荐实跑顺序、reader isolation 口径与验证方式整理为用户手册；同步把入口挂到 `docs/README.md` 与 `docs/cli-operations-manual.md`。
+- feat(loom/weitu-validation-bootstrap): `CL-loom-weitu-validation-bootstrap-01` — 新增 `scripts/bootstrap_weitu_validation_workspace.py`，把卫图样例真实验证的 manual_eval 工作区初始化、branch bundle 导出、branch report 导出、whole-book report 导出与 mailbox-style notes 回填收口成一个可重复执行入口。
+
+  解决问题：
+  - 卫图验证之前需要手工逐条执行多条导出命令，容易漏步骤
+  - 人工兜底入口与 resume / recovery 下一步说明分散在多处文档中
+  - “当前已经跑过什么验证”难以在工作区内被完整保留
+
+  验证：
+  - 新增 `tests/test_bootstrap_weitu_validation_workspace.py` → 1/1 通过
+  - 联合验证：`tests/test_whole_book_imitation_service.py` 4/4、`tests/test_cli.py` 7/7
+  - 实际执行：`python3 scripts/bootstrap_weitu_validation_workspace.py 62e636f0-c901-4167-aa1c-aff3da9c83ef weitu-sample --force`
+
+- ops(loom/weitu-ab-smoke): 已在同一真实卫图分支上执行 baseline vs enhanced 的 first-pass 对比。
+
+  实际结果：
+  - baseline: `quality_verdict=quality-pass`, `style_signal_count=0`, `chapter_quality_signal_count=0`
+  - enhanced: `quality_verdict=quality-hold`, `style_signal_count=2`, `chapter_quality_signal_count=2`
+
+  结论：
+  - 已证明打开 Loom enhanced flags 会真实改变 whole-book 执行侧产物与 gate 结论
+  - 但尚未证明“卫图样例仿写效果提升”，因为当前结果更接近“增强后暴露了问题”，而不是“增强后质量已上升”
+
+- ops(loom/weitu-validation): 已开始卫图样例的真实验证执行，不再停留在纯规划。
+
+  本轮已执行证据：
+  - 锁定真实验证目标分支：`run_id=ac9449b9-7326-474f-bb72-4416375a7491` / `branch_id=62e636f0-c901-4167-aa1c-aff3da9c83ef`
+  - 真实执行：`loom-status` / `loom-assemble` / `loom-consolidate`
+  - 真实导出：`export-branch-report` / `export-branch-bundle` / `export-whole-book-imitation-run --execute`
+  - 已创建 mailbox-style 人工工作区：`runs/manual_eval/weitu-sample/`
+
+  当前已确认：
+  - Loom 在真实卫图分支上可运行（memory/tension/carry-over/whole-book report）
+  - whole-book report 已含 `session_loom_signals` / `session_loom_gate_summary`
+  - 但当前仍是 `loom_memory_mode=shadow`，且 `loom_pairwise_enabled=False` / `loom_style_enabled=False` / `loom_character_enabled=False`
+  - 结论仍然是“能力已建成，效果待证实”，因为 baseline vs loom 双臂对照尚未建立
+
+- docs(loom/validation-mainline): 新增两份主线文档，明确 Loom 的北极星不是“再堆评估结构”，而是推进 SOTA 仿写主链能力，并用真实验证闭环给出证据。
+
+  新增：
+  - `docs/loom/sota-imitation-progression-checklist.md`
+  - `docs/loom/weitu-real-effect-validation.md`
+
+  解决问题：
+  - 把“仿写主链推进”与“验证支线”重新收口，避免本末倒置
+  - 明确卫图样例是当前真实效果验证的首个标准对象
+  - 明确 LLM-first / human-fallback / resume-able 的验证组织方式
+  - 给后续复现测试提供手册化入口，而不是散落在 handoff / roadmap / manual_eval 模板中
+
+  同步更新：
+  - `docs/loom/README.md`
+  - `docs/loom/handoff.md`
+  - `docs/README.md`
+  - `docs/cli-operations-manual.md`
+
+- feat(loom/whole-book-bridge): `CL-loom-whole-book-bridge-01` — whole-book imitation sandbox/export report 继承 Loom 统一摘要。为 `WholeBookImitationExecutedStep` 新增 `loom_signals`，为 `WholeBookImitationRunReport` 新增 `session_loom_signals` 与 `session_loom_gate_summary`，并从 chapter harness 的真实 Loom 输出（`chapter_quality_signal`、`_loom_tension`、`_loom_rhythm`、`_loom_style`、`dialogue_signal` 等）聚合 whole-book 级质量/张力摘要与 gate 结论。
+
+  解决问题：
+  - whole-book report 过去绕开 Loom gate，下游只消费整书报告时看不到统一质量/张力结论
+  - service 层虽已聚合 Loom 数据，但 CLI 导出边界缺少合同级验证
+  - operator/control surface 与更接近执行器的 whole-book report 视图不一致
+
+  验证：
+  - `tests/test_whole_book_imitation_service.py` 4/4 通过
+  - `tests/test_cli.py` 7/7 通过（新增 `export-whole-book-imitation-run` Loom 字段导出断言）
+
 - chore(deconstruction): 对 analysis/run service 与相关测试做最小化格式整理，清理本 tranche 验证中暴露的长行 lint 问题，不改变行为。
 
 - feat(deconstruction-acceleration): 在章节 canonical artifact 持久化链路中新增 `_deconstruction_profile` shadow metadata（`profile/quick_ready/writer_lens_status/loom_status/risk_status/canonical_artifact_id/content_hash/idempotency_key/timing`），并保持 `ChapterAnalysisOutput` 既有键名完全不变；同时补充 analysis/run service 定向测试覆盖。

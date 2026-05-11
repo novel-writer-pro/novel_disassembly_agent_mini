@@ -425,6 +425,9 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./interface-manifest.md`](./interface-manifest.md)
 - [`./examples/*.sample.json`](./examples/)
 - [`./final-handoff.md`](./final-handoff.md)
+- [`./loom/sota-imitation-progression-checklist.md`](./loom/sota-imitation-progression-checklist.md)
+- [`./loom/weitu-real-effect-validation.md`](./loom/weitu-real-effect-validation.md)
+- [`./loom/weitu-validation-log-20260511.md`](./loom/weitu-validation-log-20260511.md)
 
 ---
 
@@ -709,3 +712,120 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ \
 ```
 
 对比两个 writer-imitate 输出目录的 `character_ooc` 触发率，输出 reduction%，判断是否达到 ≥20% 目标。
+
+### 12.12 export-whole-book-imitation-run — 导出整书仿写执行报告（含 Loom 摘要）
+
+当你需要把整书仿写的 dry-run / sandbox execute 结果交给下游系统、评估层或后续执行器消费时，使用：
+
+```bash
+python3 -m novel_analyzer.cli.app export-whole-book-imitation-run \
+  <branch_id> \
+  "项目名" \
+  "源作名" \
+  "目标作名" \
+  /tmp/whole-book-report.json \
+  "2:延续主线" \
+  "3:加深冲突" \
+  --execute
+```
+
+#### 这次补强了什么
+
+**Changelist marker**：`CL-loom-whole-book-bridge-01`
+
+之前 `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 已有：
+- `session_loom_signals`
+- `session_loom_gate_summary`
+
+但 whole-book export report 还没有统一继承这些 Loom 视图，导致：
+- 下游如果只消费 whole-book report，看不到 Loom 质量/张力结论
+- operator 看到的 gate 与执行器侧产物不完全一致
+
+现在 whole-book report 也统一新增：
+- `session_loom_signals`
+- `session_loom_gate_summary`
+- `executed_steps[*].loom_signals`
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| `session_loom_signals.average_chapter_quality_score` | whole-book sandbox 章节平均质量分 |
+| `session_loom_signals.average_tension_score` | whole-book 平均张力分 |
+| `session_loom_signals.average_style_drift_score` | 风格漂移均值 |
+| `session_loom_signals.average_hook_density` | 爽点/钩子密度均值 |
+| `session_loom_gate_summary.quality_verdict` | `quality-pass` / `quality-hold` |
+| `session_loom_gate_summary.gate_status` | 当前 whole-book Loom gate 状态 |
+| `executed_steps[*].loom_signals` | 每章真实 harness Loom 输出的聚合快照 |
+
+#### 解决的问题
+
+1. 解决 whole-book 执行报告绕开 Loom gate 的问题
+2. 解决 service 层有 Loom 聚合、CLI 导出边界缺合同验证的问题
+3. 让更接近执行器的整书产物与 operator surface 保持一致视图
+
+#### 推荐验证
+
+```bash
+python3 -m pytest tests/test_whole_book_imitation_service.py tests/test_cli.py -v
+```
+
+重点检查导出 JSON 中是否存在：
+- `session_loom_signals.contract_version=whole-book-session-loom-signals.v1`
+- `session_loom_gate_summary.contract_version=loom-gate-summary.v1`
+
+### 12.13 bootstrap_weitu_validation_workspace.py — 卫图样例验证工作区一键初始化
+
+如果你要复现当前 Loom 的卫图样例真实验证，不要手动逐条导出 artifact，直接运行：
+
+```bash
+python3 scripts/bootstrap_weitu_validation_workspace.py \
+  62e636f0-c901-4167-aa1c-aff3da9c83ef \
+  weitu-sample \
+  --force
+```
+
+这条命令会自动完成：
+
+1. 创建/重建 `runs/manual_eval/weitu-sample/`
+2. 导出 `weitu-branch-bundle.json`
+3. 导出 `weitu-whole-book-report.json`
+4. 导出 `weitu-branch-report.md`
+5. 生成 mailbox-style 的 `README.md / manual-review-notes.md / next-actions.md / problem-trace.md`
+
+它解决的问题是：
+
+- 过去卫图验证工作区需要手工逐条导出 artifact
+- 人工兜底入口与 resume 链条说明分散在多份文档里
+- 同一轮验证很难稳定复现
+
+现在这条脚本把：
+
+- Loom 当前执行证据
+- whole-book report
+- manual_eval mailbox 工作区
+- resume/recovery 下一步
+
+收成一个可重复执行的入口。
+
+
+## 拆书加速优化（当前版本）
+
+当前拆书加速优化已落地的重点不是完整 quick/deep 异步流水线，而是：
+- canonical quick metadata 的安全引入
+- 默认 reader / status / chapter index / window 的 canonical-only 口径
+- blocking materialization 失败时恢复 previous active artifact
+- regression / benchmark / docs / usage evidence
+
+推荐使用说明见：
+- `docs/deconstruction-acceleration/user-manual.md`
+
+当前建议 CLI 验证顺序：
+1. `show-run-status`
+2. `show-context`
+3. `show-window`
+4. `search-branch` / `ask-branch`
+
+若后续引入 companion / manual artifact，请记住：
+- 不是所有 active artifact 都会进入默认读路径
+- 默认 reader 只消费 canonical/default-readable artifact
