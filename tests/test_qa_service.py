@@ -33,6 +33,9 @@ class _DummyQAService(BranchQAService):
             ),
             used_chapters=[hit.chapter_index for hit in hits],
             evidence=[f"第{hit.chapter_index}章：{hit.summary_text}" for hit in hits],
+            chapter_evidence=[f"第{hit.chapter_index}章：{hit.summary_text}" for hit in hits],
+            window_evidence=['[窗口 1-5] 卫图开始筹备修行。'],
+            graph_evidence=['[图推理] 卫图觉醒命格 -> 决定修行'],
             reasoning_paths=['卫图觉醒命格 -[advances_to]-> 卫图决定先修养生功'],
             graph_signals=['活跃冲突: 卫图受限于出身'],
             confidence=0.7,
@@ -237,7 +240,7 @@ def test_branch_qa_falls_back_when_llm_temporarily_unavailable(tmp_path: Path, m
         monkeypatch.setattr(
             service,
             '_graph_reasoning_snapshot',
-            lambda branch_id, chapters: (['卫图觉醒命格 -[advances_to]-> 卫图决定先修养生功'], ['活跃冲突: 卫图受限于出身']),
+            lambda branch_id, chapters, question_type='general': (['卫图觉醒命格 -[advances_to]-> 卫图决定先修养生功'], ['活跃冲突: 卫图受限于出身']),
         )
 
         class _BoomModel:
@@ -253,3 +256,63 @@ def test_branch_qa_falls_back_when_llm_temporarily_unavailable(tmp_path: Path, m
         assert result.answer_mode == 'degraded'
         assert result.degraded_reason is not None
         assert any(item.startswith('服务降级:') for item in result.graph_signals)
+        assert result.chapter_evidence == ['第1章：卫图觉醒命格，并决定先修养生功。']
+        assert result.window_evidence == ['[窗口 1-1] 卫图开始筹备修行。']
+        assert result.graph_evidence == ['[图推理] 卫图觉醒命格 -> 决定修行']
+
+
+def test_branch_qa_dedupes_outputs_and_prioritizes_question_type(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with _session() as session:
+        settings = Settings(llm_api_key='test-key')
+        service = BranchQAService(session, settings)
+
+        hits = [
+            type('Hit', (), {'chapter_index': 3, 'title': '觉醒仪式', 'summary_text': '李洛准备参加觉醒仪式。', 'score': 0.9, 'keyword_list': ['李洛', '觉醒仪式']} )(),
+            type('Hit', (), {'chapter_index': 1, 'title': '万相世界', 'summary_text': '李洛面临觉醒压力。', 'score': 0.8, 'keyword_list': ['李洛', '相力']} )(),
+        ]
+
+        monkeypatch.setattr(service.retrieval_service, 'search_branch', lambda branch_id, question, limit: hits)
+        monkeypatch.setattr(service, '_window_context', lambda branch_id, chapters: ['[窗口 1-5] 李洛准备参加觉醒仪式。'])
+        monkeypatch.setattr(service, '_graph_context', lambda branch_id, chapters: ['[图推理] 觉醒仪式 -> 觉醒结果'])
+        monkeypatch.setattr(service, '_graph_reasoning_snapshot', lambda branch_id, chapters, question_type='general': (['觉醒仪式 -[advances_to]-> 觉醒结果', '觉醒仪式 -[advances_to]-> 觉醒结果'], ['活跃冲突: 李洛面临觉醒失败风险', '活跃冲突: 李洛面临觉醒失败风险']))
+
+        class _EchoModel:
+            def invoke(self, _prompt: str):
+                class _Msg:
+                    content = '{"answer":"李洛面临觉醒压力。","used_chapters":[3,3,1],"evidence":["第3章：李洛准备参加觉醒仪式。","第3章：李洛准备参加觉醒仪式。"],"reasoning_paths":["觉醒仪式 -[advances_to]-> 觉醒结果","觉醒仪式 -[advances_to]-> 觉醒结果"],"graph_signals":["活跃冲突: 李洛面临觉醒失败风险","活跃冲突: 李洛面临觉醒失败风险"],"confidence":0.8,"insufficient_context":false}'
+                return _Msg()
+
+        monkeypatch.setattr('novel_analyzer.services.qa_service.build_chat_model', lambda *args, **kwargs: _EchoModel())
+
+        result = service.answer_question('branch-1', '李洛什么时候参加觉醒仪式？')
+        assert result.used_chapters == [3, 1]
+        assert result.evidence == ['第3章：李洛准备参加觉醒仪式。']
+        assert result.reasoning_paths == ['觉醒仪式 -[advances_to]-> 觉醒结果']
+        assert result.graph_signals == ['活跃冲突: 李洛面临觉醒失败风险']
+        assert result.chapter_evidence[0] == '第3章：李洛准备参加觉醒仪式。'
+        assert len(result.chapter_evidence) == 2
+        assert result.window_evidence == ['[窗口 1-5] 李洛准备参加觉醒仪式。']
+        assert result.graph_evidence == ['[图推理] 觉醒仪式 -> 觉醒结果']
+
+
+def test_branch_qa_marks_timeline_questions_conservative_when_single_chapter_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with _session() as session:
+        settings = Settings(llm_api_key='test-key')
+        service = BranchQAService(session, settings)
+        hits = [type('Hit', (), {'chapter_index': 1, 'title': '万相世界', 'summary_text': '李洛准备参加觉醒仪式。', 'score': 1.0, 'keyword_list': ['李洛', '觉醒仪式']})()]
+        monkeypatch.setattr(service.retrieval_service, 'search_branch', lambda branch_id, question, limit: hits)
+        monkeypatch.setattr(service, '_window_context', lambda branch_id, chapters: [])
+        monkeypatch.setattr(service, '_graph_context', lambda branch_id, chapters: [])
+        monkeypatch.setattr(service, '_graph_reasoning_snapshot', lambda branch_id, chapters, question_type='general': ([], []))
+
+        class _EchoModel:
+            def invoke(self, _prompt: str):
+                class _Msg:
+                    content = '{"answer":"李洛准备参加觉醒仪式。","used_chapters":[1],"evidence":["第1章：李洛准备参加觉醒仪式。"],"reasoning_paths":[],"graph_signals":[],"confidence":0.9,"insufficient_context":false}'
+                return _Msg()
+
+        monkeypatch.setattr('novel_analyzer.services.qa_service.build_chat_model', lambda *args, **kwargs: _EchoModel())
+
+        result = service.answer_question('branch-1', '李洛前20章的推进主线是什么？')
+        assert result.insufficient_context is True
+        assert result.confidence <= 0.45

@@ -489,6 +489,9 @@ class BranchQAResult(BaseModel):
     answer: str
     used_chapters: list[int] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
+    chapter_evidence: list[str] = Field(default_factory=list)
+    window_evidence: list[str] = Field(default_factory=list)
+    graph_evidence: list[str] = Field(default_factory=list)
     reasoning_paths: list[str] = Field(default_factory=list)
     graph_signals: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)

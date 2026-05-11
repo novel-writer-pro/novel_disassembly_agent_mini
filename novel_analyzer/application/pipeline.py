@@ -75,6 +75,7 @@ def advance_pipeline(
 
                 failed_job = failed_jobs[0]
                 if failed_job.attempts < runtime.chapter_failure_retry_limit:
+                    run_service.ensure_chapter_retryable(branch_id, failed_job.chapter_index)
                     run_service.reset_failed_job(branch_id, failed_job.chapter_index)
                     continue
 

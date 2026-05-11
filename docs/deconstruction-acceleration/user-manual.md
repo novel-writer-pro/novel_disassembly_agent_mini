@@ -411,3 +411,11 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 - 当前版本新增了一个重要保护：若某章已经拥有 active canonical artifact，则 `retry-chapter` 会被拒绝，以避免 job 状态与 artifact 进度出现错位。
 
 - 当前默认 `chapter_job_stall_timeout_seconds` 已提高到 600；真实长阶段调用若仍出现 stall，再考虑更细粒度 heartbeat 或更早 fallback。
+
+### 5.5 QA 新证据分层（本轮新增）
+当前 `ask-branch` 回答结果内部已补充更细的证据分层：
+- `chapter_evidence`
+- `window_evidence`
+- `graph_evidence`
+
+同时会先做问题类型识别（如人物 / 关系 / 世界规则 / 时间线 / 伏笔），再对检索命中做轻量 rerank，并在证据偏薄时更保守地回答，减少“答得像对、其实证据不够”的情况。

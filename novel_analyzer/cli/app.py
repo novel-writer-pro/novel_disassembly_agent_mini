@@ -773,7 +773,13 @@ def retry_failed_jobs(
     with factory() as session:
         run_service = _run_service(session, settings)
         failed = run_service.list_failed_jobs(branch_id, max_chapters)
+        skipped = 0
         for job in failed:
+            try:
+                run_service.ensure_chapter_retryable(branch_id, job.chapter_index)
+            except ValueError:
+                skipped += 1
+                continue
             run_service.reset_failed_job(branch_id, job.chapter_index)
             artifact_ids = _analysis_service(session, settings).analyze_range(
                 run_id,
@@ -783,6 +789,7 @@ def retry_failed_jobs(
             )
             retried += len(artifact_ids)
         echo(f"retried_failed_jobs={retried}")
+        echo(f"skipped_completed_chapters={skipped}")
 
 
 @app.command()

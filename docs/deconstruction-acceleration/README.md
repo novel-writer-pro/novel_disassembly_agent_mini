@@ -48,3 +48,6 @@
 - `docs/imitation-next-dev-handoff.md`
 - `.omx/plans/prd-book-deconstruction-quick-deep-profiles.md`
 - `.omx/plans/test-spec-book-deconstruction-quick-deep-profiles.md`
+
+9. QA 分层证据与保守回答策略
+   - 已补 `chapter/window/graph` 三层证据面，以及按问题类型做 rerank / 降级的 QA 精化路径

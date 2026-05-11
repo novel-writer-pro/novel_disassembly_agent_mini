@@ -1,5 +1,12 @@
 ## Unreleased
 
+
+- feat(deconstruction/qa-hardening): QA 结果新增 `chapter_evidence` / `window_evidence` / `graph_evidence` 分层证据字段，并按问题类型做命中 rerank 与保守降级；同时给 retry/recovery bulk path 增加 completed-chapter guard，避免已完成章节被重复重跑。
+
+  验证：
+  - `tests/test_qa_service.py` 6/6 通过
+  - `tests/test_run_service.py tests/test_cli_retry_bulk.py tests/test_application_layer.py -k "retry_failed_jobs_cli_skips_completed_chapters_with_artifacts or retry_refused_when_readable_artifact_already_exists or stalled_jobs_respects_timeout_setting"` → 3/3 通过
+
 - docs(deconstruction-acceleration): 补充 `user-manual.md`，把当前拆书加速优化版本的已落地能力、未落地范围、推荐实跑顺序、reader isolation 口径与验证方式整理为用户手册；同步把入口挂到 `docs/README.md` 与 `docs/cli-operations-manual.md`。
 - feat(loom/weitu-validation-bootstrap): `CL-loom-weitu-validation-bootstrap-01` — 新增 `scripts/bootstrap_weitu_validation_workspace.py`，把卫图样例真实验证的 manual_eval 工作区初始化、branch bundle 导出、branch report 导出、whole-book report 导出与 mailbox-style notes 回填收口成一个可重复执行入口。
 

@@ -39,3 +39,7 @@
 - 为避免已完成章节被重复 `retry-chapter` 拉起并造成 job/artifact 进度错位，新增 `RunService.ensure_chapter_retryable()`，并让 CLI / recovery 在发现 active canonical artifact 时直接拒绝 retry。
 
 - 将 `chapter_job_stall_timeout_seconds` 默认值从 180 调高到 600，并补了 run_service 对应回归，降低真实长阶段调用被过早判定 stalled 的概率。
+
+- QA answer path 新增 question-type 分类、检索 rerank、章节/窗口/图证据分层字段，以及薄证据问题的保守降级策略。
+- recovery / retry bulk path 补 completed-chapter guard，避免已完成章节被 retry-failed / retry_failed_jobs 再次重跑。
+- 已完成定向验证：QA 6/6，retry/stall guard 子集 3/3。
