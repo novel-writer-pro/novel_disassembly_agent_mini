@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-compare-cli): 新增 `scripts/compare_deconstruction_benchmarks.py`，可直接比较两份真实拆书 benchmark JSON 的 wall-clock、avg/chapter、failed_jobs 与 prompt_char_totals；扩展回归 26/26 通过。
+
+
 - test(deconstruction/benchmark-cli): 为 `scripts/benchmark_deconstruction_run.py` 增加自动化测试，覆盖有/无 prompt metrics 两种 run 汇总模式；扩展回归 24/24 通过。
 
 

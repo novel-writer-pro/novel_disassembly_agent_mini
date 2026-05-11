@@ -129,3 +129,21 @@ python3 scripts/benchmark_deconstruction_run.py <run_id> <branch_id> --database-
 - 所以它可作为 wall-clock 基线，但不能提供 prompt_char_totals；
 - 下一次 funded-provider 重跑将作为“带 prompt metrics 的新基线”。
 
+## 对照命令（新 funded run 完成后）
+先分别导出两份 benchmark JSON：
+```bash
+python3 scripts/benchmark_deconstruction_run.py <baseline_run_id> <baseline_branch_id> --database-url <dburl> --json > baseline.json
+python3 scripts/benchmark_deconstruction_run.py <candidate_run_id> <candidate_branch_id> --database-url <dburl> --json > candidate.json
+```
+
+再运行：
+```bash
+python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.json --json
+```
+
+重点关注：
+- `elapsed_seconds.delta_pct`
+- `avg_seconds_per_completed_chapter.delta_pct`
+- `failed_jobs.delta`
+- `prompt_char_totals.*.delta_pct`
+

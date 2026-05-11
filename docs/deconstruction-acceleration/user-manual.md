@@ -544,3 +544,17 @@ python3 scripts/benchmark_deconstruction_run.py <run_id> <branch_id> --database-
 
 这意味着：
 - 后续做真实性能对照时，benchmark 工具链本身也更可靠。
+
+### 6.17 benchmark compare CLI 已就位
+当前已经提供：
+```bash
+python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.json --json
+```
+
+它可以直接比较：
+- `elapsed_seconds`
+- `avg_seconds_per_completed_chapter`
+- `failed_jobs`
+- `prompt_char_totals`
+
+所以 funded-provider 新 run 跑完后，可以立即做结构化对照，而不必手工算差值。

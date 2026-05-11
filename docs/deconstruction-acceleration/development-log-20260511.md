@@ -86,3 +86,6 @@
 
 - 已补 benchmark CLI 自动化测试，确保真实 run 汇总工具在“旧 run 无 prompt metrics”和“新 run 有 prompt metrics”两种模式下都能稳定工作。
 - 这样一来，下一次 funded-provider benchmark 对照不再只是“有脚本可跑”，而是“脚本本身也已被测试保护”。
+
+- 已补 benchmark compare CLI：未来 funded-provider 新 run 完成后，可直接与当前卫图旧基线 JSON 做结构化对比，不需要再手工计算 delta。
+- 这使得下一阶段的工作重心，真正从“继续改 quick 主链代码”切换到了“跑真实对照并读结果”。
