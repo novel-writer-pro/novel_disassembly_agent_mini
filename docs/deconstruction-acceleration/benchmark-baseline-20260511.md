@@ -93,3 +93,39 @@ PY
   - 10 章 baseline vs quick
   - canonical commit latency vs enrichment latency
   - concurrency=1 vs post-commit enrichment lane 对照
+
+## 真实 run benchmark（funded-provider 恢复后复跑入口）
+
+当真实 provider 可用时，推荐直接用下面脚本汇总一次完整拆书 run 的耗时与 prompt 成本：
+
+```bash
+python3 scripts/benchmark_deconstruction_run.py <run_id> <branch_id> --database-url <dburl> --json
+```
+
+建议至少记录：
+- `completed_chapters`
+- `failed_jobs`
+- `elapsed_seconds`
+- `avg_seconds_per_completed_chapter`
+- `prompt_char_totals.*`
+- `per_chapter[*].total_prompt_chars`
+
+这样后续就能同时对比：
+- 优化前后 wall-clock
+- 优化前后 prompt 体积
+- prompt 缩减是否真实兑现成耗时下降
+
+## 当前卫图真实 run 基线（旧 run，无 prompt metrics）
+已汇总：
+- run: `754b205f-22fc-4eeb-962d-6d6800c4052d`
+- branch: `03c657c8-5389-4e42-9234-b14137c04125`
+- `completed_chapters=20`
+- `failed_jobs=0`
+- `elapsed_seconds=4728.32721`
+- `avg_seconds_per_completed_chapter=236.4163605`
+
+说明：
+- 这份 run 完成于 prompt-metrics 埋点落地之前；
+- 所以它可作为 wall-clock 基线，但不能提供 prompt_char_totals；
+- 下一次 funded-provider 重跑将作为“带 prompt metrics 的新基线”。
+

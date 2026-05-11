@@ -79,3 +79,7 @@
 
 - 已补 prompt 体积观测埋点：在 `invocation_metadata` 中记录每个同步 stage 的 prompt 字符数与总和。
 - 这一步不是直接提速，而是为下一步 funded-provider 真实 benchmark 铺测量基础，使后续对照不只看 wall-clock，也能看 prompt 成本变化是否兑现到真实耗时。
+
+- 已补可重复执行的真实 run benchmark 脚本：`scripts/benchmark_deconstruction_run.py`。
+- 当前它已经能稳定汇总：章节完成数、failed_jobs、wall-clock、平均每章耗时，以及（新 run 才会有的）prompt_char_counts / total_prompt_chars。
+- 这意味着下一次 funded-provider 对照跑，不需要临时写脚本取证，benchmark 面已经产品化到脚本级别。

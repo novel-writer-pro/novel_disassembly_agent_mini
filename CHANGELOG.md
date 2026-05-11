@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-cli): 新增 `scripts/benchmark_deconstruction_run.py`，可汇总真实拆书 run 的章节完成数、failed_jobs、wall-clock 与 prompt metrics；已成功用于卫图 20 章真实 run 汇总，得到旧基线 `elapsed_seconds=4728.32721` / `avg_seconds_per_completed_chapter=236.4163605`。
+
+
 - feat(deconstruction/prompt-metrics-observability): 在章节 raw output 的 `invocation_metadata` 中记录各同步 stage 的 `prompt_char_counts` 与 `total_prompt_chars`，为后续 funded-provider 真实 benchmark 提供数据库内可查询的 prompt 成本证据；扩展回归 22/22 通过。
 
 

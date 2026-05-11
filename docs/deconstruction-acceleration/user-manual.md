@@ -520,3 +520,19 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这意味着：
 - 后续真实 benchmark 不只看总耗时；
 - 还能直接对照“prompt 缩减是否真的换来了运行时间收益”。
+
+### 6.15 真实 benchmark 脚本已就位
+当前已经提供：
+```bash
+python3 scripts/benchmark_deconstruction_run.py <run_id> <branch_id> --database-url <dburl> --json
+```
+
+它可以直接汇总：
+- `completed_chapters`
+- `failed_jobs`
+- `elapsed_seconds`
+- `avg_seconds_per_completed_chapter`
+- `prompt_char_totals`
+- `per_chapter[*].total_prompt_chars`
+
+因此下一次 provider 余额恢复后，可以直接做 funded-provider 对照跑。
