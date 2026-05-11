@@ -100,3 +100,6 @@
 
 - 已补 benchmark bundle exporter：未来 funded-provider 对照跑完成后，可以直接导出完整 evidence bundle，而不需要手工拼 baseline/candidate/compare/summary 文件。
 - 这意味着 benchmark 结果已经接近“可直接交付”的 artifact 水平。
+
+- compare CLI 现在不只给 delta，还会判断“这两次 run 能不能拿来当严格性能对照”。
+- 这样可以避免把 1 章 smoke 与 20 章旧基线、或 fallback-heavy run 与 pure-provider run 直接当成同一类结果来解释。

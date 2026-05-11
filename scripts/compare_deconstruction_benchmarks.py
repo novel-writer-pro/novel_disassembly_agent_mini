@@ -27,6 +27,28 @@ def _pct_delta(old: float | None, new: float | None) -> float | None:
     return ((new - old) / old) * 100.0
 
 
+def _comparability(base: dict[str, Any], cand: dict[str, Any]) -> dict[str, Any]:
+    base_completed = base.get('completed_chapters')
+    cand_completed = cand.get('completed_chapters')
+    base_pure = base.get('is_pure_primary_provider_run')
+    cand_pure = cand.get('is_pure_primary_provider_run')
+    chapter_count_match = (
+        base_completed is not None and cand_completed is not None and base_completed == cand_completed
+    )
+    provider_purity_match = base_pure is True and cand_pure is True
+    return {
+        'chapter_count_match': chapter_count_match,
+        'provider_purity_match': provider_purity_match,
+        'is_strictly_comparable': bool(chapter_count_match and provider_purity_match),
+        'notes': [
+            note for note in [
+                None if chapter_count_match else 'chapter count differs between baseline and candidate',
+                None if provider_purity_match else 'at least one run is not a pure primary-provider run',
+            ] if note
+        ],
+    }
+
+
 def main() -> int:
     args = _parse_args()
     baseline = _load(args.baseline_json)
@@ -53,6 +75,7 @@ def main() -> int:
     payload = {
         'baseline_run_id': baseline.get('run_id'),
         'candidate_run_id': candidate.get('run_id'),
+        'comparability': _comparability(baseline, candidate),
         'completed_chapters': {
             'baseline': baseline.get('completed_chapters'),
             'candidate': candidate.get('completed_chapters'),
@@ -82,6 +105,7 @@ def main() -> int:
     else:
         print(f"baseline_run_id={payload['baseline_run_id']}")
         print(f"candidate_run_id={payload['candidate_run_id']}")
+        print(f"is_strictly_comparable={str(payload['comparability']['is_strictly_comparable']).lower()}")
         print(f"elapsed_delta_seconds={payload['elapsed_seconds']['delta']}")
         print(f"elapsed_delta_pct={payload['elapsed_seconds']['delta_pct']}")
         print(f"avg_per_chapter_delta_seconds={payload['avg_seconds_per_completed_chapter']['delta']}")

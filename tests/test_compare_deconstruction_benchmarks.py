@@ -17,6 +17,7 @@ def test_compare_benchmarks_json_output(tmp_path: Path, capsys) -> None:
             'fact_extractor_chars': 2000,
             'analysis_generator_chars': 1000,
         },
+        'is_pure_primary_provider_run': True,
     }
     candidate = {
         'run_id': 'run-new',
@@ -28,6 +29,7 @@ def test_compare_benchmarks_json_output(tmp_path: Path, capsys) -> None:
             'fact_extractor_chars': 1500,
             'analysis_generator_chars': 900,
         },
+        'is_pure_primary_provider_run': True,
     }
     base_path = tmp_path / 'baseline.json'
     cand_path = tmp_path / 'candidate.json'
@@ -46,6 +48,7 @@ def test_compare_benchmarks_json_output(tmp_path: Path, capsys) -> None:
     assert payload['elapsed_seconds']['delta'] == -200.0
     assert payload['avg_seconds_per_completed_chapter']['delta'] == -10.0
     assert payload['prompt_char_totals']['fact_extractor_chars']['delta'] == -500
+    assert payload['comparability']['is_strictly_comparable'] is True
 
 
 def test_compare_benchmarks_plain_output(tmp_path: Path, capsys) -> None:
@@ -56,6 +59,8 @@ def test_compare_benchmarks_plain_output(tmp_path: Path, capsys) -> None:
         'elapsed_seconds': 1000.0,
         'avg_seconds_per_completed_chapter': 50.0,
         'prompt_char_totals': {},
+        'is_pure_primary_provider_run': False,
+        'is_pure_primary_provider_run': True,
     }
     candidate = {
         'run_id': 'run-new',
@@ -81,6 +86,7 @@ def test_compare_benchmarks_plain_output(tmp_path: Path, capsys) -> None:
     assert 'baseline_run_id=run-base' in out
     assert 'candidate_run_id=run-new' in out
     assert 'elapsed_delta_seconds=100.0' in out
+    assert 'is_strictly_comparable=false' in out
 
 
 def test_compare_benchmarks_can_consume_repo_style_json_files(tmp_path: Path, capsys) -> None:
@@ -118,3 +124,39 @@ def test_compare_benchmarks_can_consume_repo_style_json_files(tmp_path: Path, ca
     assert payload['baseline_run_id'] == 'baseline-run'
     assert payload['candidate_run_id'] == 'candidate-run'
     assert payload['elapsed_seconds']['delta'] < 0
+
+
+def test_compare_benchmarks_marks_chapter_count_mismatch_not_comparable(tmp_path: Path, capsys) -> None:
+    baseline = {
+        'run_id': 'base',
+        'completed_chapters': 20,
+        'failed_jobs': 0,
+        'elapsed_seconds': 1000.0,
+        'avg_seconds_per_completed_chapter': 50.0,
+        'prompt_char_totals': {},
+        'is_pure_primary_provider_run': True,
+    }
+    candidate = {
+        'run_id': 'cand',
+        'completed_chapters': 1,
+        'failed_jobs': 0,
+        'elapsed_seconds': 10.0,
+        'avg_seconds_per_completed_chapter': 10.0,
+        'prompt_char_totals': {},
+        'is_pure_primary_provider_run': True,
+    }
+    base_path = tmp_path / 'baseline.json'
+    cand_path = tmp_path / 'candidate.json'
+    base_path.write_text(json.dumps(baseline, ensure_ascii=False), encoding='utf-8')
+    cand_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding='utf-8')
+
+    import sys
+    argv = sys.argv[:]
+    sys.argv = ['compare_deconstruction_benchmarks.py', str(base_path), str(cand_path), '--json']
+    try:
+        assert compare_main() == 0
+    finally:
+        sys.argv = argv
+    payload = json.loads(capsys.readouterr().out)
+    assert payload['comparability']['is_strictly_comparable'] is False
+    assert payload['comparability']['chapter_count_match'] is False

@@ -604,3 +604,13 @@ python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidat
 - `summary.md`
 
 因此新的 funded-provider 对照 run 完成后，可以一键导出完整交付包。
+
+### 6.22 compare CLI 已支持“严格可比性”判断
+当前 compare 输出会额外给出：
+- `chapter_count_match`
+- `provider_purity_match`
+- `is_strictly_comparable`
+- `notes`
+
+这意味着：
+- 后续看到 delta 之前，先能判断这次 baseline/candidate 对照是否真的严格成立。

@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/benchmark-comparability): `compare_deconstruction_benchmarks.py` 现已输出 chapter-count/provider-purity 可比性判断，避免把 smoke run、fallback-heavy run 与严格 primary-provider 对照混为一谈；扩展回归 30/30 通过。
+
+
 - feat(deconstruction/benchmark-bundle-exporter): 新增 `scripts/export_deconstruction_benchmark_bundle.py`，可从 baseline/candidate benchmark JSON 自动导出完整交付包（baseline/candidate/compare/summary）；扩展回归 29/29 通过。
 
 

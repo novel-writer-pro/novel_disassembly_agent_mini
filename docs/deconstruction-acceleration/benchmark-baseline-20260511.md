@@ -193,3 +193,14 @@ python3 scripts/export_deconstruction_benchmark_bundle.py baseline.json candidat
 - `out_dir/compare.json`
 - `out_dir/summary.md`
 
+## compare 结果解读原则
+当 `compare.json` 里：
+- `comparability.is_strictly_comparable=true`
+
+才适合把该对照当成严格性能结论。
+
+若为 `false`，则应优先把结果解释为：
+- smoke / 可用性证据
+- fallback 稳定性证据
+- 或非等价样本对照
+
