@@ -536,3 +536,11 @@ python3 scripts/benchmark_deconstruction_run.py <run_id> <branch_id> --database-
 - `per_chapter[*].total_prompt_chars`
 
 因此下一次 provider 余额恢复后，可以直接做 funded-provider 对照跑。
+
+### 6.16 benchmark CLI 已有自动化测试保护
+当前 `scripts/benchmark_deconstruction_run.py` 已有自动化测试覆盖：
+- 新 run（带 prompt metrics）
+- 旧 run（不带 prompt metrics）
+
+这意味着：
+- 后续做真实性能对照时，benchmark 工具链本身也更可靠。

@@ -83,3 +83,6 @@
 - 已补可重复执行的真实 run benchmark 脚本：`scripts/benchmark_deconstruction_run.py`。
 - 当前它已经能稳定汇总：章节完成数、failed_jobs、wall-clock、平均每章耗时，以及（新 run 才会有的）prompt_char_counts / total_prompt_chars。
 - 这意味着下一次 funded-provider 对照跑，不需要临时写脚本取证，benchmark 面已经产品化到脚本级别。
+
+- 已补 benchmark CLI 自动化测试，确保真实 run 汇总工具在“旧 run 无 prompt metrics”和“新 run 有 prompt metrics”两种模式下都能稳定工作。
+- 这样一来，下一次 funded-provider benchmark 对照不再只是“有脚本可跑”，而是“脚本本身也已被测试保护”。
