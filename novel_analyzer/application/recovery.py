@@ -30,6 +30,7 @@ def recover_branch(
         if action == "retry-chapter":
             if chapter_index is None:
                 raise ValueError("chapter_index is required for retry-chapter")
+            run_service.ensure_chapter_retryable(branch_id, chapter_index)
             run_service.reset_failed_job(branch_id, chapter_index)
             message = f"retried chapter {chapter_index}"
         elif action == "retry-failed":

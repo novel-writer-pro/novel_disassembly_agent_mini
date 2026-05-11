@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
@@ -169,3 +170,73 @@ def test_record_chapter_artifact_backfills_deconstruction_profile_metadata(tmp_p
         assert profile["canonical_artifact_id"] == artifact.id
         assert profile["idempotency_key"]
         assert artifact.payload_json["chapter_index"] == 1
+
+
+def test_fail_stalled_jobs_respects_timeout_setting(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    settings = Settings(database_url="sqlite+pysqlite:///:memory:", chapter_job_stall_timeout_seconds=600)
+    with _session() as session:
+        novel, manifest = IngestService(session, settings).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session, settings)
+        _, branch = service.create_run(novel.id, manifest.id)
+        job = service.start_chapter_job(branch.id, 1)
+        job.started_at = datetime.now(UTC) - timedelta(seconds=300)
+        job.heartbeat_at = datetime.now(UTC) - timedelta(seconds=300)
+        session.commit()
+
+        stalled = service.fail_stalled_jobs(branch.id)
+        assert stalled == 0
+
+        job.started_at = datetime.now(UTC) - timedelta(seconds=700)
+        job.heartbeat_at = datetime.now(UTC) - timedelta(seconds=700)
+        session.commit()
+
+        stalled = service.fail_stalled_jobs(branch.id)
+        assert stalled == 1
+
+        refreshed = session.scalar(select(ChapterJob).where(ChapterJob.id == job.id))
+        assert refreshed is not None
+        assert refreshed.status == 'failed'
+        assert refreshed.failure_code == 'heartbeat_timeout'
+
+
+def test_chapter_has_readable_artifact_respects_non_downstream(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session)
+        _, branch = service.create_run(novel.id, manifest.id)
+        service.record_chapter_artifact(branch.id, 1, {"chapter_summary": "canonical"})
+        assert service.chapter_has_readable_artifact(branch.id, 1) is True
+
+        service.record_chapter_artifact(
+            branch.id,
+            1,
+            {"chapter_summary": "companion"},
+            source_kind="manual",
+            participates_in_downstream=False,
+        )
+        assert service.chapter_has_readable_artifact(branch.id, 1) is True
+
+
+def test_retry_refused_when_readable_artifact_already_exists(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    settings = Settings(database_url="sqlite+pysqlite:///:memory:")
+    with _session() as session:
+        novel, manifest = IngestService(session, settings).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session, settings)
+        _, branch = service.create_run(novel.id, manifest.id)
+        service.record_chapter_artifact(branch.id, 1, {"chapter_index": 1, "chapter_summary": "done"})
+
+        try:
+            service.ensure_chapter_retryable(branch.id, 1)
+        except ValueError as exc:
+            assert "already has an active canonical artifact" in str(exc)
+        else:
+            raise AssertionError("expected retry guard to refuse completed chapter")

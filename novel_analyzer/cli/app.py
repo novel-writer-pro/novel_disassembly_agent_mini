@@ -817,6 +817,10 @@ def retry_chapter(
     factory = create_session_factory(settings)
     with factory() as session:
         run_service = _run_service(session, settings)
+        try:
+            run_service.ensure_chapter_retryable(branch_id, chapter_index)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
         run_service.reset_failed_job(branch_id, chapter_index)
         artifact_ids = _analysis_service(session, settings).analyze_range(
             run_id,

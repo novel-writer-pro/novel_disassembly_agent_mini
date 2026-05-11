@@ -29,3 +29,13 @@
 - 10章/100章真实 benchmark
 
 - 新增 `user-manual.md`，把当前已落地能力、未落地能力、推荐实跑顺序、默认 reader 口径和验证方式整理成用户手册。
+
+- 真实试跑发现：新库+真实模型可跑通前 3 章，但第 4 章在 `fact_extractor` 阶段出现 `job stalled for more than 180 seconds`，说明当前版本仍存在真实运行稳定性问题。
+
+- 长跑继续推进到第 8 章后，第 9 章再次失败，错误同样是 `job stalled for more than 180 seconds`，但这次卡在 `evidence_binder @ 30%`，说明稳定性问题不只出现在 `fact_extractor`。
+
+- 为真实 DeepSeek 长跑补最小稳定性修复：将 `chapter_job_stall_timeout_seconds` 默认值从 180 提高到 600，并新增 run_service 单测覆盖，减少长阶段调用被过早判定为 stalled 的风险。
+
+- 为避免已完成章节被重复 `retry-chapter` 拉起并造成 job/artifact 进度错位，新增 `RunService.ensure_chapter_retryable()`，并让 CLI / recovery 在发现 active canonical artifact 时直接拒绝 retry。
+
+- 将 `chapter_job_stall_timeout_seconds` 默认值从 180 调高到 600，并补了 run_service 对应回归，降低真实长阶段调用被过早判定 stalled 的概率。

@@ -34,6 +34,10 @@
    - 当前拆书加速优化版本的用户使用说明
    - 已落地能力 / 未落地能力 / 推荐实跑顺序 / 验证口径
 
+8. [version-diff.md](./version-diff.md)
+   - 旧版拆书 vs 新版加速拆书的差异说明
+   - 覆盖使用差异 / 能力差异 / 恢复差异 / 适用场景差异
+
 ## 适合谁看
 - **架构师 / 后端负责人**：先看 [architecture.md](./architecture.md)
 - **直接开发者**：先看 [development-guide.md](./development-guide.md)

@@ -187,6 +187,23 @@ class RunService:
             raise ValueError("branch does not belong to run")
         return run, branch
 
+    def chapter_has_readable_artifact(self, branch_id: str, chapter_index: int) -> bool:
+        return bool(
+            self.session.scalar(
+                select(ChapterArtifact.id)
+                .where(ChapterArtifact.branch_id == branch_id)
+                .where(ChapterArtifact.chapter_index == chapter_index)
+                .where(default_readable_artifact_clause())
+                .limit(1)
+            )
+        )
+
+    def ensure_chapter_retryable(self, branch_id: str, chapter_index: int) -> None:
+        if self.chapter_has_readable_artifact(branch_id, chapter_index):
+            raise ValueError(
+                f"chapter {chapter_index} already has an active canonical artifact; retry is refused"
+            )
+
     def next_chapter_index(self, run_id: str, branch_id: str) -> int | None:
         """Return the next chapter index that should be analyzed for a branch."""
 

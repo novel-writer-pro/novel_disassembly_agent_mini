@@ -7,6 +7,75 @@
 
 ---
 
+## 0. 整条链路的输入说明
+
+### 0.1 数据库输入
+当前推荐**显式传入 `--database-url`**，不要只依赖 shell 环境变量。
+
+推荐格式：
+```bash
+postgresql+psycopg://<user>:<password>@<host>:<port>/<db_name>
+```
+
+例如：
+```bash
+postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer_deconstruction_20260511
+```
+
+### 0.2 LLM 输入
+当前真实试跑建议显式配置：
+- `base_url`
+- `model`
+- `api_key`
+- stage / qa / fallback model
+
+如果是同一 provider 同一模型统一试跑，建议把：
+- `NOVEL_ANALYZER_LLM_BASE_URL`
+- `NOVEL_ANALYZER_LLM_MODEL_NAME`
+- `NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME`
+- `NOVEL_ANALYZER_LLM_QA_MODEL_NAME`
+- `NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME`
+全部显式对齐。
+
+### 0.3 小说文本输入
+必须提供：
+- 本地 txt 文件路径
+- 可选标题 `--title`
+
+当前试跑样例：
+```bash
+/home/user/download_novel/down/万相之王.txt
+```
+
+### 0.4 CLI 参数输入
+当前拆书主链至少会用到：
+- `ingest <path> --title ... --database-url ...`
+- `start-run <novel_id> <manifest_id> --database-url ...`
+- `analyze-range <run_id> <branch_id> <start> <end> --database-url ...`
+- `show-run-status <run_id> <branch_id> --database-url ...`
+- `show-context <branch_id> <chapter_index> --database-url ...`
+- `show-window <branch_id> <start> <end> --database-url ...`
+- `search-branch <branch_id> <query> --database-url ...`
+- `ask-branch <branch_id> <question> --database-url ...`
+
+### 0.5 QA / 检索输入
+QA 与检索当前都依赖：
+- 已物化的 canonical/default-readable artifact
+- branch_id
+- query / question 文本
+
+### 0.6 当前一个真实注意事项
+本轮真实验证中发现：
+- `init-db` 使用环境变量初始化新库可以成功
+- 但 `db-health` 直接依赖环境变量时出现过“数据库不存在”的异常
+- 使用显式 `--database-url` 后恢复正常
+
+因此：
+- **当前推荐实际运行时始终显式传 `--database-url`**
+- 把“环境变量直跑 db-health 异常”记为现阶段 CLI / 配置读取链路问题
+
+---
+
 ## 1. 当前这批改进已经落地了什么
 
 当前已经落地并可依赖的能力：
@@ -216,3 +285,129 @@ poetry run novel-analyzer show-window <branch_id> 1 5
 - [../direct-usage-guide.md](../direct-usage-guide.md)
 - [../cli-operations-manual.md](../cli-operations-manual.md)
 - [../../README.md](../../README.md)
+
+
+## 11. 真实试跑已验证到哪一步
+
+当前已在独立新库上验证通过：
+- 新库创建
+- schema 初始化
+- 小说导入（《万相之王》100 章）
+- run / branch 创建
+- 使用 DeepSeek `deepseek-v4-flash` 真实启动拆书
+- 至少前 3 章已成功完成 canonical artifact / fact / graph / risk card 生成
+- `show-run-status` 可正确显示 completed/running/next_chapter
+- `show-context` 可正确返回 previous_summary / fact_context / graph_context
+- `search-branch` 可返回命中章节
+- `ask-branch` 可返回带 evidence / reasoning_path / graph_signal 的答案
+
+### 当前真实运行中已暴露并修复的问题
+1. **风险审计缺表**
+   - 问题：`gate_checker_results` / `chapter_risk_cards` 未进入新库初始化链路
+   - 影响：第 1 章 risk aggregation 时直接报 `UndefinedTable`
+   - 处理：补 Alembic 迁移 `20260511_02_risk_audit_records.py`
+
+2. **`db-health` 环境变量直跑不稳定**
+   - 问题：同一套配置下，`init-db` 成功，但 `db-health` 直接吃环境变量时曾报“database does not exist”
+   - 处理建议：当前实际运行**始终显式传 `--database-url`**
+
+### 当前仍待继续验证
+- 前 20 章整段长跑是否 0 failed
+- 第 5 章后的 `show-window`
+- 更长跑下的 provider 稳定性与耗时分布
+
+
+### 真实运行补充结论（2026-05-11）
+当前独立新库 + 真实 DeepSeek 试跑已经进一步确认：
+- 前 1~5 章可以成功完成
+- 第 4 章起曾从 staged pipeline 降级到 `monolithic_fallback`，但仍能继续向前推进
+- 这说明当前真实风险不再是“流程跑不起来”，而是：
+  - 某些章节在 `fact_extractor` 阶段会触发降级
+  - 系统依赖 fallback 保持主线继续
+
+因此当前版本更准确的描述应是：
+- **主线可跑通**
+- **fallback 可工作**
+- **阶段稳定性仍需继续优化**
+- **不是所有章节都稳定走完小模型 staged path**
+
+进一步的真实运行证据：
+- 前 8 章可连续完成
+- 第 9 章再次出现 `job stalled for more than 180 seconds`，而且这次卡在 `evidence_binder @ 30%`，说明稳定性问题不是单一 `fact_extractor` 阶段专属，而是 staged pipeline 的中间阶段在真实长跑下都可能出现 stall
+
+## 12. 推荐的当前最稳妥运行方式
+
+### 12.1 数据库
+优先用独立新库，不污染已有主库。
+
+### 12.2 配置传递
+- **数据库：显式 `--database-url`**
+- **LLM：环境变量显式对齐 base_url / model / key / stage / qa / fallback**
+
+### 12.3 推荐命令顺序
+1. `init-db --database-url ...`
+2. `db-capabilities --database-url ...`
+3. `ingest ... --database-url ...`
+4. `start-run ... --database-url ...`
+5. `analyze-range ... --database-url ...`
+6. 过程中穿插：
+   - `show-run-status`
+   - `show-context`
+   - `search-branch`
+   - `ask-branch`
+   - 第 5 章后 `show-window`
+
+## 13. 当前版本的故障恢复建议
+
+### 情况 A：risk / checker 相关缺表
+先做：
+```bash
+python3 -m novel_analyzer.cli.app init-db --database-url <dburl> --no-ensure-db
+python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
+```
+确认：
+- `initialized_schema=true`
+- `missing_tables=` 为空
+
+### 情况 B：db-health 明明建库成功却报库不存在
+优先怀疑配置读取链路，而不是数据库本身。
+
+处理：
+- 改用显式 `--database-url`
+- 用 `db-capabilities --database-url ...` 作为更可靠的判定口径
+
+### 情况 C：QA / search 结果异常
+先检查：
+- 当前是否已有 active canonical artifacts
+- `show-run-status` 的 `completed_chapters` 是否大于 0
+- `show-context` 是否能返回 previous_summary / fact_context / graph_context
+
+### 情况 D：还没到第 5 章却要看 window
+这是正常现象。固定 window 需要在 5 / 10 / 15 ... 章边界后才能验证。
+
+
+### 情况 E：长跑中某一章卡在 fact_extractor / stall timeout
+真实试跑里已经遇到过：
+- 前 1~3 章通过
+- 第 4 章在 `fact_extractor` 阶段卡住
+- 180 秒后被系统判定为 `job stalled for more than 180 seconds`
+
+这说明当前版本虽然能跑通前几章，但在真实模型 / 真实文本下仍可能出现阶段性 stall。
+
+建议处理顺序：
+1. 先看 `show-run-status` / `list-failed-jobs`
+2. 确认失败章、失败阶段、attempts
+3. 优先做一次 `retry-chapter`
+4. 若重复在同一阶段 stall，再检查：
+   - provider 响应耗时
+   - chapter 文本长度 / prompt 负载
+   - `chapter_job_stall_timeout_seconds` 是否过低
+
+当前结论：
+- 这属于**真实运行稳定性问题**
+- 不是 schema 初始化问题
+- 也不是默认 reader / QA / context contract 问题
+
+- 当前版本新增了一个重要保护：若某章已经拥有 active canonical artifact，则 `retry-chapter` 会被拒绝，以避免 job 状态与 artifact 进度出现错位。
+
+- 当前默认 `chapter_job_stall_timeout_seconds` 已提高到 600；真实长阶段调用若仍出现 stall，再考虑更细粒度 heartbeat 或更早 fallback。
