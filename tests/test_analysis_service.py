@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
-from novel_analyzer.database.models import ChapterJob
+from novel_analyzer.database.models import ChapterArtifact, ChapterJob
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.domain.schemas import (
     AnalysisSummary,
@@ -115,13 +115,45 @@ def test_stage_chapter_content_trims_large_input() -> None:
     assert trimmed.endswith("A")
 
 
+def test_build_deconstruction_profile_marks_deferred_writer_without_schema_rename() -> None:
+    payload = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_index": 1,
+            "normalized_title": "测试章",
+            "cleaned_text": "正文",
+        }
+    )
+    profile = AnalysisService._build_deconstruction_profile(
+        chapter_content=payload.cleaned_text,
+        stage_payload={},
+        writer_deferred=True,
+    )
+    base = {
+        "chapter_index": 1,
+        "normalized_title": "测试章",
+        "writer_learning_notes": [],
+        "unsupported_inferences": [],
+        "ambiguous_points": [],
+        "quality_gate_notes": [],
+    }
+    enriched = AnalysisService._with_deconstruction_profile(base, profile)
+    assert enriched["writer_learning_notes"] == []
+    assert enriched["_deconstruction_profile"]["writer_lens_status"] == "deferred"
+    assert "writer_learning_notes" in enriched
+    assert "unsupported_inferences" in enriched
+
+
 def test_writer_learning_lens_accepts_dict_transferable_lessons() -> None:
     output = WriterLearningLensOutput.model_validate(
         {
             'transferable_lessons': [
                 {'lesson': '通过未解线索制造后续期待', 'category': 'pacing'},
                 {'summary': '让人物关系在冲突中递进'},
-                {'lesson_id': 3, 'category': 'character_relationship', 'content': '把冲突线索埋入日常互动。'},
+                {
+                    'lesson_id': 3,
+                    'category': 'character_relationship',
+                    'content': '把冲突线索埋入日常互动。',
+                },
             ]
         }
     )
@@ -296,7 +328,10 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
             service.analyze_range(run.id, branch.id, 1, 1)
 
 
-def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_risk_audit_failure_does_not_break_main_chapter_commit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
 
@@ -304,6 +339,162 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, m
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
         service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        monkeypatch.setattr(
+            service,
+            '_invoke_stage',
+            lambda model, prompt, schema: schema.model_validate(
+                {
+                    'chapter_index': 1,
+                    'normalized_title': '一',
+                    'cleaned_text': '第1章 一\n卫图觉醒命格。',
+                    'paragraph_blocks': [{'order': 1, 'text': '卫图觉醒命格。'}],
+                }
+                if schema.__name__ == 'ChapterIntakeOutput'
+                else (
+                    {
+                        'characters': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                        'events': [
+                            {'label': '卫图觉醒命格', 'evidence': ['觉醒命格'], 'confidence': 0.9}
+                        ],
+                        'relations': [],
+                        'conflicts': [],
+                        'foreshadowing': [],
+                        'worldbuilding_facts': [],
+                    }
+                    if schema.__name__ == 'ChapterFactExtractionOutput'
+                    else (
+                        {
+                            'retained_items': [
+                                {'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}
+                            ],
+                            'unsupported_items': [],
+                            'coverage_summary': 'ok',
+                        }
+                        if schema.__name__ == 'EvidenceBindingOutput'
+                        else (
+                            {
+                                'summary': {'short': '卫图觉醒命格。'},
+                                'themes': [],
+                                'pacing': {},
+                                'emotional_curve': {},
+                                'continuity_notes': ['主线开启。'],
+                            }
+                            if schema.__name__ == 'ChapterAnalysisLayerOutput'
+                            else (
+                                {
+                                    'hook_notes': [],
+                                    'conflict_notes': [],
+                                    'reveal_order_notes': [],
+                                    'scene_efficiency_notes': [],
+                                    'transferable_lessons': [],
+                                }
+                                if schema.__name__ == 'WriterLearningLensOutput'
+                                else {
+                                    'overclaim_flags': [],
+                                    'ambiguous_points': [],
+                                    'needs_human_review': False,
+                                }
+                            )
+                        )
+                    )
+                )
+            ),
+        )
+
+        monkeypatch.setattr(
+            service.risk_audit_service,
+            'generate_for_chapter',
+            lambda branch_id, chapter_index: (_ for _ in ()).throw(RuntimeError('audit boom')),
+        )
+
+        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
+        assert len(artifact_ids) == 1
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'validated'
+
+
+def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() -> None:
+    output = WriterLearningLensOutput().ensure_minimum_writer_notes(
+        '测试章',
+        '这是摘要',
+        ['本章推进了关系变化。'],
+        ['前文冲突获得阶段性解决。'],
+        ['仍有未解线程待处理。'],
+    )
+    lessons = output.transferable_lessons
+    assert lessons
+    assert any('推进' in item for item in lessons)
+    assert any('可信' in item or '解决' in item for item in lessons)
+
+
+def test_provider_unavailable_uses_local_heuristic_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text(
+        '第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n',
+        encoding='utf-8',
+    )
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        def _provider_down(*_args: object, **_kwargs: object) -> dict[str, object]:
+            raise RuntimeError("Error code: 403 - {'code':'SUBSCRIPTION_NOT_FOUND'}")
+
+        monkeypatch.setattr(service, '_invoke_stage', _provider_down)
+        monkeypatch.setattr(service, '_invoke_monolithic_analysis', _provider_down)
+
+        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
+        assert len(artifact_ids) == 1
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'validated'
+
+
+def test_materialization_failure_restores_previous_active_artifact_and_blocks_job(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        previous = RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '旧版本',
+                'chapter_summary': '旧摘要',
+                'key_entities': ['卫图'],
+                'key_events': ['旧事件'],
+                'continuity_notes': ['旧衔接'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'quality_gate_notes': [],
+                'hook_score': 4.0,
+                'dimensions': [],
+            },
+        )
+        service = AnalysisService(session, Settings(llm_api_key='test-key', embedding_backend='stub'))
 
         monkeypatch.setattr(
             service,
@@ -358,59 +549,30 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, m
                 )
             ),
         )
-
         monkeypatch.setattr(
-            service.risk_audit_service,
-            'generate_for_chapter',
-            lambda branch_id, chapter_index: (_ for _ in ()).throw(RuntimeError('audit boom')),
+            service.retrieval_service,
+            'materialize_for_artifact',
+            lambda artifact_id: (_ for _ in ()).throw(RuntimeError('retrieval boom')),
         )
 
-        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
-        assert len(artifact_ids) == 1
+        with pytest.raises(RuntimeError, match='retrieval boom'):
+            service.analyze_range(run.id, branch.id, 1, 1)
+
         job = session.scalar(
             select(ChapterJob)
             .where(ChapterJob.branch_id == branch.id)
             .where(ChapterJob.chapter_index == 1)
         )
         assert job is not None
-        assert job.status == 'validated'
+        assert job.status == 'failed'
 
-
-def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() -> None:
-    output = WriterLearningLensOutput().ensure_minimum_writer_notes(
-        '测试章',
-        '这是摘要',
-        ['本章推进了关系变化。'],
-        ['前文冲突获得阶段性解决。'],
-        ['仍有未解线程待处理。'],
-    )
-    lessons = output.transferable_lessons
-    assert lessons
-    assert any('推进' in item for item in lessons)
-    assert any('可信' in item or '解决' in item for item in lessons)
-
-
-def test_provider_unavailable_uses_local_heuristic_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    novel_path = tmp_path / 'novel.txt'
-    novel_path.write_text('第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n', encoding='utf-8')
-
-    with _session() as session:
-        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
-        run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
-
-        def _provider_down(*_args: object, **_kwargs: object) -> dict[str, object]:
-            raise RuntimeError("Error code: 403 - {'code':'SUBSCRIPTION_NOT_FOUND'}")
-
-        monkeypatch.setattr(service, '_invoke_stage', _provider_down)
-        monkeypatch.setattr(service, '_invoke_monolithic_analysis', _provider_down)
-
-        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
-        assert len(artifact_ids) == 1
-        job = session.scalar(
-            select(ChapterJob)
-            .where(ChapterJob.branch_id == branch.id)
-            .where(ChapterJob.chapter_index == 1)
-        )
-        assert job is not None
-        assert job.status == 'validated'
+        artifacts = session.scalars(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .order_by(ChapterArtifact.created_at)
+        ).all()
+        assert len(artifacts) == 2
+        active_ids = [artifact.id for artifact in artifacts if artifact.visibility == 'active']
+        assert active_ids == [previous.id]
+        assert artifacts[-1].visibility == 'hidden'

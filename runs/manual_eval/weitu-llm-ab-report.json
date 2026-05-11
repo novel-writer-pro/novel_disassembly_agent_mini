@@ -1,0 +1,74 @@
+{
+  "contract_version": "loom-ab-compare.v1",
+  "baseline_dir": "/home/user/ai-books/runs/manual_eval/weitu-llm-baseline/artifacts/writer-output",
+  "loom_dir": "/home/user/ai-books/runs/manual_eval/weitu-llm-enhanced/artifacts/writer-output",
+  "total_chapters": 4,
+  "baseline_ooc_count": 0,
+  "loom_ooc_count": 0,
+  "baseline_ooc_rate": 0.0,
+  "loom_ooc_rate": 0.0,
+  "ooc_rate_delta": 0.0,
+  "ooc_reduction_pct": 0.0,
+  "target_met": false,
+  "target_threshold_pct": 20.0,
+  "improved_chapters": [],
+  "regressed_chapters": [],
+  "baseline_risk_level_distribution": {
+    "low": 4
+  },
+  "loom_risk_level_distribution": {
+    "low": 4
+  },
+  "baseline_verdict_distribution": {
+    "needs_revision": 4
+  },
+  "loom_verdict_distribution": {
+    "needs_revision": 4
+  },
+  "chapter_results": [
+    {
+      "chapter_index": 2,
+      "baseline_ooc": false,
+      "loom_ooc": false,
+      "ooc_improved": false,
+      "ooc_regressed": false,
+      "baseline_risk_level": "low",
+      "loom_risk_level": "low",
+      "baseline_verdict": "needs_revision",
+      "loom_verdict": "needs_revision"
+    },
+    {
+      "chapter_index": 3,
+      "baseline_ooc": false,
+      "loom_ooc": false,
+      "ooc_improved": false,
+      "ooc_regressed": false,
+      "baseline_risk_level": "low",
+      "loom_risk_level": "low",
+      "baseline_verdict": "needs_revision",
+      "loom_verdict": "needs_revision"
+    },
+    {
+      "chapter_index": 4,
+      "baseline_ooc": false,
+      "loom_ooc": false,
+      "ooc_improved": false,
+      "ooc_regressed": false,
+      "baseline_risk_level": "low",
+      "loom_risk_level": "low",
+      "baseline_verdict": "needs_revision",
+      "loom_verdict": "needs_revision"
+    },
+    {
+      "chapter_index": 5,
+      "baseline_ooc": false,
+      "loom_ooc": false,
+      "ooc_improved": false,
+      "ooc_regressed": false,
+      "baseline_risk_level": "low",
+      "loom_risk_level": "low",
+      "baseline_verdict": "needs_revision",
+      "loom_verdict": "needs_revision"
+    }
+  ]
+}

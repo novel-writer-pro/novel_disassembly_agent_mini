@@ -93,6 +93,7 @@
 - 现已进一步新增 `external_runtime_executor_pilot_wave`，把真正 external executor 的 first-wave 试探范围独立对象化
 - 现已新增 `writer-imitate-external-runtime-checkpoint-state.json/.md`，作为 external runtime 第一波 checkpoint writeback 的本地模拟状态面
 - 现已新增 `writer-imitate-external-runtime-transition-state.json/.md`，作为 external runtime 第一波 transition apply 的本地模拟状态面
+- 现已新增 `writer-imitate-external-runtime-validation-state.json/.md`，作为 external runtime simulation bridge 的本地验证面
 - markdown 第一层也开始显式提示 compatibility layer，进一步把 primary 层提升成默认展示入口
 - 现在 `Primary Verdicts / Primary Digests` 的显示顺序也已前置到 operator contract 之前，展示优先级开始真正偏向 primary 层
 - `writer-imitate-index.md` 的完整字段面中，legacy verdict/digest 家族也已开始被单独归类到 compatibility layer 小节

@@ -1,0 +1,199 @@
+# Loom 架构 / 织机架构
+
+> **Loom** — 织机。小说由线索（threads）、角色（characters）、世界规则（rules）织成。
+> Loom 是在现有 novel-analyzer 基础上，把这些线索编织得更连贯、更可控、更能自我进化的下一代架构层。
+
+---
+
+## 一句话定位
+
+> Loom 不是重写现有系统，而是在已有 GraphRAG 基础设施（`pg_trgm` + `pgvector` + `GraphNode/GraphEdge`）
+> 与 0509 仿写控制层（`session_state → operator_surface → action_queue → execution_state`）之上，
+> 填补五个关键缺口：**记忆代谢**、**评估自进化**、**叙事张力调节**、**文风/节奏量化**（Phase 4）、**角色认知基**（Phase 4）。
+
+---
+
+## 与现有系统的关系
+
+```
+novel-analyzer（现有，保持不变）
+├── 内容理解层        chapter_intake → fact_extractor → evidence_binder → ...
+├── 风险与审查层      risk_semantic_signal → checker → review_workflow
+├── 生成与仿写层      ← Loom memory 层增强 carry_over_state
+│   └── 0509 控制层  session_state / operator_surface / action_queue  ← Loom 直接对接
+├── 治理与评估层      ← Loom reward 层补充 pairwise 评估
+└── 运营与接入层      保持不变
+
+Loom（新增层，叠加在上方）
+├── memory/          分层记忆 + 冲突代谢（对接 0509 session_state，填补 live writeback 缺口）
+├── reward/          学习型评估（补充规则化 checker，填补 automated gate 缺口）
+├── tension/         叙事张力自动调节（补充人工 steering，填补 full control console 缺口）
+├── style/           文风量化 + 节奏分析 + 对话质量信号（Phase 4 规划）
+└── character/       角色认知基（Phase 4 规划，深化 OOC checker）
+```
+
+**原则**：
+- 现有链路继续工作，Loom 通过 feature flag 渐进启用
+- 复用现有 DB 表（`GraphNode`、`GraphEdge`、`FactRecord`、`RiskSemanticSignalRecord`），加字段而不是建新表
+- 0509 控制层的 🔴 未实现项，是 Loom 各模块的优先填补目标
+- 每个 Phase 都有可回滚路径，不影响生产稳定性
+
+---
+
+## 五大升级方向（Phase 1-4）
+
+## 当前最重要的两份执行文档
+
+如果你不是单纯看架构，而是要**继续把主链路仿写能力推向 SOTA**，先看这两份：
+
+- [SOTA 仿写能力推进 Checklist](./sota-imitation-progression-checklist.md)
+- [卫图样例真实效果验证工作流](./weitu-real-effect-validation.md)
+
+它们分别回答：
+
+- 我们主链路到底在推进什么能力
+- 如何用卫图样例做真实验证，而不是只停留在“系统能跑”
+
+---
+
+### A. 分层记忆 + 冲突代谢（Memory）
+
+**解决的问题**：
+- 长书（100章+）仿写时，`carry_over_state` 线性追加，冲突累积无法消解，越写越乱
+- 0509 控制层的 `session_state` 已有完整 preview 链，但缺 **Live Checkpoint Writeback**（🔴）
+
+**核心思路**：
+把现有 `GraphNode/GraphEdge/FactRecord/WindowArtifact` 映射为三层记忆结构，
+加入冲突检测和代谢机制，并把 0509 的 `session_state` 作为 Working Memory 层的运行时入口。
+
+**SOTA 参考**：EvoSpark（ACL 2026）Stratified Narrative Memory、Memory as Metabolism（2026）
+
+→ [memory/README.md](./memory/README.md)
+
+---
+
+### B. 学习型评估 / Pairwise Reward（Reward）
+
+**解决的问题**：
+- 现有 `risk_checker` 规则固定，无法从人工评审数据中学习
+- 0509 控制层缺 **Consumer Migration Telemetry** 和 **Automated Retirement Gate**（🔴）
+
+**核心思路**：
+从现有 `manual_eval_record` 和 `reader_feedback_comments` 提取 pairwise 对比数据，
+构建 LLM-as-judge 评估层，逐步演进到 fine-tuned reward model，
+同时为 0509 的 retirement gate 提供自动质量门控能力。
+
+**SOTA 参考**：EvolvR（SOTA on StoryER/HANNA/OpenMEVA，2025-2026）
+
+→ [reward/README.md](./reward/README.md)
+
+---
+
+### C. 叙事张力自动调节（Tension）
+
+**解决的问题**：
+- 情节平淡/重复无自动检测，完全依赖人工 steering
+- 0509 控制层缺 **Full Control Console**（🔴），张力信号是控制台的关键输入
+
+**核心思路**：
+直接用现有 `ChunkEmbedding`（pgvector）计算 `plot_similarity_score`，
+从现有 `GraphEdge` 计算 `conflict_density`，不需要新的 LLM 调用，
+并把张力信号接入 0509 的 operator surface，作为控制台的实时质量指标。
+
+**SOTA 参考**：Long Story Generation via KG + Literary Theory（2025）obstacle framework
+
+→ [tension/README.md](./tension/README.md)
+
+---
+
+### D. 文风量化 + 节奏分析 + 对话质量（Style）🔲 Phase 4 规划
+
+**解决的问题**：
+- 文风漂移无检测：100 章后风格悄悄偏移，系统无法感知
+- 节奏/爽点无量化：批量仿写时爽点密度不稳定，读者留存率下降
+- 对话质量无信号：角色说话风格漂移，对话填充过多
+
+**核心思路**：
+复用现有 `ChunkEmbedding` 计算风格向量，检测漂移；
+从 `FactRecord` 统计钩子密度，识别节奏类型；
+从对话 chunk 计算角色声音一致性。全部零 LLM 调用。
+
+**SOTA 参考**：StyleRPA（2024）风格向量评估、CharacterBench（2024）对话一致性
+
+→ [style/README.md](./style/README.md)
+
+---
+
+### E. 角色认知基（Character）🔲 Phase 4 规划
+
+**解决的问题**：
+- 角色状态是 snapshot，不是持续演化的认知基
+- OOC checker 是规则检测，不能感知角色内在动机和说话风格
+
+**核心思路**：
+从 Loom memory 层切片构建 `CharacterPersona`（价值观/目标/恐惧/说话风格向量），
+在每次仿写前检测草案是否符合角色认知基，补充而非替代现有 OOC checker。
+
+**SOTA 参考**：BookWorld（2025）角色 agent 自主认知基、Deep Persona Alignment（2025）
+
+→ [character/README.md](./character/README.md)
+
+---
+
+## 快速导航
+
+| 文档 | 说明 |
+|------|------|
+| [overview.md](./overview.md) | 完整架构图、SOTA 对比表、设计原则、风险分析 |
+| [memory/README.md](./memory/README.md) | 记忆层入口 |
+| [memory/layered-memory-design.md](./memory/layered-memory-design.md) | 三层记忆设计 + DB 扩展方案 |
+| [memory/conflict-metabolism.md](./memory/conflict-metabolism.md) | 冲突代谢机制 |
+| [memory/carry-over-migration.md](./memory/carry-over-migration.md) | 从现有 carry_over_state 迁移方案 |
+| [reward/README.md](./reward/README.md) | 评估层入口 |
+| [reward/pairwise-eval-design.md](./reward/pairwise-eval-design.md) | Pairwise 评估框架设计 |
+| [reward/reward-model-roadmap.md](./reward/reward-model-roadmap.md) | LLM-as-judge → reward model 演进路线 |
+| [reward/eval-data-collection.md](./reward/eval-data-collection.md) | 评估数据收集规范 |
+| [tension/README.md](./tension/README.md) | 张力层入口 |
+| [tension/tension-metrics.md](./tension/tension-metrics.md) | 三个张力指标计算方法 |
+| [tension/obstacle-injection.md](./tension/obstacle-injection.md) | Obstacle 自动注入机制 |
+| [tension/trope-integration.md](./tension/trope-integration.md) | 与现有 trope/worldview RAG 库集成 |
+| [style/README.md](./style/README.md) | 文风/节奏/对话层入口（Phase 4 规划） |
+| [style/style-vector-design.md](./style/style-vector-design.md) | 风格向量化与漂移检测设计 |
+| [style/rhythm-analysis-design.md](./style/rhythm-analysis-design.md) | 节奏分析器设计 |
+| [style/dialogue-signal-design.md](./style/dialogue-signal-design.md) | 对话质量信号设计 |
+| [character/README.md](./character/README.md) | 角色认知基层入口（Phase 4 规划） |
+| [character/character-persona-design.md](./character/character-persona-design.md) | CharacterPersona 构建与一致性检测设计 |
+| [roadmap.md](./roadmap.md) | Phase 1-5 开发路线图 + 验收标准 |
+| [gap-analysis-and-evolution.md](./gap-analysis-and-evolution.md) | 商业水准差距分析 + Phase 4/5 演进规划 |
+
+---
+
+## 如何判断 Loom 比现有架构更好
+
+每个 Phase 都有**可量化的对比实验**，且每个实验都有明确的回滚路径：
+
+| Phase | 对比方法 | 验收指标 | 回滚方式 |
+|-------|---------|---------|---------|
+| Phase 1（记忆） | 同一本书连续 20 章，旧链路 vs Loom 链路 | `character_ooc` 触发率下降 ≥ 20%，人工一致性评分提升 | feature flag 关闭，回到原 carry_over_state |
+| Phase 2（张力） | 批量仿写 10 章，有/无张力调节对比 | `plot_similarity_score` 方差扩大，人工"情节吸引力"评分提升 | 关闭 preflight 张力检查 |
+| Phase 3（评估） | pairwise 评估 vs 现有 checker，与人工判断对比 | Kendall's τ ≥ 0.5（参考 EvolvR 的 0.55） | 回到纯规则 checker |
+| Phase 4（文风/节奏/对话） | 有/无 style_drift + rhythm_signal 对比 | style_drift Pearson r ≥ 0.5；综合评分 5/10 → 7/10 | feature flag 关闭各信号 |
+| Phase 5（读者模拟/多线） | reader_sim_score vs 真实读者评分对比 | Pearson r ≥ 0.6；综合评分 7/10 → 8.5/10 | 关闭 reader_simulation_service |
+
+---
+
+## 0509 控制层与 Loom 的对接关系
+
+| 0509 状态 | 对应 Loom 模块 | Loom 填补内容 |
+|-----------|--------------|-------------|
+| ✅ Session State / Operator Surface | memory/layered-memory-design | 作为 Working Memory 层的运行时入口 |
+| ✅ Action Queue / Execution State | memory/carry-over-migration | 对接 carry_over_state 迁移路径 |
+| ✅ Primary/Legacy 双层治理 | reward/eval-data-collection | 评估数据按 primary/legacy 分层收集 |
+| 🔴 Live Checkpoint Writeback | memory/conflict-metabolism | 冲突消解后的状态回写机制 |
+| 🟡 Consumer Migration Telemetry | reward/eval-data-collection | writer control surfaces、control-surface registry/index、execution chain、execution resume、live/runtime readiness 以及 external runtime simulation bridge 已统一输出 Loom gate 摘要与最小迁移遥测；更细粒度真实 runtime 观测仍待后续扩展 |
+| 🟡 Automated Retirement Gate | reward/pairwise-eval-design | writer retirement readiness/preview 已接入最小质量门控；完整 reward 驱动 gate 仍待后续扩展 |
+| 🟡 Loom Signal Surface | tension/tension-metrics + reward/pairwise-eval-design | `writer-imitate-operator-surface` 已暴露 `session_loom_signals`，`session_primary_verdicts` 也已吸收 quality 聚合；retirement gate 仍待后续接入 |
+
+---
+
+返回 [文档中心](../README.md) | [架构专题](../architecture/README.md)

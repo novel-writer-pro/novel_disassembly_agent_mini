@@ -1,6 +1,203 @@
 ## Unreleased
 
-- docs: 新增 `docs/architecture/imitation-commercial-agent-control-plane-architecture-20260509.md`，用完整 Mermaid 架构图与分层说明收口当前仿写商业 Agent 控制层的最新设计，把 experiment、session-state、operator/legacy 双 surface、retirement preview、root navigation 与 primary/legacy 分层治理全部放进同一张架构图里。
+- docs(deconstruction-acceleration): 补充 `user-manual.md`，把当前拆书加速优化版本的已落地能力、未落地范围、推荐实跑顺序、reader isolation 口径与验证方式整理为用户手册；同步把入口挂到 `docs/README.md` 与 `docs/cli-operations-manual.md`。
+- feat(loom/weitu-validation-bootstrap): `CL-loom-weitu-validation-bootstrap-01` — 新增 `scripts/bootstrap_weitu_validation_workspace.py`，把卫图样例真实验证的 manual_eval 工作区初始化、branch bundle 导出、branch report 导出、whole-book report 导出与 mailbox-style notes 回填收口成一个可重复执行入口。
+
+  解决问题：
+  - 卫图验证之前需要手工逐条执行多条导出命令，容易漏步骤
+  - 人工兜底入口与 resume / recovery 下一步说明分散在多处文档中
+  - “当前已经跑过什么验证”难以在工作区内被完整保留
+
+  验证：
+  - 新增 `tests/test_bootstrap_weitu_validation_workspace.py` → 1/1 通过
+  - 联合验证：`tests/test_whole_book_imitation_service.py` 4/4、`tests/test_cli.py` 7/7
+  - 实际执行：`python3 scripts/bootstrap_weitu_validation_workspace.py 62e636f0-c901-4167-aa1c-aff3da9c83ef weitu-sample --force`
+
+- ops(loom/weitu-ab-smoke): 已在同一真实卫图分支上执行 baseline vs enhanced 的 first-pass 对比。
+
+  实际结果：
+  - baseline: `quality_verdict=quality-pass`, `style_signal_count=0`, `chapter_quality_signal_count=0`
+  - enhanced: `quality_verdict=quality-hold`, `style_signal_count=2`, `chapter_quality_signal_count=2`
+
+  结论：
+  - 已证明打开 Loom enhanced flags 会真实改变 whole-book 执行侧产物与 gate 结论
+  - 但尚未证明“卫图样例仿写效果提升”，因为当前结果更接近“增强后暴露了问题”，而不是“增强后质量已上升”
+
+- ops(loom/weitu-writer-ab): 已在卫图样例上执行第一轮 writer-imitate 真实对比。
+
+  实际执行：
+  - baseline / enhanced 各生成 chapter 2 和 chapter 3 的 `writer-imitate-ch*.json`
+  - `loom-collect-pairs` 成功采集 2 对 cross-dir pairwise 记录
+  - `loom-pairs-stats` 显示：`total_pairs=2`, `avg_quality_score=0.5`, `evaluation_method=heuristic:2`, `overall_preference=tie:2`
+  - `loom-ab-compare` 显示：`baseline_ooc_count=0`, `loom_ooc_count=0`, `ooc_reduction_pct=0.0`, `target_met=False`
+
+  结论：
+  - 已证明 pairwise / A-B 工具链在卫图样例上真正跑通
+  - enhanced 路径会新增单章 Loom 信号（如 `chapter_quality_signal`、`_loom_style`）
+  - 但当前还没有证据表明 enhanced 结果优于 baseline，且评估仍以 heuristic 为主
+
+- ops(loom/weitu-writer-ab-expand): 已把卫图样例的 LLM writer-imitate 对比从 chapter 2–3 扩到 chapter 2–5。
+
+  实际结果：
+  - baseline / enhanced 已生成 4 章 LLM prose 样本
+  - `loom-collect-pairs` → 4 pairs
+  - `loom-pairs-stats` → `A=1, tie=3`, `avg_quality_score=0.4875`, `evaluation_method=heuristic`
+  - `loom-ab-compare` → `baseline_ooc_count=0`, `loom_ooc_count=0`, `ooc_reduction_pct=0.0`
+
+  人工对读趋势：
+  - chapter 2：baseline 更强
+  - chapter 3：enhanced 更强
+  - chapter 4：baseline 略强
+  - chapter 5：baseline 更强
+
+  阶段结论：
+  - enhanced 稳定改变了信号层与文本风格取向
+  - 但在卫图样例 2–5 章抽样里，正文效果暂时仍是 baseline 略占优或至少未被反超
+
+- ops(loom/weitu-validation): 已开始卫图样例的真实验证执行，不再停留在纯规划。
+
+  本轮已执行证据：
+  - 锁定真实验证目标分支：`run_id=ac9449b9-7326-474f-bb72-4416375a7491` / `branch_id=62e636f0-c901-4167-aa1c-aff3da9c83ef`
+  - 真实执行：`loom-status` / `loom-assemble` / `loom-consolidate`
+  - 真实导出：`export-branch-report` / `export-branch-bundle` / `export-whole-book-imitation-run --execute`
+  - 已创建 mailbox-style 人工工作区：`runs/manual_eval/weitu-sample/`
+
+  当前已确认：
+  - Loom 在真实卫图分支上可运行（memory/tension/carry-over/whole-book report）
+  - whole-book report 已含 `session_loom_signals` / `session_loom_gate_summary`
+  - 但当前仍是 `loom_memory_mode=shadow`，且 `loom_pairwise_enabled=False` / `loom_style_enabled=False` / `loom_character_enabled=False`
+  - 结论仍然是“能力已建成，效果待证实”，因为 baseline vs loom 双臂对照尚未建立
+
+- docs(loom/validation-mainline): 新增两份主线文档，明确 Loom 的北极星不是“再堆评估结构”，而是推进 SOTA 仿写主链能力，并用真实验证闭环给出证据。
+
+  新增：
+  - `docs/loom/sota-imitation-progression-checklist.md`
+  - `docs/loom/weitu-real-effect-validation.md`
+
+  解决问题：
+  - 把“仿写主链推进”与“验证支线”重新收口，避免本末倒置
+  - 明确卫图样例是当前真实效果验证的首个标准对象
+  - 明确 LLM-first / human-fallback / resume-able 的验证组织方式
+  - 给后续复现测试提供手册化入口，而不是散落在 handoff / roadmap / manual_eval 模板中
+
+  同步更新：
+  - `docs/loom/README.md`
+  - `docs/loom/handoff.md`
+  - `docs/README.md`
+  - `docs/cli-operations-manual.md`
+
+- feat(loom/whole-book-bridge): `CL-loom-whole-book-bridge-01` — whole-book imitation sandbox/export report 继承 Loom 统一摘要。为 `WholeBookImitationExecutedStep` 新增 `loom_signals`，为 `WholeBookImitationRunReport` 新增 `session_loom_signals` 与 `session_loom_gate_summary`，并从 chapter harness 的真实 Loom 输出（`chapter_quality_signal`、`_loom_tension`、`_loom_rhythm`、`_loom_style`、`dialogue_signal` 等）聚合 whole-book 级质量/张力摘要与 gate 结论。
+
+  解决问题：
+  - whole-book report 过去绕开 Loom gate，下游只消费整书报告时看不到统一质量/张力结论
+  - service 层虽已聚合 Loom 数据，但 CLI 导出边界缺少合同级验证
+  - operator/control surface 与更接近执行器的 whole-book report 视图不一致
+
+  验证：
+  - `tests/test_whole_book_imitation_service.py` 4/4 通过
+  - `tests/test_cli.py` 7/7 通过（新增 `export-whole-book-imitation-run` Loom 字段导出断言）
+
+- chore(deconstruction): 对 analysis/run service 与相关测试做最小化格式整理，清理本 tranche 验证中暴露的长行 lint 问题，不改变行为。
+
+- feat(deconstruction-acceleration): 在章节 canonical artifact 持久化链路中新增 `_deconstruction_profile` shadow metadata（`profile/quick_ready/writer_lens_status/loom_status/risk_status/canonical_artifact_id/content_hash/idempotency_key/timing`），并保持 `ChapterAnalysisOutput` 既有键名完全不变；同时补充 analysis/run service 定向测试覆盖。
+
+- docs(deconstruction-acceleration): 新增 `docs/deconstruction-acceleration/` 专题目录，落地拆书加速优化入口、架构说明、开发文档与关键遗漏审查；同步把专题挂到 `docs/README.md` 与 `docs/architecture/README.md`，明确 Quick/Deep 双档、canonical-readable/downstream-driving 合同、reader isolation、fork inherited deferred completeness、stale/idempotency 守卫与 benchmark 口径。
+
+- feat(loom/phase4-flags): 新增 `loom_style_enabled`（默认 False）和 `loom_character_enabled`（默认 False）两个 Phase 4 feature flag，接入 `loom-status` 输出，并在 CLI 操作手册 12.1 节补充环境变量说明。
+
+- docs(loom/phase4): 新增 Phase 4 设计文档层 `docs/loom/style/`（风格向量化 + 节奏分析 + 对话质量信号，全部零 LLM 调用）和 `docs/loom/character/`（CharacterPersona 构建 + 一致性检测，深化 OOC checker）。更新 `docs/loom/overview.md` 架构图、`docs/loom/README.md` 导航表与架构树。
+
+- docs(loom/roadmap): 更新 `docs/loom/roadmap.md`，新增 Phase 4/5 总览与完整任务清单（style_calibration_service / rhythm_analysis_service / dialogue_signal / character_agent_service / reader_simulation_service / thread_scheduler_service），补充两条新风险登记。
+
+- docs(loom/overview): 更新 `docs/loom/overview.md` SOTA 对比表，新增节奏/爽点、对话设计、读者模拟、多线调度四个维度，并更新已有维度的 Gap 状态以反映 Phase 1-3 进展。
+
+- refactor(loom/cli): 从 `loom_collect_pairs`、`loom_collect_pairs_from_db`、`loom_collect_pairs_from_manual`、`loom_ab_compare` 四个命令中提取 9 个模块级共享 helper（`_loom_build_llm_client`、`_loom_final_draft_text`、`_loom_round0_draft_text`、`_loom_extract_chapter_index`、`_loom_load_chapter_artifacts`、`_loom_chapter_goal`、`_loom_risk_verdict`、`_loom_write_pairs_jsonl`、`_loom_echo_total_pairs`），移除约 150 行重复代码，将 `uuid` 提升为模块级导入。69 个 Loom 测试全部通过。
+
+- docs(loom/phase3): 更新 `docs/loom/handoff.md`（Phase 3 交付物、测试计数 69/394、CMD 速查）、`docs/loom/roadmap.md`（Phase 3 进行中、P3 任务清单全部标记）、`docs/cli-operations-manual.md`（新增 12.7–12.11 节 Phase 3 命令文档）。
+
+ `writer-imitate-control-surface-registry` 与 `writer-imitate-index` 第一层摘要接入 `session_loom_gate_summary`，让 operator 在入口面即可看到 Loom gate 结论。
+
+- feat(loom/live-runtime-summary): `live_control_state`、`live_validation_state` 与 external runtime simulation bridge 统一继承 `session_loom_gate_summary`，让 operator/live/runtime 全链路共享同一层 Loom gate 摘要。
+
+- feat(loom/gate-summary): 为 `action_queue`、`execution_state`、`execution_replay`、`execution_apply`、`execution_resume` 新增统一 `session_loom_gate_summary`，把质量 verdict、张力计数与迁移状态收口成稳定执行摘要。
+
+- feat(loom/resume-gate): `writer-imitate-execution-resume` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，并在 `quality-hold` 时把恢复提示切换为先处理质量，再进入 resume/recovery。
+
+- feat(loom/runtime-sim-bridge): `writer-imitate-external-runtime-executor-preview` / checkpoint / transition / validation 产物统一继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 external runtime simulation bridge 与 operator/live 面共享同一套 Loom 状态。
+
+- feat(loom/runtime-readiness): `writer-imitate-live-control-state` 与 `writer-imitate-external-runtime-executor-readiness` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 live/runtime readiness 面在进入真实执行器前即可感知 Loom 质量与迁移状态。
+
+- feat(loom/telemetry): 新增 `session_consumer_migration_telemetry`，在 session/operator/legacy/retirement preview 产物中标记 primary-ready 与 legacy-remaining 消费方，为后续 legacy 收口提供最小迁移可见性。
+
+- feat(loom/retirement-gate): writer retirement readiness / preview 接入最小 Loom quality gate，当聚合 `chapter_quality_score < 0.7` 时标记 `quality-blocked`，并把阻断原因写入 `blocking_reasons` 与 preview `projected_effect`。
+
+- feat(loom/quality): `session_primary_verdicts` 新增 `quality_verdict`、`average_chapter_quality_score`、`chapter_quality_signal_count`，并让 writer operator surface 在 primary verdict 层直接暴露章节质量聚合结果，减少下游对 sidecar Loom signal 的依赖。
+
+- feat(loom/control-surface): `writer-imitate-session-state.json` 与 `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段，从 `writer-imitate-ch*.json` 汇总 Loom tension signal 与可选 `chapter_quality_score`，并在 operator surface markdown 渲染 `Loom Signals` 小节，作为 0509 消费 Loom 信号的稳定入口。
+
+- docs: 创建 Loom handoff 交接文档 `docs/loom/handoff.md`，更新 `docs/session-handoff-manual.md` 引用入口。handoff 文档覆盖架构定位、工作状态、决策记录、剩余工作、启动步骤、风险点、文档索引、命令速查，不包含任何敏感凭据。
+
+- fix(loom): 对齐 Loom 服务层 node/edge type 查询与真实 PostgreSQL 生产数据：MemoryAssemblerService 的 `_count_active_characters` 兼容 `entity`/`character`，`_get_active_rule_labels` 兼容 `world_rule`/`rule`，`_get_key_relationship_labels` 兼容 `relates_to`/`relationship`；MemoryConsolidationService 的 CONFLICT_EDGE_TYPES 补充 `conflict_centers_on`/`conflict_involves`/`pressured_by`；移除 `_mark_evolution` 中对 GraphNode 不存在的 `is_active` 赋值。38/38 tests passing。
+
+- fix(loom/cli): 修复 `loom-status`、`loom-consolidate`、`loom-assemble` 三个命令未注册的问题。原因：命令定义在 `if __name__ == "__main__": app()` 之后，导致以 `python -m` 方式运行时 `app()` 先于装饰器执行，命令未被注册。已将三个命令移至 `__main__` guard 之前，现在 `--help` 中正确显示，并已在真实 PostgreSQL 数据上验证。
+
+- ops: 配置 DeepSeek 为当前 LLM provider（`deepseek-v4-flash`，base_url=`https://api.deepseek.com/v1`），更新 `.env.local` 并验证 API 连通性。
+
+- ops: 在 PostgreSQL 生产环境成功运行 Alembic migration `20260509_01_loom_memory_fields`，10 个 Loom 字段已创建（`fact_records` +3、`graph_nodes` +4、`graph_edges` +3），所有字段有默认值，现有数据安全。
+
+- ops: 端到端验证 Loom Phase 1+2 在真实 PostgreSQL 环境下的完整链路：导入测试小说（3章）→ DeepSeek 分析 → Loom consolidation 自动触发（`loom_consolidation_complete` 事件记录）→ `loom-status` 展示张力指标 → `loom-assemble` 输出含 episodic decay 的 carry_over_state。
+
+ `20260509_01_loom_memory_fields.py`，为 PostgreSQL 生产环境添加 Loom 所需的 10 个字段（`fact_records` +3、`graph_nodes` +4、`graph_edges` +3），均有 server-side 默认值，现有数据安全，支持 downgrade。
+
+- loom/docs: 更新 `docs/loom/roadmap.md`，将 Phase 1+2 所有任务标记为 ✅ 已完成，补充 Phase 3 详细任务清单（生产部署 / 0509 对接 / pairwise 数据积累 / reward model / 角色认知基），更新风险登记表。
+
+- docs: 更新 `docs/cli-operations-manual.md`，新增第 12 节"Loom 记忆与张力命令"，完整记录 `loom-status`、`loom-consolidate`、`loom-assemble` 三个命令的用法、输出示例、环境变量说明、PostgreSQL 生产启用步骤，以及 Loom 与现有命令的关系表。
+
+- docs: 更新 `docs/real-run-checklist.md`，新增第 8 节"Loom 记忆层检查"，包含试跑后的 Loom 状态检查步骤、PostgreSQL migration 指引、feature flag 切换建议。
+
+- loom/docs: 更新 `docs/loom/memory/carry-over-migration.md`，将三阶段迁移路径全部标记为已实现，补充实验结果记录表（shadow 验证 ✅、A/B 实验 🔲、生产 migration 🔲），明确 PostgreSQL 生产环境必须先运行 migration 的警告。
+
+Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEdge）与 0509 仿写控制层之上的升级层，填补三个关键缺口：分层记忆代谢、学习型评估、叙事张力自动调节。
+
+- loom/db: `FactRecord` 新增 `importance_score`、`decay_factor`、`episodic_status` 三个字段，支持情节记忆的重要性排序与衰减。
+
+- loom/db: `GraphNode` 新增 `conflict_status`、`loom_version`、`superseded_by_node_id`、`importance_score` 四个字段，支持节点冲突分类（clean/contradiction/evolution/ambiguity/resolved）与版本链追踪。
+
+- loom/db: `GraphEdge` 新增 `conflict_status`、`loom_version`、`is_active` 三个字段，支持边的活跃状态管理。
+
+- loom/service: 新增 `memory_consolidation_service.py`，每章分析完成后运行冲突检测与情节记忆衰减。支持 contradiction/evolution/ambiguity 三类冲突分类，输出 `ConsolidationResult` 可直接作为 0509 operator_surface 的信号。
+
+- loom/service: 新增 `memory_assembler_service.py`，从三层记忆（Working/Episodic/Semantic）动态组装 carry_over_state。输出包含 `_legacy_compat` 字段，与现有 0509 session_state 格式 100% 兼容。
+
+- loom/service: 新增 `tension_service.py`，计算三个叙事张力指标：`plot_similarity_score`（pgvector cosine 相似度，fallback 为 Jaccard keyword 相似度）、`conflict_density`（冲突边密度）、`surprise_index`（新颖度指数）。全部基于现有 DB 数据，不需要新的 LLM 调用。
+
+- loom/service: 新增 `pairwise_eval_service.py`，LLM-as-judge pairwise 评估框架。支持四个维度（character_consistency/plot_coherence/style_fidelity/narrative_tension），含 heuristic fallback（无 LLM 时可用）。输出 `chapter_quality_score` 可接入 0509 session_primary_verdicts。
+
+- loom/settings: `Settings` 新增五个 Loom feature flags：`loom_memory_mode`（disabled/shadow/ab/enabled，默认 shadow）、`loom_tension_enabled`（默认 True）、`loom_pairwise_enabled`（默认 False）、`loom_episodic_top_k`（默认 20）、`loom_tension_lookback_n`（默认 3）。
+
+- loom/analysis: `analysis_service.py` 在章节 materialization 完成后调用 `MemoryConsolidationService`（shadow/enabled/ab 模式下生效），非阻塞，失败只记录 job event。
+
+- loom/harness: `imitation_harness_service.py` 的 `preflight_draft` 新增 `loom_tension` 检查项，当 `loom_tension_enabled=True` 时自动计算张力指标并附加到 preflight checks（warn 级别，非阻塞）。
+
+- loom/harness: `imitation_harness_service.py` 新增 `_build_carry_over_json` 方法，在 shadow 模式下并行运行 MemoryAssemblerService 并将结果附加到 `_loom_memory` 字段；在 enabled 模式下直接使用 Loom 三层记忆输出替换原有静态组装逻辑。
+
+- loom/cli: 新增三个 CLI 命令：`loom-status`（查看分支的记忆状态与张力指标）、`loom-consolidate`（对指定章节手动运行冲突代谢）、`loom-assemble`（输出指定章节的 carry_over_state JSON）。
+
+- loom/docs: 新增 `docs/loom/` 目录，包含 README.md、overview.md、arch-diff-and-alignment.md（0509 vs Loom 冲突点与对齐方案）、roadmap.md，以及 memory/、reward/、tension/ 三个子目录共 16 份架构文档。
+
+- loom/test: 新增 `tests/test_loom_phase1.py`（23 个单元测试）和 `tests/test_loom_phase2.py`（15 个集成测试），覆盖 DB 字段默认值、冲突代谢、记忆组装、张力指标、pairwise 评估、CLI 命令全链路，共 38 个测试全部通过。
+
+- docs: 整理 `docs/README.md` 为生产级文档管理结构，按角色（产品/后端/接入者/维护者/仿写）和能力线（风险审查/Review Workflow/仿写/读者体验）分流，新增 A/B/C/D 四层文档分类。
+
+- docs: 更新 `docs/roles/` 下各角色入口 README，加入场景描述、分步阅读顺序、关键文档速查表。
+
+- docs: 更新 `docs/tracks/imitation/README.md` 和 `docs/roles/imitation/README.md`，完整收录 0509 仿写控制层六份文档，标注适合角色和阅读顺序。
+
+- docs: 更新 `docs/architecture/README.md`，加入分层表格和 0509 文档用途说明，新增 Loom 架构入口。
+
+- docs: `README.md` Newcomer Path 改为按角色分流表，More docs 收口到两行。
+
+，用完整 Mermaid 架构图与分层说明收口当前仿写商业 Agent 控制层的最新设计，把 experiment、session-state、operator/legacy 双 surface、retirement preview、root navigation 与 primary/legacy 分层治理全部放进同一张架构图里。
 
 - docs: 新增 `docs/architecture/imitation-commercial-agent-ops-closed-loop-20260509.md`，从商业运营闭环视角解释当前控制层如何把 experiment、operator surface、action/execution、primary/legacy 治理与 retirement preview 串成接近商用的操作闭环。
 
@@ -37,6 +234,8 @@
 - imitation: 新增 `writer-imitate-external-runtime-checkpoint-state.json/.md` 与 `writer-imitate-apply-external-runtime-checkpoint` 命令，先把 external runtime 第一波 checkpoint writeback 试探落成 output 工作区内的本地模拟状态面。
 
 - imitation: 新增 `writer-imitate-external-runtime-transition-state.json/.md` 与 `writer-imitate-apply-external-runtime-transition` 命令，把 external runtime 第一波 transition apply 也落成 output 工作区内的本地模拟状态面，继续沿 runtime simulation bridge 向前推进。
+
+- imitation: 新增 `writer-imitate-external-runtime-validation-state.json/.md` 与 `writer-imitate-validate-external-runtime-state` 命令，把 external runtime checkpoint+transition 模拟后的验证结果独立收口，形成完整的 runtime simulation bridge。
 
 - imitation: `writer-imitate-index` 现在还会额外产出独立的 `writer-imitate-operator-surface.json/.md`，把 `session_operator_contract` 提升成默认入口产物，方便控制台/运营面直接消费第一层稳定合同。
 
@@ -1240,6 +1439,20 @@
 ### 交付纪律补充
 - 增补项目约定：每一次修复和变动，都同步更新文档、`CHANGELOG.md` 与 git commit 记录
 - 后续所有 UI、API、运行时恢复与自动拆书推进相关修改，均按该约定执行
+
+
+### 拆书 reader isolation：active companion 不再默认可读
+- 为 `ChapterArtifact` 默认读路径新增 canonical/default-readable 过滤：`visibility='active'` 且 `participates_in_downstream=true`
+- 修复 `record_chapter_artifact()`：非 downstream 的 companion / manual artifact 不再隐藏当前 active canonical artifact
+- 收口 `previous_summary`、window materialization、status completed count、chapter index 等默认 reader，避免误读 active enrichment companion
+- 增补回归测试，覆盖 canonical artifact 保留、summary/status/index 忽略 non-downstream companion 的行为
+- 同步补充拆书开发/使用文档，明确 active companion 不能天然进入默认读路径
+
+
+### 拆书 contract：ChapterAnalysisOutput 既有键名保持不变
+- 核查 `ChapterAnalysisOutput` schema 与 `analysis_service` 序列化路径，确认 `_deconstruction_profile` 只作为附加 metadata 写入
+- 确认当前输出仍保持 canonical keys：`chapter_summary`、`key_entities`、`key_events`、`continuity_notes`、`writer_learning_notes`、`unsupported_inferences`、`ambiguous_points`、`quality_gate_notes`
+- 补开发/使用日志，明确后续 quick/deep 扩展只能新增 shadow metadata，不能重命名主输出 contract keys
 
 
 ### 问答区可见性增强

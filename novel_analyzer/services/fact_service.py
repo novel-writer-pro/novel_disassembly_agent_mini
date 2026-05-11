@@ -9,6 +9,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, FactRecord, WindowArtifact
+from novel_analyzer.services.run_service import default_readable_artifact_clause
 
 
 class FactService:
@@ -133,7 +134,7 @@ class FactService:
             .where(ChapterArtifact.branch_id == branch_id)
             .where(ChapterArtifact.chapter_index >= start)
             .where(ChapterArtifact.chapter_index <= chapter_index)
-            .where(ChapterArtifact.visibility == 'active')
+            .where(default_readable_artifact_clause())
             .order_by(ChapterArtifact.chapter_index)
         ).all()
         if len(artifacts) < window_size:

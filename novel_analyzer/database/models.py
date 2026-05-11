@@ -284,6 +284,11 @@ class FactRecord(TimestampSoftDeleteMixin, Base):
     evidence_list: Mapped[list[str]] = mapped_column(JSON, default=list)
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
     metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    # Loom memory fields
+    importance_score: Mapped[float] = mapped_column(Float, default=0.5)
+    decay_factor: Mapped[float] = mapped_column(Float, default=1.0)
+    episodic_status: Mapped[str] = mapped_column(String(32), default="active")
+    # episodic_status: active | decayed | superseded
 
     branch: Mapped[RunBranch] = relationship(back_populates="facts")
 
@@ -322,6 +327,12 @@ class GraphNode(TimestampSoftDeleteMixin, Base):
     chapter_last_seen: Mapped[int] = mapped_column(Integer)
     occurrence_count: Mapped[int] = mapped_column(Integer, default=1)
     metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    # Loom memory fields
+    conflict_status: Mapped[str] = mapped_column(String(32), default="clean")
+    # conflict_status: clean | contradiction | evolution | ambiguity | resolved
+    loom_version: Mapped[int] = mapped_column(Integer, default=1)
+    superseded_by_node_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    importance_score: Mapped[float] = mapped_column(Float, default=0.5)
 
     branch: Mapped[RunBranch] = relationship(back_populates="graph_nodes")
     outgoing_edges: Mapped[list[GraphEdge]] = relationship(
@@ -354,6 +365,10 @@ class GraphEdge(TimestampSoftDeleteMixin, Base):
     chapter_first_seen: Mapped[int] = mapped_column(Integer)
     chapter_last_seen: Mapped[int] = mapped_column(Integer)
     metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    # Loom memory fields
+    conflict_status: Mapped[str] = mapped_column(String(32), default="clean")
+    loom_version: Mapped[int] = mapped_column(Integer, default=1)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     branch: Mapped[RunBranch] = relationship(back_populates="graph_edges")
     source_node: Mapped[GraphNode] = relationship(

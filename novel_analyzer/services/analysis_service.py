@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import re
 import time
 from collections.abc import Sequence
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from langchain_core.messages import BaseMessage
 from sqlalchemy import select
@@ -38,6 +39,7 @@ from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.graph_service import GraphService
+from novel_analyzer.services.memory_consolidation_service import MemoryConsolidationService
 from novel_analyzer.services.quality_gate_service import QualityGateService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
@@ -56,6 +58,7 @@ class AnalysisService:
         self.fact_service = FactService(session)
         self.graph_service = GraphService(session)
         self.risk_audit_service = RiskAuditService(session)
+        self.memory_consolidation = MemoryConsolidationService(session)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -70,14 +73,16 @@ class AnalysisService:
 
     @staticmethod
     def _stage_chapter_content(chapter_content: str, max_chars: int = 3600) -> str:
-        """Trim oversized chapter text for small-model staged prompts while preserving head/tail context."""
+        """Trim oversized chapter text for small-model staged prompts while preserving
+        head/tail context."""
 
         text = chapter_content.strip()
         if len(text) <= max_chars:
             return text
         head = text[:2200].rstrip()
         tail = text[-1200:].lstrip()
-        return f"{head}\n\n[... 中间内容已为阶段模型省略 {len(text) - len(head) - len(tail)} 字 ...]\n\n{tail}"
+        omitted = len(text) - len(head) - len(tail)
+        return f"{head}\n\n[... 中间内容已为阶段模型省略 {omitted} 字 ...]\n\n{tail}"
 
     @classmethod
     def _extract_json_payload(cls, message: BaseMessage) -> dict[str, object]:
@@ -333,7 +338,10 @@ class AnalysisService:
     @staticmethod
     def _heuristic_entities(chapter_content: str, limit: int = 5) -> list[str]:
         candidates = re.findall(r"[一-龥]{2,4}", chapter_content)
-        stop_words = {"第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个", "没有", "可以", "自己", "什么", "这样"}
+        stop_words = {
+            "第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个",
+            "没有", "可以", "自己", "什么", "这样",
+        }
         seen: set[str] = set()
         results: list[str] = []
         for item in candidates:
@@ -354,7 +362,11 @@ class AnalysisService:
     ) -> ChapterAnalysisOutput:
         content = chapter_content.strip()
         summary_source = re.split(r"[。！？\n]", content, maxsplit=1)[0].strip()
-        chapter_summary = summary_source[:120] if summary_source else f"本章围绕《{normalized_title}》展开。"
+        chapter_summary = (
+            summary_source[:120]
+            if summary_source
+            else f"本章围绕《{normalized_title}》展开。"
+        )
         key_entities = cls._heuristic_entities(content)
         key_events = [chapter_summary] if chapter_summary else []
         continuity_notes = [
@@ -394,6 +406,51 @@ class AnalysisService:
             and not result.key_events
             and not result.continuity_notes
         )
+
+    @staticmethod
+    def _content_hash(chapter_content: str) -> str:
+        return hashlib.sha256(chapter_content.encode('utf-8')).hexdigest()
+
+    @classmethod
+    def _build_deconstruction_profile(
+        cls,
+        *,
+        chapter_content: str,
+        stage_payload: dict[str, object],
+        writer_deferred: bool,
+    ) -> dict[str, Any]:
+        fallback = str(stage_payload.get('fallback') or '').strip()
+        stage_error = str(stage_payload.get('stage_error') or '').strip()
+        profile = 'quick'
+        writer_lens_status = 'deferred' if writer_deferred else 'complete'
+        timing = {
+            'commit_phase': 'sync',
+            'enrichment_phase': 'deferred' if writer_deferred else 'inline',
+        }
+        if fallback:
+            timing['fallback_mode'] = fallback
+        if stage_error:
+            timing['stage_error'] = stage_error
+        return {
+            'profile': profile,
+            'quick_ready': True,
+            'writer_lens_status': writer_lens_status,
+            'loom_status': 'pending',
+            'risk_status': 'pending',
+            'canonical_artifact_id': None,
+            'content_hash': cls._content_hash(chapter_content),
+            'idempotency_key': None,
+            'timing': timing,
+        }
+
+    @staticmethod
+    def _with_deconstruction_profile(
+        payload: dict[str, Any],
+        profile: dict[str, Any],
+    ) -> dict[str, Any]:
+        enriched = dict(payload)
+        enriched['_deconstruction_profile'] = profile
+        return enriched
 
     @staticmethod
     def _merge_stage_outputs(
@@ -901,10 +958,19 @@ class AnalysisService:
                     progress_percent=90,
                     emit_event=True,
                 )
+                writer_deferred = not bool(result.writer_learning_notes)
+                deconstruction_profile = self._build_deconstruction_profile(
+                    chapter_content=chapter_content,
+                    stage_payload=stage_payload,
+                    writer_deferred=writer_deferred,
+                )
                 artifact = self.run_service.record_chapter_artifact(
                     branch_id,
                     segment.chapter_index,
-                    result.model_dump(mode='json'),
+                    self._with_deconstruction_profile(
+                        result.model_dump(mode='json'),
+                        deconstruction_profile,
+                    ),
                     source_kind='model',
                     participates_in_downstream=True,
                 )
@@ -923,6 +989,36 @@ class AnalysisService:
                     segment.chapter_index,
                     self.settings.cross_chapter_window,
                 )
+                # Loom: memory consolidation (shadow / enabled mode)
+                if self.settings.loom_memory_mode in ("shadow", "enabled", "ab"):
+                    try:
+                        loom_result = self.memory_consolidation.consolidate(
+                            branch_id, segment.chapter_index
+                        )
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
+                            chapter_index=segment.chapter_index,
+                            event_type="loom_consolidation_complete",
+                            stage="loom_memory",
+                            message=(
+                                f"loom consolidation: {loom_result.total_conflicts} conflicts "
+                                f"(contradictions={len(loom_result.contradictions)}, "
+                                f"evolutions={len(loom_result.evolutions)}, "
+                                f"ambiguities={len(loom_result.ambiguities)})"
+                            ),
+                            payload_json=loom_result.to_operator_signal(),
+                        )
+                    except Exception as _loom_exc:  # noqa: BLE001
+                        # Loom is non-blocking – log and continue
+                        self.run_service.record_job_event(
+                            branch_id=branch_id,
+                            chapter_index=segment.chapter_index,
+                            event_type="loom_consolidation_failed",
+                            stage="loom_memory",
+                            level="warning",
+                            message=str(_loom_exc),
+                            payload_json={"non_blocking": True},
+                        )
                 self.run_service.complete_chapter_job(branch_id, segment.chapter_index)
                 try:
                     self.run_service.record_job_event(
@@ -961,6 +1057,12 @@ class AnalysisService:
                 artifact_ids.append(artifact.id)
                 previous_summary = result.chapter_summary
             except Exception as exc:
+                if 'artifact' in locals() and artifact is not None:
+                    self.run_service.restore_previous_active_artifact(
+                        branch_id,
+                        segment.chapter_index,
+                        artifact.id,
+                    )
                 self.run_service.record_raw_output(
                     run_id,
                     branch_id,

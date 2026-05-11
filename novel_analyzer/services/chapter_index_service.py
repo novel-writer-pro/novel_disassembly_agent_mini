@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session
 from novel_analyzer.database.models import (
     ChapterArtifact,
     ChapterJob,
-    ChapterRiskCardRecord,
     ChapterManifest,
+    ChapterRiskCardRecord,
     ChapterSegment,
     RetrievalDocument,
     RunBranch,
 )
+from novel_analyzer.services.run_service import default_readable_artifact_clause
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +100,7 @@ class ChapterIndexService:
             for artifact in self.session.scalars(
                 select(ChapterArtifact)
                 .where(ChapterArtifact.branch_id == branch_id)
-                .where(ChapterArtifact.visibility == 'active')
+                .where(default_readable_artifact_clause())
                 .order_by(ChapterArtifact.chapter_index)
                 .limit(limit)
             ).all()
@@ -161,7 +162,11 @@ class ChapterIndexService:
                     hook_score=payload.get('hook_score'),
                     needs_human_review=bool(payload.get('needs_human_review', False)),
                     summary=summary,
-                    risk_level=str(risk_payload.get('overall_risk_level')) if risk_payload else None,
+                    risk_level=(
+                        str(risk_payload.get('overall_risk_level'))
+                        if risk_payload
+                        else None
+                    ),
                     risk_count=len(top_risks) if isinstance(top_risks, list) else 0,
                 )
             )
@@ -201,7 +206,7 @@ class ChapterIndexService:
             for artifact in self.session.scalars(
                 select(ChapterArtifact)
                 .where(ChapterArtifact.branch_id == branch_id)
-                .where(ChapterArtifact.visibility == 'active')
+                .where(default_readable_artifact_clause())
                 .order_by(ChapterArtifact.chapter_index)
                 .limit(limit)
             ).all()

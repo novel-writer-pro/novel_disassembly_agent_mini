@@ -878,6 +878,8 @@ class ChapterImitationHarnessReport(BaseModel):
     policy_summary: dict[str, object] = Field(default_factory=dict)
     final_verdict: str = Field(default="needs_revision")
     stop_reason: str
+    chapter_quality_signal: dict[str, object] = Field(default_factory=dict)
+    dialogue_signal: dict[str, object] = Field(default_factory=dict)
 
 
 class MultiChapterImitationStep(BaseModel):
@@ -973,6 +975,7 @@ class WholeBookImitationExecutedStep(BaseModel):
     scheduling_priority: int = Field(default=4, ge=1, le=5)
     scheduling_reason: str = Field(default="")
     policy_summary: dict[str, object] = Field(default_factory=dict)
+    loom_signals: dict[str, object] = Field(default_factory=dict)
 
 
 class WholeBookImitationRunReport(BaseModel):
@@ -989,4 +992,6 @@ class WholeBookImitationRunReport(BaseModel):
     final_carry_over_state: WholeBookCarryOverState | None = Field(default=None)
     policy_summary: dict[str, object] = Field(default_factory=dict)
     dashboard_summary: dict[str, object] = Field(default_factory=dict)
+    session_loom_signals: dict[str, object] = Field(default_factory=dict)
+    session_loom_gate_summary: dict[str, object] = Field(default_factory=dict)
     run_notes: list[str] = Field(default_factory=list)

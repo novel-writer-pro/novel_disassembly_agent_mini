@@ -3,6 +3,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from novel_analyzer.database.models import ChapterArtifact, WindowArtifact
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.fact_service import FactService
@@ -56,3 +57,75 @@ def test_context_service_exposes_prior_summary_facts_window_and_graph(tmp_path: 
         assert bundle['graph_context']['nodes']
         assert 'overview' in bundle['graph_context']
         assert 'state_summary' in bundle
+
+
+def test_previous_summary_ignores_inactive_companion_artifact(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RunService(session)
+        service.record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '第1章',
+                'chapter_summary': 'canonical summary',
+            },
+        )
+        session.add(
+            ChapterArtifact(
+                branch_id=branch.id,
+                chapter_index=1,
+                artifact_type='chapter_analysis',
+                payload_json={
+                    'chapter_index': 1,
+                    'normalized_title': '第1章',
+                    'chapter_summary': 'inactive enrichment companion',
+                },
+                status='validated',
+                visibility='shadow',
+                source_kind='analysis',
+                participates_in_downstream=False,
+                inherited_from_branch_id=None,
+                is_inherited=False,
+            )
+        )
+        session.commit()
+
+        context_service = ContextService(session)
+        assert context_service.previous_summary(branch.id, 2) == 'canonical summary'
+
+
+def test_window_summary_ignores_newer_shadow_window_artifact(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session).create_run(novel.id, manifest.id)
+        session.add_all(
+            [
+                WindowArtifact(
+                    branch_id=branch.id,
+                    window_start_chapter=1,
+                    window_end_chapter=5,
+                    window_type='fixed_5',
+                    payload_json={'window_summary': 'canonical window summary'},
+                    status='ready',
+                ),
+                WindowArtifact(
+                    branch_id=branch.id,
+                    window_start_chapter=1,
+                    window_end_chapter=4,
+                    window_type='fixed_5_shadow',
+                    payload_json={'window_summary': 'shadow enrichment window'},
+                    status='shadow',
+                ),
+            ]
+        )
+        session.commit()
+
+        context_service = ContextService(session)
+        assert context_service.window_summary(branch.id, 7) == 'canonical window summary'

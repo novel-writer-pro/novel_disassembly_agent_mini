@@ -145,3 +145,65 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 - state summary 是否足够帮助后续章节？
 - QA 的保守程度是否合适？
 - thematic contexts 哪个主题最有价值？
+
+---
+
+## 8. Loom 记忆层检查（Phase 1+2+3 已上线）
+
+Loom 默认以 `shadow` 模式运行，不影响主链路。试跑完成后可用以下命令检查 Loom 状态。
+
+### 8.1 查看记忆与张力状态
+
+```bash
+poetry run novel-analyzer loom-status <branch_id>
+```
+
+重点观察：
+- `contradiction_nodes` > 0：有角色/规则矛盾，建议人工确认
+- `tension_score` < 0.3：情节偏平淡，可考虑引入新元素
+- `plot_similarity` > 0.85：当前章节与前几章高度重复
+
+### 8.2 手动运行冲突代谢
+
+```bash
+poetry run novel-analyzer loom-consolidate <branch_id> <chapter_index>
+```
+
+### 8.3 查看记忆组装内容
+
+```bash
+poetry run novel-analyzer loom-assemble <branch_id> <next_chapter_index>
+```
+
+### 8.4 PostgreSQL 生产环境首次启用 Loom
+
+**必须先运行 migration：**
+
+```bash
+poetry run novel-analyzer db-upgrade
+```
+
+然后在 `.env.local` 中设置：
+
+```bash
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=shadow   # 先用 shadow 观察
+# 验证无问题后切换到：
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=enabled
+```
+
+### 8.5 Pairwise 数据采集（Phase 3）
+
+```bash
+# 从 manual_eval 工作区提取
+novel-analyzer loom-collect-pairs-from-manual \
+  --manual-eval-dir runs/manual_eval/ \
+  --pairs-file output/loom-pairs.jsonl
+
+# 从 writer-imitate 产物提取
+novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl
+
+# 查看采集进度
+novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl
+```
+
+详细说明见 [CLI 操作手册第 12 节](./cli-operations-manual.md#12-loom-记忆与张力命令phase-123)。

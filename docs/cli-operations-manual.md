@@ -425,6 +425,9 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./interface-manifest.md`](./interface-manifest.md)
 - [`./examples/*.sample.json`](./examples/)
 - [`./final-handoff.md`](./final-handoff.md)
+- [`./loom/sota-imitation-progression-checklist.md`](./loom/sota-imitation-progression-checklist.md)
+- [`./loom/weitu-real-effect-validation.md`](./loom/weitu-real-effect-validation.md)
+- [`./loom/weitu-validation-log-20260511.md`](./loom/weitu-validation-log-20260511.md)
 
 ---
 
@@ -481,3 +484,348 @@ python -m scripts.check_sample_branch <run_id> <branch_id> ./branch.md
 ```
 
 这条命令会顺序执行 PostgreSQL 能力检查与 branch report 导出，适合交接和真实环境 smoke。
+
+---
+
+## 12. Loom 记忆与张力命令（Phase 1+2+3）
+
+Loom 是叠加在现有系统之上的记忆代谢与质量评估层。默认以 `shadow` 模式运行（并行计算但不影响主链路）。
+
+### 12.1 环境变量
+
+```bash
+# 控制 Loom 记忆层模式
+export NOVEL_ANALYZER_LOOM_MEMORY_MODE=shadow   # disabled | shadow | ab | enabled
+
+# 控制张力检测
+export NOVEL_ANALYZER_LOOM_TENSION_ENABLED=true
+
+# 控制 pairwise 评估（默认关闭，需要 LLM）
+export NOVEL_ANALYZER_LOOM_PAIRWISE_ENABLED=false
+
+# 情节记忆 top-K 锚点数量
+export NOVEL_ANALYZER_LOOM_EPISODIC_TOP_K=20
+
+# 张力相似度回溯章节数
+export NOVEL_ANALYZER_LOOM_TENSION_LOOKBACK_N=3
+
+# Phase 4：文风量化 + 节奏分析（默认关闭，待 Phase 4 实现后启用）
+export NOVEL_ANALYZER_LOOM_STYLE_ENABLED=false
+
+# Phase 4：角色认知基（默认关闭，待 Phase 4 实现后启用）
+export NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED=false
+```
+
+### 12.2 loom-status — 查看分支记忆与张力状态
+
+```bash
+poetry run novel-analyzer loom-status <branch_id>
+# 或
+python3 -m novel_analyzer.cli.app loom-status <branch_id>
+```
+
+输出示例：
+```
+=== Loom Memory Status ===
+branch_id:           <branch_id>
+total_facts:         248
+active_facts:        231
+total_graph_nodes:   89
+contradiction_nodes: 2
+evolution_nodes:     14
+loom_memory_mode:    shadow
+loom_tension_enabled:True
+
+=== Loom Tension (chapter 42) ===
+tension_score:       0.5823
+plot_similarity:     0.4210
+conflict_density:    0.8500
+surprise_index:      0.3200
+alerts:              none
+```
+
+**说明**：
+- `contradiction_nodes` > 0 时，建议运行 `loom-consolidate` 手动检查冲突
+- `tension_score` < 0.3 时，情节可能过于平淡，建议引入新元素
+- `plot_similarity` > 0.85 时，当前章节与前几章高度重复
+
+### 12.3 loom-consolidate — 手动运行冲突代谢
+
+```bash
+poetry run novel-analyzer loom-consolidate <branch_id> <chapter_index>
+```
+
+对指定章节运行冲突检测与情节记忆衰减。通常由 `analysis_service` 在章节分析完成后自动调用（shadow/enabled 模式），此命令用于手动补跑或调试。
+
+输出示例：
+```
+branch_id:      <branch_id>
+chapter_index:  42
+contradictions: 1
+evolutions:     3
+ambiguities:    0
+human_review:   True
+contradiction details:
+  - 张三: '张三' 在第42章与第30章存在直接矛盾
+```
+
+### 12.4 loom-assemble — 查看 carry_over_state 内容
+
+```bash
+poetry run novel-analyzer loom-assemble <branch_id> <target_chapter>
+```
+
+输出 Loom 为目标章节组装的 `carry_over_state` JSON，用于调试记忆层内容。
+
+```bash
+# 示例：查看第 43 章的记忆组装结果
+poetry run novel-analyzer loom-assemble <branch_id> 43
+```
+
+输出包含：
+- `working_memory`：当前活跃角色、线索、近期摘要
+- `episodic_anchors`：按重要性排序的关键事件锚点
+- `semantic_snapshot`：角色数量、活跃规则、关键关系
+- `_legacy_compat`：与现有 carry_over_state 格式兼容的字段
+
+### 12.5 PostgreSQL 生产环境启用 Loom
+
+**首次启用前必须运行 Alembic migration：**
+
+```bash
+# 方式 1：通过 novel-analyzer CLI
+poetry run novel-analyzer db-upgrade
+
+# 方式 2：直接运行 alembic
+alembic upgrade head
+```
+
+migration 文件：`alembic/versions/20260509_01_loom_memory_fields.py`
+
+新增字段（均有默认值，现有数据安全）：
+- `fact_records`：`importance_score`、`decay_factor`、`episodic_status`
+- `graph_nodes`：`conflict_status`、`loom_version`、`superseded_by_node_id`、`importance_score`
+- `graph_edges`：`conflict_status`、`loom_version`、`is_active`
+
+**切换到 enabled 模式：**
+
+```bash
+# .env.local 中设置
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=enabled
+```
+
+建议先用 `ab` 模式做 A/B 实验验证效果，再切换到 `enabled`：
+
+```bash
+NOVEL_ANALYZER_LOOM_MEMORY_MODE=ab
+```
+
+### 12.6 Loom 与现有命令的关系
+
+Loom 是非侵入式的叠加层：
+
+| 现有命令 | Loom 影响 |
+|---------|---------|
+| `analyze-range` | shadow/enabled 模式下，章节完成后自动调用 `loom-consolidate` |
+| `harness-imitation` | preflight 新增 `loom_tension` 检查项（warn 级别，非阻塞） |
+| `writer-imitate` | carry_over_state 在 enabled 模式下使用三层记忆组装 |
+| 其他命令 | 完全不受影响 |
+
+`loom_memory_mode=disabled` 时，所有 Loom 逻辑完全跳过，行为与 Loom 引入前完全一致。
+
+---
+
+### 12.7 loom-collect-pairs — 从 writer-imitate 产物提取 pairwise 数据
+
+```bash
+# 单目录模式：同一目录内 round-0 vs final（默认）
+novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl
+
+# 跨目录模式：baseline vs steering 对比
+novel-analyzer loom-collect-pairs \
+  --output-dir output/baseline/ \
+  --compare-dir output/steering/ \
+  --pairs-file output/loom-pairs.jsonl
+
+# 使用 LLM-as-judge（需配置 LLM）
+novel-analyzer loom-collect-pairs --output-dir output/ --use-llm
+```
+
+扫描 `--output-dir` 下的 `writer-imitate-ch*.json` 文件，提取 pairwise 对并追加写入 JSONL。
+
+### 12.8 loom-collect-pairs-from-manual — 从人工评估工作区提取 pairwise 数据
+
+```bash
+novel-analyzer loom-collect-pairs-from-manual \
+  --manual-eval-dir runs/manual_eval/ \
+  --pairs-file output/loom-pairs.jsonl
+```
+
+扫描 `runs/manual_eval/` 下所有工作区（跳过 `_template`）的 `artifacts/writer-imitate-ch*.json`，提取 round-0 vs final pairwise 对，`pair_source=manual_eval_workspace`。
+
+### 12.9 loom-collect-pairs-from-db — 从 DB 分支提取 pairwise 数据
+
+```bash
+novel-analyzer loom-collect-pairs-from-db <branch_a_id> <branch_b_id> \
+  --pairs-file output/loom-pairs.jsonl
+```
+
+跨两个 DB 分支，按章节索引匹配 `ChapterArtifact` 记录，用 `chapter_summary` 作为对比文本。
+
+### 12.10 loom-pairs-stats — 查看 pairwise 数据采集进度
+
+```bash
+novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl
+```
+
+输出示例：
+```
+=== Loom Pairwise Data Stats ===
+pairs_file:        output/loom-pairs.jsonl
+total_pairs:       47
+target:            500
+progress:          9.4%
+avg_quality_score: 0.6823
+unique_chapters:   12
+chapter_range:     1–42
+
+preference distribution:
+  A: 21
+  B: 19
+  tie: 7
+
+evaluation_method distribution:
+  heuristic: 47
+
+pair_source distribution:
+  manual_eval_workspace: 12
+  single_dir_rounds: 35
+
+remaining_to_target: 453
+```
+
+### 12.11 loom-ab-compare — A/B 实验对比报告
+
+```bash
+novel-analyzer loom-ab-compare output/baseline/ output/loom/ \
+  --output-file output/ab-report.json
+```
+
+对比两个 writer-imitate 输出目录的 `character_ooc` 触发率，输出 reduction%，判断是否达到 ≥20% 目标。
+
+### 12.12 export-whole-book-imitation-run — 导出整书仿写执行报告（含 Loom 摘要）
+
+当你需要把整书仿写的 dry-run / sandbox execute 结果交给下游系统、评估层或后续执行器消费时，使用：
+
+```bash
+python3 -m novel_analyzer.cli.app export-whole-book-imitation-run \
+  <branch_id> \
+  "项目名" \
+  "源作名" \
+  "目标作名" \
+  /tmp/whole-book-report.json \
+  "2:延续主线" \
+  "3:加深冲突" \
+  --execute
+```
+
+#### 这次补强了什么
+
+**Changelist marker**：`CL-loom-whole-book-bridge-01`
+
+之前 `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 已有：
+- `session_loom_signals`
+- `session_loom_gate_summary`
+
+但 whole-book export report 还没有统一继承这些 Loom 视图，导致：
+- 下游如果只消费 whole-book report，看不到 Loom 质量/张力结论
+- operator 看到的 gate 与执行器侧产物不完全一致
+
+现在 whole-book report 也统一新增：
+- `session_loom_signals`
+- `session_loom_gate_summary`
+- `executed_steps[*].loom_signals`
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| `session_loom_signals.average_chapter_quality_score` | whole-book sandbox 章节平均质量分 |
+| `session_loom_signals.average_tension_score` | whole-book 平均张力分 |
+| `session_loom_signals.average_style_drift_score` | 风格漂移均值 |
+| `session_loom_signals.average_hook_density` | 爽点/钩子密度均值 |
+| `session_loom_gate_summary.quality_verdict` | `quality-pass` / `quality-hold` |
+| `session_loom_gate_summary.gate_status` | 当前 whole-book Loom gate 状态 |
+| `executed_steps[*].loom_signals` | 每章真实 harness Loom 输出的聚合快照 |
+
+#### 解决的问题
+
+1. 解决 whole-book 执行报告绕开 Loom gate 的问题
+2. 解决 service 层有 Loom 聚合、CLI 导出边界缺合同验证的问题
+3. 让更接近执行器的整书产物与 operator surface 保持一致视图
+
+#### 推荐验证
+
+```bash
+python3 -m pytest tests/test_whole_book_imitation_service.py tests/test_cli.py -v
+```
+
+重点检查导出 JSON 中是否存在：
+- `session_loom_signals.contract_version=whole-book-session-loom-signals.v1`
+- `session_loom_gate_summary.contract_version=loom-gate-summary.v1`
+
+### 12.13 bootstrap_weitu_validation_workspace.py — 卫图样例验证工作区一键初始化
+
+如果你要复现当前 Loom 的卫图样例真实验证，不要手动逐条导出 artifact，直接运行：
+
+```bash
+python3 scripts/bootstrap_weitu_validation_workspace.py \
+  62e636f0-c901-4167-aa1c-aff3da9c83ef \
+  weitu-sample \
+  --force
+```
+
+这条命令会自动完成：
+
+1. 创建/重建 `runs/manual_eval/weitu-sample/`
+2. 导出 `weitu-branch-bundle.json`
+3. 导出 `weitu-whole-book-report.json`
+4. 导出 `weitu-branch-report.md`
+5. 生成 mailbox-style 的 `README.md / manual-review-notes.md / next-actions.md / problem-trace.md`
+
+它解决的问题是：
+
+- 过去卫图验证工作区需要手工逐条导出 artifact
+- 人工兜底入口与 resume 链条说明分散在多份文档里
+- 同一轮验证很难稳定复现
+
+现在这条脚本把：
+
+- Loom 当前执行证据
+- whole-book report
+- manual_eval mailbox 工作区
+- resume/recovery 下一步
+
+收成一个可重复执行的入口。
+
+
+## 拆书加速优化（当前版本）
+
+当前拆书加速优化已落地的重点不是完整 quick/deep 异步流水线，而是：
+- canonical quick metadata 的安全引入
+- 默认 reader / status / chapter index / window 的 canonical-only 口径
+- blocking materialization 失败时恢复 previous active artifact
+- regression / benchmark / docs / usage evidence
+
+推荐使用说明见：
+- `docs/deconstruction-acceleration/user-manual.md`
+
+当前建议 CLI 验证顺序：
+1. `show-run-status`
+2. `show-context`
+3. `show-window`
+4. `search-branch` / `ask-branch`
+
+若后续引入 companion / manual artifact，请记住：
+- 不是所有 active artifact 都会进入默认读路径
+- 默认 reader 只消费 canonical/default-readable artifact

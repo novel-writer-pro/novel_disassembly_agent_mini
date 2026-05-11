@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +61,126 @@ def _safe_settings(database_url: str | None = None, *, require_admin: bool = Fal
     except ValueError as exc:
         echo(str(exc))
         raise typer.Exit(code=1) from exc
+
+
+def _loom_build_llm_client(use_llm: bool, database_url: str | None, model_name: str) -> Any:
+    if not use_llm:
+        return None
+    from novel_analyzer.llm.client import build_chat_model
+    settings = _safe_settings(database_url)
+    raw_model = build_chat_model(settings, model_name=model_name or None)
+
+    class _Adapter:
+        def __init__(self, lc_model: Any) -> None:
+            self._model = lc_model
+
+        def chat(self, prompt: str) -> str:
+            from langchain_core.messages import HumanMessage
+            return str(self._model.invoke([HumanMessage(content=prompt)]).content)
+
+    return _Adapter(raw_model)
+
+
+def _loom_final_draft_text(payload: dict[str, object]) -> str:
+    fd = payload.get("final_draft", {})
+    if isinstance(fd, dict):
+        return str(fd.get("draft_text", "")).strip()
+    return ""
+
+
+def _loom_round0_draft_text(payload: dict[str, object]) -> str:
+    rounds = payload.get("rounds", [])
+    if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
+        draft = rounds[0].get("draft", {})
+        if isinstance(draft, dict):
+            return str(draft.get("draft_text", "")).strip()
+    return ""
+
+
+def _loom_extract_chapter_index(payload: dict[str, object], filename: str) -> int:
+    try:
+        ch_idx = int(payload.get("source_chapter_index", 0))
+    except (TypeError, ValueError):
+        ch_idx = 0
+    if ch_idx == 0:
+        m = re.search(r"writer-imitate-ch(\d+)\.json$", filename)
+        ch_idx = int(m.group(1)) if m else 0
+    return ch_idx
+
+
+def _loom_load_chapter_artifacts(directory: Path) -> dict[int, dict[str, object]]:
+    result: dict[int, dict[str, object]] = {}
+    for path in sorted(directory.glob("writer-imitate-ch*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(payload, dict):
+            continue
+        chapter_index = _loom_extract_chapter_index(payload, path.name)
+        if chapter_index > 0:
+            result[chapter_index] = payload
+    return result
+
+
+def _loom_chapter_goal(payload: dict[str, object]) -> str:
+    return str(payload.get("target_goal", "")).strip()
+
+
+def _loom_risk_verdict(payload: dict[str, object]) -> str:
+    fd = payload.get("final_draft", {})
+    if isinstance(fd, dict):
+        notes = fd.get("risk_gate_notes", [])
+        if isinstance(notes, list) and notes:
+            return "; ".join(str(n) for n in notes[:3])
+    return str(payload.get("final_verdict", "unknown")).strip()
+
+
+def _loom_write_pairs_jsonl(
+    eval_svc: Any,
+    pairs_to_eval: list[dict[str, object]],
+    pairs_file: Path,
+    extra_keys: list[str],
+) -> int:
+    import datetime as _datetime
+
+    pairs_file.parent.mkdir(parents=True, exist_ok=True)
+    collected = 0
+    collected_at = _datetime.datetime.now(tz=_datetime.timezone.utc).isoformat()
+    with pairs_file.open("a", encoding="utf-8") as fh:
+        for pair in pairs_to_eval:
+            result = eval_svc.evaluate(
+                pair_id=str(pair["pair_id"]),
+                branch_id=str(pair["branch_id"]),
+                chapter_index=int(pair["chapter_index"]),  # type: ignore[arg-type]
+                draft_a=str(pair["draft_a"]),
+                draft_b=str(pair["draft_b"]),
+                chapter_goal=str(pair["chapter_goal"]),
+                key_constraints=str(pair["key_constraints"]),
+                risk_verdict_a=str(pair["risk_verdict_a"]),
+                risk_verdict_b=str(pair["risk_verdict_b"]),
+            )
+            signal = result.to_chapter_quality_signal()
+            record: dict[str, object] = {
+                **signal,
+                "pair_id": pair["pair_id"],
+                "pair_source": pair["pair_source"],
+                "chapter_goal": pair["chapter_goal"],
+                "collected_at": collected_at,
+                "loom_collect_version": "1.0",
+                **{k: pair[k] for k in extra_keys if k in pair},
+            }
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            collected += 1
+    return collected
+
+
+def _loom_echo_total_pairs(pairs_file: Path) -> None:
+    try:
+        total = sum(1 for _ in pairs_file.open(encoding="utf-8"))
+        echo(f"  total_pairs_in_file={total}")
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _list_skill_names(settings: Settings) -> list[str]:
@@ -695,6 +817,10 @@ def retry_chapter(
     factory = create_session_factory(settings)
     with factory() as session:
         run_service = _run_service(session, settings)
+        try:
+            run_service.ensure_chapter_retryable(branch_id, chapter_index)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
         run_service.reset_failed_job(branch_id, chapter_index)
         artifact_ids = _analysis_service(session, settings).analyze_range(
             run_id,
@@ -3154,6 +3280,176 @@ def _writer_review_markdown(
     return "\n".join(lines).strip() + "\n"
 
 
+def _extract_writer_output_loom_signal(
+    payload: dict[str, object],
+    *,
+    artifact_name: str,
+) -> dict[str, object] | None:
+    chapter_index_obj = payload.get("source_chapter_index")
+    try:
+        chapter_index = int(chapter_index_obj)
+    except (TypeError, ValueError):
+        match = re.search(r"writer-imitate-ch(\d+)\.json$", artifact_name)
+        chapter_index = int(match.group(1)) if match else 0
+
+    branch_id = str(payload.get("branch_id", "")).strip()
+    rounds = payload.get("rounds", [])
+    latest_round = (
+        rounds[-1]
+        if isinstance(rounds, list) and rounds and isinstance(rounds[-1], dict)
+        else {}
+    )
+    skill_outputs = latest_round.get("skill_outputs", {}) if isinstance(latest_round, dict) else {}
+    skill_outputs = skill_outputs if isinstance(skill_outputs, dict) else {}
+
+    tension_signal_obj = skill_outputs.get("_loom_tension", payload.get("_loom_tension"))
+    tension_signal = tension_signal_obj if isinstance(tension_signal_obj, dict) else {}
+
+    quality_signal_obj = (
+        payload.get("_loom_chapter_quality")
+        or payload.get("chapter_quality_signal")
+        or skill_outputs.get("_loom_chapter_quality")
+    )
+    quality_signal = quality_signal_obj if isinstance(quality_signal_obj, dict) else {}
+    quality_score = quality_signal.get("quality_score", payload.get("chapter_quality_score"))
+    quality_confidence = quality_signal.get("confidence")
+
+    style_signal_obj = skill_outputs.get("_loom_style", payload.get("_loom_style"))
+    style_signal = style_signal_obj if isinstance(style_signal_obj, dict) else {}
+
+    rhythm_signal_obj = skill_outputs.get("_loom_rhythm", payload.get("_loom_rhythm"))
+    rhythm_signal = rhythm_signal_obj if isinstance(rhythm_signal_obj, dict) else {}
+
+    dialogue_signal_obj = payload.get("dialogue_signal")
+    dialogue_signal = dialogue_signal_obj if isinstance(dialogue_signal_obj, dict) else {}
+
+    if not tension_signal and quality_score in (None, "") and not style_signal and not rhythm_signal:
+        return None
+
+    tension_alerts = tension_signal.get("alerts", [])
+    return {
+        "artifact": artifact_name,
+        "branch_id": branch_id,
+        "chapter_index": chapter_index,
+        "has_tension_signal": bool(tension_signal),
+        "tension_signal": tension_signal,
+        "tension_alert_count": len(tension_alerts) if isinstance(tension_alerts, list) else 0,
+        "has_quality_signal": quality_score not in (None, ""),
+        "chapter_quality_score": quality_score,
+        "chapter_quality_confidence": quality_confidence,
+        "chapter_quality_signal": quality_signal,
+        "has_style_signal": bool(style_signal),
+        "style_signal": style_signal,
+        "has_rhythm_signal": bool(rhythm_signal),
+        "rhythm_signal": rhythm_signal,
+        "has_dialogue_signal": bool(dialogue_signal),
+        "dialogue_signal": dialogue_signal,
+    }
+
+
+def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
+    chapter_files = sorted(output_dir.glob("writer-imitate-ch*.json"))
+    chapter_signals: list[dict[str, object]] = []
+
+    for path in chapter_files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(payload, dict):
+            continue
+        signal = _extract_writer_output_loom_signal(payload, artifact_name=path.name)
+        if signal is not None:
+            chapter_signals.append(signal)
+
+    tension_chapters = [item for item in chapter_signals if item.get("has_tension_signal")]
+    quality_chapters = [item for item in chapter_signals if item.get("has_quality_signal")]
+    style_chapters = [item for item in chapter_signals if item.get("has_style_signal")]
+    rhythm_chapters = [item for item in chapter_signals if item.get("has_rhythm_signal")]
+    dialogue_chapters = [item for item in chapter_signals if item.get("has_dialogue_signal")]
+    quality_scores = [
+        float(item["chapter_quality_score"])
+        for item in quality_chapters
+        if isinstance(item.get("chapter_quality_score"), (int, float))
+    ]
+    tension_scores = [
+        float(item["tension_signal"]["tension_score"])
+        for item in tension_chapters
+        if isinstance(item.get("tension_signal"), dict)
+        and isinstance(item["tension_signal"].get("tension_score"), (int, float))
+    ]
+    style_drift_scores = [
+        float(item["style_signal"]["style_drift_score"])
+        for item in style_chapters
+        if isinstance(item.get("style_signal"), dict)
+        and isinstance(item["style_signal"].get("style_drift_score"), (int, float))
+    ]
+    hook_densities = [
+        float(item["rhythm_signal"]["hook_density"])
+        for item in rhythm_chapters
+        if isinstance(item.get("rhythm_signal"), dict)
+        and isinstance(item["rhythm_signal"].get("hook_density"), (int, float))
+    ]
+    alert_chapters = [
+        item["chapter_index"]
+        for item in tension_chapters
+        if isinstance(item.get("chapter_index"), int) and int(item.get("tension_alert_count", 0)) > 0
+    ]
+
+    return {
+        "contract_version": "loom-operator-signals.v1",
+        "signal_source": "writer-imitate chapter artifacts",
+        "chapter_count": len(chapter_signals),
+        "tension_signal_count": len(tension_chapters),
+        "chapter_quality_signal_count": len(quality_chapters),
+        "style_signal_count": len(style_chapters),
+        "rhythm_signal_count": len(rhythm_chapters),
+        "dialogue_signal_count": len(dialogue_chapters),
+        "tension_alert_chapters": alert_chapters,
+        "average_tension_score": round(sum(tension_scores) / len(tension_scores), 4) if tension_scores else None,
+        "average_chapter_quality_score": round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None,
+        "average_style_drift_score": round(sum(style_drift_scores) / len(style_drift_scores), 4) if style_drift_scores else None,
+        "average_hook_density": round(sum(hook_densities) / len(hook_densities), 4) if hook_densities else None,
+        "signals": chapter_signals,
+    }
+
+
+def _build_session_loom_gate_summary(
+    primary_verdicts: dict[str, object] | object,
+    consumer_migration: dict[str, object] | object,
+    loom_signals: dict[str, object] | object,
+) -> dict[str, object]:
+    primary_verdicts = primary_verdicts if isinstance(primary_verdicts, dict) else {}
+    consumer_migration = consumer_migration if isinstance(consumer_migration, dict) else {}
+    loom_signals = loom_signals if isinstance(loom_signals, dict) else {}
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
+    migration_status = str(consumer_migration.get("migration_status", "")).strip()
+    avg_quality = primary_verdicts.get("average_chapter_quality_score")
+    tension_signal_count = int(loom_signals.get("tension_signal_count", 0) or 0)
+    tension_alert_chapters = loom_signals.get("tension_alert_chapters", [])
+    tension_alert_count = len(tension_alert_chapters) if isinstance(tension_alert_chapters, list) else 0
+    if quality_verdict == "quality-hold":
+        gate_status = "blocked-on-quality"
+        next_gate_action = "raise chapter quality before continuing execution flow"
+    elif migration_status and migration_status != "primary-in-progress":
+        gate_status = "blocked-on-migration"
+        next_gate_action = "stabilize consumer migration before continuing execution flow"
+    else:
+        gate_status = "monitoring"
+        next_gate_action = "continue execution while monitoring Loom quality and migration telemetry"
+    return {
+        "contract_version": "loom-gate-summary.v1",
+        "quality_verdict": quality_verdict,
+        "average_chapter_quality_score": avg_quality,
+        "chapter_quality_signal_count": int(primary_verdicts.get("chapter_quality_signal_count", 0) or 0),
+        "tension_signal_count": tension_signal_count,
+        "tension_alert_chapter_count": tension_alert_count,
+        "migration_status": migration_status,
+        "gate_status": gate_status,
+        "next_gate_action": next_gate_action,
+    }
+
+
 def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     experiment_files = sorted(output_dir.glob("writer-innovation-experiment-*.json"))
     ledger_entries: list[dict[str, object]] = []
@@ -3484,6 +3780,45 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "reason": "根据 guarded/high-risk 状态自动选择",
         },
     ]
+    session_loom_signals = _collect_writer_output_loom_signals(output_dir)
+    avg_quality_score_obj = session_loom_signals.get("average_chapter_quality_score")
+    avg_quality_score = (
+        float(avg_quality_score_obj)
+        if isinstance(avg_quality_score_obj, (int, float))
+        else None
+    )
+    quality_signal_count = int(session_loom_signals.get("chapter_quality_signal_count", 0) or 0)
+    quality_verdict = (
+        "quality-signal-missing"
+        if quality_signal_count == 0
+        else "quality-hold"
+        if avg_quality_score is not None and avg_quality_score < 0.7
+        else "quality-pass"
+    )
+
+    avg_hook_density_obj = session_loom_signals.get("average_hook_density")
+    avg_tension_obj = session_loom_signals.get("average_tension_score")
+    avg_style_drift_obj = session_loom_signals.get("average_style_drift_score")
+    _hook = float(avg_hook_density_obj) if isinstance(avg_hook_density_obj, (int, float)) else None
+    _tension = float(avg_tension_obj) if isinstance(avg_tension_obj, (int, float)) else None
+    _drift = float(avg_style_drift_obj) if isinstance(avg_style_drift_obj, (int, float)) else None
+    if _hook is not None and _tension is not None:
+        _hook_score = min(1.0, (_hook or 0.0) / 2.0)
+        _tension_score = _tension or 0.0
+        _style_score = max(0.0, 1.0 - (_drift or 0.0) * 2)
+        reader_satisfaction_score: float | None = round(
+            _hook_score * 0.35 + _tension_score * 0.40 + _style_score * 0.25, 4
+        )
+    else:
+        reader_satisfaction_score = None
+    reader_satisfaction_verdict = (
+        "reader-blocked"
+        if reader_satisfaction_score is not None and reader_satisfaction_score < 0.6
+        else "reader-pass"
+        if reader_satisfaction_score is not None
+        else "reader-signal-missing"
+    )
+
     session_operator_contract = {
         "contract_version": "writer-imitate-operator-surface.v1",
         "status": {
@@ -3493,6 +3828,7 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
             "session_lane_status": session_lane_status,
             "session_execution_mode": session_execution_mode,
             "session_release_readiness": session_release_readiness,
+            "quality_verdict": quality_verdict,
         },
         "queues": {
             "priority_queue": session_priority_queue,
@@ -3514,15 +3850,25 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     }
     session_primary_verdicts = {
         "promotion_verdict": promotion_verdict,
-        "runtime_verdict": f"{session_execution_mode}:{session_ship_decision}:{risk_register}",
+        "runtime_verdict": (
+            f"{session_execution_mode}:{session_ship_decision}:{risk_register}:{quality_verdict}"
+        ),
         "control_verdict": f"{session_governor_mode}:{session_lane_status}",
-        "final_verdict": f"{session_ship_decision}:{session_release_readiness}",
+        "final_verdict": f"{session_ship_decision}:{session_release_readiness}:{quality_verdict}",
+        "quality_verdict": quality_verdict,
+        "average_chapter_quality_score": avg_quality_score,
+        "chapter_quality_signal_count": quality_signal_count,
+        "reader_satisfaction_score": reader_satisfaction_score,
+        "reader_satisfaction_verdict": reader_satisfaction_verdict,
     }
     session_primary_digests = {
         "runtime_contract": session_runtime_contract,
         "control_summary": f"ship={session_ship_decision};lane={session_lane_status};risk={risk_register}",
         "governance_checksum": f"checksum={len(session_escalation_path)}",
-        "operating_digest": f"ready={len(session_ready_queue)};blocked={len(session_blocked_queue)}",
+        "operating_digest": (
+            f"ready={len(session_ready_queue)};blocked={len(session_blocked_queue)};"
+            f"quality={avg_quality_score if avg_quality_score is not None else 'na'}"
+        ),
     }
     session_primary_contract_hints = {
         "preferred_verdict_source": "session_primary_verdicts",
@@ -3543,6 +3889,43 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         ],
         "migration_status": "compatibility-layer-active",
     }
+    session_consumer_migration_telemetry = {
+        "contract_version": "writer-imitate-consumer-migration-telemetry.v1",
+        "migration_status": "primary-in-progress",
+        "preferred_verdict_source": session_primary_contract_hints["preferred_verdict_source"],
+        "preferred_digest_source": session_primary_contract_hints["preferred_digest_source"],
+        "primary_consumers_ready": [
+            "writer-imitate-operator-surface",
+            "writer-imitate-action-queue",
+            "writer-imitate-execution-state",
+            "writer-imitate-execution-replay",
+            "writer-imitate-execution-apply",
+            "writer-imitate-execution-resume",
+            "writer-imitate-live-control-state",
+            "writer-imitate-live-mutation-preview",
+            "writer-imitate-live-validation-state",
+            "writer-imitate-external-runtime-executor-readiness",
+            "writer-imitate-external-runtime-executor-preview",
+        ],
+        "legacy_consumers_remaining": [
+            "writer-imitate-legacy-contract-surface",
+            "writer-imitate-legacy-retirement-preview",
+            "writer-imitate-index full-session-field-surface",
+        ],
+        "legacy_verdict_fields_remaining": session_primary_contract_hints["legacy_verdict_fields"],
+        "legacy_digest_fields_remaining": session_primary_contract_hints["legacy_digest_fields"],
+        "next_migration_slice": "move legacy surfaces and index summaries to read primary telemetry first",
+        "evidence": [
+            "primary operator surface generated",
+            "action/execution surfaces expose session_primary_verdicts and session_primary_digests",
+            "legacy surfaces still present for compatibility",
+        ],
+    }
+    session_loom_gate_summary = _build_session_loom_gate_summary(
+        session_primary_verdicts,
+        session_consumer_migration_telemetry,
+        session_loom_signals,
+    )
     session_legacy_contract_layer = {
         "contract_version": "writer-imitate-legacy-contract-layer.v1",
         "legacy_verdict_fields": session_primary_contract_hints["legacy_verdict_fields"],
@@ -3553,16 +3936,39 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     }
     session_legacy_retirement_readiness = {
         "contract_version": "writer-imitate-legacy-retirement-readiness.v1",
-        "status": "not-ready",
+        "status": (
+            "quality-blocked"
+            if quality_verdict == "quality-hold" or reader_satisfaction_verdict == "reader-blocked"
+            else "not-ready"
+        ),
         "required_conditions": [
             "downstream consumers switched to session_primary_verdicts",
             "downstream consumers switched to session_primary_digests",
             "legacy contract surface reviewed by operators",
             "primary-first display policy validated in production-like workflow",
+            "loom quality gate passes for the current session",
         ],
         "blocking_reasons": [
             "legacy verdict fields still exposed for compatibility",
             "legacy digest fields still exposed for compatibility",
+            *(
+                [
+                    f"loom quality gate blocks retirement (quality_verdict={quality_verdict}, average_chapter_quality_score={avg_quality_score})"
+                ]
+                if quality_verdict == "quality-hold"
+                else [
+                    "loom quality signal missing for retirement gate"
+                ]
+                if quality_verdict == "quality-signal-missing"
+                else []
+            ),
+            *(
+                [
+                    f"reader satisfaction gate blocks retirement (reader_satisfaction_score={reader_satisfaction_score:.3f})"
+                ]
+                if reader_satisfaction_verdict == "reader-blocked" and reader_satisfaction_score is not None
+                else []
+            ),
         ],
     }
     session_legacy_retirement_plan = {
@@ -3668,11 +4074,14 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": session_primary_verdicts,
         "session_primary_digests": session_primary_digests,
         "session_primary_contract_hints": session_primary_contract_hints,
+        "session_consumer_migration_telemetry": session_consumer_migration_telemetry,
+        "session_loom_gate_summary": session_loom_gate_summary,
         "session_legacy_contract_layer": session_legacy_contract_layer,
         "session_legacy_retirement_readiness": session_legacy_retirement_readiness,
         "session_legacy_retirement_plan": session_legacy_retirement_plan,
         "session_legacy_retirement_pilot_wave": session_legacy_retirement_pilot_wave,
         "session_control_surface_entrypoints": session_control_surface_entrypoints,
+        "session_loom_signals": session_loom_signals,
         "experiments": ledger_entries,
     }
 
@@ -3696,6 +4105,9 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
     ]
     primary_verdicts = session_state.get("session_primary_verdicts", {})
     primary_digests = session_state.get("session_primary_digests", {})
+    consumer_migration = session_state.get("session_consumer_migration_telemetry", {})
+    loom_signals = session_state.get("session_loom_signals", {})
+    loom_gate_summary = _build_session_loom_gate_summary(primary_verdicts, consumer_migration, loom_signals)
     return {
         "contract_version": "writer-imitate-action-queue.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -3707,6 +4119,8 @@ def _build_writer_output_action_queue(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": primary_verdicts if isinstance(primary_verdicts, dict) else {},
         "session_primary_digests": primary_digests if isinstance(primary_digests, dict) else {},
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": session_state.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": loom_gate_summary,
         "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "action_backlog": backlog,
         "ready_items": ready_items,
@@ -3730,6 +4144,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    consumer_migration_obj = session_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
@@ -3740,6 +4156,8 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
     retirement_pilot_wave = retirement_pilot_wave_obj if isinstance(retirement_pilot_wave_obj, dict) else {}
     entrypoints_obj = session_state.get("session_control_surface_entrypoints", {})
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
+    loom_signals_obj = session_state.get("session_loom_signals", {})
+    loom_signals = loom_signals_obj if isinstance(loom_signals_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-operator-surface.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -3748,10 +4166,12 @@ def _build_writer_output_operator_surface(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
         "session_primary_contract_hints": primary_hints,
+        "session_consumer_migration_telemetry": consumer_migration,
         "session_legacy_contract_layer": legacy_layer,
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
         "session_legacy_retirement_pilot_wave": retirement_pilot_wave,
+        "session_loom_signals": loom_signals,
         "session_control_surface_entrypoints": entrypoints,
         "promotion_verdict": session_state.get("promotion_verdict", ""),
         "risk_register": session_state.get("risk_register", ""),
@@ -3820,6 +4240,31 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- runtime_verdict: {primary_verdicts.get('runtime_verdict', '')}")
         lines.append(f"- control_verdict: {primary_verdicts.get('control_verdict', '')}")
         lines.append(f"- final_verdict: {primary_verdicts.get('final_verdict', '')}")
+        lines.append(f"- quality_verdict: {primary_verdicts.get('quality_verdict', '')}")
+        lines.append(
+            f"- average_chapter_quality_score: {primary_verdicts.get('average_chapter_quality_score', '')}"
+        )
+        lines.append(
+            f"- chapter_quality_signal_count: {primary_verdicts.get('chapter_quality_signal_count', 0)}"
+        )
+        if primary_verdicts.get("reader_satisfaction_score") is not None:
+            lines.append(
+                f"- reader_satisfaction_score: {primary_verdicts.get('reader_satisfaction_score', '')}"
+            )
+            lines.append(
+                f"- reader_satisfaction_verdict: {primary_verdicts.get('reader_satisfaction_verdict', '')}"
+            )
+            loom_sigs = payload.get("session_loom_signals", {})
+            if isinstance(loom_sigs, dict):
+                _h = loom_sigs.get("average_hook_density")
+                _t = loom_sigs.get("average_tension_score")
+                _d = loom_sigs.get("average_style_drift_score")
+                if _h is not None or _t is not None:
+                    lines.append("\n### Reader Simulation Panels")
+                    lines.append(f"- casual (hook_density): {round(min(1.0, float(_h or 0)/2.0), 3) if _h is not None else 'n/a'}")
+                    lines.append(f"- veteran (tension+surprise): {round(float(_t or 0), 3) if _t is not None else 'n/a'}")
+                    lines.append(f"- satisfaction (climax+tension): {round(float(_t or 0), 3) if _t is not None else 'n/a'}")
+                    lines.append(f"- editor (tension+style): {round(max(0.0, 1.0 - float(_d or 0)*2)*0.5 + float(_t or 0)*0.5, 3) if _t is not None else 'n/a'}")
     primary_digests = payload.get("session_primary_digests", {})
     if isinstance(primary_digests, dict):
         lines.append("\n## Primary Digests")
@@ -3848,6 +4293,36 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         lines.append(f"- legacy_verdict_fields: {legacy_verdict_text}")
         lines.append(f"- legacy_digest_fields: {legacy_digest_text}")
         lines.append("- compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint")
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- preferred_verdict_source: {consumer_migration.get('preferred_verdict_source', '')}")
+        lines.append(f"- preferred_digest_source: {consumer_migration.get('preferred_digest_source', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
+        primary_consumers = consumer_migration.get("primary_consumers_ready", [])
+        legacy_consumers = consumer_migration.get("legacy_consumers_remaining", [])
+        primary_text = "；".join(str(x) for x in primary_consumers) if isinstance(primary_consumers, list) else ""
+        legacy_text = "；".join(str(x) for x in legacy_consumers) if isinstance(legacy_consumers, list) else ""
+        lines.append(f"- primary_consumers_ready: {primary_text}")
+        lines.append(f"- legacy_consumers_remaining: {legacy_text}")
+    loom_gate_summary = payload.get("session_loom_gate_summary", {})
+    if isinstance(loom_gate_summary, dict):
+        lines.append("\n## Loom Gate Summary")
+        lines.append(f"- gate_status: {loom_gate_summary.get('gate_status', '')}")
+        lines.append(f"- quality_verdict: {loom_gate_summary.get('quality_verdict', '')}")
+        lines.append(
+            f"- average_chapter_quality_score: {loom_gate_summary.get('average_chapter_quality_score', '')}"
+        )
+        lines.append(
+            f"- chapter_quality_signal_count: {loom_gate_summary.get('chapter_quality_signal_count', 0)}"
+        )
+        lines.append(f"- tension_signal_count: {loom_gate_summary.get('tension_signal_count', 0)}")
+        lines.append(
+            f"- tension_alert_chapter_count: {loom_gate_summary.get('tension_alert_chapter_count', 0)}"
+        )
+        lines.append(f"- migration_status: {loom_gate_summary.get('migration_status', '')}")
+        lines.append(f"- next_gate_action: {loom_gate_summary.get('next_gate_action', '')}")
     legacy_layer = payload.get("session_legacy_contract_layer", {})
     if isinstance(legacy_layer, dict):
         lines.append("\n## Legacy Contract Layer")
@@ -3886,6 +4361,44 @@ def _append_primary_surface_lines(lines: list[str], payload: dict[str, object]) 
         targets = retirement_pilot_wave.get("target_fields", [])
         target_text = "；".join(str(x) for x in targets) if isinstance(targets, list) else ""
         lines.append(f"- target_fields: {target_text}")
+    loom_signals = payload.get("session_loom_signals", {})
+    if isinstance(loom_signals, dict):
+        lines.append("\n## Loom Signals")
+        lines.append(f"- signal_source: {loom_signals.get('signal_source', '')}")
+        lines.append(f"- chapter_count: {loom_signals.get('chapter_count', 0)}")
+        lines.append(f"- tension_signal_count: {loom_signals.get('tension_signal_count', 0)}")
+        lines.append(
+            f"- chapter_quality_signal_count: {loom_signals.get('chapter_quality_signal_count', 0)}"
+        )
+        lines.append(f"- average_tension_score: {loom_signals.get('average_tension_score', '')}")
+        lines.append(
+            f"- average_chapter_quality_score: {loom_signals.get('average_chapter_quality_score', '')}"
+        )
+        if loom_signals.get("average_style_drift_score") is not None:
+            lines.append(f"- average_style_drift_score: {loom_signals.get('average_style_drift_score', '')}")
+        if loom_signals.get("average_hook_density") is not None:
+            lines.append(f"- average_hook_density: {loom_signals.get('average_hook_density', '')}")
+        if loom_signals.get("style_signal_count", 0):
+            lines.append(f"- style_signal_count: {loom_signals.get('style_signal_count', 0)}")
+        if loom_signals.get("rhythm_signal_count", 0):
+            lines.append(f"- rhythm_signal_count: {loom_signals.get('rhythm_signal_count', 0)}")
+        if loom_signals.get("dialogue_signal_count", 0):
+            lines.append(f"- dialogue_signal_count: {loom_signals.get('dialogue_signal_count', 0)}")
+        tension_alert_chapters = loom_signals.get("tension_alert_chapters", [])
+        alert_text = "；".join(str(x) for x in tension_alert_chapters) if isinstance(tension_alert_chapters, list) else ""
+        lines.append(f"- tension_alert_chapters: {alert_text}")
+        signals = loom_signals.get("signals", [])
+        if isinstance(signals, list) and signals:
+            lines.append("\n### Loom Chapter Signals")
+            for item in signals[:8]:
+                if not isinstance(item, dict):
+                    continue
+                lines.append(
+                    f"- chapter {item.get('chapter_index', '')}: "
+                    f"tension={item.get('tension_signal', {}).get('tension_score', '') if isinstance(item.get('tension_signal'), dict) else ''} | "
+                    f"quality={item.get('chapter_quality_score', '')} | "
+                    f"alerts={item.get('tension_alert_count', 0)}"
+                )
 
 
 def _writer_output_operator_surface_markdown(output_dir: Path) -> str:
@@ -3933,6 +4446,8 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
     primary_hints_obj = session_state.get("session_primary_contract_hints", {})
     primary_hints = primary_hints_obj if isinstance(primary_hints_obj, dict) else {}
+    consumer_migration_obj = session_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     retirement_readiness_obj = session_state.get("session_legacy_retirement_readiness", {})
     retirement_readiness = retirement_readiness_obj if isinstance(retirement_readiness_obj, dict) else {}
     retirement_plan_obj = session_state.get("session_legacy_retirement_plan", {})
@@ -3947,6 +4462,7 @@ def _build_writer_output_legacy_contract_surface(output_dir: Path) -> dict[str, 
         "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
         "session_legacy_contract_layer": legacy_layer,
         "session_primary_contract_hints": primary_hints,
+        "session_consumer_migration_telemetry": consumer_migration,
         "session_legacy_retirement_readiness": retirement_readiness,
         "session_legacy_retirement_plan": retirement_plan,
         "session_legacy_retirement_pilot_wave": retirement_pilot_wave,
@@ -3978,6 +4494,17 @@ def _writer_output_legacy_contract_surface_markdown(output_dir: Path) -> str:
             lines.append(f"- external_runtime_executor_readiness_role: {entrypoint_roles.get('external_runtime_executor_readiness', '')}")
             lines.append(f"- external_runtime_executor_preview_role: {entrypoint_roles.get('external_runtime_executor_preview', '')}")
     _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
+        primary_consumers = consumer_migration.get("primary_consumers_ready", [])
+        legacy_consumers = consumer_migration.get("legacy_consumers_remaining", [])
+        primary_text = "；".join(str(x) for x in primary_consumers) if isinstance(primary_consumers, list) else ""
+        legacy_text = "；".join(str(x) for x in legacy_consumers) if isinstance(legacy_consumers, list) else ""
+        lines.append(f"- primary_consumers_ready: {primary_text}")
+        lines.append(f"- legacy_consumers_remaining: {legacy_text}")
     retirement_readiness = payload.get("session_legacy_retirement_readiness", {})
     if isinstance(retirement_readiness, dict):
         lines.append("\n## Legacy Retirement Readiness")
@@ -4021,6 +4548,8 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
     readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
     legacy_layer_obj = session_state.get("session_legacy_contract_layer", {})
     legacy_layer = legacy_layer_obj if isinstance(legacy_layer_obj, dict) else {}
+    consumer_migration_obj = session_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-legacy-retirement-preview.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -4028,7 +4557,8 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
         "retirement_readiness": readiness,
         "retirement_pilot_wave": pilot_wave,
         "legacy_contract_layer": legacy_layer,
-        "preview_status": "planned-not-executed",
+        "consumer_migration_telemetry": consumer_migration,
+        "preview_status": "quality-blocked" if readiness.get("status") == "quality-blocked" else "planned-not-executed",
         "projected_effect": {
             "legacy_verdict_count_after_wave": max(int(legacy_layer.get("legacy_verdict_count", 0) or 0), 0),
             "legacy_digest_count_after_wave": max(
@@ -4038,6 +4568,7 @@ def _build_writer_output_legacy_retirement_preview(output_dir: Path) -> dict[str
                 0,
             ),
             "requires_rollback_on_mismatch": True,
+            "quality_gate": readiness.get("status", ""),
         },
     }
 
@@ -4048,10 +4579,13 @@ def _build_writer_output_control_surface_registry(output_dir: Path) -> dict[str,
     entrypoints = entrypoints_obj if isinstance(entrypoints_obj, dict) else {}
     operator_contract_obj = session_state.get("session_operator_contract", {})
     operator_contract = operator_contract_obj if isinstance(operator_contract_obj, dict) else {}
+    loom_gate_summary_obj = session_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-control-surface-registry.v1",
         "session_control_surface_entrypoints": entrypoints,
         "session_operator_contract": operator_contract,
+        "session_loom_gate_summary": loom_gate_summary,
         "registry_status": "active",
     }
 
@@ -4070,14 +4604,15 @@ def _writer_output_control_surface_registry_markdown(output_dir: Path) -> str:
         lines.append(f"- live_control_state: {entrypoints.get('live_control_state_markdown', '')}")
         lines.append(f"- display_policy: {entrypoints.get('display_policy', '')}")
         roles = entrypoints.get("entrypoint_roles", {})
-        if isinstance(roles, dict):
-            lines.append("\n## EntryPoint Roles")
-            lines.append(f"- primary_operator_entrypoint: {roles.get('primary_operator_entrypoint', '')}")
-            lines.append(f"- legacy_operator_entrypoint: {roles.get('legacy_operator_entrypoint', '')}")
-            lines.append(f"- legacy_retirement_preview: {roles.get('legacy_retirement_preview', '')}")
-            lines.append(f"- live_control_state: {roles.get('live_control_state', '')}")
+    if isinstance(roles, dict):
+        lines.append("\n## EntryPoint Roles")
+        lines.append(f"- primary_operator_entrypoint: {roles.get('primary_operator_entrypoint', '')}")
+        lines.append(f"- legacy_operator_entrypoint: {roles.get('legacy_operator_entrypoint', '')}")
+        lines.append(f"- legacy_retirement_preview: {roles.get('legacy_retirement_preview', '')}")
+        lines.append(f"- live_control_state: {roles.get('live_control_state', '')}")
     operator_contract = payload.get("session_operator_contract", {})
     _append_operator_contract_lines(lines, operator_contract, include_queues=True, include_actions=True)
+    _append_primary_surface_lines(lines, payload)
     return "\n".join(lines).strip() + "\n"
 
 
@@ -4099,6 +4634,12 @@ def _writer_output_legacy_retirement_preview_markdown(output_dir: Path) -> str:
         blocking_text = "；".join(str(x) for x in blocking_reasons) if isinstance(blocking_reasons, list) else ""
         lines.append(f"- required_conditions: {required_text}")
         lines.append(f"- blocking_reasons: {blocking_text}")
+
+    consumer_migration = payload.get("consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
 
     pilot_wave = payload.get("retirement_pilot_wave", {})
     if isinstance(pilot_wave, dict):
@@ -4253,6 +4794,13 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
     ]
     execution_registry_obj = session_state.get("session_execution_registry", {})
     execution_registry = execution_registry_obj if isinstance(execution_registry_obj, dict) else {}
+    consumer_migration = session_state.get("session_consumer_migration_telemetry", {})
+    loom_signals = session_state.get("session_loom_signals", {})
+    loom_gate_summary = _build_session_loom_gate_summary(
+        session_state.get("session_primary_verdicts", {}),
+        consumer_migration,
+        loom_signals,
+    )
     recovery_cursor = {
         "blocked_ticket_ids": [
             str(item.get("ticket_id", ""))
@@ -4299,6 +4847,8 @@ def _build_writer_output_execution_state(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": session_state.get("session_primary_verdicts", {}),
         "session_primary_digests": session_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": session_state.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": session_state.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": loom_gate_summary,
         "session_legacy_contract_layer": session_state.get("session_legacy_contract_layer", {}),
         "execution_ticket_count": len(execution_tickets),
         "ready_count": ready_count,
@@ -4490,6 +5040,8 @@ def _build_writer_output_execution_replay(output_dir: Path) -> dict[str, object]
         "session_primary_verdicts": execution_state.get("session_primary_verdicts", {}),
         "session_primary_digests": execution_state.get("session_primary_digests", {}),
         "session_primary_contract_hints": execution_state.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": execution_state.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": execution_state.get("session_loom_gate_summary", {}),
         "session_legacy_contract_layer": execution_state.get("session_legacy_contract_layer", {}),
         "current_run_status": execution_state.get("run_status", ""),
         "next_run_status": next_run_status,
@@ -4633,6 +5185,8 @@ def _build_writer_output_execution_apply(output_dir: Path) -> dict[str, object]:
         "session_primary_verdicts": replay.get("session_primary_verdicts", {}),
         "session_primary_digests": replay.get("session_primary_digests", {}),
         "session_primary_contract_hints": replay.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": replay.get("session_consumer_migration_telemetry", {}),
+        "session_loom_gate_summary": replay.get("session_loom_gate_summary", {}),
         "session_legacy_contract_layer": replay.get("session_legacy_contract_layer", {}),
         "apply_status": apply_status,
         "applied_tickets": applied_tickets,
@@ -4699,22 +5253,38 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = apply_preview.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = apply_preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = apply_preview.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     applied_checkpoints_obj = apply_preview.get("applied_checkpoints", [])
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
     applied_transitions_obj = apply_preview.get("applied_transitions", [])
     applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
     live_mutation_readiness = {
-        "status": "not-ready",
+        "status": "quality-blocked" if quality_verdict == "quality-hold" else "not-ready",
         "required_conditions": [
             "checkpoint writeback executor implemented",
             "transition apply executor implemented",
             "rollback path verified against live mutation",
+            "loom quality gate passes before live mutation",
+            "consumer migration telemetry reviewed before live mutation",
         ],
         "blocking_reasons": [
             "apply preview is still non-mutating",
             "live checkpoint writeback has not been wired",
+            *(
+                [f"loom quality gate blocks live mutation (quality_verdict={quality_verdict})"]
+                if quality_verdict == "quality-hold"
+                else []
+            ),
         ],
-        "next_action": "implement checkpoint writeback executor",
+        "next_action": (
+            "raise chapter quality before live mutation"
+            if quality_verdict == "quality-hold"
+            else "implement checkpoint writeback executor"
+        ),
     }
     live_mutation_plan = {
         "phase": "pre-live-mutation",
@@ -4762,6 +5332,8 @@ def _build_writer_output_live_control_state(output_dir: Path) -> dict[str, objec
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "pending_checkpoint_writeback": applied_checkpoints,
         "pending_transition_apply": applied_transitions,
         "next_live_mutation_step": "checkpoint-writeback",
@@ -4782,6 +5354,11 @@ def _writer_output_live_control_state_markdown(output_dir: Path) -> str:
     lines.append(f"- next_live_mutation_step: {payload.get('next_live_mutation_step', '')}")
     _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("live_mutation_readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Live Mutation Readiness")
@@ -4845,6 +5422,12 @@ def _build_writer_output_live_mutation_preview(output_dir: Path) -> dict[str, ob
     plan = plan_obj if isinstance(plan_obj, dict) else {}
     pilot_wave_obj = live_control_state.get("live_mutation_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = live_control_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_control_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     checkpoints_obj = live_control_state.get("pending_checkpoint_writeback", [])
     checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
     transitions_obj = live_control_state.get("pending_transition_apply", [])
@@ -4855,6 +5438,9 @@ def _build_writer_output_live_mutation_preview(output_dir: Path) -> dict[str, ob
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "live_control_state_entrypoint": "writer-imitate-live-control-state.json",
         "preview_status": "planned-not-executed",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "live_mutation_readiness": readiness,
         "live_mutation_plan": plan,
         "live_mutation_pilot_wave": pilot_wave,
@@ -4928,6 +5514,10 @@ def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, ob
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = live_control_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_control_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-live-checkpoint-state.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -4937,6 +5527,8 @@ def _build_writer_output_live_checkpoint_state(output_dir: Path) -> dict[str, ob
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "applied_checkpoints": applied_checkpoints,
     }
 
@@ -4983,6 +5575,10 @@ def _build_writer_output_live_transition_state(output_dir: Path) -> dict[str, ob
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = live_control_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = live_control_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_control_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-live-transition-state.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
@@ -4992,6 +5588,8 @@ def _build_writer_output_live_transition_state(output_dir: Path) -> dict[str, ob
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "applied_transitions": applied_transitions,
     }
 
@@ -5029,6 +5627,10 @@ def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, ob
     primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
     primary_digests_obj = live_transition_state.get("session_primary_digests", {})
     primary_digests = primary_digests_obj if isinstance(primary_digests_obj, dict) else {}
+    consumer_migration_obj = live_transition_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_transition_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
 
     validation_checks = [
         {"check": "checkpoint_writeback_applied", "passed": bool(checkpoints)},
@@ -5046,6 +5648,8 @@ def _build_writer_output_live_validation_state(output_dir: Path) -> dict[str, ob
         "session_operator_contract": operator_contract,
         "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": primary_digests,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "validation_checks": validation_checks,
         "next_live_mutation_step": "external-runtime-executor",
     }
@@ -5072,19 +5676,43 @@ def _writer_output_live_validation_state_markdown(output_dir: Path) -> str:
 def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -> dict[str, object]:
     live_validation_state = _build_writer_output_live_validation_state(output_dir)
     validation_status = str(live_validation_state.get("live_validation_status", "")).strip()
+    primary_verdicts_obj = live_validation_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = live_validation_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = live_validation_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
     readiness = {
-        "status": "not-ready" if validation_status != "validated-local" else "bridge-ready-runtime-not-wired",
+        "status": (
+            "quality-blocked"
+            if quality_verdict == "quality-hold"
+            else "not-ready"
+            if validation_status != "validated-local"
+            else "bridge-ready-runtime-not-wired"
+        ),
         "required_conditions": [
             "external runtime checkpoint executor implemented",
             "external runtime transition executor implemented",
             "runtime-side rollback path verified",
             "consumer migration telemetry connected",
+            "loom quality gate passes before runtime executor launch",
         ],
         "blocking_reasons": [
             "local bridge stops at output artifacts only",
             "external runtime mutation path not wired yet",
+            *(
+                [f"loom quality gate blocks runtime executor launch (quality_verdict={quality_verdict})"]
+                if quality_verdict == "quality-hold"
+                else []
+            ),
         ],
-        "next_action": "implement external runtime checkpoint executor",
+        "next_action": (
+            "raise chapter quality before wiring runtime executor"
+            if quality_verdict == "quality-hold"
+            else "implement external runtime checkpoint executor"
+        ),
+        "quality_verdict": quality_verdict,
     }
     runtime_executor_plan = {
         "phase": "pre-runtime-executor",
@@ -5120,6 +5748,9 @@ def _build_writer_output_external_runtime_executor_readiness(output_dir: Path) -
         "contract_version": "writer-imitate-external-runtime-executor-readiness.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "live_validation_state_entrypoint": "writer-imitate-live-validation-state.json",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness,
         "external_runtime_executor_plan": runtime_executor_plan,
         "external_runtime_executor_pilot_wave": runtime_executor_pilot_wave,
@@ -5132,6 +5763,12 @@ def _writer_output_external_runtime_executor_readiness_markdown(output_dir: Path
     lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
     lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append("- live_validation_state_entrypoint: writer-imitate-live-validation-state.md")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5176,11 +5813,20 @@ def _build_writer_output_external_runtime_executor_preview(output_dir: Path) -> 
     plan = plan_obj if isinstance(plan_obj, dict) else {}
     pilot_wave_obj = readiness.get("external_runtime_executor_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = readiness.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = readiness.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = readiness.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     return {
         "contract_version": "writer-imitate-external-runtime-executor-preview.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_readiness_entrypoint": "writer-imitate-external-runtime-executor-readiness.json",
         "preview_status": "planned-not-executed",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness_payload,
         "external_runtime_executor_plan": plan,
         "external_runtime_executor_pilot_wave": pilot_wave,
@@ -5194,6 +5840,12 @@ def _writer_output_external_runtime_executor_preview_markdown(output_dir: Path) 
     lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
     lines.append("- external_runtime_executor_readiness_entrypoint: writer-imitate-external-runtime-executor-readiness.md")
     lines.append(f"- preview_status: {payload.get('preview_status', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5223,6 +5875,12 @@ def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> 
     readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
     pilot_wave_obj = preview.get("external_runtime_executor_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = preview.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     live_checkpoint_state = _build_writer_output_live_checkpoint_state(output_dir)
     applied_checkpoints_obj = live_checkpoint_state.get("applied_checkpoints", [])
     applied_checkpoints = applied_checkpoints_obj if isinstance(applied_checkpoints_obj, list) else []
@@ -5246,6 +5904,9 @@ def _build_writer_output_external_runtime_checkpoint_state(output_dir: Path) -> 
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
         "checkpoint_state_status": "external-runtime-checkpoint-simulated-local",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness,
         "pilot_wave": pilot_wave,
         "applied_runtime_checkpoints": simulated_runtime_checkpoints,
@@ -5261,6 +5922,12 @@ def _writer_output_external_runtime_checkpoint_state_markdown(output_dir: Path) 
     lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
     lines.append(f"- checkpoint_state_status: {payload.get('checkpoint_state_status', '')}")
     lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5287,6 +5954,12 @@ def _build_writer_output_external_runtime_transition_state(output_dir: Path) -> 
     readiness = readiness_obj if isinstance(readiness_obj, dict) else {}
     pilot_wave_obj = preview.get("external_runtime_executor_pilot_wave", {})
     pilot_wave = pilot_wave_obj if isinstance(pilot_wave_obj, dict) else {}
+    primary_verdicts_obj = preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = preview.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
     live_transition_state = _build_writer_output_live_transition_state(output_dir)
     applied_transitions_obj = live_transition_state.get("applied_transitions", [])
     applied_transitions = applied_transitions_obj if isinstance(applied_transitions_obj, list) else []
@@ -5310,6 +5983,9 @@ def _build_writer_output_external_runtime_transition_state(output_dir: Path) -> 
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
         "transition_state_status": "external-runtime-transition-simulated-local",
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
         "readiness": readiness,
         "pilot_wave": pilot_wave,
         "applied_runtime_transitions": simulated_runtime_transitions,
@@ -5325,6 +6001,12 @@ def _writer_output_external_runtime_transition_state_markdown(output_dir: Path) 
     lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
     lines.append(f"- transition_state_status: {payload.get('transition_state_status', '')}")
     lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     readiness = payload.get("readiness", {})
     if isinstance(readiness, dict):
         lines.append("\n## Readiness")
@@ -5342,6 +6024,59 @@ def _writer_output_external_runtime_transition_state_markdown(output_dir: Path) 
             lines.append(
                 f"- {item.get('from', '')} -> {item.get('to', '')} | applied={item.get('applied', False)} | mode={item.get('mode', '')}"
             )
+    return "\n".join(lines).strip() + "\n"
+
+
+def _build_writer_output_external_runtime_validation_state(output_dir: Path) -> dict[str, object]:
+    checkpoint_state = _build_writer_output_external_runtime_checkpoint_state(output_dir)
+    transition_state = _build_writer_output_external_runtime_transition_state(output_dir)
+    checkpoints_obj = checkpoint_state.get("applied_runtime_checkpoints", [])
+    checkpoints = checkpoints_obj if isinstance(checkpoints_obj, list) else []
+    transitions_obj = transition_state.get("applied_runtime_transitions", [])
+    transitions = transitions_obj if isinstance(transitions_obj, list) else []
+    primary_verdicts_obj = transition_state.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = transition_state.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    loom_gate_summary_obj = transition_state.get("session_loom_gate_summary", {})
+    loom_gate_summary = loom_gate_summary_obj if isinstance(loom_gate_summary_obj, dict) else {}
+    validation_checks = [
+        {"check": "runtime_checkpoint_simulated", "passed": bool(checkpoints)},
+        {"check": "runtime_transition_simulated", "passed": bool(transitions)},
+    ]
+    validation_status = "validated-runtime-simulation" if all(bool(item.get("passed", False)) for item in validation_checks) else "validation-failed"
+    return {
+        "contract_version": "writer-imitate-external-runtime-validation-state.v1",
+        "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
+        "external_runtime_executor_preview_entrypoint": "writer-imitate-external-runtime-executor-preview.json",
+        "validation_status": validation_status,
+        "session_primary_verdicts": primary_verdicts,
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": loom_gate_summary,
+        "validation_checks": validation_checks,
+        "next_runtime_step": "external-runtime-executor-implementation",
+    }
+
+
+def _writer_output_external_runtime_validation_state_markdown(output_dir: Path) -> str:
+    payload = _build_writer_output_external_runtime_validation_state(output_dir)
+    lines = ["# Writer Imitation External Runtime Validation State"]
+    lines.append(f"\n- contract_version: {payload.get('contract_version', '')}")
+    lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
+    lines.append("- external_runtime_executor_preview_entrypoint: writer-imitate-external-runtime-executor-preview.md")
+    lines.append(f"- validation_status: {payload.get('validation_status', '')}")
+    lines.append(f"- next_runtime_step: {payload.get('next_runtime_step', '')}")
+    _append_primary_surface_lines(lines, payload)
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
+    lines.append("\n## Validation Checks")
+    checks = payload.get("validation_checks", [])
+    for item in checks if isinstance(checks, list) else []:
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('check', '')}: passed={item.get('passed', False)}")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -5373,21 +6108,39 @@ def _build_writer_output_execution_resume(output_dir: Path) -> dict[str, object]
         "对 deferred tickets 走 review-resume",
         "对 blocked tickets 走 recovery-resume",
     ]
-    resume_status = "resume-ready" if resume_targets else "no-resume-needed"
+    primary_verdicts_obj = apply_preview.get("session_primary_verdicts", {})
+    primary_verdicts = primary_verdicts_obj if isinstance(primary_verdicts_obj, dict) else {}
+    consumer_migration_obj = apply_preview.get("session_consumer_migration_telemetry", {})
+    consumer_migration = consumer_migration_obj if isinstance(consumer_migration_obj, dict) else {}
+    quality_verdict = str(primary_verdicts.get("quality_verdict", "")).strip()
+    resume_status = (
+        "quality-blocked"
+        if quality_verdict == "quality-hold"
+        else "resume-ready"
+        if resume_targets
+        else "no-resume-needed"
+    )
+    resume_hint = (
+        "raise quality before resume/recovery"
+        if quality_verdict == "quality-hold"
+        else apply_preview.get("next_resume_hint", "")
+    )
     return {
         "contract_version": "writer-imitate-execution-resume.v1",
         "primary_operator_entrypoint": "writer-imitate-operator-surface.json",
         "legacy_operator_entrypoint": "writer-imitate-legacy-contract-surface.json",
         "source_contract_version": apply_preview.get("contract_version", ""),
         "session_operator_contract": apply_preview.get("session_operator_contract", {}),
-        "session_primary_verdicts": apply_preview.get("session_primary_verdicts", {}),
+        "session_primary_verdicts": primary_verdicts,
         "session_primary_digests": apply_preview.get("session_primary_digests", {}),
         "session_primary_contract_hints": apply_preview.get("session_primary_contract_hints", {}),
+        "session_consumer_migration_telemetry": consumer_migration,
+        "session_loom_gate_summary": apply_preview.get("session_loom_gate_summary", {}),
         "session_legacy_contract_layer": apply_preview.get("session_legacy_contract_layer", {}),
         "resume_status": resume_status,
         "resume_targets": resume_targets,
         "resume_steps": resume_steps,
-        "resume_hint": apply_preview.get("next_resume_hint", ""),
+        "resume_hint": resume_hint,
     }
 
 
@@ -5402,6 +6155,11 @@ def _writer_output_execution_resume_markdown(output_dir: Path) -> str:
     lines.append(f"- resume_hint: {payload.get('resume_hint', '')}")
     _append_primary_surface_lines(lines, payload)
     _append_operator_contract_lines(lines, payload.get("session_operator_contract", {}))
+    consumer_migration = payload.get("session_consumer_migration_telemetry", {})
+    if isinstance(consumer_migration, dict):
+        lines.append("\n## Consumer Migration Telemetry")
+        lines.append(f"- migration_status: {consumer_migration.get('migration_status', '')}")
+        lines.append(f"- next_migration_slice: {consumer_migration.get('next_migration_slice', '')}")
     resume_targets = payload.get("resume_targets", [])
     resume_steps = payload.get("resume_steps", [])
     lines.append("\n## Resume Targets")
@@ -6487,6 +7245,20 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
             "session_ship_decision",
             "session_recovery_owner",
         ]
+        loom_gate_summary = _build_session_loom_gate_summary(
+            {
+                "quality_verdict": "quality-hold" if risk_register == "high-risk" else "quality-pass",
+                "average_chapter_quality_score": None,
+                "chapter_quality_signal_count": 0,
+            },
+            {
+                "migration_status": "primary-in-progress",
+            },
+            {
+                "tension_signal_count": 0,
+                "tension_alert_chapters": [],
+            },
+        )
         lines.append("\n### Control Surface EntryPoints")
         lines.append("- primary_operator_entrypoint: writer-imitate-operator-surface.md")
         lines.append("- legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md")
@@ -6533,6 +7305,18 @@ def _writer_output_index_markdown(output_dir: Path) -> str:
         lines.append(
             f"- session_digest_registry: runtime={session_runtime_contract}；summary={session_control_summary[0]}"
         )
+        if loom_gate_summary:
+            lines.append("\n### Loom Gate Summary")
+            lines.append(f"- gate_status: {loom_gate_summary.get('gate_status', '')}")
+            lines.append(f"- quality_verdict: {loom_gate_summary.get('quality_verdict', '')}")
+            lines.append(
+                f"- average_chapter_quality_score: {loom_gate_summary.get('average_chapter_quality_score', '')}"
+            )
+            lines.append(
+                f"- tension_alert_chapter_count: {loom_gate_summary.get('tension_alert_chapter_count', 0)}"
+            )
+            lines.append(f"- migration_status: {loom_gate_summary.get('migration_status', '')}")
+            lines.append(f"- next_gate_action: {loom_gate_summary.get('next_gate_action', '')}")
 
         lines.append("\n### Full Session Field Surface")
         lines.append(f"- promotion_verdict: {promotion_verdict}")
@@ -7295,6 +8079,27 @@ def writer_imitate_apply_external_runtime_transition(
 
 
 @app.command()
+def writer_imitate_validate_external_runtime_state(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+) -> None:
+    """Validate the external-runtime simulation bridge into an output artifact only."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "writer-imitate-external-runtime-validation-state.json"
+    md_path = output_dir / "writer-imitate-external-runtime-validation-state.md"
+    json_path.write_text(
+        json.dumps(_build_writer_output_external_runtime_validation_state(output_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    md_path.write_text(
+        _writer_output_external_runtime_validation_state_markdown(output_dir),
+        encoding="utf-8",
+    )
+    echo(f"writer_imitate_external_runtime_validation_state_json={json_path}")
+    echo(f"writer_imitate_external_runtime_validation_state_markdown={md_path}")
+
+
+@app.command()
 def writer_imitate_resume_replay(
     output_dir: Path = typer.Option(Path("output"), "--output-dir"),
 ) -> None:
@@ -7613,6 +8418,720 @@ def latest_manifest(novel_id: str, database_url: str | None = None) -> None:
             raise typer.Exit(code=1)
         echo(f"manifest_id={manifest.id}")
         echo(f"chapter_count={manifest.chapter_count}")
+
+
+
+@app.command()
+def loom_status(
+    branch_id: str,
+    database_url: str | None = None,
+) -> None:
+    """Show Loom memory and tension status for a branch."""
+    from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
+    from novel_analyzer.services.tension_service import TensionService
+    from novel_analyzer.database.models import FactRecord, GraphNode
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        # Memory stats
+        total_facts = session.scalar(
+            select(func.count(FactRecord.id))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.deleted_at.is_(None))
+        ) or 0
+        active_facts = session.scalar(
+            select(func.count(FactRecord.id))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.episodic_status == "active")
+            .where(FactRecord.deleted_at.is_(None))
+        ) or 0
+        total_nodes = session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+        contradiction_nodes = session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.conflict_status == "contradiction")
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+        evolution_nodes = session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.conflict_status == "evolution")
+            .where(GraphNode.deleted_at.is_(None))
+        ) or 0
+
+        echo("=== Loom Memory Status ===")
+        echo(f"branch_id:           {branch_id}")
+        echo(f"total_facts:         {total_facts}")
+        echo(f"active_facts:        {active_facts}")
+        echo(f"total_graph_nodes:   {total_nodes}")
+        echo(f"contradiction_nodes: {contradiction_nodes}")
+        echo(f"evolution_nodes:     {evolution_nodes}")
+        echo(f"loom_memory_mode:    {settings.loom_memory_mode}")
+        echo(f"loom_tension_enabled:{settings.loom_tension_enabled}")
+        echo(f"loom_pairwise_enabled:{settings.loom_pairwise_enabled}")
+        echo(f"loom_style_enabled:  {settings.loom_style_enabled}")
+        echo(f"loom_character_enabled:{settings.loom_character_enabled}")
+
+        # Latest chapter for tension
+        latest_chapter = session.scalar(
+            select(func.max(FactRecord.chapter_index))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.deleted_at.is_(None))
+        )
+        if latest_chapter:
+            tension_svc = TensionService(session)
+            score = tension_svc.compute(branch_id, chapter_index=latest_chapter)
+            echo("")
+            echo(f"=== Loom Tension (chapter {latest_chapter}) ===")
+            echo(f"tension_score:       {score.tension_score:.4f}")
+            echo(f"plot_similarity:     {score.plot_similarity:.4f}")
+            echo(f"conflict_density:    {score.conflict_density:.4f}")
+            echo(f"surprise_index:      {score.surprise_index:.4f}")
+            if score.alerts:
+                echo("alerts:")
+                for a in score.alerts:
+                    echo(f"  [{a.severity}] {a.message}")
+            else:
+                echo("alerts:              none")
+
+        if latest_chapter and settings.loom_style_enabled:
+            from novel_analyzer.services.style_calibration_service import StyleCalibrationService
+            from novel_analyzer.services.rhythm_analysis_service import RhythmAnalysisService
+            style_svc = StyleCalibrationService(session)
+            rhythm_svc = RhythmAnalysisService(session)
+            style_result = style_svc.compute_style_drift(branch_id, latest_chapter)
+            rhythm_result = rhythm_svc.compute(branch_id, latest_chapter)
+            echo("")
+            echo(f"=== Loom Style (chapter {latest_chapter}) ===")
+            echo(f"style_drift_score:   {style_result.style_drift_score:.4f}")
+            echo(f"style_alert:         {style_result.alert_level}")
+            if style_result.suggestion:
+                echo(f"style_suggestion:    {style_result.suggestion}")
+            echo(f"hook_density:        {rhythm_result.hook_density:.4f}")
+            echo(f"pacing_type:         {rhythm_result.pacing_type}")
+            echo(f"climax_score:        {rhythm_result.climax_score:.4f}")
+            echo(f"rhythm_alert:        {rhythm_result.alert_level}")
+            if rhythm_result.suggestion:
+                echo(f"rhythm_suggestion:   {rhythm_result.suggestion}")
+
+        if latest_chapter and settings.loom_character_enabled:
+            from novel_analyzer.services.long_book_health_service import LongBookHealthService
+            from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
+            health_svc = LongBookHealthService(session)
+            thread_svc = ThreadSchedulerService(session)
+            health = health_svc.compute_health(branch_id, latest_chapter)
+            thread_report = thread_svc.analyze_thread_status(branch_id, latest_chapter)
+            echo("")
+            echo(f"=== Loom Long-Book Health (chapter {latest_chapter}) ===")
+            echo(f"health_score:        {health.health_score:.4f}")
+            echo(f"quality_trend:       {health.quality_trend}")
+            echo(f"health_alert:        {health.alert_level}")
+            if health.suggestion:
+                echo(f"health_suggestion:   {health.suggestion}")
+            echo(f"active_threads:      {len(thread_report.active_threads)}")
+            echo(f"dormant_threads:     {len(thread_report.dormant_threads)}")
+            echo(f"overdue_threads:     {len(thread_report.overdue_threads)}")
+            echo(f"overdue_ratio:       {thread_report.overdue_ratio:.4f}")
+            if health.quality_trend == "declining":
+                try:
+                    from novel_analyzer.services.steering_library_service import SteeringLibraryService
+                    steering_svc = SteeringLibraryService()
+                    payload_result = steering_svc.retrieve_pack(query_text="质量下滑 情节平淡 角色漂移")
+                    pack = payload_result.get("steering_pack", {})
+                    trope_axes = pack.get("trope_axes", [])
+                    innovation_directives = pack.get("innovation_directives", [])
+                    if trope_axes or innovation_directives:
+                        echo("")
+                        echo("=== Loom Steering Pack Suggestion (quality declining) ===")
+                        for axis in trope_axes[:3]:
+                            echo(f"  trope: {axis}")
+                        for directive in innovation_directives[:2]:
+                            echo(f"  directive: {directive}")
+                except Exception:  # noqa: BLE001
+                    pass
+
+
+@app.command()
+def loom_consolidate(
+    branch_id: str,
+    chapter_index: int,
+    database_url: str | None = None,
+) -> None:
+    """Run Loom memory consolidation for a specific chapter."""
+    from novel_analyzer.services.memory_consolidation_service import MemoryConsolidationService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        svc = MemoryConsolidationService(session)
+        result = svc.consolidate(branch_id, chapter_index)
+        session.commit()
+        echo(f"branch_id:      {branch_id}")
+        echo(f"chapter_index:  {chapter_index}")
+        echo(f"contradictions: {len(result.contradictions)}")
+        echo(f"evolutions:     {len(result.evolutions)}")
+        echo(f"ambiguities:    {len(result.ambiguities)}")
+        echo(f"human_review:   {result.human_review_required}")
+        if result.contradictions:
+            echo("contradiction details:")
+            for c in result.contradictions:
+                echo(f"  - {c.entity_label}: {c.description}")
+
+
+@app.command()
+def loom_assemble(
+    branch_id: str,
+    target_chapter: int,
+    database_url: str | None = None,
+) -> None:
+    """Assemble and print Loom carry_over_state for a target chapter."""
+    from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        svc = MemoryAssemblerService(session)
+        mem = svc.assemble(branch_id, target_chapter_index=target_chapter)
+        cos = mem.to_carry_over_state()
+        echo(json.dumps(cos, ensure_ascii=False, indent=2))
+
+
+@app.command()
+def loom_collect_pairs(
+    output_dir: Path = typer.Option(Path("output"), "--output-dir"),
+    compare_dir: Path | None = typer.Option(None, "--compare-dir"),
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    min_draft_length: int = typer.Option(50, "--min-draft-length"),
+    database_url: str | None = None,
+) -> None:
+    """Collect pairwise evaluation data from writer-imitate output artifacts.
+
+    Single-dir mode (default): pairs round-0 vs final draft within each
+    writer-imitate-ch*.json that has 2+ rounds.
+
+    Cross-dir mode (--compare-dir): pairs final draft from --output-dir
+    (baseline) vs --compare-dir (steering) for matching chapter indices.
+
+    Appends JSONL records to --pairs-file (one chapter_quality_signal per line).
+    """
+    from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+
+    llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
+    eval_svc = PairwiseEvalService(llm_client=llm_client)
+
+    pairs_to_eval: list[dict[str, object]] = []
+
+    if compare_dir is not None:
+        baseline_artifacts = _loom_load_chapter_artifacts(output_dir)
+        steering_artifacts = _loom_load_chapter_artifacts(compare_dir)
+        for ch_idx in sorted(set(baseline_artifacts) & set(steering_artifacts)):
+            b_payload = baseline_artifacts[ch_idx]
+            s_payload = steering_artifacts[ch_idx]
+            draft_a = _loom_final_draft_text(b_payload)
+            draft_b = _loom_final_draft_text(s_payload)
+            if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
+                continue
+            pairs_to_eval.append({
+                "pair_id": str(uuid.uuid4()),
+                "branch_id": str(b_payload.get("branch_id", "")).strip(),
+                "chapter_index": ch_idx,
+                "draft_a": draft_a,
+                "draft_b": draft_b,
+                "chapter_goal": _loom_chapter_goal(b_payload),
+                "key_constraints": "",
+                "risk_verdict_a": _loom_risk_verdict(b_payload),
+                "risk_verdict_b": _loom_risk_verdict(s_payload),
+                "pair_source": "cross_dir",
+                "dir_a": str(output_dir),
+                "dir_b": str(compare_dir),
+            })
+    else:
+        for ch_idx, payload in sorted(_loom_load_chapter_artifacts(output_dir).items()):
+            rounds = payload.get("rounds", [])
+            if not isinstance(rounds, list) or len(rounds) < 2:
+                continue
+            draft_a = _loom_round0_draft_text(payload)
+            draft_b = _loom_final_draft_text(payload)
+            if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
+                continue
+            if draft_a == draft_b:
+                continue
+            pairs_to_eval.append({
+                "pair_id": str(uuid.uuid4()),
+                "branch_id": str(payload.get("branch_id", "")).strip(),
+                "chapter_index": ch_idx,
+                "draft_a": draft_a,
+                "draft_b": draft_b,
+                "chapter_goal": _loom_chapter_goal(payload),
+                "key_constraints": "",
+                "risk_verdict_a": "unknown",
+                "risk_verdict_b": _loom_risk_verdict(payload),
+                "pair_source": "single_dir_rounds",
+                "dir_a": str(output_dir),
+                "dir_b": str(output_dir),
+            })
+
+    if not pairs_to_eval:
+        echo("loom_collect_pairs: no eligible pairs found.")
+        echo(f"  output_dir={output_dir}")
+        if compare_dir:
+            echo(f"  compare_dir={compare_dir}")
+        raise typer.Exit(code=0)
+
+    collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["dir_a", "dir_b"])
+
+    echo(f"loom_collect_pairs: collected {collected} pair(s) → {pairs_file}")
+    echo(f"  mode={'cross_dir' if compare_dir else 'single_dir_rounds'}")
+    echo(f"  use_llm={use_llm}")
+    echo(f"  pairs_file={pairs_file}")
+    _loom_echo_total_pairs(pairs_file)
+
+
+@app.command()
+def loom_pairs_stats(
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+) -> None:
+    """Show pairwise data collection progress toward the 500-pair Phase 3 target."""
+    TARGET = 500
+
+    if not pairs_file.exists():
+        echo(f"loom_pairs_stats: {pairs_file} not found — no pairs collected yet.")
+        echo(f"  total_pairs=0  target={TARGET}  progress=0.0%")
+        raise typer.Exit(code=0)
+
+    records: list[dict[str, object]] = []
+    for line in pairs_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            records.append(json.loads(line))
+        except Exception:  # noqa: BLE001
+            continue
+
+    total = len(records)
+    progress_pct = round(total / TARGET * 100, 1)
+
+    quality_scores = [
+        float(r["quality_score"])
+        for r in records
+        if isinstance(r.get("quality_score"), (int, float))
+    ]
+    avg_quality = round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None
+
+    preference_counts: dict[str, int] = {}
+    for r in records:
+        pref = str(r.get("overall_preference", "unknown"))
+        preference_counts[pref] = preference_counts.get(pref, 0) + 1
+
+    method_counts: dict[str, int] = {}
+    for r in records:
+        method = str(r.get("evaluation_method", "unknown"))
+        method_counts[method] = method_counts.get(method, 0) + 1
+
+    source_counts: dict[str, int] = {}
+    for r in records:
+        src = str(r.get("pair_source", "unknown"))
+        source_counts[src] = source_counts.get(src, 0) + 1
+
+    chapters = sorted({int(r["chapter_index"]) for r in records if isinstance(r.get("chapter_index"), int)})
+
+    echo(f"=== Loom Pairwise Data Stats ===")
+    echo(f"pairs_file:        {pairs_file}")
+    echo(f"total_pairs:       {total}")
+    echo(f"target:            {TARGET}")
+    echo(f"progress:          {progress_pct}%")
+    echo(f"avg_quality_score: {avg_quality}")
+    echo(f"unique_chapters:   {len(chapters)}")
+    if chapters:
+        echo(f"chapter_range:     {min(chapters)}–{max(chapters)}")
+    echo("")
+    echo("preference distribution:")
+    for pref, count in sorted(preference_counts.items()):
+        echo(f"  {pref}: {count}")
+    echo("")
+    echo("evaluation_method distribution:")
+    for method, count in sorted(method_counts.items()):
+        echo(f"  {method}: {count}")
+    echo("")
+    echo("pair_source distribution:")
+    for src, count in sorted(source_counts.items()):
+        echo(f"  {src}: {count}")
+    echo("")
+    remaining = max(0, TARGET - total)
+    echo(f"remaining_to_target: {remaining}")
+
+
+@app.command()
+def loom_ab_compare(
+    baseline_dir: Path = typer.Argument(..., help="Baseline output dir (Loom off)."),
+    loom_dir: Path = typer.Argument(..., help="Loom-enabled output dir (Loom on)."),
+    output_file: Path | None = typer.Option(None, "--output-file", help="Write JSON report to this path."),
+) -> None:
+    """A/B experiment: compare character_ooc trigger rate between baseline and Loom-enabled runs.
+
+    Reads writer-imitate-ch*.json from both dirs and reports per-chapter and aggregate
+    character_ooc trigger rates, risk level distribution, and verdict distribution.
+    Target: character_ooc trigger rate drops >= 20% with Loom enabled.
+    """
+    def _final_risk(payload: dict[str, object]) -> dict[str, object]:
+        rounds = payload.get("rounds", [])
+        if isinstance(rounds, list) and rounds:
+            last_round = rounds[-1]
+            if isinstance(last_round, dict):
+                risk = last_round.get("risk", {})
+                if isinstance(risk, dict):
+                    return risk
+        policy = payload.get("policy_summary", {})
+        if isinstance(policy, dict) and policy.get("risk_overall_level"):
+            return {"overall_risk_level": policy["risk_overall_level"], "checker_statuses": {}, "top_risk_types": []}
+        return {}
+
+    def _ooc_triggered(risk: dict[str, object]) -> bool:
+        checker_statuses = risk.get("checker_statuses", {})
+        if isinstance(checker_statuses, dict):
+            status = checker_statuses.get("character_ooc", "")
+            if str(status) in ("warn", "triggered", "fail"):
+                return True
+        top_risk_types = risk.get("top_risk_types", [])
+        if isinstance(top_risk_types, list) and "character_ooc" in top_risk_types:
+            return True
+        return False
+
+    def _risk_level(risk: dict[str, object]) -> str:
+        return str(risk.get("overall_risk_level", "low")).strip()
+
+    def _final_verdict(payload: dict[str, object]) -> str:
+        return str(payload.get("final_verdict", "unknown")).strip()
+
+    baseline_artifacts = _loom_load_chapter_artifacts(baseline_dir)
+    loom_artifacts = _loom_load_chapter_artifacts(loom_dir)
+    common_chapters = sorted(set(baseline_artifacts) & set(loom_artifacts))
+
+    if not common_chapters:
+        echo("loom_ab_compare: no matching chapters found between the two directories.")
+        echo(f"  baseline_dir={baseline_dir} ({len(baseline_artifacts)} chapters)")
+        echo(f"  loom_dir={loom_dir} ({len(loom_artifacts)} chapters)")
+        raise typer.Exit(code=1)
+
+    chapter_results: list[dict[str, object]] = []
+    baseline_ooc_count = 0
+    loom_ooc_count = 0
+    baseline_risk_levels: dict[str, int] = {}
+    loom_risk_levels: dict[str, int] = {}
+    baseline_verdicts: dict[str, int] = {}
+    loom_verdicts: dict[str, int] = {}
+
+    for ch_idx in common_chapters:
+        b_payload = baseline_artifacts[ch_idx]
+        l_payload = loom_artifacts[ch_idx]
+        b_risk = _final_risk(b_payload)
+        l_risk = _final_risk(l_payload)
+        b_ooc = _ooc_triggered(b_risk)
+        l_ooc = _ooc_triggered(l_risk)
+        b_level = _risk_level(b_risk)
+        l_level = _risk_level(l_risk)
+        b_verdict = _final_verdict(b_payload)
+        l_verdict = _final_verdict(l_payload)
+
+        if b_ooc:
+            baseline_ooc_count += 1
+        if l_ooc:
+            loom_ooc_count += 1
+        baseline_risk_levels[b_level] = baseline_risk_levels.get(b_level, 0) + 1
+        loom_risk_levels[l_level] = loom_risk_levels.get(l_level, 0) + 1
+        baseline_verdicts[b_verdict] = baseline_verdicts.get(b_verdict, 0) + 1
+        loom_verdicts[l_verdict] = loom_verdicts.get(l_verdict, 0) + 1
+
+        chapter_results.append({
+            "chapter_index": ch_idx,
+            "baseline_ooc": b_ooc,
+            "loom_ooc": l_ooc,
+            "ooc_improved": b_ooc and not l_ooc,
+            "ooc_regressed": not b_ooc and l_ooc,
+            "baseline_risk_level": b_level,
+            "loom_risk_level": l_level,
+            "baseline_verdict": b_verdict,
+            "loom_verdict": l_verdict,
+        })
+
+    total = len(common_chapters)
+    baseline_ooc_rate = round(baseline_ooc_count / total, 4) if total else 0.0
+    loom_ooc_rate = round(loom_ooc_count / total, 4) if total else 0.0
+    ooc_rate_delta = round(loom_ooc_rate - baseline_ooc_rate, 4)
+    ooc_reduction_pct = round((baseline_ooc_rate - loom_ooc_rate) / baseline_ooc_rate * 100, 1) if baseline_ooc_rate > 0 else 0.0
+    target_met = ooc_reduction_pct >= 20.0
+
+    improved_chapters = [r["chapter_index"] for r in chapter_results if r["ooc_improved"]]
+    regressed_chapters = [r["chapter_index"] for r in chapter_results if r["ooc_regressed"]]
+
+    report: dict[str, object] = {
+        "contract_version": "loom-ab-compare.v1",
+        "baseline_dir": str(baseline_dir),
+        "loom_dir": str(loom_dir),
+        "total_chapters": total,
+        "baseline_ooc_count": baseline_ooc_count,
+        "loom_ooc_count": loom_ooc_count,
+        "baseline_ooc_rate": baseline_ooc_rate,
+        "loom_ooc_rate": loom_ooc_rate,
+        "ooc_rate_delta": ooc_rate_delta,
+        "ooc_reduction_pct": ooc_reduction_pct,
+        "target_met": target_met,
+        "target_threshold_pct": 20.0,
+        "improved_chapters": improved_chapters,
+        "regressed_chapters": regressed_chapters,
+        "baseline_risk_level_distribution": baseline_risk_levels,
+        "loom_risk_level_distribution": loom_risk_levels,
+        "baseline_verdict_distribution": baseline_verdicts,
+        "loom_verdict_distribution": loom_verdicts,
+        "chapter_results": chapter_results,
+    }
+
+    echo("=== Loom A/B Experiment Report ===")
+    echo(f"baseline_dir:        {baseline_dir}")
+    echo(f"loom_dir:            {loom_dir}")
+    echo(f"total_chapters:      {total}")
+    echo("")
+    echo("character_ooc trigger rate:")
+    echo(f"  baseline:          {baseline_ooc_count}/{total} ({baseline_ooc_rate*100:.1f}%)")
+    echo(f"  loom:              {loom_ooc_count}/{total} ({loom_ooc_rate*100:.1f}%)")
+    echo(f"  reduction:         {ooc_reduction_pct:.1f}%")
+    echo(f"  target (>=20%):    {'✓ MET' if target_met else '✗ NOT MET'}")
+    echo("")
+    if improved_chapters:
+        echo(f"improved chapters:   {improved_chapters}")
+    if regressed_chapters:
+        echo(f"regressed chapters:  {regressed_chapters}")
+    echo("")
+    echo("risk level distribution (baseline → loom):")
+    all_levels = sorted(set(list(baseline_risk_levels) + list(loom_risk_levels)))
+    for level in all_levels:
+        b_cnt = baseline_risk_levels.get(level, 0)
+        l_cnt = loom_risk_levels.get(level, 0)
+        echo(f"  {level}: {b_cnt} → {l_cnt}")
+    echo("")
+    echo("verdict distribution (baseline → loom):")
+    all_verdicts = sorted(set(list(baseline_verdicts) + list(loom_verdicts)))
+    for verdict in all_verdicts:
+        b_cnt = baseline_verdicts.get(verdict, 0)
+        l_cnt = loom_verdicts.get(verdict, 0)
+        echo(f"  {verdict}: {b_cnt} → {l_cnt}")
+
+    if output_file is not None:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        echo(f"\nreport written to: {output_file}")
+
+
+@app.command()
+def loom_collect_pairs_from_db(
+    branch_a: str = typer.Argument(..., help="First branch ID (treated as draft A)."),
+    branch_b: str = typer.Argument(..., help="Second branch ID (treated as draft B)."),
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    min_summary_length: int = typer.Option(20, "--min-summary-length"),
+    database_url: str | None = None,
+) -> None:
+    """Collect pairwise evaluation data from ChapterArtifact DB records across two branches.
+
+    Pairs matching chapter indices from branch-a vs branch-b using chapter_summary
+    as the comparison text. Useful for comparing analysis quality between branches.
+    Appends JSONL records to --pairs-file.
+    """
+    from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+
+    llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
+    eval_svc = PairwiseEvalService(llm_client=llm_client)
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+
+    with factory() as session:
+        artifacts_a = session.execute(
+            select(
+                ChapterArtifact.chapter_index,
+                ChapterArtifact.payload_json,
+            )
+            .where(ChapterArtifact.branch_id == branch_a)
+            .where(ChapterArtifact.visibility == "active")
+            .where(ChapterArtifact.deleted_at.is_(None))
+            .order_by(ChapterArtifact.chapter_index)
+        ).all()
+
+        artifacts_b = session.execute(
+            select(
+                ChapterArtifact.chapter_index,
+                ChapterArtifact.payload_json,
+            )
+            .where(ChapterArtifact.branch_id == branch_b)
+            .where(ChapterArtifact.visibility == "active")
+            .where(ChapterArtifact.deleted_at.is_(None))
+            .order_by(ChapterArtifact.chapter_index)
+        ).all()
+
+    map_a: dict[int, dict[str, object]] = {
+        int(row.chapter_index): (row.payload_json if isinstance(row.payload_json, dict) else {})
+        for row in artifacts_a
+    }
+    map_b: dict[int, dict[str, object]] = {
+        int(row.chapter_index): (row.payload_json if isinstance(row.payload_json, dict) else {})
+        for row in artifacts_b
+    }
+    common_chapters = sorted(set(map_a) & set(map_b))
+
+    if not common_chapters:
+        echo(f"loom_collect_pairs_from_db: no matching chapters between branch_a={branch_a} and branch_b={branch_b}.")
+        echo(f"  branch_a chapters: {len(map_a)}, branch_b chapters: {len(map_b)}")
+        raise typer.Exit(code=0)
+
+    def _summary_text(payload: dict[str, object]) -> str:
+        summary = str(payload.get("chapter_summary", "")).strip()
+        events = payload.get("key_events", [])
+        if isinstance(events, list) and events:
+            events_text = "；".join(str(e).strip() for e in events if str(e).strip())
+            if events_text:
+                summary = f"{summary}。{events_text}" if summary else events_text
+        return summary
+
+    def _chapter_goal(payload: dict[str, object]) -> str:
+        return str(payload.get("normalized_title", "")).strip()
+
+    pairs_to_eval: list[dict[str, object]] = []
+    for ch_idx in common_chapters:
+        payload_a = map_a[ch_idx]
+        payload_b = map_b[ch_idx]
+        text_a = _summary_text(payload_a)
+        text_b = _summary_text(payload_b)
+        if len(text_a) < min_summary_length or len(text_b) < min_summary_length:
+            continue
+        if text_a == text_b:
+            continue
+        pairs_to_eval.append({
+            "pair_id": str(uuid.uuid4()),
+            "branch_id": branch_a,
+            "chapter_index": ch_idx,
+            "draft_a": text_a,
+            "draft_b": text_b,
+            "chapter_goal": _chapter_goal(payload_a),
+            "key_constraints": "",
+            "risk_verdict_a": "unknown",
+            "risk_verdict_b": "unknown",
+            "pair_source": "db_branch_compare",
+            "dir_a": branch_a,
+            "dir_b": branch_b,
+        })
+
+    if not pairs_to_eval:
+        echo("loom_collect_pairs_from_db: no eligible pairs found.")
+        echo(f"  common_chapters={len(common_chapters)}, min_summary_length={min_summary_length}")
+        raise typer.Exit(code=0)
+
+    collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["dir_a", "dir_b"])
+
+    echo(f"loom_collect_pairs_from_db: collected {collected} pair(s) → {pairs_file}")
+    echo(f"  branch_a={branch_a}")
+    echo(f"  branch_b={branch_b}")
+    echo(f"  use_llm={use_llm}")
+    _loom_echo_total_pairs(pairs_file)
+
+
+@app.command()
+def loom_collect_pairs_from_manual(
+    manual_eval_dir: Path = typer.Option(Path("runs/manual_eval"), "--manual-eval-dir"),
+    pairs_file: Path = typer.Option(Path("output/loom-pairs.jsonl"), "--pairs-file"),
+    use_llm: bool = typer.Option(False, "--use-llm"),
+    model_name: str = typer.Option("", "--model-name"),
+    min_draft_length: int = typer.Option(50, "--min-draft-length"),
+    database_url: str | None = None,
+) -> None:
+    """Collect pairwise evaluation data from manual_eval workspace artifacts.
+
+    Scans all subdirectories of --manual-eval-dir (excluding _template) for
+    artifacts/writer-imitate-ch*.json files. For each artifact with 2+ rounds,
+    pairs round-0 vs final draft and runs pairwise eval.
+
+    Appends JSONL records to --pairs-file with pair_source="manual_eval_workspace".
+    """
+    from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+
+    llm_client = _loom_build_llm_client(use_llm, database_url, model_name)
+    eval_svc = PairwiseEvalService(llm_client=llm_client)
+
+    if not manual_eval_dir.exists():
+        echo(f"loom_collect_pairs_from_manual: {manual_eval_dir} not found.")
+        raise typer.Exit(code=1)
+
+    workspace_dirs: list[Path] = [
+        d for d in sorted(manual_eval_dir.iterdir())
+        if d.is_dir() and d.name != "_template"
+    ]
+
+    if not workspace_dirs:
+        echo(f"loom_collect_pairs_from_manual: no workspace directories found in {manual_eval_dir}.")
+        raise typer.Exit(code=0)
+
+    pairs_to_eval: list[dict[str, object]] = []
+
+    for workspace in workspace_dirs:
+        artifacts_dir = workspace / "artifacts"
+        if not artifacts_dir.exists():
+            continue
+        for artifact_path in sorted(artifacts_dir.glob("writer-imitate-ch*.json")):
+            try:
+                payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(payload, dict):
+                continue
+
+            rounds = payload.get("rounds", [])
+            if not isinstance(rounds, list) or len(rounds) < 2:
+                continue
+
+            draft_a = _loom_round0_draft_text(payload)
+            draft_b = _loom_final_draft_text(payload)
+            if len(draft_a) < min_draft_length or len(draft_b) < min_draft_length:
+                continue
+            if draft_a == draft_b:
+                continue
+
+            ch_idx = _loom_extract_chapter_index(payload, artifact_path.name)
+
+            pairs_to_eval.append({
+                "pair_id": str(uuid.uuid4()),
+                "branch_id": str(payload.get("branch_id", "")).strip(),
+                "chapter_index": ch_idx,
+                "draft_a": draft_a,
+                "draft_b": draft_b,
+                "chapter_goal": _loom_chapter_goal(payload),
+                "key_constraints": "",
+                "risk_verdict_a": "unknown",
+                "risk_verdict_b": _loom_risk_verdict(payload),
+                "pair_source": "manual_eval_workspace",
+                "workspace": workspace.name,
+                "artifact_path": str(artifact_path),
+            })
+
+    if not pairs_to_eval:
+        echo("loom_collect_pairs_from_manual: no eligible pairs found.")
+        echo(f"  manual_eval_dir={manual_eval_dir}")
+        raise typer.Exit(code=0)
+
+    collected = _loom_write_pairs_jsonl(eval_svc, pairs_to_eval, pairs_file, ["workspace", "artifact_path"])
+
+    echo(f"loom_collect_pairs_from_manual: collected {collected} pair(s) → {pairs_file}")
+    echo(f"  manual_eval_dir={manual_eval_dir}")
+    echo(f"  workspaces_scanned={len(workspace_dirs)}")
+    echo(f"  use_llm={use_llm}")
+    echo(f"  pairs_file={pairs_file}")
+    _loom_echo_total_pairs(pairs_file)
 
 
 if __name__ == "__main__":

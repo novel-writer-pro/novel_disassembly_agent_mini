@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, FactRecord, WindowArtifact
 from novel_analyzer.services.graph_service import GraphService
+from novel_analyzer.services.run_service import default_readable_artifact_clause
 
 
 class ContextService:
@@ -24,7 +25,7 @@ class ContextService:
             select(ChapterArtifact)
             .where(ChapterArtifact.branch_id == branch_id)
             .where(ChapterArtifact.chapter_index == chapter_index - 1)
-            .where(ChapterArtifact.visibility == 'active')
+            .where(default_readable_artifact_clause())
         )
         if artifact is None:
             return ''
