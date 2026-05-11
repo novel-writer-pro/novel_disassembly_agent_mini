@@ -179,6 +179,13 @@ class AnalysisService:
         return any(keyword in text for keyword in keywords)
 
     @staticmethod
+    def _compact_previous_summary(previous_summary: str, *, max_chars: int = 220) -> str:
+        text = str(previous_summary or '').strip()
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - 1].rstrip() + '…'
+
+    @staticmethod
     def _compact_prior_context_json(
         prior_context: dict[str, object],
         *,
@@ -648,9 +655,11 @@ class AnalysisService:
                 )
                 chapter_content = full_text[segment.start_offset : segment.end_offset].strip()
                 stage_chapter_content = self._stage_chapter_content(chapter_content)
-                previous_summary = self.context_service.previous_summary(
-                    branch_id,
-                    segment.chapter_index,
+                previous_summary = self._compact_previous_summary(
+                    self.context_service.previous_summary(
+                        branch_id,
+                        segment.chapter_index,
+                    )
                 )
                 prior_context = self.context_service.fact_context_json(
                     branch_id,

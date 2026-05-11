@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- perf(deconstruction/previous-summary-compaction): quick 拆书主链统一压缩 `previous_summary` 输入，减少上一章摘要在多个同步 stage prompt 中重复膨胀；扩展回归 20/20 通过。
+
+
 - test(deconstruction/prompt-budget-guards): 为 quick 拆书主链新增基于卫图第 20 章真实上下文的 prompt budget 护栏测试，覆盖绝对长度上限与相对旧版缩减比例，扩展回归 18/18 通过。
 
 

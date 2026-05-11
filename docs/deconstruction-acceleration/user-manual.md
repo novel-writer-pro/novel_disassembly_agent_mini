@@ -502,3 +502,12 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 
 这意味着：
 - 后续继续开发时，如果同步 prompt 又膨胀回去，会被测试直接拦住。
+
+### 6.13 当前已落地的加速动作（第 6 刀）
+当前上一章摘要输入也已做 compact 处理：
+- 默认会截断到较短长度；
+- 防止 previous_summary 在多个同步 stage prompt 中重复膨胀。
+
+这意味着：
+- quick 主链的公共上下文成本进一步下降；
+- 且这一优化对多个 stage 同时生效。

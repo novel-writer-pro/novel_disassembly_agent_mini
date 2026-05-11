@@ -73,3 +73,6 @@
 
 - 已把当前 prompt 缩减成果固化为测试护栏：后续如果有人把 quick 主链 prompt 重新撑大，将直接在 `tests/test_analysis_service.py` 里暴露回退。
 - 这比单纯写文档更有价值，因为它把“提速成果”变成了可执行约束，而不是口头约定。
+
+- 性能优化第 6 刀已落地：统一压缩 `previous_summary`，避免上一章摘要在多个同步 stage prompt 中重复占据大量上下文。
+- 这是一个全局性小优化：虽然单点收益不如 graph/prior_context 缩减那么大，但它会作用到每个需要 previous_summary 的同步 stage。
