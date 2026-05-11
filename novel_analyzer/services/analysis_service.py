@@ -179,6 +179,14 @@ class AnalysisService:
         return any(keyword in text for keyword in keywords)
 
     @staticmethod
+    def _prompt_metrics(**prompts: str) -> dict[str, object]:
+        char_counts = {f'{name}_chars': len(text) for name, text in prompts.items()}
+        return {
+            'prompt_char_counts': char_counts,
+            'total_prompt_chars': sum(char_counts.values()),
+        }
+
+    @staticmethod
     def _compact_previous_summary(previous_summary: str, *, max_chars: int = 220) -> str:
         text = str(previous_summary or '').strip()
         if len(text) <= max_chars:
@@ -924,6 +932,13 @@ class AnalysisService:
                         'writer': writer.model_dump(mode='json'),
                         'guard': guard.model_dump(mode='json'),
                     }
+                    prompt_metrics = self._prompt_metrics(
+                        chapter_intake=prompts['chapter_intake'],
+                        fact_extractor=fact_prompt_map['fact_extractor'],
+                        evidence_binder=evidence_prompt_map['evidence_binder'],
+                        analysis_generator=analysis_prompt_map['analysis_generator'],
+                        anti_fabrication_guard=guard_prompt_map['anti_fabrication_guard'],
+                    )
                     if self._is_sparse_result(result):
                         raise ValueError('stage pipeline produced sparse result')
                 except Exception as stage_exc:
@@ -951,6 +966,7 @@ class AnalysisService:
                             chapter_content,
                         )
                         stage_payload = {'stage_error': str(stage_exc), 'fallback': 'monolithic'}
+                        prompt_metrics = {'prompt_char_counts': {}, 'total_prompt_chars': 0}
                     except Exception as fallback_exc:
                         if not self._is_provider_unavailable_error(fallback_exc):
                             raise
@@ -964,6 +980,7 @@ class AnalysisService:
                             'fallback_error': str(fallback_exc),
                             'fallback': 'local-heuristic',
                         }
+                        prompt_metrics = {'prompt_char_counts': {}, 'total_prompt_chars': 0}
 
                 response_text = json.dumps(stage_payload, ensure_ascii=False, indent=2)
                 raw_result = result.model_dump(mode='json')
@@ -984,6 +1001,7 @@ class AnalysisService:
                         ),
                         'base_url': self.settings.llm_base_url,
                         'pipeline': 'small-model-skills-v1',
+                        **prompt_metrics,
                     },
                 )
                 self.run_service.update_job_progress(
@@ -1106,6 +1124,7 @@ class AnalysisService:
                         ),
                         'base_url': self.settings.llm_base_url,
                         'pipeline': 'small-model-skills-v1',
+                        **prompt_metrics,
                     },
                 )
                 self.run_service.fail_chapter_job(branch_id, segment.chapter_index, str(exc))

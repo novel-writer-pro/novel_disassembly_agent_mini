@@ -511,3 +511,12 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这意味着：
 - quick 主链的公共上下文成本进一步下降；
 - 且这一优化对多个 stage 同时生效。
+
+### 6.14 运行观测能力已增强
+当前拆书原始输出记录中，已经开始保存同步 stage 的 prompt 大小指标：
+- `prompt_char_counts`
+- `total_prompt_chars`
+
+这意味着：
+- 后续真实 benchmark 不只看总耗时；
+- 还能直接对照“prompt 缩减是否真的换来了运行时间收益”。

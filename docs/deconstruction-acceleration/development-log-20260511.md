@@ -76,3 +76,6 @@
 
 - 性能优化第 6 刀已落地：统一压缩 `previous_summary`，避免上一章摘要在多个同步 stage prompt 中重复占据大量上下文。
 - 这是一个全局性小优化：虽然单点收益不如 graph/prior_context 缩减那么大，但它会作用到每个需要 previous_summary 的同步 stage。
+
+- 已补 prompt 体积观测埋点：在 `invocation_metadata` 中记录每个同步 stage 的 prompt 字符数与总和。
+- 这一步不是直接提速，而是为下一步 funded-provider 真实 benchmark 铺测量基础，使后续对照不只看 wall-clock，也能看 prompt 成本变化是否兑现到真实耗时。

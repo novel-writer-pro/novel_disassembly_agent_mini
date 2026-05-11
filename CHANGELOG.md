@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/prompt-metrics-observability): 在章节 raw output 的 `invocation_metadata` 中记录各同步 stage 的 `prompt_char_counts` 与 `total_prompt_chars`，为后续 funded-provider 真实 benchmark 提供数据库内可查询的 prompt 成本证据；扩展回归 22/22 通过。
+
+
 - perf(deconstruction/previous-summary-compaction): quick 拆书主链统一压缩 `previous_summary` 输入，减少上一章摘要在多个同步 stage prompt 中重复膨胀；扩展回归 20/20 通过。
 
 
