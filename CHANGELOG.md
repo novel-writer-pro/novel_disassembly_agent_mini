@@ -1,6 +1,12 @@
 ## Unreleased
 
 
+- docs(deconstruction/weitu-midrun): 卫图真实拆书中期证据补充：当前已稳定推进到 7 章完成、8 章运行中；第 6 章曾触发 `small_model_pipeline` JSON 失败，但 `monolithic_fallback` 成功接管并完成整章，说明新链路的真实稳定性收益不仅来自 stall timeout，也来自 fallback 兜底仍有效。
+
+
+- ops(deconstruction/weitu-real-validation): 已在独立数据库上用 `deepseek-v4-flash` 启动卫图前 20 章真实拆书验证；当前前 5 章已完成，`show-run-status / show-chapter / show-context / show-window / search-branch / ask-branch` 全链路可用，且前 5 章吞吐约 31 分钟。
+
+
 - feat(deconstruction/qa-hardening): QA 结果新增 `chapter_evidence` / `window_evidence` / `graph_evidence` 分层证据字段，并按问题类型做命中 rerank 与保守降级；同时给 retry/recovery bulk path 增加 completed-chapter guard，避免已完成章节被重复重跑。
 
   验证：
@@ -60,6 +66,24 @@
   阶段结论：
   - enhanced 稳定改变了信号层与文本风格取向
   - 但在卫图样例 2–5 章抽样里，正文效果暂时仍是 baseline 略占优或至少未被反超
+
+- fix(loom/harness-feedback): style / character / rhythm 的 Loom 建议开始真正回流到 writer-imitate 修订决策链。
+
+  解决问题：
+  - 之前 enhanced 里的 `_loom_style` / character checks 主要是“出信号 + 出 preflight check”
+  - 但建议没有稳定进入 `recommended_actions`，导致 enhanced 可能只是在报告层更丰富，而不真正影响修订策略
+
+  本轮改动：
+  - style / rhythm / character 的 `suggestion` 进入 `recommended_actions`
+  - `_loom_character_consistency` 写入 skill outputs，供 downstream 消费
+
+  验证：
+  - `tests/test_loom_phase2.py` → 20/20 通过
+  - 手工执行 enhanced writer-imitate 后，确认产物中存在 `_loom_style`、`_loom_character_consistency`、`chapter_quality_signal`
+
+  结论：
+  - 已证明 enhanced 信号开始真正回流到决策链
+  - 尚未证明这一步已经让卫图样例正文质量稳定提升
 
 - ops(loom/weitu-validation): 已开始卫图样例的真实验证执行，不再停留在纯规划。
 

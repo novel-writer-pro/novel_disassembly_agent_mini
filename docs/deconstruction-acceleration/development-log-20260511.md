@@ -43,3 +43,10 @@
 - QA answer path 新增 question-type 分类、检索 rerank、章节/窗口/图证据分层字段，以及薄证据问题的保守降级策略。
 - recovery / retry bulk path 补 completed-chapter guard，避免已完成章节被 retry-failed / retry_failed_jobs 再次重跑。
 - 已完成定向验证：QA 6/6，retry/stall guard 子集 3/3。
+
+- 卫图链路实测表明：在 stall timeout 提升到 600 后，前 6 章可连续完成，当前未见 failed_jobs，说明稳定性已较上一轮万相验证明显改善。
+- 但真实吞吐仍偏慢：前 5 章约 31 分钟，折算约 6.2 min/章，距离“100章 5min”目标仍有数量级差距。
+- 现阶段性能瓶颈更接近 `fact_extractor / evidence_binder / analysis_generator` 的串行模型耗时，而不是 artifact materialization 或恢复逻辑。
+
+- 卫图第 6 章实测中，`small_model_pipeline` 曾出现 JSON 解析失败，但 `monolithic_fallback` 接管后仍完成整章，说明当前链路不仅更稳，而且确实具备真实运行中的故障吸收能力。
+- 这也意味着后续性能优化不能误伤 fallback 可用性；在追求极限吞吐时，需要保住当前这层“慢但能兜住”的安全网。

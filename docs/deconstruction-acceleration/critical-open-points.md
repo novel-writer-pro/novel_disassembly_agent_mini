@@ -181,3 +181,14 @@
 因此当前判断是：
 - **没有遗漏掉会阻止本轮启动的一级关键点**；
 - 但有若干二级关键点，应该在实现和 benchmark 过程中持续观察，而不是现在就扩大范围。
+
+## 补充：卫图真实链路暴露出的性能关键点
+- 当前最主要的现实瓶颈已经从“容易 stall / 容易错位重试”转移到“单章串行模型阶段耗时过高”。
+- 若要逼近 100 章 5 分钟级目标，后续不能只继续修 recovery / guard，必须正面压缩：
+  - `fact_extractor`
+  - `evidence_binder`
+  - `analysis_generator`
+  的 token 体积、调用轮数或同步阻塞比例。
+
+- 真实样例已证明 fallback 仍有价值：第 6 章 small-model JSON 失败后，monolithic fallback 成功接住并完成整章。
+- 因此后续如果做更激进的 quick-profile 裁剪，不能把 fallback 一并削弱，否则会用速度换掉当前已经得到验证的稳定性收益。

@@ -419,3 +419,23 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 - `graph_evidence`
 
 同时会先做问题类型识别（如人物 / 关系 / 世界规则 / 时间线 / 伏笔），再对检索命中做轻量 rerank，并在证据偏薄时更保守地回答，减少“答得像对、其实证据不够”的情况。
+
+### 6.4 卫图真实验证结论（2026-05-11）
+当前已在独立数据库中对“卫图”前 20 章链路做真实运行验证，其中前 5 章已完成并验证：
+- `show-run-status`
+- `show-chapter`
+- `show-context`
+- `show-window 1-5`
+- `search-branch`
+- `ask-branch`
+
+结论：
+- 链路可运行、可检索、可 QA；
+- 但当前速度仍偏慢，前 5 章约 31 分钟，主要受单章串行 LLM stages 耗时影响。
+
+### 6.5 当前真实运行中的兜底行为
+在卫图真实样例运行中，第 6 章曾出现一次 `small_model_pipeline` 的 JSON 修复失败；系统随后自动进入 `monolithic_fallback` 并完成该章。
+
+这说明：
+- 当前版本虽然不够快；
+- 但遇到阶段性模型输出不稳定时，已经具备一定的自动兜底能力。
