@@ -1,6 +1,20 @@
 ## Unreleased
 
 
+- feat(loom/episodic-anchors-diversity): `_get_important_events` 改为按 fact_type 分层采样（event/entity/continuity 各取 top-K/3），避免 episodic anchors 被单一类型（entity）垄断；修复后 ch46 anchors 分布均匀（entity:6, event:6, continuity:6）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-episodic-anchors-diversity-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch46 验证
+
+
+- feat(loom/fact-importance-from-frequency): `_update_fact_importance` 根据 entity FactRecord 出现频率计算 `importance_score`（公式：0.3 + 0.7 * cnt/max_cnt）；修复后卫图=1.0，杏=0.618，李童氏=0.587；episodic decay 现在真正发挥作用（82 facts decayed，min decay=0.099）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-fact-importance-from-frequency-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch46 验证
+
+
 - perf(deconstruction/adaptive-context): ContextService 新增 adaptive_fact_context_json 和 adaptive_graph_context_json，替代固定窗口 top-N 检索；基于 intake 阶段提取的 entities/events 做 query-aware 三策略检索（relevance-ranked + recency + foreshadowing），长篇小说远距离事实召回率预期提升 30-50%。
 
   Changelist: `CL-adaptive-context-assembly-01`
@@ -24,6 +38,24 @@
   Changelist: `CL-fix-prompt-metrics-unbound-01`
 
   Tested: test_early_context_failure_does_not_raise_unboundlocalerror passed
+
+
+- feat(deconstruction/foreshadowing-lifecycle): 新增 ForeshadowingService，实现伏笔生命周期管理（planted → reinforced → paid_off）；每章分析完成后自动更新伏笔状态；ContextService 的 adaptive context 现在自动注入 open_foreshadowing_threads 到后续章节上下文中，防止长篇小说丢失未回收伏笔。
+
+  Changelist: `CL-foreshadowing-lifecycle-01`
+
+  Constraint: 依赖 GraphNode 表的 metadata_json 字段存储 lifecycle 状态，无需新建表
+  Tested: 32 analysis tests passed, import verification
+  Not-tested: 200+ 章长篇的伏笔回收率对比
+
+
+- feat(deconstruction/complexity-router): 新增章节复杂度评分器 _score_chapter_complexity，基于 intake 结果（场景数/对话密度/段落数/悬念标记）计算 0-1 复杂度分数；高复杂度章节（>=0.7）自动路由到 fallback（更大）模型，简单章节继续使用 stage 小模型，实现成本与质量的自动平衡。
+
+  Changelist: `CL-complexity-router-01`
+
+  Constraint: 阈值 0.7 为初始值，后续可根据 benchmark 调整
+  Tested: 32 analysis tests passed
+  Not-tested: 真实章节的复杂度分布与模型切换效果
 
 
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。

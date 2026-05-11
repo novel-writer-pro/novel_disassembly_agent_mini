@@ -1,6 +1,6 @@
 # Deconstruction Engine SOTA Optimization Roadmap
 
-## Current Status: Phase 1 Complete (Adaptive Context + Stage Merging)
+## Current Status: Phase 2A+2B Complete (Foreshadowing + Complexity Router)
 
 ---
 
@@ -24,17 +24,16 @@
 ## Phase 2 - Medium Priority (Next)
 
 ### 2A. Foreshadowing Lifecycle Manager
-- **Status**: Pending
+- **Status**: Done
 - **Impact**: Prevents lost plot threads in 100+ chapter novels
-- **Design**: New `ForeshadowingService` with planted/reinforced/paid_off state machine; auto-inject open foreshadowing into subsequent chapter context
-- **Files to create**: `novel_analyzer/services/foreshadowing_service.py`
-- **Integration**: `ContextService.adaptive_fact_context_json` + `GraphService`
+- **Change**: New `ForeshadowingService` with planted/reinforced/paid_off state machine; auto-inject open foreshadowing into subsequent chapter context
+- **Files**: `novel_analyzer/services/foreshadowing_service.py`, `novel_analyzer/services/context_service.py`, `novel_analyzer/services/analysis_service.py`
 
 ### 2B. Chapter Complexity Router
-- **Status**: Pending
+- **Status**: Done
 - **Impact**: Smart model selection saves cost on simple chapters, improves quality on complex ones
-- **Design**: After intake, score chapter complexity (character_count * scene_switches * thread_density); route to small/large model accordingly
-- **Files to modify**: `novel_analyzer/services/analysis_service.py`
+- **Change**: `_score_chapter_complexity` scores intake results; routes to fallback model when complexity >= 0.7
+- **Files**: `novel_analyzer/services/analysis_service.py`
 
 ### 2C. Pipeline Pipelining
 - **Status**: Pending

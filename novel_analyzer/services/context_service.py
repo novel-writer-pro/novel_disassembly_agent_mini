@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, FactRecord, GraphNode, WindowArtifact
+from novel_analyzer.services.foreshadowing_service import ForeshadowingService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.run_service import default_readable_artifact_clause
 
@@ -172,6 +173,9 @@ class ContextService:
             'relevant_count': len(relevant_facts),
             'recency_count': len(recency_facts),
             'foreshadow_count': len(foreshadow_unique),
+            'open_foreshadowing_threads': ForeshadowingService(
+                self.session
+            ).open_threads_context_json(branch_id, chapter_index, limit=8),
         }
 
     def adaptive_graph_context_json(

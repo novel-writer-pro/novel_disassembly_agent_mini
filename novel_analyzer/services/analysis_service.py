@@ -38,6 +38,7 @@ from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.fact_service import FactService
+from novel_analyzer.services.foreshadowing_service import ForeshadowingService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.memory_consolidation_service import MemoryConsolidationService
 from novel_analyzer.services.quality_gate_service import QualityGateService
@@ -59,6 +60,7 @@ class AnalysisService:
         self.graph_service = GraphService(session)
         self.risk_audit_service = RiskAuditService(session)
         self.memory_consolidation = MemoryConsolidationService(session)
+        self.foreshadowing_service = ForeshadowingService(session)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -83,6 +85,52 @@ class AnalysisService:
         tail = text[-1200:].lstrip()
         omitted = len(text) - len(head) - len(tail)
         return f"{head}\n\n[... 中间内容已为阶段模型省略 {omitted} 字 ...]\n\n{tail}"
+
+    @staticmethod
+    def _score_chapter_complexity(
+        intake: ChapterIntakeOutput,
+        chapter_content: str,
+    ) -> float:
+        """Score chapter complexity (0-1) based on structural signals from intake.
+
+        Factors: character count, scene switches, dialogue density, content length.
+        High complexity chapters benefit from larger models.
+        """
+        char_count = len(chapter_content)
+        scene_count = len(intake.scene_candidates)
+        dialogue_count = len(intake.dialogue_candidates)
+        paragraph_count = len(intake.paragraph_blocks)
+
+        length_score = min(char_count / 5000.0, 1.0)
+        scene_score = min(scene_count / 5.0, 1.0)
+        dialogue_score = min(dialogue_count / 15.0, 1.0)
+        density_score = min(paragraph_count / 20.0, 1.0)
+
+        has_suspense = any(
+            keyword in ' '.join(intake.notes)
+            for keyword in ('悬念', '转场', '时间变化', '伏笔')
+        ) if intake.notes else False
+        suspense_bonus = 0.15 if has_suspense else 0.0
+
+        return min(
+            0.3 * length_score
+            + 0.25 * scene_score
+            + 0.2 * dialogue_score
+            + 0.15 * density_score
+            + 0.1 + suspense_bonus,
+            1.0,
+        )
+
+    def _select_model_for_complexity(
+        self,
+        complexity_score: float,
+        stage_model: object,
+        fallback_model: object,
+    ) -> object:
+        """Route to fallback (larger) model when chapter complexity exceeds threshold."""
+        if complexity_score >= 0.7:
+            return fallback_model
+        return stage_model
 
     @classmethod
     def _extract_json_payload(cls, message: BaseMessage) -> dict[str, object]:
@@ -632,6 +680,33 @@ class AnalysisService:
             needs_human_review=guard.needs_human_review,
         )
 
+    def _update_foreshadowing_lifecycle(
+        self,
+        branch_id: str,
+        chapter_index: int,
+        stage_payload: dict[str, object],
+        state_summary: dict[str, object],
+    ) -> None:
+        facts_data = stage_payload.get('facts', {})
+        if not isinstance(facts_data, dict):
+            return
+        foreshadowing_list = facts_data.get('foreshadowing', [])
+        if not isinstance(foreshadowing_list, list):
+            return
+        foreshadowing_dicts = []
+        for item in foreshadowing_list:
+            if isinstance(item, dict):
+                foreshadowing_dicts.append(item)
+            elif hasattr(item, 'model_dump'):
+                foreshadowing_dicts.append(item.model_dump())
+        if foreshadowing_dicts or state_summary.get('paid_off_foreshadowing'):
+            try:
+                self.foreshadowing_service.update_from_facts(
+                    branch_id, chapter_index, foreshadowing_dicts, state_summary,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
     def analyze_range(
         self,
         run_id: str,
@@ -763,6 +838,12 @@ class AnalysisService:
                         for d in intake.dialogue_candidates[:3]
                         if str(d).strip()
                     ]
+                    complexity_score = self._score_chapter_complexity(
+                        intake, stage_chapter_content,
+                    )
+                    active_model = self._select_model_for_complexity(
+                        complexity_score, stage_model, fallback_model,
+                    )
                     adaptive_prior = self.context_service.adaptive_fact_context_json(
                         branch_id, segment.chapter_index, query_entities, query_events,
                     )
@@ -790,7 +871,7 @@ class AnalysisService:
                         facts = cast(
                             ChapterFactExtractionOutput,
                             self._invoke_stage(
-                                stage_model,
+                                active_model,
                                 fact_prompt_map['fact_extractor'],
                                 ChapterFactExtractionOutput,
                             ),
@@ -827,7 +908,7 @@ class AnalysisService:
                             )
                         )
                         evidence, analysis = self._invoke_merged_stage(
-                            stage_model,
+                            active_model,
                             ea_prompt_map['evidence_and_analysis'],
                             'evidence', EvidenceBindingOutput,
                             'analysis', ChapterAnalysisLayerOutput,
@@ -855,7 +936,7 @@ class AnalysisService:
                         evidence = cast(
                             EvidenceBindingOutput,
                             self._invoke_stage(
-                                stage_model,
+                                active_model,
                                 evidence_prompt_map['evidence_binder'],
                                 EvidenceBindingOutput,
                             ),
@@ -895,7 +976,7 @@ class AnalysisService:
                         analysis = cast(
                             ChapterAnalysisLayerOutput,
                             self._invoke_stage(
-                                stage_model,
+                                active_model,
                                 analysis_prompt_map['analysis_generator'],
                                 ChapterAnalysisLayerOutput,
                             ),
@@ -974,7 +1055,7 @@ class AnalysisService:
                     guard = cast(
                         AntiFabricationGuardOutput,
                         self._invoke_stage(
-                            stage_model,
+                            active_model,
                             guard_prompt_map['anti_fabrication_guard'],
                             AntiFabricationGuardOutput,
                         ),
@@ -1130,6 +1211,9 @@ class AnalysisService:
                 self.retrieval_service.materialize_for_artifact(artifact.id)
                 self.fact_service.materialize_for_artifact(artifact.id)
                 self.graph_service.materialize_for_artifact(artifact.id)
+                self._update_foreshadowing_lifecycle(
+                    branch_id, segment.chapter_index, stage_payload, state_summary,
+                )
                 self.fact_service.materialize_window_if_ready(
                     branch_id,
                     segment.chapter_index,
