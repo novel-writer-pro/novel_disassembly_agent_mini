@@ -576,3 +576,34 @@ def test_materialization_failure_restores_previous_active_artifact_and_blocks_jo
         active_ids = [artifact.id for artifact in artifacts if artifact.visibility == 'active']
         assert active_ids == [previous.id]
         assert artifacts[-1].visibility == 'hidden'
+
+
+def test_quick_profile_defers_writer_lens_stage_and_preserves_profile(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        artifact = session.scalar(
+            select(ChapterArtifact).where(ChapterArtifact.branch_id == branch.id)
+        )
+        assert artifact is not None
+        assert artifact.payload_json['writer_learning_notes'] == []
+        assert artifact.payload_json['_deconstruction_profile']['writer_lens_status'] == 'deferred'

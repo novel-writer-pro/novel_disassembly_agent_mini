@@ -439,3 +439,13 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这说明：
 - 当前版本虽然不够快；
 - 但遇到阶段性模型输出不稳定时，已经具备一定的自动兜底能力。
+
+### 6.6 当前已落地的加速动作（第 1 刀）
+当前 quick 主链已把 `writer_learning_lens` 从同步阶段移出，改为 deferred：
+- 章节仍会保留 `writer_learning_notes` 字段；
+- 但默认值可为空；
+- `_deconstruction_profile.writer_lens_status` 会标记为 `deferred`。
+
+这意味着：
+- 默认 status/context/search/QA 链路不受影响；
+- 每章会少一次同步模型调用，是当前版本最安全的提速动作之一。

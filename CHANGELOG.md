@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- perf(deconstruction/quick-writer-deferral): quick 拆书主链默认将 `writer_learning_lens` 从同步 LLM stage 改为 deferred，占位保留 `writer_learning_notes=[]` 与 `_deconstruction_profile.writer_lens_status=deferred`，直接减少一次串行模型调用；定向回归 8/8 通过，且 fallback smoke 未受破坏。
+
+
 - docs(deconstruction/weitu-midrun): 卫图真实拆书中期证据补充：当前已稳定推进到 7 章完成、8 章运行中；第 6 章曾触发 `small_model_pipeline` JSON 失败，但 `monolithic_fallback` 成功接管并完成整章，说明新链路的真实稳定性收益不仅来自 stall timeout，也来自 fallback 兜底仍有效。
 
 
@@ -14,6 +17,20 @@
   - `tests/test_run_service.py tests/test_cli_retry_bulk.py tests/test_application_layer.py -k "retry_failed_jobs_cli_skips_completed_chapters_with_artifacts or retry_refused_when_readable_artifact_already_exists or stalled_jobs_respects_timeout_setting"` → 3/3 通过
 
 - docs(deconstruction-acceleration): 补充 `user-manual.md`，把当前拆书加速优化版本的已落地能力、未落地范围、推荐实跑顺序、reader isolation 口径与验证方式整理为用户手册；同步把入口挂到 `docs/README.md` 与 `docs/cli-operations-manual.md`。
+- docs(loom/docs-entrypoints): 收窄 `docs/README.md` 与 `docs/loom/README.md` 的默认入口，把 Loom 主线文档固定为 5 份 canonical 文档，并明确 source-of-truth 约定。
+
+  解决问题：
+  - `/docs` 和 `docs/loom` 文档过多时，读者容易不知道先看哪份
+  - `roadmap / handoff / validation / checklist` 的职责边界不够显式
+  - 设计稿、背景稿、执行文档混在一起时，维护成本和理解成本都偏高
+
+  当前 canonical 顺序：
+  - `sota-imitation-progression-checklist.md`
+  - `weitu-real-effect-validation.md`
+  - `weitu-validation-log-20260511.md`
+  - `handoff.md`
+  - `roadmap.md`
+
 - feat(loom/weitu-validation-bootstrap): `CL-loom-weitu-validation-bootstrap-01` — 新增 `scripts/bootstrap_weitu_validation_workspace.py`，把卫图样例真实验证的 manual_eval 工作区初始化、branch bundle 导出、branch report 导出、whole-book report 导出与 mailbox-style notes 回填收口成一个可重复执行入口。
 
   解决问题：
@@ -84,6 +101,16 @@
   结论：
   - 已证明 enhanced 信号开始真正回流到决策链
   - 尚未证明这一步已经让卫图样例正文质量稳定提升
+
+- ops(loom/post-feedback-rerun): 在 feedback-loop 修复后继续尝试扩样重跑 enhanced LLM 正文。
+
+  当前状态：
+  - chapter 2 / 3 enhanced LLM 重跑成功
+  - chapter 4 / 5 enhanced LLM 当前运行失败，未形成新的正文证据
+
+  结论：
+  - feedback-loop 修复已在小样本上生效
+  - 但 2–5 全量 post-fix 趋势仍未闭环，下一步需先解决 chapter 4 / 5 的 LLM 运行失败
 
 - ops(loom/weitu-validation): 已开始卫图样例的真实验证执行，不再停留在纯规划。
 

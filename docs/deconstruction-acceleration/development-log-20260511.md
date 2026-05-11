@@ -50,3 +50,7 @@
 
 - 卫图第 6 章实测中，`small_model_pipeline` 曾出现 JSON 解析失败，但 `monolithic_fallback` 接管后仍完成整章，说明当前链路不仅更稳，而且确实具备真实运行中的故障吸收能力。
 - 这也意味着后续性能优化不能误伤 fallback 可用性；在追求极限吞吐时，需要保住当前这层“慢但能兜住”的安全网。
+
+- 性能优化第 1 刀已落地：将 `writer_learning_lens` 从 quick 同步主链中移出，改为 deferred stub，从而直接减少一次串行 LLM 调用。
+- 契约保持不变：`writer_learning_notes` 仍保留为空数组，`_deconstruction_profile.writer_lens_status` 标记为 `deferred`，consumer 无需改读路径。
+- 这是一种“先削 stage 数，再谈 prompt 缩短”的低风险提速策略，适合作为真实瓶颈优化的第一步。

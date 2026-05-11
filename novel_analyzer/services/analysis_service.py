@@ -778,27 +778,17 @@ class AnalysisService:
                         progress_percent=65,
                         emit_event=True,
                     )
-                    writer = cast(
-                        WriterLearningLensOutput,
-                        self._invoke_stage(
-                            stage_model,
-                            analysis_prompt_map['writer_learning_lens'],
-                            WriterLearningLensOutput,
-                        ),
-                    ).ensure_minimum_writer_notes(
-                        segment.normalized_title,
-                        analysis.summary.short or analysis.summary.one_sentence,
-                        state_transition_notes,
-                        evidence_backed_resolutions,
-                        unresolved_threads,
-                    )
+                    writer = WriterLearningLensOutput()
                     self.run_service.record_job_event(
                         branch_id=branch_id,
                         chapter_index=segment.chapter_index,
                         job_id=job.id,
-                        event_type='stage_completed',
+                        event_type='stage_deferred',
                         stage='writer_learning_lens',
-                        message=f'chapter {segment.chapter_index} writer_learning_lens completed',
+                        message=(
+                            f'chapter {segment.chapter_index} writer_learning_lens deferred '
+                            'for quick profile throughput'
+                        ),
                     )
                     self.run_service.update_job_progress(
                         branch_id,
