@@ -61,12 +61,20 @@
 
 ## Benchmark Plan
 
-| Metric | Baseline | Target (Phase 1) | Target (Phase 2) |
+| Metric | Baseline | Measured (Phase 1) | Target (Phase 2) |
 |--------|----------|-------------------|-------------------|
-| Single chapter latency | ~60s | ~36s (merged) | ~25s (pipelined) |
+| Single chapter latency (non-merged) | ~330s | 330.4s | - |
+| Single chapter latency (merged) | - | 254.0s (-23%) | ~200s (pipelined) |
 | LLM calls per chapter | 5 | 3 (merged) | 3 |
-| Fact recall @ch50 | ~40% | ~65% (adaptive) | ~80% (foreshadow) |
+| Fact recall @ch50 | ~40% | ~65% (adaptive, estimated) | ~80% (foreshadow) |
 | Context relevance | fixed top-8 | query-aware top-30 | lifecycle-managed |
+
+**Real benchmark (2026-05-12, deepseek-v4-flash)**:
+- Provider: deepseek-v4-flash @ https://api.deepseek.com/v1
+- Novel: 775 chapters, ~5.2MB
+- Non-merged (5 calls): 330.4s/chapter
+- Merged (3 calls): 254.0s/chapter
+- Speedup: 23% (76.4s saved per chapter)
 
 ---
 

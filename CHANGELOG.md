@@ -1,6 +1,13 @@
 ## Unreleased
 
 
+- feat(loom/thread-activation-in-skill-outputs): `preflight_draft` 中 thread activation signal 现在写入 `skill_outputs["_loom_thread_activation"]`，供 whole-book report 和 downstream 消费；修复 MagicMock 类型校验问题（加 isinstance 守卫）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-thread-activation-signal-01`
+
+  Tested: test_loom_phase2.py (21 passed), 手工 ch6 enabled 验证
+
+
 - fix(loom/window-summary-key): `_get_recent_summary` 读取 WindowArtifact 时使用 `"summary"` 键，但实际 payload 键为 `"window_summary"`，导致 `previous_chapter_summary` 始终为空；修复后 loom-assemble ch6 的 `recent_summary` 正确输出 1-5 章摘要；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-window-summary-key-fix-01`
@@ -72,6 +79,14 @@
   Constraint: batch_size 上限 3，避免单次 session 过长导致超时
   Tested: 32 analysis tests passed, 70 core tests passed, import verification
   Not-tested: 真实长篇的批量处理稳定性
+
+
+- benchmark(deconstruction/sota-v2): 使用 deepseek-v4-flash 对 775 章长篇进行真实单章 benchmark：非合并路径 330.4s/章，合并路径 254.0s/章，提速 23%（每章节省 76.4s）。
+
+  Changelist: `CL-benchmark-sota-v2-01`
+
+  Tested: 真实 API 调用，单章端到端完成
+  Not-tested: 多章连续运行的稳定性和累积误差
 
 
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。
