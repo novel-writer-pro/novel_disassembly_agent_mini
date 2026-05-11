@@ -581,3 +581,12 @@ python3 scripts/run_deconstruction_benchmark.py <novel_path> --title <title> --d
 - `compare_deconstruction_benchmarks.py`
 
 三者可以串成完整链路使用。
+
+### 6.20 benchmark summary 已支持 fallback 识别
+当前 benchmark summary 已额外输出：
+- `fallback_modes`
+- `fallback_chapter_count`
+- `is_pure_primary_provider_run`
+
+这意味着：
+- 后续 funded-provider 对照时，可以明确知道某次 run 是否混入了 fallback / heuristic 路径。

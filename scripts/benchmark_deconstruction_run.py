@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Any
 
@@ -61,6 +61,7 @@ def main() -> int:
             elapsed_seconds = (finished_at - started_at).total_seconds()
 
         totals: dict[str, int] = defaultdict(int)
+        fallback_counter: Counter[str] = Counter()
         per_chapter: list[dict[str, Any]] = []
         for raw in raws:
             meta = raw.invocation_metadata or {}
@@ -72,6 +73,14 @@ def main() -> int:
                     except Exception:
                         pass
             total_prompt_chars = meta.get("total_prompt_chars")
+            parsed_json = raw.parsed_json or {}
+            profile = {}
+            if isinstance(parsed_json, dict):
+                profile = parsed_json.get('_deconstruction_profile') or {}
+            timing = profile.get('timing') if isinstance(profile, dict) else {}
+            fallback_mode = timing.get('fallback_mode') if isinstance(timing, dict) else None
+            if fallback_mode:
+                fallback_counter[str(fallback_mode)] += 1
             per_chapter.append(
                 {
                     "chapter_index": raw.chapter_index,
@@ -81,6 +90,7 @@ def main() -> int:
                     "total_prompt_chars": total_prompt_chars,
                     "prompt_char_counts": counts,
                     "parse_status": raw.parse_status,
+                    "fallback_mode": fallback_mode,
                 }
             )
 
@@ -96,6 +106,9 @@ def main() -> int:
                 elapsed_seconds / len(completed) if elapsed_seconds and completed else None
             ),
             "prompt_char_totals": dict(sorted(totals.items())),
+            "fallback_modes": dict(sorted(fallback_counter.items())),
+            "fallback_chapter_count": sum(fallback_counter.values()),
+            "is_pure_primary_provider_run": sum(fallback_counter.values()) == 0,
             "per_chapter": per_chapter,
         }
 
@@ -110,8 +123,12 @@ def main() -> int:
             print(f"finished_at={payload['finished_at']}")
             print(f"elapsed_seconds={payload['elapsed_seconds']}")
             print(f"avg_seconds_per_completed_chapter={payload['avg_seconds_per_completed_chapter']}")
+            print(f"fallback_chapter_count={payload['fallback_chapter_count']}")
+            print(f"is_pure_primary_provider_run={str(payload['is_pure_primary_provider_run']).lower()}")
             for key, value in payload["prompt_char_totals"].items():
                 print(f"{key}={value}")
+            for key, value in payload["fallback_modes"].items():
+                print(f"fallback_{key}={value}")
     return 0
 
 

@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- feat(deconstruction/fallback-aware-benchmark): `benchmark_deconstruction_run.py` 现已识别并汇总 `fallback_modes` / `fallback_chapter_count` / `is_pure_primary_provider_run`，避免后续对照时把混入 fallback/heuristic 的 run 误当成纯 provider 性能结果；扩展回归 28/28 通过。
+
+
 - ops(deconstruction/benchmark-smoke): 已在独立库上真实跑通 `run_deconstruction_benchmark.py` 的 1 章 smoke，并成功用 `compare_deconstruction_benchmarks.py` 读取 repo 内旧基线 artifact 与 candidate JSON 输出结构化对比，证明 benchmark 工具链执行面可用。
 
 

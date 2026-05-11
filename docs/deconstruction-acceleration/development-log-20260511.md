@@ -95,3 +95,5 @@
 
 - 已完成 runner + compare 的真实 smoke，证明 benchmark 工具链不仅有单测，而且能在真实数据库/真实 CLI 路径上闭环执行。
 - 尽管本次 smoke 只跑 1 章，且 prompt metrics totals 为空（provider 返回路径未产出新 totals），但“从建库到 compare 输出”的整个执行面已经打通。
+
+- 已把 benchmark summary 升级为 fallback-aware：后续对照时可以直接区分“纯 primary provider run”和“混入 fallback/heuristic 的 run”，避免把降级路径误当成真实模型性能结果。

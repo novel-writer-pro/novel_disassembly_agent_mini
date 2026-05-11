@@ -35,7 +35,11 @@ def _seed_run(tmp_path: Path, *, with_prompt_metrics: bool) -> tuple[str, str, s
                 idx,
                 job.attempts,
                 '{"ok":true}',
-                parsed_json={'ok': True},
+                parsed_json=(
+                    {'ok': True, '_deconstruction_profile': {'timing': {'fallback_mode': 'local-heuristic'}}}
+                    if with_prompt_metrics and idx == 2
+                    else {'ok': True}
+                ),
                 parse_status='parsed',
                 parse_error=None,
                 invocation_metadata=(
@@ -55,7 +59,7 @@ def _seed_run(tmp_path: Path, *, with_prompt_metrics: bool) -> tuple[str, str, s
                     }
                 ),
             )
-            service.record_chapter_artifact(branch.id, idx, {'chapter_index': idx, 'chapter_summary': f'第{idx}章摘要'})
+            service.record_chapter_artifact(branch.id, idx, {'chapter_index': idx, 'chapter_summary': f'第{idx}章摘要', '_deconstruction_profile': {'timing': ({'fallback_mode': 'local-heuristic'} if with_prompt_metrics and idx == 2 else {})}})
             service.complete_chapter_job(branch.id, idx)
         return file_url, run.id, branch.id
 
@@ -75,6 +79,9 @@ def test_benchmark_cli_summarizes_prompt_metrics(tmp_path: Path, capsys) -> None
     assert payload['prompt_char_totals']['chapter_intake_chars'] == 30
     assert payload['prompt_char_totals']['fact_extractor_chars'] == 60
     assert payload['per_chapter'][0]['total_prompt_chars'] == 30
+    assert payload['fallback_modes']['local-heuristic'] == 1
+    assert payload['fallback_chapter_count'] == 1
+    assert payload['is_pure_primary_provider_run'] is False
 
 
 def test_benchmark_cli_handles_runs_without_prompt_metrics(tmp_path: Path, capsys) -> None:
@@ -90,3 +97,6 @@ def test_benchmark_cli_handles_runs_without_prompt_metrics(tmp_path: Path, capsy
     assert payload['completed_chapters'] == 2
     assert payload['prompt_char_totals'] == {}
     assert payload['per_chapter'][0]['prompt_char_counts'] == {}
+    assert payload['fallback_modes'] == {}
+    assert payload['fallback_chapter_count'] == 0
+    assert payload['is_pure_primary_provider_run'] is True

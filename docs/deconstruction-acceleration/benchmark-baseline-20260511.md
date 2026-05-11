@@ -173,3 +173,12 @@ python3 scripts/compare_deconstruction_benchmarks.py baseline.json candidate.jso
 - 这是工具链执行面 smoke，不是正式 20 章 funded-provider 对照结果；
 - 但它证明 runner + summarize + compare 三段式已经可以在真实数据库上闭环使用。
 
+## fallback-aware 对照原则
+后续对照时，优先使用：
+- `is_pure_primary_provider_run=true`
+- `fallback_chapter_count=0`
+
+若 candidate run 混入 fallback/heuristic，则应把它标记为：
+- 工具链可用性证据 / 兜底稳定性证据
+- 而不是纯粹的 primary provider 性能证据
+
