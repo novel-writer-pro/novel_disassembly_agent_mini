@@ -674,7 +674,7 @@ def test_analysis_and_guard_prompts_use_compact_state_and_no_graph_context(monke
         run, branch = RunService(session).create_run(novel.id, manifest.id)
         service = AnalysisService(session, Settings(llm_api_key='test-key'))
 
-        captured: list[str] = []
+        captured: list[tuple[str, str]] = []
         real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
         original = real_build.build_agent_stage_prompts
 
@@ -773,3 +773,80 @@ def test_fact_and_evidence_prompts_drop_graph_and_minimize_state(monkeypatch, tm
         assert '窗口摘要' not in evidence_prompt
         assert '伏笔A' in fact_prompt
         assert '伏笔D' not in fact_prompt
+
+
+def test_compact_prior_context_json_keeps_only_small_fact_fields() -> None:
+    payload = AnalysisService._compact_prior_context_json(
+        {
+            'previous_summary': '这是一个很长的前情摘要。' * 40,
+            'facts': [
+                {'chapter_index': 1, 'fact_type': 'entity', 'label': '卫图', 'confidence': 0.9, 'evidence': ['drop-me']},
+                {'chapter_index': 2, 'fact_type': 'event', 'label': '觉醒命格', 'confidence': 0.8, 'metadata': {'drop': True}},
+            ],
+            'other': {'ignored': True},
+        }
+    )
+    assert 'drop-me' not in payload
+    assert 'metadata' not in payload
+    assert 'ignored' not in payload
+    assert '卫图' in payload and '觉醒命格' in payload
+    assert len(payload) < 600
+
+
+def test_fact_analysis_and_guard_prompts_use_compact_prior_context(monkeypatch, tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+
+        captured: list[str] = []
+        real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
+        original = real_build.build_agent_stage_prompts
+
+        def _capture(context):
+            prompts = original(context)
+            if context.intake_json != '{}' and context.fact_json == '{}':
+                captured.append(('fact', prompts['fact_extractor']))
+            if context.evidence_bound_json != '{}':
+                captured.append(('analysis', prompts['analysis_generator']))
+                captured.append(('guard', prompts['anti_fabrication_guard']))
+            return prompts
+
+        monkeypatch.setattr('novel_analyzer.services.analysis_service.build_agent_stage_prompts', _capture)
+        monkeypatch.setattr(service.context_service, 'previous_summary', lambda *args, **kwargs: '前情')
+        monkeypatch.setattr(service.context_service, 'fact_context_json', lambda *args, **kwargs: {
+            'previous_summary': '很长很长的前情摘要' * 50,
+            'facts': [
+                {'chapter_index': 1, 'fact_type': 'entity', 'label': '卫图', 'confidence': 0.9, 'evidence': ['SHOULD-DROP']},
+                {'chapter_index': 2, 'fact_type': 'event', 'label': '觉醒命格', 'confidence': 0.8, 'metadata': {'drop': True}},
+            ],
+        })
+        monkeypatch.setattr(service.context_service, 'graph_context_json', lambda *args, **kwargs: {'overview': {'node_count': 999}, 'central_nodes': ['GRAPH-BIG']})
+        monkeypatch.setattr(service.context_service, 'state_summary_json', lambda *args, **kwargs: {'paid_off_foreshadowing': ['伏笔A']})
+        monkeypatch.setattr(service.context_service, 'window_summary', lambda *args, **kwargs: '窗口摘要')
+
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        fact_prompt = next(text for kind, text in captured if kind == 'fact')
+        analysis_prompt = next(text for kind, text in captured if kind == 'analysis')
+        guard_prompt = next(text for kind, text in captured if kind == 'guard')
+        joined = '\n'.join([fact_prompt, analysis_prompt, guard_prompt])
+        assert 'SHOULD-DROP' not in joined
+        assert 'metadata' not in joined
+        assert '卫图' in joined
+        assert '觉醒命格' in joined

@@ -485,3 +485,12 @@ python3 -m novel_analyzer.cli.app db-capabilities --database-url <dburl>
 这意味着：
 - 事实链路的同步 token 成本继续下降；
 - 而输出结构、context/search/QA 消费契约仍不变。
+
+### 6.11 当前已落地的加速动作（第 5 刀）
+当前前情事实输入也已改为 compact 版：
+- 只保留小规模前情摘要；
+- 事实只保留关键信息，不再把大体积 evidence / metadata 整包传入同步 stage。
+
+这意味着：
+- quick 主链的同步 prompt 体积已被系统性压缩；
+- 后续真实提速验证将更有意义，因为不是单点优化，而是多刀叠加后的主链瘦身结果。

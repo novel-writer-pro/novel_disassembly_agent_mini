@@ -1,6 +1,9 @@
 ## Unreleased
 
 
+- perf(deconstruction/prior-context-slimming): quick 拆书主链将 `prior_context_json` 压缩为 compact 版，仅保留小规模前情摘要与事实关键字段；扩展回归 16/16 通过。量化样本显示卫图第 20 章上 `fact_extractor` prompt 约下降 90.6%。
+
+
 - perf(deconstruction/fact-evidence-prompt-slimming): 继续缩 quick 拆书主链 prompt 体积：`fact_extractor` 去掉完整图谱上下文，仅保留 compact 前情状态；`evidence_binder` 回到最小必要输入（cleaned_text + fact_json）。扩展回归 14/14 通过。
 
 

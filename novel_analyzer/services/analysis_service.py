@@ -179,6 +179,33 @@ class AnalysisService:
         return any(keyword in text for keyword in keywords)
 
     @staticmethod
+    def _compact_prior_context_json(
+        prior_context: dict[str, object],
+        *,
+        max_facts: int = 8,
+    ) -> str:
+        compact: dict[str, object] = {}
+        facts = prior_context.get('facts')
+        if isinstance(facts, list) and facts:
+            compact_facts: list[dict[str, object]] = []
+            for item in facts[:max_facts]:
+                if not isinstance(item, dict):
+                    continue
+                row: dict[str, object] = {}
+                for key in ('chapter_index', 'fact_type', 'label', 'confidence'):
+                    value = item.get(key)
+                    if value not in (None, '', []):
+                        row[key] = value
+                if row:
+                    compact_facts.append(row)
+            if compact_facts:
+                compact['facts'] = compact_facts
+        previous_summary = prior_context.get('previous_summary')
+        if isinstance(previous_summary, str) and previous_summary.strip():
+            compact['previous_summary'] = previous_summary.strip()[:200]
+        return json.dumps(compact, ensure_ascii=False, indent=2) if compact else '{}'
+
+    @staticmethod
     def _compact_state_summary_json(
         state_summary: dict[str, object],
         *,
@@ -642,6 +669,7 @@ class AnalysisService:
                     segment.chapter_index,
                 )
                 prior_context_json = json.dumps(prior_context, ensure_ascii=False, indent=2)
+                compact_prior_context_json = self._compact_prior_context_json(prior_context)
                 graph_context_json = json.dumps(graph_context, ensure_ascii=False, indent=2)
                 state_summary_json = json.dumps(state_summary, ensure_ascii=False, indent=2)
                 try:
@@ -682,7 +710,7 @@ class AnalysisService:
                             chapter_content=stage_chapter_content,
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
-                            prior_context_json=prior_context_json,
+                            prior_context_json=compact_prior_context_json,
                             graph_context_json='{}',
                             state_summary_json=compact_state_summary_json,
                             cleaned_text=intake.cleaned_text,
@@ -758,7 +786,7 @@ class AnalysisService:
                             chapter_content=stage_chapter_content,
                             previous_summary=previous_summary,
                             intake_json=intake.model_dump_json(indent=2),
-                            prior_context_json=prior_context_json,
+                            prior_context_json=compact_prior_context_json,
                             graph_context_json='{}',
                             state_summary_json=compact_state_summary_json,
                             cleaned_text=intake.cleaned_text,
@@ -824,7 +852,7 @@ class AnalysisService:
                         chapter_content=stage_chapter_content,
                         previous_summary=previous_summary,
                         intake_json=intake.model_dump_json(indent=2),
-                        prior_context_json=prior_context_json,
+                        prior_context_json=compact_prior_context_json,
                         graph_context_json='{}',
                         state_summary_json=compact_state_summary_json,
                         window_summary=window_summary,

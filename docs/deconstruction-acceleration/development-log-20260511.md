@@ -67,3 +67,6 @@
   - `fact_extractor` 去掉完整图谱上下文，仅保留 compact state summary；
   - `evidence_binder` 回到最小必要输入（`cleaned_text + fact_json`），不再额外消费 graph/state/window。
 - 这是当前最符合 prompt 资产定义的瘦身动作，因为 evidence-binder 的技能说明本来就只依赖章节正文与事实 JSON。
+
+- 性能优化第 5 刀已落地：继续压缩 `prior_context_json`，把前情事实输入从全量 JSON 缩为 compact 版，只保留 chapter_index / fact_type / label / confidence 等小字段。
+- 这一步进一步降低了 `fact_extractor` / `analysis_generator` / `anti_fabrication_guard` 的同步 prompt 体积，并且量化结果显示 `fact_extractor` 已从约 26k 字符降到约 2.5k 字符量级。
