@@ -147,11 +147,18 @@ class HttpRerankProvider:
     timeout: float = 30.0
     max_retries: int = 2
     verify_ssl: bool = True
+    batch_size: int = 0
 
     def rerank(self, query: str, documents: list[str]) -> list[float]:
         if not documents:
             return []
-
+        
+        if self.batch_size > 0 and len(documents) > self.batch_size:
+            return self._rerank_chunked(query, documents)
+        
+        return self._rerank_single(query, documents)
+    
+    def _rerank_single(self, query: str, documents: list[str]) -> list[float]:
         api_base = self.api_base.rstrip("/")
         
         if self.api_format == "tei":
@@ -222,6 +229,28 @@ class HttpRerankProvider:
                 ) from exc
 
         raise RuntimeError(f"Unexpected: exhausted retries for {url}")
+    
+    def _rerank_chunked(self, query: str, documents: list[str]) -> list[float]:
+        results: list[float] = []
+        failed_chunks: list[tuple[int, int, str]] = []
+        
+        for i in range(0, len(documents), self.batch_size):
+            chunk = documents[i:i + self.batch_size]
+            try:
+                chunk_results = self._rerank_single(query, chunk)
+                results.extend(chunk_results)
+            except Exception as e:
+                failed_chunks.append((i, i + len(chunk), str(e)))
+                results.extend([0.0] * len(chunk))
+        
+        if failed_chunks:
+            chunk_desc = ", ".join(f"[{start}:{end}]" for start, end, _ in failed_chunks)
+            raise RuntimeError(
+                f"Failed to rerank {len(failed_chunks)} chunk(s) at indices {chunk_desc}. "
+                f"First error: {failed_chunks[0][2]}"
+            )
+        
+        return results
 
 
 @lru_cache(maxsize=8)
@@ -237,6 +266,7 @@ def _cached_rerank_provider(
     http_timeout: float,
     http_max_retries: int,
     http_verify_ssl: bool,
+    http_batch_size: int,
 ) -> RerankProvider:
     if not model_name:
         return DisabledRerankProvider()
@@ -256,6 +286,7 @@ def _cached_rerank_provider(
             timeout=http_timeout,
             max_retries=http_max_retries,
             verify_ssl=http_verify_ssl,
+            batch_size=http_batch_size,
         )
     return DisabledRerankProvider()
 
@@ -264,6 +295,10 @@ def get_rerank_provider(settings: Settings | None = None) -> RerankProvider:
     """Return the configured rerank provider."""
 
     runtime = settings or get_settings()
+    batch_size = runtime.rerank_http_batch_size if runtime.rerank_http_batch_size > 0 else 32
+    if runtime.rerank_backend not in ('http', 'tei'):
+        batch_size = 0
+    
     return _cached_rerank_provider(
         runtime.rerank_backend,
         runtime.rerank_model_name,
@@ -276,4 +311,5 @@ def get_rerank_provider(settings: Settings | None = None) -> RerankProvider:
         runtime.rerank_http_timeout,
         runtime.rerank_http_max_retries,
         runtime.rerank_http_verify_ssl,
+        batch_size,
     )

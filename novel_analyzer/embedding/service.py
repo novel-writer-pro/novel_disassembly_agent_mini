@@ -193,11 +193,18 @@ class HttpEmbeddingProvider:
     timeout: float = 30.0
     max_retries: int = 2
     verify_ssl: bool = True
+    batch_size: int = 0
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-
+        
+        if self.batch_size > 0 and len(texts) > self.batch_size:
+            return self._embed_texts_chunked(texts)
+        
+        return self._embed_texts_single(texts)
+    
+    def _embed_texts_single(self, texts: list[str]) -> list[list[float]]:
         api_base = self.api_base.rstrip("/")
         
         if self.api_format == "openai":
@@ -267,6 +274,28 @@ class HttpEmbeddingProvider:
                 ) from exc
 
         raise RuntimeError(f"Unexpected: exhausted retries for {url}")
+    
+    def _embed_texts_chunked(self, texts: list[str]) -> list[list[float]]:
+        results: list[list[float]] = []
+        failed_chunks: list[tuple[int, int, str]] = []
+        
+        for i in range(0, len(texts), self.batch_size):
+            chunk = texts[i:i + self.batch_size]
+            try:
+                chunk_results = self._embed_texts_single(chunk)
+                results.extend(chunk_results)
+            except Exception as e:
+                failed_chunks.append((i, i + len(chunk), str(e)))
+                results.extend([[0.0] * 1024] * len(chunk))
+        
+        if failed_chunks:
+            chunk_desc = ", ".join(f"[{start}:{end}]" for start, end, _ in failed_chunks)
+            raise RuntimeError(
+                f"Failed to embed {len(failed_chunks)} chunk(s) at indices {chunk_desc}. "
+                f"First error: {failed_chunks[0][2]}"
+            )
+        
+        return results
 
 
 @lru_cache(maxsize=8)
@@ -283,6 +312,7 @@ def _cached_embedding_provider(
     http_timeout: float,
     http_max_retries: int,
     http_verify_ssl: bool,
+    http_batch_size: int,
 ) -> EmbeddingProvider:
     if backend == 'onnx':
         return OnnxBgeEmbeddingProvider(
@@ -300,6 +330,7 @@ def _cached_embedding_provider(
             timeout=http_timeout,
             max_retries=http_max_retries,
             verify_ssl=http_verify_ssl,
+            batch_size=http_batch_size,
         )
     return DeterministicStubEmbeddingProvider(dim=stub_dim)
 
@@ -321,4 +352,5 @@ def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvide
         runtime.embedding_http_timeout,
         runtime.embedding_http_max_retries,
         runtime.embedding_http_verify_ssl,
+        runtime.effective_embedding_batch_size(),
     )
