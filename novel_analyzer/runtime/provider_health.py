@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.runtime.storage import runtime_cache_root
+
+DECAY_WINDOW_SECONDS = 300
+SUCCESS_DECAY_RATE = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +66,21 @@ def read_provider_health(settings: Settings | None = None) -> ProviderHealthRepo
     )
 
 
+def _apply_time_decay(current: ProviderHealthReport) -> int:
+    """Decay degraded_events if enough time has passed since last update."""
+    if not current.last_updated_at or current.degraded_events == 0:
+        return current.degraded_events
+    try:
+        last_update = datetime.fromisoformat(current.last_updated_at)
+        elapsed = (datetime.now(timezone.utc) - last_update).total_seconds()
+        decay_periods = int(elapsed / DECAY_WINDOW_SECONDS)
+        if decay_periods > 0:
+            return max(0, current.degraded_events - decay_periods * SUCCESS_DECAY_RATE)
+    except (ValueError, TypeError):
+        pass
+    return current.degraded_events
+
+
 def record_provider_health(
     *,
     ok: bool,
@@ -71,12 +89,21 @@ def record_provider_health(
 ) -> ProviderHealthReport:
     runtime = settings or get_settings()
     current = read_provider_health(runtime)
+    decayed_degraded = _apply_time_decay(current)
+
+    if ok:
+        new_degraded = max(0, decayed_degraded - SUCCESS_DECAY_RATE)
+        new_success = current.success_events + 1
+    else:
+        new_degraded = decayed_degraded + 1
+        new_success = current.success_events
+
     next_report = ProviderHealthReport(
         provider_name=runtime.llm_provider_name,
         model_name=runtime.llm_qa_model_name,
         last_status="ok" if ok else "degraded",
-        degraded_events=current.degraded_events + (0 if ok else 1),
-        success_events=current.success_events + (1 if ok else 0),
+        degraded_events=new_degraded,
+        success_events=new_success,
         last_error=None if ok else (error_message or current.last_error),
         last_updated_at=datetime.now(timezone.utc).isoformat(),
     )

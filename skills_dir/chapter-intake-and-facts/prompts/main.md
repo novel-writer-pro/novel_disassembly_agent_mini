@@ -17,26 +17,34 @@ B) 从正文中抽取可被文本直接支持的事实层内容
 - 原始章节正文：
 {{chapter_content}}
 
-输出要求：
-1. 只输出一个 JSON 对象，包含两个顶层 key：`intake` 和 `facts`。
-2. `intake` 部分：
-   - chapter_index, normalized_title, cleaned_text, paragraph_blocks, dialogue_candidates, scene_candidates, notes
-   - paragraph_blocks 只切段不改写
-   - dialogue_candidates 仅提取直接引号对话或明显口语片段
-   - scene_candidates 按场景/时空变化粗切
-   - notes 只写文本处理层注意事项
-   - 发现章节尾部悬念、转场、时间变化时在 notes 中标记
-3. `facts` 部分：
-   - characters, events, relations, conflicts, foreshadowing, worldbuilding_facts
-   - 每个数组元素：label, evidence(1~3条原文短证据), confidence(0~1)
-   - 不写文学评论，不写主题分析
-   - 事件必须是本章发生或本章被明确陈述的事实
-   - 没证据就不要写
-   - 优先识别：打压、觉醒、反击、悬念、接应、升级、代价、背叛、真相揭露等关键 beat
-   - 如果本章明确呈现力量规则、社会规则、资源竞争规则，写入 worldbuilding_facts
-   - 如果前情状态摘要里存在未回收伏笔/冲突升级/关系变化/规则约束，优先检查本章是否有新的直接文本证据
+严格输出要求：
+1. 只输出一个 JSON 对象，顶层必须且只能有两个 key：`intake` 和 `facts`。
+2. `intake` 对象必须包含以下字段（缺一不可）：
+   - chapter_index: 整数，与输入章节序号一致
+   - normalized_title: 字符串，与输入章节标题一致
+   - cleaned_text: 字符串，清理后的正文
+   - paragraph_blocks: 数组，每个元素 {"order": 整数, "text": "段落内容"}
+   - dialogue_candidates: 字符串数组，直接引号对话
+   - scene_candidates: 数组，每个元素 {"order": 整数, "text": "场景描述"}
+   - notes: 字符串数组，文本处理层注意事项
+3. `facts` 对象必须包含以下字段（缺一不可）：
+   - characters: 数组
+   - events: 数组
+   - relations: 数组
+   - conflicts: 数组
+   - foreshadowing: 数组
+   - worldbuilding_facts: 数组
+   - 每个数组元素格式：{"label": "标签", "evidence": ["证据1"], "confidence": 0.9}
+4. 不写文学评论，不写主题分析
+5. 事件必须是本章发生或本章被明确陈述的事实
+6. 没证据就不要写
+7. 优先识别：打压、觉醒、反击、悬念、接应、升级、代价、背叛、真相揭露等关键 beat
+8. 如果本章明确呈现力量规则、社会规则、资源竞争规则，写入 worldbuilding_facts
+9. 如果前情状态摘要里存在未回收伏笔/冲突升级/关系变化/规则约束，优先检查本章是否有新的直接文本证据
+10. 如果本章出现同一人物的不同称呼（如"卫图"和"那个少年"指同一人），在 characters 中用 label 写最常用名，evidence 中注明别名
 
-示例（格式示意）：
+严格 JSON Schema（不允许偏离）：
+```json
 {
   "intake": {
     "chapter_index": 1,
@@ -56,3 +64,4 @@ B) 从正文中抽取可被文本直接支持的事实层内容
     "worldbuilding_facts": []
   }
 }
+```
