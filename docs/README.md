@@ -58,6 +58,7 @@
 | 能力线 | 入口 | 状态 |
 |--------|------|------|
 | 拆书引擎 (SOTA) | [deconstruction-acceleration/](./deconstruction-acceleration/README.md) | Phase 4.5 完成 |
+| 底座优化 | [foundation-optimization/](./foundation-optimization/README.md) | P0-P2 全部完成 |
 | 风险审查 | [risk-audit-system-overview.md](./risk-audit-system-overview.md) | 9 checker 生产就绪 |
 | 仿写能力 | [writer-imitation-workflow.md](./writer-imitation-workflow.md) | 全书仿写可用 |
 | Review 工作流 | [minimal-review-workflow-guide.md](./minimal-review-workflow-guide.md) | DB-only 模式 |

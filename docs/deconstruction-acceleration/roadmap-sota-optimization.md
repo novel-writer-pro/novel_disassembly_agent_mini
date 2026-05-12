@@ -126,6 +126,8 @@
 
 以下为 diminishing returns 区域的优化点，建议在积累 50+ 章真实运行数据后按需启动。
 
+底座层优化已独立为专题文档：[foundation-optimization/README.md](../foundation-optimization/README.md)
+
 ### 5A. LLM-based Coreference Resolution
 
 **问题**: 当前 `EntityResolutionService` 使用字符级 Jaccard 相似度，对于语义级别名（如"那个少年"="卫图"）无法识别。

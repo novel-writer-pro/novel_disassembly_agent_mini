@@ -261,3 +261,4 @@ NOVEL_ANALYZER_USE_MERGED_STAGES=false
 | [roadmap-sota-optimization.md](./roadmap-sota-optimization.md) | 完整 roadmap + benchmark + 风险矩阵 |
 | [architecture.md](./architecture.md) | Quick/Deep 双档架构设计 |
 | [user-manual.md](./user-manual.md) | 用户使用说明 |
+| [../foundation-optimization/README.md](../foundation-optimization/README.md) | 底座优化专题 (分词/检索/压缩/缓存) |
