@@ -12,16 +12,16 @@ RERANK_IMAGE="ghcr.io/huggingface/text-embeddings-inference:cpu-1.6"
 RERANK_MODEL="${TEI_RERANK_MODEL:-BAAI/bge-reranker-v2-m3}"
 RERANK_PORT="${TEI_RERANK_PORT:-8081}"
 
-docker rm -f tei-embed tei-rerank 2>/dev/null || true
+sudo docker rm -f tei-embed tei-rerank 2>/dev/null || true
 
-docker run -d --name tei-embed \
+sudo docker run -d --name tei-embed \
   -p "${EMBED_PORT}:80" \
   -v "${CACHE_DIR}:/data" \
   "${EMBED_IMAGE}" \
   --model-id "${EMBED_MODEL}" \
   --max-client-batch-size 32
 
-docker run -d --name tei-rerank \
+sudo docker run -d --name tei-rerank \
   -p "${RERANK_PORT}:80" \
   -v "${CACHE_DIR}:/data" \
   "${RERANK_IMAGE}" \
