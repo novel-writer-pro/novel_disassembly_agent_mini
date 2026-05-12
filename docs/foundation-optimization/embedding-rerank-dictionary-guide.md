@@ -58,11 +58,9 @@ jieba 自定义词典格式：
 ### 1.4 自动构建流程
 
 ```python
-# 已实现: DomainDictionaryService
-# 输出: .cache/novel-analyzer/domain-dict.txt
-
-# 后续增强: 转换为 jieba 格式
-# 输出: .cache/novel-analyzer/jieba-user-dict.txt
+# 已实现: DomainDictionaryService 同时产出两份文件
+# .cache/novel-analyzer/domain-dict.txt        — 纯词表 (flat whitelist)
+# .cache/novel-analyzer/jieba-user-dict.txt    — "<term> <freq> <pos>" 格式
 ```
 
 ### 1.5 构建步骤
@@ -544,7 +542,7 @@ Phase 4 (持续): 迭代优化
 | `embedding/service.py` | bge-m3 ONNX | novel-embedding-v1 ONNX | 仅改配置 |
 | `rerank/service.py` | bge-reranker-v2-m3 | novel-reranker-v1 ONNX | 仅改配置 |
 | `retrieval_service.py` BM25 | simple 分词 | jieba + 领域词典 | 需改代码 |
-| `DomainDictionaryService` | 已实现 | 增加 jieba 格式输出 | 小改 |
+| `DomainDictionaryService` | 已实现 (plain + jieba 双格式) | — | — |
 
 系统设计为配置驱动，模型替换只需修改环境变量：
 ```bash

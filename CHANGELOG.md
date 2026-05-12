@@ -1,6 +1,14 @@
 ## Unreleased
 
 
+- feat(foundation/P0): DomainDictionaryService 同步产出 jieba userdict 格式（`jieba-user-dict.txt`，`<term> <freq> <pos>`），与纯词表 `domain-dict.txt` 并列落盘；为 BM25 + jieba / pg_jieba 真正消费领域词典打通前置一半（另一半属运维侧 pg_jieba userdict 重载）。
+
+  Changelist: `CL-foundation-domain-dict-jieba-01`
+
+  Tested: `tests/test_domain_dictionary_service.py` 3 用例 + `test_analysis_service` / `test_fact_service` / `test_graph_service` 38 用例回归全部通过（合计 41 passed）。
+  Not-tested: pg_jieba `select pg_jieba.load_dict(...)` 实际重载未在本机验证（运维侧动作，非应用层）。
+
+
 - feat(web+api/full-api-coverage): FastAPI 升级到 v0.3.0，新增 7 个路由模块共 33 个端点；覆盖拆书（chapter-bundle/source/qa-context）、风险检查（review-clusters/risk-audit/risk-signals）、流水线（pipeline/start-range/runs）、问答（ask-branch/search-branch）；新增流式输出端点（writer/imitate-stream + ask-branch-stream，SSE 格式）；130 个 Loom 测试全部通过，端到端 /api/loom/status 验证通过。
 
   Changelist: `CL-web-api-full-coverage-01`

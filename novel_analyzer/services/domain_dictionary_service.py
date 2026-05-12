@@ -2,6 +2,12 @@
 
 Collects entity names, event labels, and other domain-specific terms from
 completed chapter analyses to improve BM25 tokenization and keyword matching.
+
+Two output files are maintained side-by-side in ``runtime_cache_dir``:
+
+- ``domain-dict.txt``: plain term list (one term per line).
+- ``jieba-user-dict.txt``: ``<term> <freq> <pos>`` per line, consumable by
+  ``jieba.load_userdict`` and ``pg_jieba`` userdict loaders.
 """
 
 from __future__ import annotations
@@ -14,6 +20,11 @@ from sqlalchemy.orm import Session
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import FactRecord, GraphNode
 
+# jieba userdict freq must exceed the built-in dictionary's top frequencies so
+# multi-char domain terms stay glued during tokenization (empirical floor ~50).
+_JIEBA_DEFAULT_FREQ = 100
+_JIEBA_DEFAULT_POS = "n"
+
 
 class DomainDictionaryService:
     """Builds and maintains a domain-specific dictionary from analysis results."""
@@ -24,6 +35,9 @@ class DomainDictionaryService:
 
     def _dict_path(self) -> Path:
         return Path(self.settings.runtime_cache_dir) / "domain-dict.txt"
+
+    def _jieba_dict_path(self) -> Path:
+        return Path(self.settings.runtime_cache_dir) / "jieba-user-dict.txt"
 
     def _load_existing(self) -> set[str]:
         path = self._dict_path()
@@ -65,9 +79,7 @@ class DomainDictionaryService:
             return 0
 
         all_terms = sorted(existing | new_terms)
-        path = self._dict_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text('\n'.join(all_terms) + '\n', encoding='utf-8')
+        self._persist(all_terms)
         return len(new_terms)
 
     def update_from_chapter(
@@ -97,14 +109,24 @@ class DomainDictionaryService:
             return 0
 
         all_terms = sorted(existing | new_terms)
-        path = self._dict_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text('\n'.join(all_terms) + '\n', encoding='utf-8')
+        self._persist(all_terms)
         return len(new_terms)
 
     def get_terms(self) -> list[str]:
         """Return all domain dictionary terms."""
         return sorted(self._load_existing())
+
+    def _persist(self, all_terms: list[str]) -> None:
+        plain = self._dict_path()
+        plain.parent.mkdir(parents=True, exist_ok=True)
+        plain.write_text('\n'.join(all_terms) + '\n', encoding='utf-8')
+
+        jieba = self._jieba_dict_path()
+        lines = [
+            f"{term} {_JIEBA_DEFAULT_FREQ} {_JIEBA_DEFAULT_POS}"
+            for term in all_terms
+        ]
+        jieba.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
     @staticmethod
     def _extract_sub_terms(term: str) -> list[str]:
