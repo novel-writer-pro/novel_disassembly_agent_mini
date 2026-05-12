@@ -223,6 +223,32 @@ Novel: 775 chapters, ~5.2MB
 
 ---
 
+## Risk Controls (Implemented)
+
+| 风险 | 控制措施 | 级别 |
+|------|---------|------|
+| 后处理 service 静默失败 | 所有 exception handler 改为 logger.warning/debug | 已实现 |
+| LLM provider rate-limit (429) | 指数退避 5s*attempt，最多 3 次 | 已实现 |
+| LLM provider 503 | 指数退避 3s*attempt，最多 3 次 | 已实现 |
+| Provider 持续降级 | provider_health 记录每次调用结果，degraded 时 warning | 已实现（观察模式） |
+| Materialization 慢/卡死 | 耗时监控，>60s 发出 warning | 已实现 |
+| Merged stage 返回格式异常 | 自动降级到非合并路径（分别调用） | 已实现 |
+| Artifact persist 后 materialization 失败 | restore_previous_active_artifact 回滚 | 已有 |
+| Job 长时间无心跳 | fail_stalled_jobs 自动标记超时 | 已有 |
+| 章节重试超限 | chapter_failure_retry_limit (默认 5) 后标记 pipeline failed | 已有 |
+
+### 未来风险控制演进
+
+| 风险 | 建议措施 | 优先级 |
+|------|---------|--------|
+| Provider 持续降级自动熔断 | degraded_events >= 10 时自动切换 fallback provider | Medium |
+| Materialization 硬超时 | 120s 后强制中断 + rollback | Medium |
+| 单章 LLM 总耗时超限 | 全链路 timeout budget（如 300s），超时走 heuristic fallback | Low |
+| 并发章节间的 DB 锁竞争 | batch_size > 1 时监控 session 锁等待时间 | Low |
+| 置信度校准的 N+1 查询 | 批量查询替代逐 fact 查询 | Low |
+
+---
+
 ## Configuration Reference
 
 ```bash
