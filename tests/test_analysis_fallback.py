@@ -68,7 +68,7 @@ def test_stage_failure_falls_back_to_monolithic_and_persists_result(tmp_path: Pa
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
 
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
         dummy_model = _DummyModel(
             [
                 INTAKE_OK,
@@ -105,7 +105,7 @@ def test_recorded_raw_output_includes_prompt_metrics(tmp_path: Path) -> None:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
 
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
         dummy_model = _DummyModel(
             [
                 INTAKE_OK,

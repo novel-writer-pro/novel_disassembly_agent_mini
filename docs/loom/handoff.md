@@ -296,6 +296,32 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
    - enhanced: `quality-hold`、`style_signal_count=2`、`chapter_quality_signal_count=2`
    - 这证明 enhanced 会真实改变执行器侧产物，但还不能证明最终仿写效果提升。
 
+### 4.0.17 reference-eval 批量对比 + gate fidelity-blocked（2026-05-12）
+
+**Changelist marker**：`CL-loom-reference-eval-batch-compare-01`
+
+**这次解决了什么：**
+
+1. **`loom-reference-eval --compare-dir` 批量对比模式**
+   - `chapter_index=0` 时扫描目录内所有 writer-imitate-ch*.json
+   - `--compare-dir` 支持 A vs B 两个目录的 fidelity 对比
+   - 输出每章 `A=x.xxx B=x.xxx delta=±x.xxx`
+
+2. **gate summary 新增 `fidelity-blocked` 状态**
+   - `average_reference_fidelity < 0.5` 时触发
+   - 优先级高于 `reader-sim-warn`，低于 `blocked-on-quality`
+   - contract 升级到 v2
+
+3. **批量对比验证结果（skeleton draft）**
+   ```
+   ch2: A(enhanced)=0.350  B(baseline)=0.150  delta=-0.200
+   ch3: A=0.300  B=0.450  delta=+0.150
+   ch4: A=0.450  B=0.150  delta=-0.300
+   ch5: A=0.150  B=0.150  delta=+0.000
+   ```
+
+**测试结果：** 130 passed
+
 ### 4.0.16 Reference-based 评估服务 + CLI（2026-05-12）
 
 **Changelist marker**：`CL-loom-reference-eval-service-01` / `CL-loom-reference-eval-cli-01`
@@ -594,11 +620,13 @@ dialogue_signal: conflict_dialogue_density=0.1091
 
 | 优先级 | 任务 | 说明 | 前置条件 |
 |--------|------|------|---------|
-| 🔴 P0 | A/B 实验：真实数据运行 | 用 20 章真实数据跑 loom-ab-compare，验证 character_ooc 下降 ≥20% | 需切换 loom_memory_mode=ab 并积累真实产物 |
-| 🟡 P0 | 0509 operator_surface 深化对接 | 当前 contract / execution / live / runtime simulation 面已基本统一；下一步是把这些 Loom gate 真正接到更接近生产的 executor / consumer 上 | 需 Loom 稳定运行 |
-| 🟡 P1 | Pairwise 数据积累 | 用 loom-collect-pairs 积累 500+ pairs；开启 loom_pairwise_enabled=True 后每次 writer-imitate 自动产出 | 需生产运行积累 |
-| 🟡 P1 | 角色认知基（Phase 3） | 角色级 agent 自主认知基 | 需 A/B 实验验证通过 |
-| 🟢 P2 | Fine-tuned reward model | 替代 LLM-as-judge | 需 pairwise 数据量充足 |
+| 🔴 P0 | Reference fidelity 多章节统计验证 | 对 ch10-30 跑 5 次取平均，确认 enhanced fidelity 稳定 ≥1.5x baseline | DeepSeek API 可用 |
+| 🔴 P0 | 连续写作场景验证 | ch10→ch11→ch12 连续传递 carry_over，验证 Loom 防退化效果 | 需 loom_memory_mode=enabled |
+| 🟡 P0 | Pairwise 数据积累 | 当前 30 pairs（6%），目标 500+；每次 writer-imitate --use-llm 自动产出 | 需持续运行 |
+| 🟡 P1 | reference fidelity 进入 gate summary | `overall_fidelity < 0.5` 时触发 `fidelity-blocked` gate | 需多章节验证通过 |
+| 🟡 P1 | 角色认知基深化 | CharacterPersona 从 episodic_anchors 构建，check_character_consistency 使用真实 persona | 需 reference fidelity 稳定 |
+| 🟢 P2 | Fine-tuned reward model | 用 500+ pairs 训练专用 reward model 替代 LLM-as-judge | 需数据量充足 |
+| 🟢 P2 | 连续写作 20+ 章 A/B 实验 | 验证 carry_over 退化防护的长期效果 | 需连续写作场景验证通过 |
 
 ### 4.1.1 Phase 4/5 规划概览（Phase 3 完成后）
 

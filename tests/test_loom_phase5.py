@@ -364,3 +364,90 @@ def test_long_book_health_to_dict() -> None:
         assert "quality_trend" in d
         assert "alert_level" in d
         assert d["chapter_index"] == 1
+
+
+def test_reference_eval_heuristic_fallback() -> None:
+    from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+
+    svc = ReferenceEvalService(llm_client=None)
+    result = svc.evaluate(
+        branch_id="test-branch",
+        chapter_index=1,
+        original_text="卫图夜里起身喂马，发现眉心金光闪烁。",
+        draft_text="卫图深夜起来照料马匹，注意到额头有光芒。",
+        chapter_goal="延续卫图日常",
+    )
+    assert result.evaluation_method == "heuristic_reference"
+    assert 0.0 <= result.overall_fidelity <= 1.0
+    assert result.confidence == 0.3
+    assert len(result.dimensions) == 6
+    for dim in result.dimensions.values():
+        assert 0.0 <= dim.score <= 1.0
+
+
+def test_reference_eval_empty_draft() -> None:
+    from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+
+    svc = ReferenceEvalService(llm_client=None)
+    result = svc.evaluate(
+        branch_id="test-branch",
+        chapter_index=1,
+        original_text="卫图夜里起身喂马。",
+        draft_text="",
+        chapter_goal="",
+    )
+    assert result.overall_fidelity == 0.0
+    assert result.evaluation_method == "heuristic_reference"
+
+
+def test_reference_eval_identical_text() -> None:
+    from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+
+    svc = ReferenceEvalService(llm_client=None)
+    text = "卫图夜里起身喂马，发现眉心金光闪烁。他决定明天去找二姑打听养生功。"
+    result = svc.evaluate(
+        branch_id="test-branch",
+        chapter_index=1,
+        original_text=text,
+        draft_text=text,
+        chapter_goal="",
+    )
+    assert result.overall_fidelity == 1.0
+
+
+def test_reference_eval_to_signal() -> None:
+    from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+
+    svc = ReferenceEvalService(llm_client=None)
+    result = svc.evaluate(
+        branch_id="test-branch",
+        chapter_index=5,
+        original_text="原文内容" * 50,
+        draft_text="仿写内容" * 50,
+        chapter_goal="测试",
+    )
+    signal = result.to_signal()
+    assert signal["branch_id"] == "test-branch"
+    assert signal["chapter_index"] == 5
+    assert "overall_fidelity" in signal
+    assert "dimensions" in signal
+    assert len(signal["dimensions"]) == 6
+
+
+def test_reference_eval_llm_parse_error() -> None:
+    from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+
+    class _BadLLM:
+        def chat(self, prompt: str) -> str:
+            return "this is not json"
+
+    svc = ReferenceEvalService(llm_client=_BadLLM())
+    result = svc.evaluate(
+        branch_id="test-branch",
+        chapter_index=1,
+        original_text="原文",
+        draft_text="仿写",
+        chapter_goal="",
+    )
+    assert result.evaluation_method == "fallback"
+    assert result.overall_fidelity == 0.5

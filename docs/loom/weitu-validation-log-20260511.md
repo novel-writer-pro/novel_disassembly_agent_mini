@@ -711,6 +711,13 @@ Enhanced 有前情摘要注入，LLM 知道前文发生了什么，因此能更�
 
 **结论确认：记忆注入在 ch≥10 时让仿写更接近原文（2-4x 提升）。**
 
+**补充发现：chapter_goal 对 fidelity 影响巨大**
+- 通用目标（"延续卫图修炼与成长"）→ fidelity=0.25
+- 精确目标（匹配原文实际情节）→ fidelity=0.35-0.78
+- skeleton draft（结构大纲）→ fidelity=0.15-0.65（取决于结构匹配度）
+- LLM prose（真实正文）→ fidelity=0.49-0.78（取决于记忆注入）
+- 结论：reference fidelity 同时衡量记忆注入效果、chapter_goal 准确性和 draft 类型（skeleton vs LLM prose）
+
 ### 新增服务
 
 `novel_analyzer/services/reference_eval_service.py`：

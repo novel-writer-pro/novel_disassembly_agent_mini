@@ -121,12 +121,36 @@
 
 ## G. 评估闭环（Evaluation Loop）
 
-- [ ] `loom-collect-pairs` 可从 writer-imitate 产物提取 pairwise
-- [ ] `loom-collect-pairs-from-manual` 可从人工工作区提取 pairwise
-- [ ] `loom-pairs-stats` 可追踪数据积累进度
-- [ ] `loom-ab-compare` 可比较 baseline vs loom
-- [ ] `evaluation_method=llm_judge` 样本开始出现并积累
+- [x] `loom-collect-pairs` 可从 writer-imitate 产物提取 pairwise
+- [x] `loom-collect-pairs-from-manual` 可从人工工作区提取 pairwise
+- [x] `loom-pairs-stats` 可追踪数据积累进度
+- [x] `loom-ab-compare` 可比较 baseline vs loom
+- [x] `evaluation_method=llm_judge` 样本开始出现并积累
 - [ ] 500+ pairs 积累目标进入持续跟踪
+
+---
+
+## G2. Reference-based 评估（主评估方式）
+
+- [x] `ReferenceEvalService` 以原文为参照评估仿写还原度
+- [x] `loom-reference-eval` CLI 可一键评估单章 fidelity
+- [x] `_loom_reference_fidelity` 自动集成到 `writer-imitate --use-llm` 产物
+- [x] 6 维度评估：structure/character/style/continuity/tension/information_density
+- [x] 卫图 ch2 验证：enhanced fidelity=0.78 vs baseline=0.18（4.3x）
+- [x] 卫图 ch10 验证：enhanced fidelity=0.35 vs baseline=0.15（2.3x）
+- [ ] 多章节统计验证（5-10 次运行取平均）
+- [ ] reference fidelity 进入 whole-book 聚合（average_reference_fidelity）
+- [ ] reference fidelity 进入 gate summary 作为 ship/hold 判据
+
+**关键指标**：
+- `overall_fidelity`（0-1，越高越像原文）
+- `structure_fidelity`（场景节拍还原）
+- `character_fidelity`（角色行为还原）
+- `continuity_fidelity`（连续性还原）
+
+**验收标准**：
+- enhanced `overall_fidelity` 在 ch≥10 时稳定高于 baseline（≥1.5x）
+- 6 维度中至少 4 个 enhanced 胜出
 
 **注意**：
 当前很多自动链路仍可能走 heuristic fallback，不能把“能力已实现”误当成“效果已被真实证明”。

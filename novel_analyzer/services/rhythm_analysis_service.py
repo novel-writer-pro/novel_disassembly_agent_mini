@@ -33,6 +33,11 @@ HOOK_FACT_TYPES: frozenset[str] = frozenset(
     }
 )
 
+HOOK_CONTINUITY_KEYWORDS: frozenset[str] = frozenset(
+    {"钩子", "高潮", "反转", "揭示", "悬念", "冲突升级", "转折", "危机", "爆发",
+     "伏笔", "后续", "下一章", "将会", "暗示", "预示", "留下", "埋下", "引出"}
+)
+
 PACING_SLOW_BURN = "slow_burn"
 PACING_ACTION_HEAVY = "action_heavy"
 PACING_BALANCED = "balanced"
@@ -102,10 +107,23 @@ class RhythmAnalysisService:
             .where(FactRecord.deleted_at.is_(None))
         ) or 0
 
+        from sqlalchemy import or_
+        continuity_labels = self.session.scalars(
+            select(FactRecord.label)
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.chapter_index == chapter_index)
+            .where(FactRecord.fact_type == "continuity")
+            .where(FactRecord.deleted_at.is_(None))
+        ).all()
+        continuity_hook_count = sum(
+            1 for label in continuity_labels
+            if any(kw in label for kw in HOOK_CONTINUITY_KEYWORDS)
+        )
+
         word_count = self._get_chapter_word_count(branch_id, chapter_index)
         if word_count == 0:
             return 0.0
-        return round(hook_count / (word_count / 1000), 4)
+        return round((hook_count + continuity_hook_count) / (word_count / 1000), 4)
 
     def _compute_climax_score(self, branch_id: str, chapter_index: int) -> float:
         hook_count = self.session.scalar(
@@ -116,6 +134,18 @@ class RhythmAnalysisService:
             .where(FactRecord.deleted_at.is_(None))
         ) or 0
 
+        continuity_labels = self.session.scalars(
+            select(FactRecord.label)
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.chapter_index == chapter_index)
+            .where(FactRecord.fact_type == "continuity")
+            .where(FactRecord.deleted_at.is_(None))
+        ).all()
+        continuity_hook_count = sum(
+            1 for label in continuity_labels
+            if any(kw in label for kw in HOOK_CONTINUITY_KEYWORDS)
+        )
+
         total_count = self.session.scalar(
             select(func.count(FactRecord.id))
             .where(FactRecord.branch_id == branch_id)
@@ -125,7 +155,7 @@ class RhythmAnalysisService:
 
         if total_count == 0:
             return 0.0
-        return round(hook_count / total_count, 4)
+        return round((hook_count + continuity_hook_count) / total_count, 4)
 
     def _classify_pacing(
         self, branch_id: str, chapter_index: int, lookback_n: int
@@ -149,6 +179,20 @@ class RhythmAnalysisService:
         return PACING_EPISODIC
 
     def _get_chapter_word_count(self, branch_id: str, chapter_index: int) -> int:
+        from novel_analyzer.database.models import RetrievalChunk as _RC
+        from novel_analyzer.database.models import RetrievalDocument as _RD
+
+        texts = self.session.scalars(
+            select(_RC.text)
+            .join(_RD, _RC.document_id == _RD.id)
+            .where(_RD.branch_id == branch_id)
+            .where(_RD.chapter_index == chapter_index)
+            .where(_RC.deleted_at.is_(None))
+        ).all()
+        total = sum(len(t) for t in texts)
+        if total > 0:
+            return total
+
         artifact = self.session.scalar(
             select(ChapterArtifact)
             .where(ChapterArtifact.branch_id == branch_id)

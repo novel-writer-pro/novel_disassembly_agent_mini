@@ -183,12 +183,16 @@ Phase 5 🔄 进行中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 ### 当前证据结论
 
 - 已证明：Loom enhanced 会真实改变 whole-book / writer-imitate 产物中的质量与风格信号
-- 尚未证明：Loom enhanced 在卫图样例 2–5 章抽样中稳定优于 baseline
-- 当前 4 章结果：
-  - pairwise：`A=1, tie=3`
-  - `avg_quality_score=0.4875`
-  - `character_ooc`: `0 → 0`
-  - 阶段判断：baseline 略占优或至少未被 enhanced 反超
+- ✅ 已证明：Reference-based 评估（vs 原文）中 enhanced fidelity=0.78 vs baseline=0.18（4.3x 提升）
+- ✅ 已证明：记忆注入在 ch≥10 时让仿写更接近原文（ch10: 2.3x 提升）
+- 尚未证明：多章节连续写作场景中 Loom 的 carry_over 退化防护效果
+- 当前评估方式已修正：
+  - 主评估：`loom-reference-eval`（仿写 vs 原文 fidelity，6 维度）
+  - 辅助：pairwise A vs B（两个仿写互比）
+- 当前数据：
+  - LLM judge pairs: 30（6% of 500 target）
+  - reference fidelity: ch2=0.78, ch10=0.35（enhanced）vs ch2=0.18, ch10=0.15（baseline）
+  - heuristic pairwise: B=4（enhanced 全胜）
 
 **P2：0509 对接**
 

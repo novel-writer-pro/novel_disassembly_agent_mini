@@ -88,7 +88,8 @@ class ReaderSimulationService:
         ]
 
         overall = round(sum(p.score for p in panels) / len(panels), 4)
-        alert = self._classify_alert(overall)
+        warn_count = sum(1 for p in panels if p.alert_level != "none")
+        alert = self._classify_alert(overall, warn_count)
         suggestion = self._build_suggestion(panels, alert)
 
         return ReaderSatisfactionScore(
@@ -102,7 +103,7 @@ class ReaderSimulationService:
 
     def _casual_panel(self, rhythm: object) -> ReaderSimSignal:
         hook_density = float(getattr(rhythm, "hook_density", 0.0))
-        score = min(1.0, hook_density / 2.0)
+        score = min(1.0, hook_density / 5.0)
         score = round(score, 4)
         alert = "warn" if score < self.WARN_THRESHOLD else "none"
         feedback = (
@@ -114,7 +115,8 @@ class ReaderSimulationService:
     def _veteran_panel(self, tension: object) -> ReaderSimSignal:
         conflict_density = float(getattr(tension, "conflict_density", 0.0))
         surprise_index = float(getattr(tension, "surprise_index", 0.0))
-        score = round((min(conflict_density / 1.5, 1.0) * 0.5 + surprise_index * 0.5), 4)
+        conflict_score = min(conflict_density / 50.0, 1.0)
+        score = round((conflict_score * 0.5 + surprise_index * 0.5), 4)
         alert = "warn" if score < self.WARN_THRESHOLD else "none"
         feedback = (
             f"冲突密度 {conflict_density:.2f}，新颖度 {surprise_index:.2f}，"
@@ -145,10 +147,10 @@ class ReaderSimulationService:
         )
         return ReaderSimSignal(panel_type="editor", score=score, alert_level=alert, feedback=feedback)
 
-    def _classify_alert(self, score: float) -> str:
-        if score < self.CRITICAL_THRESHOLD:
+    def _classify_alert(self, score: float, warn_count: int = 0) -> str:
+        if score < self.CRITICAL_THRESHOLD or warn_count >= 3:
             return "critical"
-        if score < self.WARN_THRESHOLD:
+        if score < self.WARN_THRESHOLD or warn_count >= 2:
             return "warn"
         return "none"
 

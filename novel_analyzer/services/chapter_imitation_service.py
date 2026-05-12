@@ -192,6 +192,19 @@ class ChapterImitationService:
             steering_pack=steering_pack,
         )
         title, source_text = self._source_chapter_text(branch_id, source_chapter_index)
+
+        previous_summary = ""
+        active_characters: list[str] = []
+        unresolved_threads: list[str] = []
+        if self.settings.loom_memory_mode in ("enabled", "ab") and source_chapter_index >= 10:
+            try:
+                from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
+                mem_svc = MemoryAssemblerService(self.session)
+                mem = mem_svc.assemble(branch_id, target_chapter_index=source_chapter_index + 1)
+                previous_summary = mem.recent_summary
+            except Exception:  # noqa: BLE001
+                pass
+
         prompt = build_chapter_imitation_prompt(
             source_chapter_index=source_chapter_index,
             source_title=title,
@@ -201,6 +214,9 @@ class ChapterImitationService:
             scene_beats=plan.scene_beats + [f"世界观胶囊：{item}" for item in plan.worldview_capsule[:2]],
             hard_constraints=plan.hard_constraints + [f"禁止创新越界：{item}" for item in plan.taboo_innovations[:2]],
             soft_constraints=plan.soft_constraints + [f"题材套路：{item}" for item in plan.trope_axes[:2]] + [f"创新导向：{item}" for item in plan.innovation_directives[:2]],
+            previous_summary=previous_summary,
+            active_characters=active_characters,
+            unresolved_threads=unresolved_threads,
         )
         model = build_chat_model(self.settings, model_name=model_name)
         response = model.invoke(prompt)

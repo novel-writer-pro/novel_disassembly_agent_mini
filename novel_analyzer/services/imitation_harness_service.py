@@ -909,6 +909,28 @@ class HarnessControllerService:
             except Exception:  # noqa: BLE001
                 pass  # Loom style is non-blocking
 
+        if self.settings.loom_style_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.reader_simulation_service import ReaderSimulationService
+                reader_svc = ReaderSimulationService(self.session)
+                reader_score = reader_svc.simulate_all_panels(branch_id, source_chapter_index)
+                reader_sig = reader_score.to_reader_satisfaction()
+                outputs["_loom_reader_sim"] = reader_sig  # type: ignore[index]
+                if reader_score.alert_level != "none" and reader_score.suggestion:
+                    if reader_score.suggestion not in recommended_actions:
+                        recommended_actions.append(reader_score.suggestion)
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_reader_sim",
+                            status="warn",
+                            severity="low",
+                            priority=4,
+                            notes=[reader_score.suggestion],
+                        )
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+
         if self.settings.loom_character_enabled and self.session is not None:
             try:
                 from sqlalchemy import select as _select
@@ -962,6 +984,9 @@ class HarnessControllerService:
                 from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
                 thread_svc = ThreadSchedulerService(self.session)
                 thread_signal = thread_svc.suggest_thread_activation(branch_id, source_chapter_index)
+                activation_sig = thread_signal.to_activation_signal()
+                if isinstance(activation_sig, dict):
+                    outputs["_loom_thread_activation"] = activation_sig  # type: ignore[index]
                 if thread_signal.suggested_thread is not None:
                     checks.append(
                         ChapterImitationPreflightCheck(
@@ -975,7 +1000,7 @@ class HarnessControllerService:
                     if thread_signal.suggested_thread not in recommended_actions:
                         recommended_actions.append(thread_signal.suggestion)
             except Exception:  # noqa: BLE001
-                pass  # Loom thread scheduler is non-blocking
+                pass
 
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
@@ -1520,7 +1545,23 @@ class HarnessControllerService:
         if self.settings.loom_pairwise_enabled and initial_draft is not None:
             try:
                 from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
-                pairwise_svc = PairwiseEvalService(llm_client=None)
+                _pairwise_llm_client = None
+                if use_llm:
+                    try:
+                        from novel_analyzer.llm.client import build_chat_model
+                        from langchain_core.messages import HumanMessage as _HumanMessage
+
+                        class _LLMAdapter:
+                            def __init__(self, model: object) -> None:
+                                self._model = model
+
+                            def chat(self, prompt: str) -> str:
+                                return str(self._model.invoke([_HumanMessage(content=prompt)]).content)  # type: ignore[union-attr]
+
+                        _pairwise_llm_client = _LLMAdapter(build_chat_model(self.settings, model_name=model_name))
+                    except Exception:  # noqa: BLE001
+                        pass
+                pairwise_svc = PairwiseEvalService(llm_client=_pairwise_llm_client)
                 pair_result = pairwise_svc.evaluate(
                     pair_id=str(uuid.uuid4()),
                     branch_id=branch_id,
@@ -1536,12 +1577,45 @@ class HarnessControllerService:
                 pass
 
         dialogue_signal: dict[str, object] = {}
-        if self.settings.loom_style_enabled and self.session is not None:
+        if self.settings.loom_pairwise_enabled and self.session is not None:
             try:
                 from novel_analyzer.services.dialogue_signal_service import DialogueSignalService
-                dialogue_svc = DialogueSignalService(session)
+                dialogue_svc = DialogueSignalService(self.session)
                 dialogue_result = dialogue_svc.compute(branch_id, source_chapter_index)
                 dialogue_signal = dialogue_result.to_dialogue_signal()
+            except Exception:  # noqa: BLE001
+                pass
+
+        reference_fidelity_signal: dict[str, object] = {}
+        if self.settings.loom_pairwise_enabled and use_llm and self.session is not None:
+            try:
+                from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+                _, original_text = self.chapter_imitation._source_chapter_text(branch_id, source_chapter_index)  # noqa: SLF001
+                _ref_llm_client = None
+                try:
+                    from novel_analyzer.llm.client import build_chat_model as _build_ref_model
+                    from langchain_core.messages import HumanMessage as _RefHM
+
+                    class _RefAdapter:
+                        def __init__(self, m: object) -> None:
+                            self._m = m
+                        def chat(self, prompt: str) -> str:
+                            return str(self._m.invoke([_RefHM(content=prompt)]).content)  # type: ignore[union-attr]
+
+                    _ref_llm_client = _RefAdapter(_build_ref_model(self.settings, model_name=model_name))
+                except Exception:  # noqa: BLE001
+                    pass
+                ref_svc = ReferenceEvalService(llm_client=_ref_llm_client)
+                ref_result = ref_svc.evaluate(
+                    branch_id=branch_id,
+                    chapter_index=source_chapter_index,
+                    original_text=original_text,
+                    draft_text=draft.draft_text,
+                    chapter_goal=target_goal,
+                )
+                reference_fidelity_signal = ref_result.to_signal()
+                if rounds:
+                    rounds[-1].skill_outputs["_loom_reference_fidelity"] = reference_fidelity_signal
             except Exception:  # noqa: BLE001
                 pass
 

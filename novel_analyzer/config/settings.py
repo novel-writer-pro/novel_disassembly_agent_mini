@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     llm_stage_model_name: str = Field(default="gpt-5.1")
     llm_qa_model_name: str = Field(default="gpt-5.2")
     llm_fallback_model_name: str = Field(default="gpt-5.4")
-    llm_timeout_seconds: float = Field(default=60.0)
+    llm_timeout_seconds: float = Field(default=180.0)
     llm_max_retries: int = Field(default=2)
     chapter_failure_retry_limit: int = Field(default=5)
     chapter_job_stall_timeout_seconds: int = Field(default=600)

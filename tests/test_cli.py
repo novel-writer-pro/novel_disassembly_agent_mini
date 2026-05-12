@@ -1468,7 +1468,7 @@ def test_export_whole_book_imitation_run_includes_loom_summaries(
 
     payload = json.loads(output_path.read_text(encoding="utf-8"))
     assert payload["execution_mode"] == "sandbox_execute"
-    assert payload["session_loom_gate_summary"]["contract_version"] == "loom-gate-summary.v1"
+    assert payload["session_loom_gate_summary"]["contract_version"] == "loom-gate-summary.v2"
     assert payload["session_loom_signals"]["contract_version"] == "whole-book-session-loom-signals.v1"
     assert isinstance(payload["executed_steps"], list)
     assert payload["executed_steps"]

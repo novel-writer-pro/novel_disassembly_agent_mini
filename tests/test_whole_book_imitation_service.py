@@ -269,7 +269,7 @@ def test_whole_book_imitation_service_runs_in_sandbox(tmp_path: Path) -> None:
         assert "top_repair_recommendations" in report.dashboard_summary["book_handoff_summary"]
         assert report.session_loom_signals["contract_version"] == "whole-book-session-loom-signals.v1"
         assert "signals" in report.session_loom_signals
-        assert report.session_loom_gate_summary["contract_version"] == "loom-gate-summary.v1"
+        assert report.session_loom_gate_summary["contract_version"] == "loom-gate-summary.v2"
         assert report.session_loom_gate_summary["quality_verdict"] in {"quality-pass", "quality-hold"}
         assert report.dashboard_summary["session_loom_signals"] == report.session_loom_signals
         assert report.dashboard_summary["session_loom_gate_summary"] == report.session_loom_gate_summary
@@ -346,20 +346,19 @@ def test_whole_book_imitation_contract_docs_and_sample_are_synced() -> None:
     assert "contract_version" in manifest
     assert "stable_contract_version" in manifest
     assert "queue_next_actions" in manifest
-    assert "./examples/whole-book-imitation-run.sample.json" in docs_index
-    assert "./whole-book-imitation-api-stability-summary.md" in docs_index
-    assert "./whole-book-imitation-api-versioning.md" in docs_index
-    assert "./whole-book-imitation-api-freeze-readiness.md" in docs_index
-    assert "./whole-book-imitation-freeze-evidence-20260503.md" in docs_index
-    assert "./examples/whole-book-imitation-readiness.sample.json" in docs_index
-    assert "./examples/whole-book-imitation-run.request.sample.json" in docs_index
-    assert "./examples/whole-book-imitation-run.provider-success-20260504.sample.json" in docs_index
-    assert "./whole-book-imitation-integration-quickstart.md" in docs_index
-    assert "./whole-book-imitation-docs-index.md" in docs_index
-    assert "./whole-book-imitation-provider-recovery-checklist.md" in docs_index
-    assert "./whole-book-imitation-sample-coverage-matrix.md" in docs_index
-    assert "./whole-book-imitation-handoff-brief.md" in docs_index
-    assert "./examples/whole-book-imitation-run.error.provider-billing.sample.json" in docs_index
+    assert "whole-book-imitation-run.sample.json" in docs_index_doc
+    assert "whole-book-imitation-api-stability-summary.md" in docs_index_doc
+    assert "whole-book-imitation-api-versioning.md" in docs_index_doc
+    assert "whole-book-imitation-api-freeze-readiness.md" in docs_index_doc
+    assert "whole-book-imitation-freeze-evidence-20260503.md" in docs_index_doc
+    assert "whole-book-imitation-readiness.sample.json" in docs_index_doc
+    assert "whole-book-imitation-run.request.sample.json" in docs_index_doc
+    assert "whole-book-imitation-run.provider-success-20260504.sample.json" in docs_index_doc
+    assert "whole-book-imitation-integration-quickstart.md" in docs_index_doc
+    assert "whole-book-imitation-provider-recovery-checklist.md" in docs_index_doc
+    assert "whole-book-imitation-sample-coverage-matrix.md" in docs_index_doc
+    assert "whole-book-imitation-handoff-brief.md" in docs_index_doc
+    assert "whole-book-imitation-run.error.provider-billing.sample.json" in docs_index_doc
     assert "whole-book-imitation-run.sample.json" in track_readme
     assert "whole-book-imitation-api-stability-summary.md" in track_readme
     assert "whole-book-imitation-api-versioning.md" in track_readme

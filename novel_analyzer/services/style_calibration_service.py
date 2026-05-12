@@ -110,8 +110,9 @@ class StyleCalibrationService:
             .join(RetrievalDocument, RetrievalChunk.document_id == RetrievalDocument.id)
             .where(RetrievalDocument.branch_id == branch_id)
             .where(RetrievalDocument.chapter_index == chapter_index)
-            .where(RetrievalChunk.chunk_order == 0)
             .where(ChunkEmbedding.deleted_at.is_(None))
+            .order_by(RetrievalChunk.chunk_order)
+            .limit(1)
         )
         if row is None or not row.vector_payload:
             return None

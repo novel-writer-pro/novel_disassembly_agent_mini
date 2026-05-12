@@ -88,6 +88,27 @@ def _loom_final_draft_text(payload: dict[str, object]) -> str:
     return ""
 
 
+def _loom_extract_signals(payload: dict[str, object]) -> dict[str, object]:
+    rounds = payload.get("rounds", [])
+    latest_round = (
+        rounds[-1]
+        if isinstance(rounds, list) and rounds and isinstance(rounds[-1], dict)
+        else {}
+    )
+    so = latest_round.get("skill_outputs", {}) if isinstance(latest_round, dict) else {}
+    so = so if isinstance(so, dict) else {}
+    return {
+        "tension": so.get("_loom_tension") or {},
+        "style": so.get("_loom_style") or {},
+        "rhythm": so.get("_loom_rhythm") or {},
+        "character": so.get("_loom_character_consistency") or {},
+        "thread_activation": so.get("_loom_thread_activation") or {},
+        "reader_sim": so.get("_loom_reader_sim") or {},
+        "reference_fidelity": so.get("_loom_reference_fidelity") or {},
+        "dialogue": payload.get("dialogue_signal") or {},
+    }
+
+
 def _loom_round0_draft_text(payload: dict[str, object]) -> str:
     rounds = payload.get("rounds", [])
     if isinstance(rounds, list) and rounds and isinstance(rounds[0], dict):
@@ -159,6 +180,8 @@ def _loom_write_pairs_jsonl(
                 key_constraints=str(pair["key_constraints"]),
                 risk_verdict_a=str(pair["risk_verdict_a"]),
                 risk_verdict_b=str(pair["risk_verdict_b"]),
+                loom_signals_a=pair.get("loom_signals_a") if isinstance(pair.get("loom_signals_a"), dict) else None,
+                loom_signals_b=pair.get("loom_signals_b") if isinstance(pair.get("loom_signals_b"), dict) else None,
             )
             signal = result.to_chapter_quality_signal()
             record: dict[str, object] = {
@@ -3330,6 +3353,12 @@ def _extract_writer_output_loom_signal(
     dialogue_signal_obj = payload.get("dialogue_signal")
     dialogue_signal = dialogue_signal_obj if isinstance(dialogue_signal_obj, dict) else {}
 
+    reader_sim_signal_obj = skill_outputs.get("_loom_reader_sim", payload.get("_loom_reader_sim"))
+    reader_sim_signal = reader_sim_signal_obj if isinstance(reader_sim_signal_obj, dict) else {}
+
+    reference_fidelity_obj = skill_outputs.get("_loom_reference_fidelity", payload.get("_loom_reference_fidelity"))
+    reference_fidelity_signal = reference_fidelity_obj if isinstance(reference_fidelity_obj, dict) else {}
+
     if not tension_signal and quality_score in (None, "") and not style_signal and not rhythm_signal:
         return None
 
@@ -3351,6 +3380,10 @@ def _extract_writer_output_loom_signal(
         "rhythm_signal": rhythm_signal,
         "has_dialogue_signal": bool(dialogue_signal),
         "dialogue_signal": dialogue_signal,
+        "has_reader_sim_signal": bool(reader_sim_signal),
+        "reader_sim_signal": reader_sim_signal,
+        "has_reference_fidelity_signal": bool(reference_fidelity_signal),
+        "reference_fidelity_signal": reference_fidelity_signal,
     }
 
 
@@ -3374,6 +3407,8 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
     style_chapters = [item for item in chapter_signals if item.get("has_style_signal")]
     rhythm_chapters = [item for item in chapter_signals if item.get("has_rhythm_signal")]
     dialogue_chapters = [item for item in chapter_signals if item.get("has_dialogue_signal")]
+    reader_sim_chapters = [item for item in chapter_signals if item.get("has_reader_sim_signal")]
+    reference_fidelity_chapters = [item for item in chapter_signals if item.get("has_reference_fidelity_signal")]
     quality_scores = [
         float(item["chapter_quality_score"])
         for item in quality_chapters
@@ -3397,6 +3432,18 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
         if isinstance(item.get("rhythm_signal"), dict)
         and isinstance(item["rhythm_signal"].get("hook_density"), (int, float))
     ]
+    reader_sim_scores = [
+        float(item["reader_sim_signal"]["overall_score"])
+        for item in reader_sim_chapters
+        if isinstance(item.get("reader_sim_signal"), dict)
+        and isinstance(item["reader_sim_signal"].get("overall_score"), (int, float))
+    ]
+    reference_fidelity_scores = [
+        float(item["reference_fidelity_signal"]["overall_fidelity"])
+        for item in reference_fidelity_chapters
+        if isinstance(item.get("reference_fidelity_signal"), dict)
+        and isinstance(item["reference_fidelity_signal"].get("overall_fidelity"), (int, float))
+    ]
     alert_chapters = [
         item["chapter_index"]
         for item in tension_chapters
@@ -3412,11 +3459,15 @@ def _collect_writer_output_loom_signals(output_dir: Path) -> dict[str, object]:
         "style_signal_count": len(style_chapters),
         "rhythm_signal_count": len(rhythm_chapters),
         "dialogue_signal_count": len(dialogue_chapters),
+        "reader_sim_signal_count": len(reader_sim_chapters),
+        "reference_fidelity_signal_count": len(reference_fidelity_chapters),
         "tension_alert_chapters": alert_chapters,
         "average_tension_score": round(sum(tension_scores) / len(tension_scores), 4) if tension_scores else None,
         "average_chapter_quality_score": round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None,
         "average_style_drift_score": round(sum(style_drift_scores) / len(style_drift_scores), 4) if style_drift_scores else None,
         "average_hook_density": round(sum(hook_densities) / len(hook_densities), 4) if hook_densities else None,
+        "average_reader_sim_score": round(sum(reader_sim_scores) / len(reader_sim_scores), 4) if reader_sim_scores else None,
+        "average_reference_fidelity": round(sum(reference_fidelity_scores) / len(reference_fidelity_scores), 4) if reference_fidelity_scores else None,
         "signals": chapter_signals,
     }
 
@@ -3435,22 +3486,32 @@ def _build_session_loom_gate_summary(
     tension_signal_count = int(loom_signals.get("tension_signal_count", 0) or 0)
     tension_alert_chapters = loom_signals.get("tension_alert_chapters", [])
     tension_alert_count = len(tension_alert_chapters) if isinstance(tension_alert_chapters, list) else 0
+    avg_reader_sim = loom_signals.get("average_reader_sim_score")
+    avg_fidelity = loom_signals.get("average_reference_fidelity")
     if quality_verdict == "quality-hold":
         gate_status = "blocked-on-quality"
         next_gate_action = "raise chapter quality before continuing execution flow"
     elif migration_status and migration_status != "primary-in-progress":
         gate_status = "blocked-on-migration"
         next_gate_action = "stabilize consumer migration before continuing execution flow"
+    elif isinstance(avg_fidelity, (int, float)) and float(avg_fidelity) < 0.5:
+        gate_status = "fidelity-blocked"
+        next_gate_action = "reference fidelity too low — improve carry_over memory and chapter_goal accuracy"
+    elif isinstance(avg_reader_sim, (int, float)) and float(avg_reader_sim) < 0.4:
+        gate_status = "reader-sim-warn"
+        next_gate_action = "reader satisfaction score low — review tension/hook/climax signals"
     else:
         gate_status = "monitoring"
         next_gate_action = "continue execution while monitoring Loom quality and migration telemetry"
     return {
-        "contract_version": "loom-gate-summary.v1",
+        "contract_version": "loom-gate-summary.v2",
         "quality_verdict": quality_verdict,
         "average_chapter_quality_score": avg_quality,
         "chapter_quality_signal_count": int(primary_verdicts.get("chapter_quality_signal_count", 0) or 0),
         "tension_signal_count": tension_signal_count,
         "tension_alert_chapter_count": tension_alert_count,
+        "average_reader_sim_score": avg_reader_sim,
+        "average_reference_fidelity": avg_fidelity,
         "migration_status": migration_status,
         "gate_status": gate_status,
         "next_gate_action": next_gate_action,
@@ -3806,14 +3867,17 @@ def _build_writer_output_session_state(output_dir: Path) -> dict[str, object]:
     avg_hook_density_obj = session_loom_signals.get("average_hook_density")
     avg_tension_obj = session_loom_signals.get("average_tension_score")
     avg_style_drift_obj = session_loom_signals.get("average_style_drift_score")
+    avg_reader_sim_obj = session_loom_signals.get("average_reader_sim_score")
     _hook = float(avg_hook_density_obj) if isinstance(avg_hook_density_obj, (int, float)) else None
     _tension = float(avg_tension_obj) if isinstance(avg_tension_obj, (int, float)) else None
     _drift = float(avg_style_drift_obj) if isinstance(avg_style_drift_obj, (int, float)) else None
-    if _hook is not None and _tension is not None:
-        _hook_score = min(1.0, (_hook or 0.0) / 2.0)
+    if isinstance(avg_reader_sim_obj, (int, float)):
+        reader_satisfaction_score: float | None = round(float(avg_reader_sim_obj), 4)
+    elif _hook is not None and _tension is not None:
+        _hook_score = min(1.0, (_hook or 0.0) / 5.0)
         _tension_score = _tension or 0.0
         _style_score = max(0.0, 1.0 - (_drift or 0.0) * 2)
-        reader_satisfaction_score: float | None = round(
+        reader_satisfaction_score = round(
             _hook_score * 0.35 + _tension_score * 0.40 + _style_score * 0.25, 4
         )
     else:
@@ -8526,6 +8590,21 @@ def loom_status(
             if rhythm_result.suggestion:
                 echo(f"rhythm_suggestion:   {rhythm_result.suggestion}")
 
+            try:
+                from novel_analyzer.services.reader_simulation_service import ReaderSimulationService
+                reader_svc = ReaderSimulationService(session)
+                reader_score = reader_svc.simulate_all_panels(branch_id, latest_chapter)
+                echo("")
+                echo(f"=== Loom Reader Sim (chapter {latest_chapter}) ===")
+                echo(f"overall_score:       {reader_score.overall_score:.4f}")
+                echo(f"reader_alert:        {reader_score.alert_level}")
+                for panel in reader_score.panels:
+                    echo(f"  [{panel.panel_type}] score={panel.score:.4f} alert={panel.alert_level}")
+                if reader_score.suggestion:
+                    echo(f"reader_suggestion:   {reader_score.suggestion}")
+            except Exception:  # noqa: BLE001
+                pass
+
         if latest_chapter and settings.loom_character_enabled:
             from novel_analyzer.services.long_book_health_service import LongBookHealthService
             from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
@@ -8655,6 +8734,8 @@ def loom_collect_pairs(
                 "key_constraints": "",
                 "risk_verdict_a": _loom_risk_verdict(b_payload),
                 "risk_verdict_b": _loom_risk_verdict(s_payload),
+                "loom_signals_a": _loom_extract_signals(b_payload),
+                "loom_signals_b": _loom_extract_signals(s_payload),
                 "pair_source": "cross_dir",
                 "dir_a": str(output_dir),
                 "dir_b": str(compare_dir),
@@ -8847,6 +8928,8 @@ def loom_ab_compare(
         l_level = _risk_level(l_risk)
         b_verdict = _final_verdict(b_payload)
         l_verdict = _final_verdict(l_payload)
+        b_signals = _loom_extract_signals(b_payload)
+        l_signals = _loom_extract_signals(l_payload)
 
         if b_ooc:
             baseline_ooc_count += 1
@@ -8867,6 +8950,18 @@ def loom_ab_compare(
             "loom_risk_level": l_level,
             "baseline_verdict": b_verdict,
             "loom_verdict": l_verdict,
+            "baseline_tension_score": b_signals.get("tension", {}).get("tension_score"),
+            "loom_tension_score": l_signals.get("tension", {}).get("tension_score"),
+            "baseline_hook_density": b_signals.get("rhythm", {}).get("hook_density"),
+            "loom_hook_density": l_signals.get("rhythm", {}).get("hook_density"),
+            "baseline_style_drift": b_signals.get("style", {}).get("style_drift_score"),
+            "loom_style_drift": l_signals.get("style", {}).get("style_drift_score"),
+            "baseline_char_count": len(b_signals.get("character", {}).get("characters", [])),
+            "loom_char_count": len(l_signals.get("character", {}).get("characters", [])),
+            "baseline_reader_sim": b_signals.get("reader_sim", {}).get("overall_score"),
+            "loom_reader_sim": l_signals.get("reader_sim", {}).get("overall_score"),
+            "baseline_reference_fidelity": b_signals.get("reference_fidelity", {}).get("overall_fidelity"),
+            "loom_reference_fidelity": l_signals.get("reference_fidelity", {}).get("overall_fidelity"),
         })
 
     total = len(common_chapters)
@@ -8930,6 +9025,29 @@ def loom_ab_compare(
         b_cnt = baseline_verdicts.get(verdict, 0)
         l_cnt = loom_verdicts.get(verdict, 0)
         echo(f"  {verdict}: {b_cnt} → {l_cnt}")
+
+    echo("")
+    echo("loom signal comparison (baseline → loom):")
+    for r in chapter_results:
+        ch = r["chapter_index"]
+        b_t = r.get("baseline_tension_score")
+        l_t = r.get("loom_tension_score")
+        b_h = r.get("baseline_hook_density")
+        l_h = r.get("loom_hook_density")
+        b_s = r.get("baseline_style_drift")
+        l_s = r.get("loom_style_drift")
+        b_c = r.get("baseline_char_count", 0)
+        l_c = r.get("loom_char_count", 0)
+        b_r = r.get("baseline_reader_sim")
+        l_r = r.get("loom_reader_sim")
+        b_f = r.get("baseline_reference_fidelity")
+        l_f = r.get("loom_reference_fidelity")
+        t_str = f"{b_t:.3f}→{l_t:.3f}" if b_t is not None and l_t is not None else "N/A"
+        h_str = f"{b_h:.3f}→{l_h:.3f}" if b_h is not None and l_h is not None else "N/A"
+        s_str = f"{b_s:.3f}→{l_s:.3f}" if b_s is not None and l_s is not None else "N/A"
+        r_str = f"{b_r:.3f}→{l_r:.3f}" if b_r is not None and l_r is not None else "N/A"
+        f_str = f"{b_f:.3f}→{l_f:.3f}" if b_f is not None and l_f is not None else "N/A"
+        echo(f"  ch{ch}: tension={t_str}  hook={h_str}  style_drift={s_str}  chars={b_c}→{l_c}  reader_sim={r_str}  fidelity={f_str}")
 
     if output_file is not None:
         output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -9139,6 +9257,103 @@ def loom_collect_pairs_from_manual(
     echo(f"  use_llm={use_llm}")
     echo(f"  pairs_file={pairs_file}")
     _loom_echo_total_pairs(pairs_file)
+
+
+@app.command()
+def loom_reference_eval(
+    branch_id: str = typer.Argument(..., help="Branch ID containing original text."),
+    chapter_index: int = typer.Argument(0, help="Chapter index (0 = batch all in dir)."),
+    draft_dir: Path = typer.Argument(..., help="Directory containing writer-imitate-ch*.json."),
+    compare_dir: Path | None = typer.Option(None, "--compare-dir", help="Second dir for side-by-side fidelity comparison."),
+    model_name: str = typer.Option("", "--model-name"),
+    database_url: str | None = None,
+) -> None:
+    """Evaluate imitation draft fidelity against original chapter text."""
+    from novel_analyzer.services.chapter_imitation_service import ChapterImitationService
+    from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        cis = ChapterImitationService(session, settings)
+        llm_client = _loom_build_llm_client(True, database_url, model_name)
+        ref_svc = ReferenceEvalService(llm_client=llm_client)
+
+        if chapter_index > 0 and compare_dir is None:
+            title, original_text = cis._source_chapter_text(branch_id, chapter_index)  # noqa: SLF001
+            artifact_path = draft_dir / f"writer-imitate-ch{chapter_index}.json"
+            if not artifact_path.exists():
+                echo(f"artifact not found: {artifact_path}")
+                raise typer.Exit(code=1)
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            draft_text = _loom_final_draft_text(payload)
+            if not draft_text:
+                echo("draft_text is empty in artifact")
+                raise typer.Exit(code=1)
+            result = ref_svc.evaluate(
+                branch_id=branch_id,
+                chapter_index=chapter_index,
+                original_text=original_text,
+                draft_text=draft_text,
+                chapter_goal=str(payload.get("target_goal", "")),
+            )
+            echo(f"=== Loom Reference Eval (chapter {chapter_index}) ===")
+            echo(f"original_title:      {title}")
+            echo(f"draft_len:           {len(draft_text)}")
+            echo(f"evaluation_method:   {result.evaluation_method}")
+            echo(f"overall_fidelity:    {result.overall_fidelity:.4f}")
+            echo(f"confidence:          {result.confidence:.4f}")
+            if result.suggestion:
+                echo(f"suggestion:          {result.suggestion}")
+            echo("")
+            echo("dimensions:")
+            for k, v in result.dimensions.items():
+                echo(f"  {k}: {v.score:.4f}")
+                if v.reason:
+                    echo(f"    {v.reason[:80]}")
+            return
+
+        artifacts_a = _loom_load_chapter_artifacts(draft_dir)
+        artifacts_b = _loom_load_chapter_artifacts(compare_dir) if compare_dir else {}
+        chapters = sorted(artifacts_a.keys()) if chapter_index == 0 else [chapter_index]
+
+        echo("=== Loom Reference Eval (batch) ===")
+        echo(f"branch_id:   {branch_id}")
+        echo(f"draft_dir:   {draft_dir}")
+        if compare_dir:
+            echo(f"compare_dir: {compare_dir}")
+        echo("")
+
+        for ch in chapters:
+            try:
+                title, original_text = cis._source_chapter_text(branch_id, ch)  # noqa: SLF001
+            except (ValueError, Exception):
+                continue
+            payload_a = artifacts_a.get(ch)
+            if not payload_a:
+                continue
+            draft_a = _loom_final_draft_text(payload_a)
+            if not draft_a:
+                continue
+            result_a = ref_svc.evaluate(
+                branch_id=branch_id, chapter_index=ch,
+                original_text=original_text, draft_text=draft_a,
+                chapter_goal=str(payload_a.get("target_goal", "")),
+            )
+            if compare_dir and ch in artifacts_b:
+                payload_b = artifacts_b[ch]
+                draft_b = _loom_final_draft_text(payload_b)
+                if draft_b:
+                    result_b = ref_svc.evaluate(
+                        branch_id=branch_id, chapter_index=ch,
+                        original_text=original_text, draft_text=draft_b,
+                        chapter_goal=str(payload_b.get("target_goal", "")),
+                    )
+                    echo(f"  ch{ch}: A={result_a.overall_fidelity:.3f}  B={result_b.overall_fidelity:.3f}  delta={result_b.overall_fidelity - result_a.overall_fidelity:+.3f}")
+                else:
+                    echo(f"  ch{ch}: A={result_a.overall_fidelity:.3f}  B=N/A")
+            else:
+                echo(f"  ch{ch}: fidelity={result_a.overall_fidelity:.3f} ({result_a.evaluation_method})")
 
 
 if __name__ == "__main__":

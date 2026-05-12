@@ -61,6 +61,9 @@ class LongBookHealthService:
         )
 
         if not quality_scores:
+            quality_scores = self._get_reader_sim_scores(branch_id, as_of_chapter, lookback_n)
+
+        if not quality_scores:
             return LongBookHealthReport(
                 branch_id=branch_id,
                 as_of_chapter=as_of_chapter,
@@ -116,6 +119,29 @@ class LongBookHealthService:
             if isinstance(score, (int, float)):
                 scores.append(float(score))
         return scores
+
+    def _get_reader_sim_scores(
+        self, branch_id: str, as_of_chapter: int, lookback_n: int
+    ) -> list[float]:
+        try:
+            from novel_analyzer.database.models import FactRecord as _FR
+            has_data = self.session.scalar(
+                select(func.count(_FR.id))
+                .where(_FR.branch_id == branch_id)
+                .where(_FR.chapter_index <= as_of_chapter)
+                .where(_FR.deleted_at.is_(None))
+            ) or 0
+            if has_data == 0:
+                return []
+            from novel_analyzer.services.reader_simulation_service import ReaderSimulationService
+            reader_svc = ReaderSimulationService(self.session)
+            scores: list[float] = []
+            for ch in range(max(1, as_of_chapter - lookback_n + 1), as_of_chapter + 1):
+                result = reader_svc.simulate_all_panels(branch_id, ch)
+                scores.append(result.overall_score)
+            return scores
+        except Exception:  # noqa: BLE001
+            return []
 
     def _classify_trend(self, scores: list[float]) -> str:
         if len(scores) < 2:

@@ -148,7 +148,7 @@ class DialogueSignalService:
         interaction_count = self.session.scalar(
             select(func.count(GraphEdge.id))
             .where(GraphEdge.branch_id == branch_id)
-            .where(GraphEdge.chapter_last_seen == chapter_index)
+            .where(GraphEdge.chapter_first_seen == chapter_index)
             .where(GraphEdge.edge_type.in_(list(INTERACTION_EDGE_TYPES)))
             .where(GraphEdge.deleted_at.is_(None))
         ) or 0
@@ -171,7 +171,7 @@ class DialogueSignalService:
         conflict_count = self.session.scalar(
             select(func.count(GraphEdge.id))
             .where(GraphEdge.branch_id == branch_id)
-            .where(GraphEdge.chapter_last_seen == chapter_index)
+            .where(GraphEdge.chapter_first_seen == chapter_index)
             .where(GraphEdge.edge_type.in_(list(CONFLICT_EDGE_TYPES)))
             .where(GraphEdge.deleted_at.is_(None))
         ) or 0
@@ -179,7 +179,7 @@ class DialogueSignalService:
         total_edges = self.session.scalar(
             select(func.count(GraphEdge.id))
             .where(GraphEdge.branch_id == branch_id)
-            .where(GraphEdge.chapter_last_seen == chapter_index)
+            .where(GraphEdge.chapter_first_seen == chapter_index)
             .where(GraphEdge.deleted_at.is_(None))
         ) or 0
 
@@ -231,8 +231,9 @@ class DialogueSignalService:
             .join(RetrievalDocument, RetrievalChunk.document_id == RetrievalDocument.id)
             .where(RetrievalDocument.branch_id == branch_id)
             .where(RetrievalDocument.chapter_index == chapter_index)
-            .where(RetrievalChunk.chunk_order == 0)
             .where(ChunkEmbedding.deleted_at.is_(None))
+            .order_by(RetrievalChunk.chunk_order)
+            .limit(1)
         )
         if row is None or not row.vector_payload:
             return None

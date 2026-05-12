@@ -202,7 +202,8 @@ class MemoryAssemblerService:
 
         parts: list[str] = []
         for w in reversed(windows):
-            summary = str((w.payload_json or {}).get("summary", ""))
+            payload = w.payload_json or {}
+            summary = str(payload.get("window_summary") or payload.get("summary", ""))
             if summary:
                 parts.append(
                     f"第{w.window_start_chapter}-{w.window_end_chapter}章：{summary}"
@@ -216,26 +217,31 @@ class MemoryAssemblerService:
     # ------------------------------------------------------------------
 
     def _get_important_events(
-        self, branch_id: str, chapter_index: int, top_k: int
+         self, branch_id: str, chapter_index: int, top_k: int
     ) -> list[dict[str, Any]]:
-        """Top-K facts by effective importance (importance_score * decay_factor)."""
-        facts = list(
-            self.session.scalars(
-                select(FactRecord)
-                .where(FactRecord.branch_id == branch_id)
-                .where(FactRecord.chapter_index < chapter_index)
-                .where(FactRecord.episodic_status == "active")
-                .where(FactRecord.deleted_at.is_(None))
-                .order_by(FactRecord.importance_score.desc())
-                .limit(top_k * 3)   # over-fetch, then re-rank by effective score
-            ).all()
-        )
-        # Re-rank by effective importance
-        ranked = sorted(
-            facts,
-            key=lambda f: f.importance_score * f.decay_factor,
-            reverse=True,
-        )[:top_k]
+        per_type_k = max(top_k // 3, 5)
+        result: list[Any] = []
+        for fact_type in ("event", "entity", "continuity"):
+            facts = list(
+                self.session.scalars(
+                    select(FactRecord)
+                    .where(FactRecord.branch_id == branch_id)
+                    .where(FactRecord.chapter_index < chapter_index)
+                    .where(FactRecord.episodic_status == "active")
+                    .where(FactRecord.fact_type == fact_type)
+                    .where(FactRecord.deleted_at.is_(None))
+                    .order_by(FactRecord.importance_score.desc())
+                    .limit(per_type_k * 3)
+                ).all()
+            )
+            ranked = sorted(
+                facts,
+                key=lambda f: f.importance_score * f.decay_factor,
+                reverse=True,
+            )[:per_type_k]
+            result.extend(ranked)
+
+        result = sorted(result, key=lambda f: f.importance_score * f.decay_factor, reverse=True)[:top_k]
         return [
             {
                 "label": f.label,
@@ -245,7 +251,7 @@ class MemoryAssemblerService:
                 "decay_factor": f.decay_factor,
                 "effective_score": round(f.importance_score * f.decay_factor, 4),
             }
-            for f in ranked
+            for f in result
         ]
 
     # ------------------------------------------------------------------
@@ -258,6 +264,7 @@ class MemoryAssemblerService:
             .where(GraphNode.branch_id == branch_id)
             .where(GraphNode.node_type.in_(["entity", "character"]))
             .where(GraphNode.conflict_status != "contradiction")
+            .where(GraphNode.importance_score >= 0.35)
             .where(GraphNode.deleted_at.is_(None))
         ).all()
         return len(list(nodes))

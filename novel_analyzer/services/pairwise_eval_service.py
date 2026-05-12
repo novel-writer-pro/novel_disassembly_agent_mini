@@ -144,18 +144,22 @@ class PairwiseEvalService:
         key_constraints: str = "",
         risk_verdict_a: str = "unknown",
         risk_verdict_b: str = "unknown",
+        loom_signals_a: dict[str, object] | None = None,
+        loom_signals_b: dict[str, object] | None = None,
     ) -> PairwiseResult:
-        """Compare two drafts and return a PairwiseResult."""
         if self._llm is not None:
-            return self._llm_evaluate(
-                pair_id=pair_id,
-                branch_id=branch_id,
-                chapter_index=chapter_index,
-                draft_a=draft_a,
-                draft_b=draft_b,
-                chapter_goal=chapter_goal,
-                key_constraints=key_constraints,
-            )
+            try:
+                return self._llm_evaluate(
+                    pair_id=pair_id,
+                    branch_id=branch_id,
+                    chapter_index=chapter_index,
+                    draft_a=draft_a,
+                    draft_b=draft_b,
+                    chapter_goal=chapter_goal,
+                    key_constraints=key_constraints,
+                )
+            except Exception:  # noqa: BLE001
+                pass
         return self._heuristic_evaluate(
             pair_id=pair_id,
             branch_id=branch_id,
@@ -164,6 +168,8 @@ class PairwiseEvalService:
             draft_b=draft_b,
             risk_verdict_a=risk_verdict_a,
             risk_verdict_b=risk_verdict_b,
+            loom_signals_a=loom_signals_a or {},
+            loom_signals_b=loom_signals_b or {},
         )
 
     # ------------------------------------------------------------------
@@ -254,12 +260,13 @@ class PairwiseEvalService:
         draft_b: str,
         risk_verdict_a: str,
         risk_verdict_b: str,
+        loom_signals_a: dict[str, object] | None = None,
+        loom_signals_b: dict[str, object] | None = None,
     ) -> PairwiseResult:
-        """Simple heuristic: prefer the draft with 'pass' verdict and more content."""
-        score_a = self._heuristic_score(draft_a, risk_verdict_a)
-        score_b = self._heuristic_score(draft_b, risk_verdict_b)
+        score_a = self._heuristic_score(draft_a, risk_verdict_a, loom_signals_a or {})
+        score_b = self._heuristic_score(draft_b, risk_verdict_b, loom_signals_b or {})
 
-        if abs(score_a - score_b) < 0.05:
+        if abs(score_a - score_b) < 0.03:
             preference = "tie"
         elif score_a > score_b:
             preference = "A"
@@ -287,15 +294,51 @@ class PairwiseEvalService:
         )
 
     @staticmethod
-    def _heuristic_score(draft: str, risk_verdict: str) -> float:
+    def _heuristic_score(
+        draft: str,
+        risk_verdict: str,
+        loom_signals: dict[str, object] | None = None,
+    ) -> float:
         base = 0.5
         if risk_verdict == "pass":
             base += 0.3
         elif risk_verdict == "revise":
             base -= 0.1
-        # Slight preference for longer drafts (more content)
         length_bonus = min(len(draft) / 10000, 0.2)
-        return base + length_bonus
+        score = base + length_bonus
+
+        if loom_signals:
+            tension = loom_signals.get("tension", {})
+            if isinstance(tension, dict) and tension:
+                t_score = tension.get("tension_score")
+                if isinstance(t_score, (int, float)):
+                    score += float(t_score) * 0.08
+
+            rhythm = loom_signals.get("rhythm", {})
+            if isinstance(rhythm, dict) and rhythm:
+                hook = rhythm.get("hook_density")
+                if isinstance(hook, (int, float)):
+                    score += min(float(hook) / 10.0, 0.06)
+
+            style = loom_signals.get("style", {})
+            if isinstance(style, dict) and style:
+                drift = style.get("style_drift_score")
+                if isinstance(drift, (int, float)):
+                    score -= float(drift) * 0.08
+
+            char = loom_signals.get("character", {})
+            if isinstance(char, dict):
+                chars = char.get("characters", [])
+                if isinstance(chars, list) and chars:
+                    score += min(len(chars) * 0.01, 0.05)
+
+            reader_sim = loom_signals.get("reader_sim", {})
+            if isinstance(reader_sim, dict) and reader_sim:
+                rs = reader_sim.get("overall_score")
+                if isinstance(rs, (int, float)):
+                    score += (float(rs) - 0.5) * 0.06
+
+        return score
 
     # ------------------------------------------------------------------
     # Helpers

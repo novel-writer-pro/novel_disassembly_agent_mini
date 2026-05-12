@@ -103,16 +103,29 @@ def build_chapter_imitation_prompt(
     scene_beats: list[str],
     hard_constraints: list[str],
     soft_constraints: list[str],
+    previous_summary: str = "",
+    active_characters: list[str] | None = None,
+    unresolved_threads: list[str] | None = None,
 ) -> str:
-    """Build a constrained imitation-draft prompt."""
 
     style_text = "\n".join(f"- {item}" for item in style_axes) or "- 保持原章结构功能"
     beat_text = "\n".join(f"- {item}" for item in scene_beats) or "- 维持原章推进"
     hard_text = "\n".join(f"- {item}" for item in hard_constraints) or "- 不得违背现有世界规则"
     soft_text = "\n".join(f"- {item}" for item in soft_constraints) or "- 保持人物与关系推进连续"
 
+    memory_block = ""
+    if previous_summary or active_characters or unresolved_threads:
+        parts: list[str] = []
+        if previous_summary:
+            parts.append(f"前情摘要：\n{previous_summary[:600]}")
+        if active_characters:
+            parts.append(f"当前活跃角色：{', '.join(active_characters[:8])}")
+        if unresolved_threads:
+            parts.append(f"待回收线索：\n" + "\n".join(f"- {t}" for t in unresolved_threads[:5]))
+        memory_block = "\n\n记忆上下文：\n" + "\n".join(parts)
+
     return f"""
-你是一个“章节仿写规划执行器”。
+你是一个"章节仿写规划执行器"。
 
 任务：
 在保留原章结构功能、冲突推进与人物选择逻辑的前提下，
@@ -133,6 +146,7 @@ def build_chapter_imitation_prompt(
 
 本次目标：
 {target_goal}
+{memory_block}
 
 风格轴：
 {style_text}

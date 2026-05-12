@@ -174,8 +174,9 @@ class TensionService:
             .join(RetrievalDocument, RetrievalChunk.document_id == RetrievalDocument.id)
             .where(RetrievalDocument.branch_id == branch_id)
             .where(RetrievalDocument.chapter_index == chapter_index)
-            .where(RetrievalChunk.chunk_order == 0)
             .where(ChunkEmbedding.deleted_at.is_(None))
+            .order_by(RetrievalChunk.chunk_order)
+            .limit(1)
         )
         if row is None or not row.vector_payload:
             return None
@@ -224,7 +225,7 @@ class TensionService:
         edge_count = self.session.scalar(
             select(func.count(GraphEdge.id))
             .where(GraphEdge.branch_id == branch_id)
-            .where(GraphEdge.chapter_last_seen == chapter_index)
+            .where(GraphEdge.chapter_first_seen == chapter_index)
             .where(GraphEdge.edge_type.in_(list(CONFLICT_EDGE_TYPES)))
             .where(GraphEdge.deleted_at.is_(None))
         ) or 0
@@ -232,7 +233,7 @@ class TensionService:
         node_count = self.session.scalar(
             select(func.count(GraphNode.id))
             .where(GraphNode.branch_id == branch_id)
-            .where(GraphNode.chapter_last_seen == chapter_index)
+            .where(GraphNode.chapter_first_seen == chapter_index)
             .where(GraphNode.node_type == "conflict")
             .where(GraphNode.deleted_at.is_(None))
         ) or 0
@@ -244,7 +245,20 @@ class TensionService:
         return round(conflict_count / (word_count / 1000), 4)
 
     def _get_chapter_word_count(self, branch_id: str, chapter_index: int) -> int:
-        """Approximate word count from chapter artifact summary length."""
+        from novel_analyzer.database.models import RetrievalChunk as _RC
+        from novel_analyzer.database.models import RetrievalDocument as _RD
+
+        texts = self.session.scalars(
+            select(_RC.text)
+            .join(_RD, _RC.document_id == _RD.id)
+            .where(_RD.branch_id == branch_id)
+            .where(_RD.chapter_index == chapter_index)
+            .where(_RC.deleted_at.is_(None))
+        ).all()
+        total = sum(len(t) for t in texts)
+        if total > 0:
+            return total
+
         artifact = self.session.scalar(
             select(ChapterArtifact)
             .where(ChapterArtifact.branch_id == branch_id)
@@ -254,9 +268,7 @@ class TensionService:
         if artifact is None:
             return 0
         payload = artifact.payload_json or {}
-        # Use summary length as proxy; real text length would be better
         summary = str(payload.get("chapter_summary", ""))
-        # Estimate: summary is ~10% of full chapter
         return max(len(summary) * 10, 500)
 
     # ------------------------------------------------------------------
