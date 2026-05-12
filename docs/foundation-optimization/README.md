@@ -203,3 +203,12 @@ Week 3: P2-1 (entity cache) + 30 章稳定性验证
 | 文档 | 说明 |
 |------|------|
 | [embedding-rerank-dictionary-guide.md](./embedding-rerank-dictionary-guide.md) | Embedding/Rerank 微调 + 分词词典建设全流程 |
+| [http-backend-guide.md](./http-backend-guide.md) | HTTP Backend 配置指南 (OpenAI/TEI 协议支持) |
+
+---
+
+## 专题备忘录
+
+| 文档 | 说明 |
+|------|------|
+| [priority-and-roi-research-20260512.md](./priority-and-roi-research-20260512.md) | 底座优化优先级与 ROI 预研(含商业 API / 自研微调 / GitHub 精华对比结论) |
