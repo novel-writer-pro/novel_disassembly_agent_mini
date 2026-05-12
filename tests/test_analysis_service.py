@@ -318,7 +318,7 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         def _boom(*_args: object, **_kwargs: object) -> dict[str, object]:
             raise RuntimeError('boom')
@@ -338,7 +338,7 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         monkeypatch.setattr(
             service,
@@ -446,7 +446,7 @@ def test_provider_unavailable_uses_local_heuristic_fallback(
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         def _provider_down(*_args: object, **_kwargs: object) -> dict[str, object]:
             raise RuntimeError("Error code: 403 - {'code':'SUBSCRIPTION_NOT_FOUND'}")
@@ -586,7 +586,7 @@ def test_quick_profile_defers_writer_lens_stage_and_preserves_profile(tmp_path: 
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
 
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
         responses = iter([
             '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
             '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
@@ -617,7 +617,7 @@ def test_quick_profile_defers_risk_aggregation_stage(tmp_path: Path) -> None:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
 
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
         responses = iter([
             '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
             '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
@@ -672,7 +672,7 @@ def test_analysis_and_guard_prompts_use_compact_state_and_no_graph_context(monke
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         captured: list[tuple[str, str]] = []
         real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
@@ -725,7 +725,7 @@ def test_fact_and_evidence_prompts_drop_graph_and_minimize_state(monkeypatch, tm
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         captured: list[tuple[str, str]] = []
         real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
@@ -800,7 +800,7 @@ def test_fact_analysis_and_guard_prompts_use_compact_prior_context(monkeypatch, 
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         captured: list[str] = []
         real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
@@ -1028,7 +1028,7 @@ def test_stage_prompts_use_compacted_previous_summary(monkeypatch, tmp_path: Pat
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         captured: list[str] = []
         real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
