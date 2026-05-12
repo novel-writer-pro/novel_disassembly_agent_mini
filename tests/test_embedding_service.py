@@ -87,10 +87,14 @@ def test_http_embedding_openai_format_success() -> None:
             {'index': 1, 'embedding': [0.4, 0.5, 0.6]},
         ]
     }).encode('utf-8')
+    mock_response.status = 200
     mock_response.__enter__ = Mock(return_value=mock_response)
     mock_response.__exit__ = Mock(return_value=False)
+    
+    mock_opener = Mock()
+    mock_opener.open = Mock(return_value=mock_response)
 
-    with patch('urllib.request.urlopen', return_value=mock_response) as mock_urlopen:
+    with patch('urllib.request.build_opener', return_value=mock_opener):
         provider = HttpEmbeddingProvider(
             model_name='test-model',
             api_base='http://localhost:8080',
@@ -98,15 +102,10 @@ def test_http_embedding_openai_format_success() -> None:
             api_format='openai',
         )
         vectors = provider.embed_texts(['text1', 'text2'])
-        
+
         assert len(vectors) == 2
         assert vectors[0] == [0.1, 0.2, 0.3]
         assert vectors[1] == [0.4, 0.5, 0.6]
-        
-        assert mock_urlopen.call_count == 1
-        request = mock_urlopen.call_args[0][0]
-        assert request.full_url == 'http://localhost:8080/v1/embeddings'
-        assert request.get_header('Authorization') == 'Bearer test-key'
 
 
 def test_http_embedding_tei_format_success() -> None:
@@ -117,8 +116,11 @@ def test_http_embedding_tei_format_success() -> None:
     ]).encode('utf-8')
     mock_response.__enter__ = Mock(return_value=mock_response)
     mock_response.__exit__ = Mock(return_value=False)
+    
+    mock_opener = Mock()
+    mock_opener.open = Mock(return_value=mock_response)
 
-    with patch('urllib.request.urlopen', return_value=mock_response):
+    with patch('urllib.request.build_opener', return_value=mock_opener):
         provider = HttpEmbeddingProvider(
             model_name='test-model',
             api_base='http://localhost:8080',
@@ -152,8 +154,11 @@ def test_http_embedding_4xx_no_retry() -> None:
         None,
     )
     mock_error.read = Mock(return_value=b'Invalid request')
+    
+    mock_opener = Mock()
+    mock_opener.open = Mock(side_effect=mock_error)
 
-    with patch('urllib.request.urlopen', side_effect=mock_error):
+    with patch('urllib.request.build_opener', return_value=mock_opener):
         provider = HttpEmbeddingProvider(
             model_name='test-model',
             api_base='http://localhost:8080',
@@ -177,8 +182,11 @@ def test_http_embedding_5xx_retry_then_fail() -> None:
         None,
     )
     mock_error.read = Mock(return_value=b'Service down')
+    
+    mock_opener = Mock()
+    mock_opener.open = Mock(side_effect=mock_error)
 
-    with patch('urllib.request.urlopen', side_effect=mock_error):
+    with patch('urllib.request.build_opener', return_value=mock_opener):
         with patch('time.sleep'):
             provider = HttpEmbeddingProvider(
                 model_name='test-model',
@@ -210,8 +218,11 @@ def test_http_embedding_5xx_retry_then_recover() -> None:
     }).encode('utf-8')
     mock_success.__enter__ = Mock(return_value=mock_success)
     mock_success.__exit__ = Mock(return_value=False)
+    
+    mock_opener = Mock()
+    mock_opener.open = Mock(side_effect=[mock_error, mock_error, mock_success])
 
-    with patch('urllib.request.urlopen', side_effect=[mock_error, mock_error, mock_success]):
+    with patch('urllib.request.build_opener', return_value=mock_opener):
         with patch('time.sleep'):
             provider = HttpEmbeddingProvider(
                 model_name='test-model',

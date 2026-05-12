@@ -138,7 +138,7 @@ class OnnxCrossEncoderRerankProvider:
         return cast(list[float], logits.astype(np.float32).tolist())
 
 
-@dataclass(slots=True)
+@dataclass
 class HttpRerankProvider:
     model_name: str
     api_base: str
@@ -148,6 +148,7 @@ class HttpRerankProvider:
     max_retries: int = 2
     verify_ssl: bool = True
     batch_size: int = 0
+    _opener: Any = None
 
     def rerank(self, query: str, documents: list[str]) -> list[float]:
         if not documents:
@@ -157,6 +158,16 @@ class HttpRerankProvider:
             return self._rerank_chunked(query, documents)
         
         return self._rerank_single(query, documents)
+    
+    def _get_opener(self) -> urllib.request.OpenerDirector:
+        if self._opener is None:
+            handlers = []
+            if not self.verify_ssl:
+                import ssl
+                context = ssl._create_unverified_context()
+                handlers.append(urllib.request.HTTPSHandler(context=context))
+            self._opener = urllib.request.build_opener(*handlers)
+        return self._opener
     
     def _rerank_single(self, query: str, documents: list[str]) -> list[float]:
         api_base = self.api_base.rstrip("/")
@@ -173,6 +184,8 @@ class HttpRerankProvider:
         else:
             raise ValueError(f"Unsupported api_format: {self.api_format}")
 
+        opener = self._get_opener()
+        
         for attempt in range(self.max_retries + 1):
             try:
                 req = urllib.request.Request(
@@ -185,22 +198,11 @@ class HttpRerankProvider:
                 if self.api_key:
                     req.add_header("Authorization", f"Bearer {self.api_key}")
 
-                context = None
-                if not self.verify_ssl:
-                    import ssl
-                    context = ssl._create_unverified_context()
-
-                with urllib.request.urlopen(req, timeout=self.timeout, context=context) as response:
+                with opener.open(req, timeout=self.timeout) as response:
                     response_data = json.loads(response.read().decode("utf-8"))
                     
-                    scores = [0.0] * len(documents)
-                    for item in response_data:
-                        idx = item["index"]
-                        score = item["score"]
-                        if 0 <= idx < len(documents):
-                            scores[idx] = score
-                    
-                    return scores
+                    index_to_score = {item["index"]: item["score"] for item in response_data}
+                    return [index_to_score[i] for i in range(len(documents))]
 
             except urllib.error.HTTPError as exc:
                 status_code = exc.code

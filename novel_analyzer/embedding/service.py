@@ -184,7 +184,7 @@ class OnnxBgeEmbeddingProvider:
         return cast(list[list[float]], normalized.astype(np.float32).tolist())
 
 
-@dataclass(slots=True)
+@dataclass
 class HttpEmbeddingProvider:
     model_name: str
     api_base: str
@@ -194,15 +194,73 @@ class HttpEmbeddingProvider:
     max_retries: int = 2
     verify_ssl: bool = True
     batch_size: int = 0
+    fallback_backend: str = ""
+    fallback_after_failures: int = 3
+    _opener: Any = None
+    _consecutive_failures: int = 0
+    _fallback_provider: Any = None
+    _last_health_check: float = 0.0
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
         
+        if self._should_use_fallback():
+            return self._embed_via_fallback(texts)
+        
         if self.batch_size > 0 and len(texts) > self.batch_size:
             return self._embed_texts_chunked(texts)
         
         return self._embed_texts_single(texts)
+    
+    def _should_use_fallback(self) -> bool:
+        if not self.fallback_backend or self.fallback_backend != "onnx":
+            return False
+        
+        if self._consecutive_failures < self.fallback_after_failures:
+            return False
+        
+        current_time = time.time()
+        if current_time - self._last_health_check > 60:
+            self._last_health_check = current_time
+            if self._check_http_health():
+                self._consecutive_failures = 0
+                return False
+        
+        return True
+    
+    def _check_http_health(self) -> bool:
+        try:
+            api_base = self.api_base.rstrip("/")
+            url = f"{api_base}/health" if self.api_format == "tei" else f"{api_base}/v1/models"
+            req = urllib.request.Request(url, method="GET")
+            opener = self._get_opener()
+            with opener.open(req, timeout=5) as response:
+                return response.status == 200
+        except Exception:
+            return False
+    
+    def _embed_via_fallback(self, texts: list[str]) -> list[list[float]]:
+        if self._fallback_provider is None:
+            from novel_analyzer.config.settings import get_settings
+            settings = get_settings()
+            self._fallback_provider = OnnxBgeEmbeddingProvider(
+                model_name=settings.embedding_model_name,
+                model_path=settings.embedding_model_path or None,
+                cache_dir=settings.embedding_cache_dir or None,
+                max_length=settings.embedding_max_length,
+            )
+        return self._fallback_provider.embed_texts(texts)
+    
+    def _get_opener(self) -> urllib.request.OpenerDirector:
+        if self._opener is None:
+            handlers = []
+            if not self.verify_ssl:
+                import ssl
+                context = ssl._create_unverified_context()
+                handlers.append(urllib.request.HTTPSHandler(context=context))
+            self._opener = urllib.request.build_opener(*handlers)
+        return self._opener
     
     def _embed_texts_single(self, texts: list[str]) -> list[list[float]]:
         api_base = self.api_base.rstrip("/")
@@ -220,6 +278,8 @@ class HttpEmbeddingProvider:
         else:
             raise ValueError(f"Unsupported api_format: {self.api_format}")
 
+        opener = self._get_opener()
+        
         for attempt in range(self.max_retries + 1):
             try:
                 req = urllib.request.Request(
@@ -232,26 +292,25 @@ class HttpEmbeddingProvider:
                 if self.api_key and self.api_format == "openai":
                     req.add_header("Authorization", f"Bearer {self.api_key}")
 
-                context = None
-                if not self.verify_ssl:
-                    import ssl
-                    context = ssl._create_unverified_context()
-
-                with urllib.request.urlopen(req, timeout=self.timeout, context=context) as response:
+                with opener.open(req, timeout=self.timeout) as response:
                     response_data = json.loads(response.read().decode("utf-8"))
                     
                     if self.api_format == "openai":
                         data_items = response_data.get("data", [])
                         sorted_items = sorted(data_items, key=lambda x: x.get("index", 0))
-                        return [item["embedding"] for item in sorted_items]
+                        result = [item["embedding"] for item in sorted_items]
                     else:
-                        return response_data
+                        result = response_data
+                    
+                    self._consecutive_failures = 0
+                    return result
 
             except urllib.error.HTTPError as exc:
                 status_code = exc.code
                 response_body = exc.read().decode("utf-8", errors="replace")[:500]
                 
                 if 400 <= status_code < 500:
+                    self._consecutive_failures += 1
                     raise RuntimeError(
                         f"HTTP {status_code} from {url}: {response_body}"
                     ) from exc
@@ -260,6 +319,7 @@ class HttpEmbeddingProvider:
                     time.sleep(0.5 * (2 ** attempt))
                     continue
                 
+                self._consecutive_failures += 1
                 raise RuntimeError(
                     f"HTTP {status_code} from {url} after {self.max_retries + 1} attempts: {response_body}"
                 ) from exc
@@ -269,6 +329,7 @@ class HttpEmbeddingProvider:
                     time.sleep(0.5 * (2 ** attempt))
                     continue
                 
+                self._consecutive_failures += 1
                 raise RuntimeError(
                     f"Failed to connect to {url} after {self.max_retries + 1} attempts: {exc}"
                 ) from exc
@@ -313,6 +374,8 @@ def _cached_embedding_provider(
     http_max_retries: int,
     http_verify_ssl: bool,
     http_batch_size: int,
+    fallback_backend: str,
+    fallback_after_failures: int,
 ) -> EmbeddingProvider:
     if backend == 'onnx':
         return OnnxBgeEmbeddingProvider(
@@ -331,6 +394,8 @@ def _cached_embedding_provider(
             max_retries=http_max_retries,
             verify_ssl=http_verify_ssl,
             batch_size=http_batch_size,
+            fallback_backend=fallback_backend,
+            fallback_after_failures=fallback_after_failures,
         )
     return DeterministicStubEmbeddingProvider(dim=stub_dim)
 
@@ -353,4 +418,6 @@ def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvide
         runtime.embedding_http_max_retries,
         runtime.embedding_http_verify_ssl,
         runtime.effective_embedding_batch_size(),
+        runtime.embedding_fallback_backend,
+        runtime.embedding_fallback_after_failures,
     )
