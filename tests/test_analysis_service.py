@@ -494,7 +494,7 @@ def test_materialization_failure_restores_previous_active_artifact_and_blocks_jo
                 'dimensions': [],
             },
         )
-        service = AnalysisService(session, Settings(llm_api_key='test-key', embedding_backend='stub'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', embedding_backend='stub', use_merged_stages=False))
 
         monkeypatch.setattr(
             service,
