@@ -1,6 +1,86 @@
 ## Unreleased
 
 
+- fix(P0/provider-health-decay): provider_health 新增时间衰减机制，每 5 分钟无新失败自动减少 2 个 degraded_events，成功调用也主动减少 2 个；防止历史失败累积导致持续 warning。
+
+  Changelist: `CL-provider-health-decay-01`
+
+  Tested: 34/34 analysis tests passed
+
+
+- fix(P0/merged-prompt-schema): merged stage prompts 增加严格 JSON Schema 约束（字段缺一不可），减少 LLM 返回格式偏离导致的 fallback 触发。
+
+  Changelist: `CL-merged-prompt-schema-01`
+
+  Tested: 34/34 analysis tests passed
+
+
+- feat(P1/coreference-prompt): fact_extractor prompt 新增指令"如果本章出现同一人物的不同称呼，在 characters 中用 label 写最常用名，evidence 中注明别名"，提升实体消解的 LLM 辅助能力。
+
+  Changelist: `CL-coreference-prompt-01`
+
+
+- test(P3/merged-path-coverage): 新增 2 个 merged path 单元测试：happy path 验证 + fallback 降级验证，覆盖 use_merged_stages=True 路径。
+
+  Changelist: `CL-merged-path-tests-01`
+
+  Tested: 34/34 analysis tests passed (含 2 个新增)
+
+
+- docs(loom/cli-manual+roadmap): CLI 操作手册新增 12.12 `loom-reference-eval` 完整用法（单章/批量/对比模式）；更新 12.11 `loom-ab-compare` 输出说明；更新 12.12 关键字段表（新增 reader_sim / reference_fidelity）；roadmap Phase 3 新增 P0 Reference-based 评估验证任务清单；gate summary contract 升级到 v2。
+
+  Changelist: `CL-loom-docs-cli-manual-roadmap-01`
+
+
+- feat(loom/reference-eval-batch-compare): `loom-reference-eval` 新增 `--compare-dir` 批量对比模式和 `chapter_index=0` 全目录扫描；gate summary 新增 `fidelity-blocked` 状态（`average_reference_fidelity < 0.5` 时触发）；contract 升级到 v2；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-batch-compare-01`
+
+  Tested: test_loom_phase1-5 (130 passed), 手工 batch compare ch2-5 验证
+
+
+- fix(loom/llm-timeout): `llm_timeout_seconds` 从 60s 提升到 180s，避免 Claude 等慢 provider 超时导致 skeleton fallback；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-llm-timeout-fix-01`
+
+  Tested: test_loom_phase1-5 (130 passed)
+
+
+- feat(loom/reference-fidelity-whole-book-aggregation): whole-book `_build_whole_book_session_loom_signals` 新增 `reference_fidelity_signal_count` / `average_reference_fidelity` 聚合字段；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-fidelity-whole-book-01`
+
+  Tested: test_loom_phase1-5 (130 passed)
+
+
+- feat(loom/reference-fidelity-full-integration): `_loom_reference_fidelity` 完整接入 `_collect_writer_output_loom_signals`（新增 `reference_fidelity_signal_count` / `average_reference_fidelity`）和 `loom-ab-compare` 信号对比（新增 `fidelity=` 列）；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-fidelity-full-integration-01`
+
+  Tested: test_loom_phase1-5 (130 passed), 手工 loom-reference-eval ch10 验证
+
+
+- feat(loom/reference-eval-tests+docs): 新增 5 个 `ReferenceEvalService` 单元测试（heuristic fallback / empty draft / identical text / to_signal / LLM parse error）；`_loom_reference_fidelity` 接入 `_loom_extract_signals` 和 `_extract_writer_output_loom_signal`；更新 `roadmap.md`（reference-based 评估方向）和 `sota-imitation-progression-checklist.md`（新增 G2 section）和 `handoff.md`（待办事项修正）；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-tests-docs-01`
+
+  Tested: test_loom_phase5.py (25 passed, +5 new), 全量 130 passed
+
+
+- feat(loom/reference-fidelity-in-harness): `run_harness` 在 `use_llm=True` 且 `loom_pairwise_enabled=True` 时自动调用 `ReferenceEvalService`，结果写入 `skill_outputs["_loom_reference_fidelity"]`；每次 LLM 仿写自动产出对原文的 6 维度还原度评分；卫图 ch2 验证 overall_fidelity=0.76；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-fidelity-in-harness-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工 writer-imitate --use-llm ch2 验证
+
+
+- feat(loom/reference-eval-cli): 新增 `loom-reference-eval` CLI 命令，可直接评估仿写草案对原文的还原度（6 维度 LLM judge）；用法：`loom-reference-eval <branch_id> <chapter_index> <draft_dir>`；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-cli-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工 loom-reference-eval ch2 验证
+
+
 - feat(loom/reference-eval-service): 新增 `ReferenceEvalService`，以原文为参照评估仿写还原度（6 维度：structure/character/style/continuity/tension/information_density）；LLM judge 验证：baseline fidelity=0.18 vs enhanced fidelity=0.78（4.3x 提升）；证明 Loom 记忆注入让仿写显著更接近原文；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-reference-eval-service-01`
