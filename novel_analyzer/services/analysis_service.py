@@ -297,6 +297,59 @@ class AnalysisService:
             return text
         return text[: max_chars - 1].rstrip() + '…'
 
+    def _select_few_shot_example(
+        self,
+        branch_id: str,
+        chapter_index: int,
+    ) -> str:
+        """Select a compact prior chapter result as few-shot example for prompt injection."""
+        if chapter_index <= 1:
+            return ''
+        target_ch = max(1, chapter_index - 1)
+        from novel_analyzer.database.models import ChapterRawOutput
+        raw = self.session.scalar(
+            select(ChapterRawOutput)
+            .where(ChapterRawOutput.branch_id == branch_id)
+            .where(ChapterRawOutput.chapter_index == target_ch)
+            .where(ChapterRawOutput.parse_status == 'parsed')
+            .order_by(ChapterRawOutput.created_at.desc())
+        )
+        if raw is None or not raw.parsed_json:
+            return ''
+        parsed = raw.parsed_json
+        if not isinstance(parsed, dict):
+            return ''
+        intake = parsed.get('intake', {})
+        facts = parsed.get('facts', {})
+        if not intake and not facts:
+            return ''
+        example = {}
+        if intake and isinstance(intake, dict):
+            example['intake'] = {
+                'chapter_index': intake.get('chapter_index', target_ch),
+                'normalized_title': str(intake.get('normalized_title', ''))[:30],
+                'cleaned_text': str(intake.get('cleaned_text', ''))[:100] + '...',
+                'paragraph_blocks': (intake.get('paragraph_blocks') or [])[:2],
+                'dialogue_candidates': (intake.get('dialogue_candidates') or [])[:2],
+                'scene_candidates': [],
+                'notes': (intake.get('notes') or [])[:2],
+            }
+        if facts and isinstance(facts, dict):
+            example['facts'] = {
+                'characters': (facts.get('characters') or [])[:2],
+                'events': (facts.get('events') or [])[:2],
+                'relations': (facts.get('relations') or [])[:1],
+                'conflicts': [],
+                'foreshadowing': (facts.get('foreshadowing') or [])[:1],
+                'worldbuilding_facts': [],
+            }
+        if not example:
+            return ''
+        compact = json.dumps(example, ensure_ascii=False)
+        if len(compact) > 800:
+            compact = compact[:800]
+        return f'\n\n参考上一章的输出格式（仅供格式参考，内容请基于当前章节）：\n{compact}'
+
     @staticmethod
     def _compact_prior_context_json(
         prior_context: dict[str, object],
@@ -885,9 +938,13 @@ class AnalysisService:
                     )
                     if self.settings.use_merged_stages:
                         try:
+                            few_shot = self._select_few_shot_example(branch_id, segment.chapter_index)
+                            merged_prompt = prompts['intake_and_facts']
+                            if few_shot:
+                                merged_prompt = merged_prompt + few_shot
                             intake, facts = self._invoke_merged_stage(
                                 stage_model,
-                                prompts['intake_and_facts'],
+                                merged_prompt,
                                 'intake', ChapterIntakeOutput,
                                 'facts', ChapterFactExtractionOutput,
                             )

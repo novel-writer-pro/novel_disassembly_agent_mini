@@ -67,6 +67,20 @@
   Tested: 36/36 analysis+fallback tests passed
 
 
+- perf(foundation/context-compression): _compact_prior_context_json 重构为 confidence-weighted 压缩：高置信度 facts 保留完整字段，低置信度只保留 label+chapter_index；注入 open_foreshadowing 到 compact context；max_facts 从 8 提升到 12。
+
+  Changelist: `CL-context-compression-01`
+
+  Tested: 34/34 analysis tests passed
+
+
+- feat(foundation/few-shot): merged stage prompt 动态注入上一章的真实输出作为 few-shot 示例（截断到 800 chars），提升小模型输出格式一致性和内容稳定性。
+
+  Changelist: `CL-few-shot-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
 - docs(loom/cli-manual+roadmap): CLI 操作手册新增 12.12 `loom-reference-eval` 完整用法（单章/批量/对比模式）；更新 12.11 `loom-ab-compare` 输出说明；更新 12.12 关键字段表（新增 reader_sim / reference_fidelity）；roadmap Phase 3 新增 P0 Reference-based 评估验证任务清单；gate summary contract 升级到 v2。
 
   Changelist: `CL-loom-docs-cli-manual-roadmap-01`
