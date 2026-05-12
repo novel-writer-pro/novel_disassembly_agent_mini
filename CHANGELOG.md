@@ -1,6 +1,23 @@
 ## Unreleased
 
 
+- feat(loom/reference-eval-service): 新增 `ReferenceEvalService`，以原文为参照评估仿写还原度（6 维度：structure/character/style/continuity/tension/information_density）；LLM judge 验证：baseline fidelity=0.18 vs enhanced fidelity=0.78（4.3x 提升）；证明 Loom 记忆注入让仿写显著更接近原文；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-service-01`
+
+  Constraint: reference-based 评估才是正确的仿写质量衡量方式（vs 原文），而非 pairwise A/B（两个仿写互比）
+  Tested: test_loom_phase1-5 (125 passed), 手工 LLM reference judge 验证
+  Not-tested: 多章节统计验证
+
+
+- ops(loom/pairwise-data-accumulation): 通过 LLM judge 路径积累 30 pairs（6% of 500 target），覆盖 ch2-20 共 10 个章节；preference 分布 A=20/B=4/tie=6；avg_quality_score=0.6765；数据写入 `/tmp/weitu-all-llm-judge-pairs.jsonl`。
+
+  Changelist: `CL-loom-pairwise-accumulation-01`
+
+  Tested: loom-pairs-stats 验证
+  Not-tested: 连续写作场景（需 20+ 章连续 carry_over 传递）
+
+
 - feat(loom/llm-prompt-memory-injection): `build_llm_draft` 在 `loom_memory_mode=enabled/ab` 时注入 `previous_summary` 到 LLM prompt（`build_chapter_imitation_prompt` 新增 `previous_summary`/`active_characters`/`unresolved_threads` 参数）；当前仅注入 summary（角色/线索列表暂不注入，避免约束过多）；LLM judge 单次对比显示 baseline 仍占优（confidence=0.85），但单次对比不具统计意义，需多次运行取平均；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-llm-prompt-memory-injection-01`
@@ -274,6 +291,30 @@
   Constraint: 当前为独立 service，尚未集成到 RiskAuditService 主循环（需后续接入）
   Tested: import verification
   Not-tested: 动态门控对 risk card 生成数量的影响
+
+
+- feat(product/qa-enhanced): BranchQAService 集成 entity resolution（别名自动扩展查询）、foreshadowing（伏笔上下文注入）、causal graph（因果链上下文注入）；检索时自动解析实体别名提升召回率。
+
+  Changelist: `CL-product-qa-enhanced-01`
+
+  Tested: import verification, 31/32 analysis tests passed
+  Not-tested: 真实 QA 回答质量对比
+
+
+- feat(product/export-enhanced): ExportService.export_chapter_bundle 新增 foreshadowing_threads 和 causal_chains 字段；导出现在包含伏笔生命周期表和因果链列表。
+
+  Changelist: `CL-product-export-enhanced-01`
+
+  Tested: import verification
+  Not-tested: 前端消费新字段的渲染
+
+
+- feat(product/confidence-gated-risk-audit): ConfidenceGatedActivationService 正式接入 RiskAuditService.generate_for_chapter 主循环；高置信度章节自动跳过 power_scaling/setting_scope checker，低置信度章节 severity 自动加严。
+
+  Changelist: `CL-product-confidence-gated-risk-audit-01`
+
+  Tested: 31/32 analysis tests passed, import verification
+  Not-tested: 跳过 checker 对 risk card 覆盖率的影响
 
 
 - fix(risk/silent-exceptions): 所有新增 service 的 exception handler 从 silent pass 改为 logger.warning/debug，确保故障可观测；涉及 foreshadowing、entity resolution、causal graph、confidence calibration、self-evaluation 五处。

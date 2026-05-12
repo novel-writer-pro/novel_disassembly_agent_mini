@@ -8,12 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings, get_settings
-from novel_analyzer.database.models import WindowArtifact
+from novel_analyzer.database.models import GraphEdge, GraphNode, WindowArtifact
 from novel_analyzer.domain.schemas import BranchQAResult
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_branch_qa_prompt
 from novel_analyzer.runtime.provider_health import record_provider_health
 from novel_analyzer.services.analysis_service import AnalysisService
+from novel_analyzer.services.causal_graph_service import CausalGraphService, CAUSAL_EDGE_TYPES
+from novel_analyzer.services.entity_resolution_service import EntityResolutionService
+from novel_analyzer.services.foreshadowing_service import ForeshadowingService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.retrieval_service import RetrievalService
 
@@ -33,6 +36,9 @@ class BranchQAService:
         self.session = session
         self.settings = settings or get_settings()
         self.retrieval_service = RetrievalService(session, self.settings)
+        self.entity_resolution = EntityResolutionService(session)
+        self.foreshadowing_service = ForeshadowingService(session)
+        self.causal_graph = CausalGraphService(session)
 
     @classmethod
     def _classify_question(cls, question: str) -> str:
@@ -151,6 +157,81 @@ class BranchQAService:
             lines.append(f"[活跃冲突] {label}")
         return lines
 
+    def _resolve_entities_in_question(self, branch_id: str, question: str) -> str:
+        """Expand question with canonical entity names for better retrieval."""
+        try:
+            alias_map = self.entity_resolution.build_alias_map(branch_id)
+        except Exception:  # noqa: BLE001
+            return question
+        if not alias_map:
+            return question
+        expanded = question
+        for alias, canonical in alias_map.items():
+            if alias in question and canonical not in question:
+                expanded = f"{expanded} {canonical}"
+        return expanded
+
+    def _foreshadow_context(
+        self,
+        branch_id: str,
+        chapter_numbers: list[int],
+        question_type: str,
+    ) -> list[str]:
+        if question_type not in ('foreshadow', 'timeline', 'general'):
+            return []
+        if not chapter_numbers:
+            return []
+        max_chapter = max(chapter_numbers)
+        threads = self.foreshadowing_service.get_open_threads(
+            branch_id, before_chapter=max_chapter + 1, limit=10,
+        )
+        if not threads:
+            return []
+        lines: list[str] = []
+        for t in threads:
+            age = max_chapter - t.chapter_planted
+            lines.append(
+                f"[伏笔/{t.status}] {t.label} (第{t.chapter_planted}章埋下, "
+                f"已跨{age}章, 强化{t.reinforcement_count}次)"
+            )
+        return lines
+
+    def _causal_context(
+        self,
+        branch_id: str,
+        chapter_numbers: list[int],
+        question_type: str,
+    ) -> list[str]:
+        if question_type not in ('timeline', 'character', 'general'):
+            return []
+        if not chapter_numbers:
+            return []
+        max_chapter = max(chapter_numbers)
+        causal_edges = self.session.scalars(
+            select(GraphEdge)
+            .where(GraphEdge.branch_id == branch_id)
+            .where(GraphEdge.edge_type.in_(list(CAUSAL_EDGE_TYPES)))
+            .where(GraphEdge.chapter_first_seen <= max_chapter)
+            .order_by(GraphEdge.weight.desc())
+            .limit(8)
+        ).all()
+        if not causal_edges:
+            return []
+        lines: list[str] = []
+        for edge in causal_edges:
+            source = self.session.scalar(
+                select(GraphNode).where(GraphNode.id == edge.source_node_id)
+            )
+            target = self.session.scalar(
+                select(GraphNode).where(GraphNode.id == edge.target_node_id)
+            )
+            if source and target:
+                lines.append(
+                    f"[因果链] {source.label} --{edge.edge_type}--> {target.label} "
+                    f"(第{edge.chapter_first_seen}章)"
+                )
+        return lines
+
     def _graph_reasoning_snapshot(
         self,
         branch_id: str,
@@ -248,7 +329,15 @@ class BranchQAService:
         """Answer a question from retrieval hits only."""
 
         question_type = self._classify_question(question)
-        hits = self.retrieval_service.search_branch(branch_id, question, limit)
+        resolved_question = self._resolve_entities_in_question(branch_id, question)
+        hits = self.retrieval_service.search_branch(branch_id, resolved_question, limit)
+        if len(hits) < limit:
+            original_hits = self.retrieval_service.search_branch(branch_id, question, limit)
+            seen = {h.chapter_index for h in hits}
+            for h in original_hits:
+                if h.chapter_index not in seen:
+                    hits.append(h)
+                    seen.add(h.chapter_index)
         hits = self._rank_hits_for_question(
             hits,
             question=question,
@@ -287,12 +376,18 @@ class BranchQAService:
             used_chapters,
             question_type=question_type,
         )
+        foreshadow_lines = self._foreshadow_context(branch_id, used_chapters, question_type)
+        causal_lines = self._causal_context(branch_id, used_chapters, question_type)
         window_evidence = [line for line in window_lines if line.strip()]
         graph_evidence = [line for line in graph_lines if line.strip()]
         evidence.extend(window_evidence[:2])
         evidence.extend(graph_evidence[:2])
+        evidence.extend(foreshadow_lines[:2])
+        evidence.extend(causal_lines[:2])
         retrieval_context = '\n\n'.join(
-            [f"[问题类型] {question_type}"] + context_lines + window_lines + graph_lines
+            [f"[问题类型] {question_type}"]
+            + context_lines + window_lines + graph_lines
+            + foreshadow_lines + causal_lines
         )
         prompt = build_branch_qa_prompt(
             question=question,

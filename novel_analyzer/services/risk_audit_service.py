@@ -25,6 +25,7 @@ from novel_analyzer.services.export_service import ExportService
 from novel_analyzer.services.risk_signal_link_service import RiskSignalLinkService
 from novel_analyzer.services.risk_semantic_signal_service import RiskSemanticSignalService
 from novel_analyzer.services.risk_signal_store_service import RiskSignalStoreService
+from novel_analyzer.services.confidence_gated_activation_service import ConfidenceGatedActivationService
 
 
 class GateChecker(Protocol):
@@ -2029,8 +2030,22 @@ class RiskAuditService:
     def generate_for_chapter(self, branch_id: str, chapter_index: int) -> ChapterRiskCard:
         artifact_payload = self._artifact_payload(branch_id, chapter_index)
         facts = self._facts(branch_id, chapter_index)
+        gate_decisions = ConfidenceGatedActivationService.gate_checkers(
+            facts, [checker.name for checker in self.checkers],
+        )
         results: list[CheckerResult] = []
         for checker in self.checkers:
+            decision = gate_decisions.get(checker.name)
+            if decision and not decision.should_run:
+                results.append(CheckerResult(
+                    checker_name=checker.name,
+                    chapter_index=chapter_index,
+                    status="skipped",
+                    risks=[],
+                    notes=[f"skipped by confidence gate: {decision.reason}"],
+                    latency_ms=0,
+                ))
+                continue
             try:
                 result = checker.evaluate(
                     branch_id=branch_id,
