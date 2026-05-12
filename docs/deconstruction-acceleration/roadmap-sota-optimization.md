@@ -95,8 +95,30 @@
 ### 4F. Confidence-gated Checker Activation
 - **Status**: Done
 - **Impact**: 低置信度章节加严检查，高置信度章节跳过冗余 checker
-- **Change**: `ConfidenceGatedActivationService` 动态决定 checker 激活和 severity 调整
-- **Files**: `novel_analyzer/services/confidence_gated_activation_service.py`
+- **Change**: `ConfidenceGatedActivationService` 动态决定 checker 激活和 severity 调整；已接入 `RiskAuditService.generate_for_chapter` 主循环
+- **Files**: `novel_analyzer/services/confidence_gated_activation_service.py`, `novel_analyzer/services/risk_audit_service.py`
+
+---
+
+## Phase 4.5 - 产品层集成 (Completed)
+
+### 4G. QA 系统增强
+- **Status**: Done
+- **Impact**: QA 回答质量提升（别名扩展 + 伏笔上下文 + 因果链上下文）
+- **Change**: `BranchQAService` 集成 entity resolution / foreshadowing / causal graph
+- **Files**: `novel_analyzer/services/qa_service.py`
+
+### 4H. 导出增强
+- **Status**: Done
+- **Impact**: 导出包含伏笔生命周期表和因果链
+- **Change**: `ExportService.export_chapter_bundle` 新增 `foreshadowing_threads` + `causal_chains`
+- **Files**: `novel_analyzer/services/export_service.py`
+
+### 4I. Quality Dashboard API
+- **Status**: Done
+- **Impact**: 前端可消费的分支级质量仪表盘
+- **Change**: `GET /api/quality-dashboard?branch_id=...` 返回置信度分布、伏笔状态、每章概要
+- **Files**: `apps/api/app/main.py`
 
 ---
 
