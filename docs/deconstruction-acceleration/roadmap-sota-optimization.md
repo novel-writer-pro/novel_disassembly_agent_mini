@@ -1,6 +1,6 @@
 # Deconstruction Engine SOTA Optimization Roadmap
 
-## Current Status: Phase 3 Complete (Entity Resolution + Arc Memory)
+## Current Status: Phase 4 Complete (Full SOTA Stack)
 
 ---
 
@@ -43,7 +43,25 @@
 
 ---
 
-## Phase 3 - Long-term Evolution (Completed)
+## Phase 4 - Quality Enhancement (Completed)
+
+### 4A. Causal Graph
+- **Status**: Done
+- **Impact**: Logic-break detection for narrative consistency
+- **Change**: New `CausalGraphService` extracts typed causal edges (causes/enables/prevents/triggers/blocks) from facts; detects contradictions with established causal chains
+- **Files**: `novel_analyzer/services/causal_graph_service.py`, `novel_analyzer/services/analysis_service.py`
+
+### 4B. Confidence Calibration
+- **Status**: Done
+- **Impact**: More accurate fact ranking in adaptive retrieval
+- **Change**: New `ConfidenceCalibrationService` with 4-factor weighted model (evidence + corroboration + recency - contradiction); auto-calibrates after each chapter
+- **Files**: `novel_analyzer/services/confidence_calibration_service.py`, `novel_analyzer/services/analysis_service.py`
+
+### 4C. Self-evaluation Loop
+- **Status**: Done
+- **Impact**: Catches quality issues before artifact commit
+- **Change**: New `SelfEvaluationService` runs 5 deterministic checks (summary quality, evidence coverage, confidence calibration, continuity coherence, entity consistency); issues injected into quality_gate_notes
+- **Files**: `novel_analyzer/services/self_evaluation_service.py`, `novel_analyzer/services/analysis_service.py`
 
 ### 3A. Entity Resolution (Coreference)
 - **Status**: Done
@@ -75,7 +93,9 @@
 - Non-merged (5 calls): 330.4s/chapter (original baseline)
 - Merged (3 calls): 254.0s/chapter (Phase 1)
 - Phase 3 (adaptive + entity + arc): 136.0s/chapter
-- Total speedup: **59% faster** (330.4s -> 136.0s)
+- Phase 4 (full stack + causal + calibration + self-eval): 241.3s/chapter
+- Total speedup vs baseline: **27% faster** with significantly richer analysis quality
+- Quality-only overhead (Phase 4 vs Phase 3): +105s for causal graph + calibration + self-eval
 
 ---
 

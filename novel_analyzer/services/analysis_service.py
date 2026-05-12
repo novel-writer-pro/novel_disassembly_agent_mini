@@ -36,6 +36,8 @@ from novel_analyzer.domain.schemas import (
 )
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
+from novel_analyzer.services.causal_graph_service import CausalGraphService
+from novel_analyzer.services.confidence_calibration_service import ConfidenceCalibrationService
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.entity_resolution_service import EntityResolutionService
 from novel_analyzer.services.fact_service import FactService
@@ -46,6 +48,7 @@ from novel_analyzer.services.quality_gate_service import QualityGateService
 from novel_analyzer.services.retrieval_service import RetrievalService
 from novel_analyzer.services.risk_audit_service import RiskAuditService
 from novel_analyzer.services.run_service import RunService
+from novel_analyzer.services.self_evaluation_service import SelfEvaluationService
 
 
 class AnalysisService:
@@ -63,6 +66,9 @@ class AnalysisService:
         self.memory_consolidation = MemoryConsolidationService(session)
         self.foreshadowing_service = ForeshadowingService(session)
         self.entity_resolution = EntityResolutionService(session)
+        self.causal_graph = CausalGraphService(session)
+        self.confidence_calibration = ConfidenceCalibrationService(session)
+        self.self_evaluation = SelfEvaluationService()
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -709,6 +715,30 @@ class AnalysisService:
             except Exception:  # noqa: BLE001
                 pass
 
+    def _update_causal_graph(
+        self,
+        branch_id: str,
+        chapter_index: int,
+        stage_payload: dict[str, object],
+        state_summary: dict[str, object],
+    ) -> None:
+        facts_data = stage_payload.get('facts', {})
+        if not isinstance(facts_data, dict):
+            return
+        try:
+            links = self.causal_graph.extract_causal_links(
+                chapter_index, facts_data, state_summary,
+            )
+            if links:
+                self.causal_graph.materialize_causal_edges(
+                    branch_id, chapter_index, links,
+                )
+            self.causal_graph.detect_logic_breaks(
+                branch_id, chapter_index, facts_data,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
     def analyze_range(
         self,
         run_id: str,
@@ -1174,6 +1204,27 @@ class AnalysisService:
                     progress_percent=85,
                     emit_event=True,
                 )
+                try:
+                    self_eval = self.self_evaluation.evaluate(
+                        result,
+                        facts if 'facts' in dir() else ChapterFactExtractionOutput(),
+                        evidence if 'evidence' in dir() else EvidenceBindingOutput(),
+                        prior_context,
+                    )
+                    if self_eval.issues:
+                        existing_notes = list(result.quality_gate_notes or [])
+                        for issue in self_eval.issues[:5]:
+                            existing_notes.append(
+                                f'[self-eval/{issue.severity}] {issue.description}'
+                            )
+                        result = result.model_copy(update={
+                            'quality_gate_notes': existing_notes,
+                            'needs_human_review': (
+                                result.needs_human_review or not self_eval.passed
+                            ),
+                        })
+                except Exception:  # noqa: BLE001
+                    pass
                 gate = QualityGateService.evaluate(chapter_content, result)
                 result = result.model_copy(update={
                     'quality_gate_notes': gate.notes,
@@ -1218,6 +1269,15 @@ class AnalysisService:
                 )
                 try:
                     self.entity_resolution.build_alias_map(branch_id)
+                except Exception:  # noqa: BLE001
+                    pass
+                self._update_causal_graph(
+                    branch_id, segment.chapter_index, stage_payload, state_summary,
+                )
+                try:
+                    self.confidence_calibration.calibrate_chapter_facts(
+                        branch_id, segment.chapter_index,
+                    )
                 except Exception:  # noqa: BLE001
                     pass
                 self.fact_service.materialize_window_if_ready(

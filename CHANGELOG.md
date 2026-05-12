@@ -199,6 +199,40 @@
   Tested: deepseek-v4-flash 真实 API 调用，ch1=136.0s, ch2=215.2s
 
 
+- feat(deconstruction/causal-graph): 新增 CausalGraphService，从事实层自动提取因果关系（causes/enables/prevents/triggers/blocks），持久化为 typed causal edges；新增 logic-break 检测，当后续章节与已建立因果链矛盾时自动标记。
+
+  Changelist: `CL-causal-graph-01`
+
+  Constraint: 因果提取基于中文关键词匹配（导致/因此/所以/于是等），零额外 API 成本
+  Tested: 32 analysis tests passed, import verification
+  Not-tested: 因果链在 50+ 章后的 logic-break 检测准确率
+
+
+- feat(deconstruction/confidence-calibration): 新增 ConfidenceCalibrationService，基于四因子加权模型（证据数量 0.25 + 跨章佐证 0.30 + 时效性 0.20 - 矛盾惩罚 0.25）自动校准事实置信度；每章分析完成后自动运行。
+
+  Changelist: `CL-confidence-calibration-01`
+
+  Constraint: 校准结果直接写回 FactRecord.confidence，影响后续 adaptive retrieval 排序
+  Tested: 32 analysis tests passed
+  Not-tested: 校准后的 retrieval 精度提升量化
+
+
+- feat(deconstruction/self-evaluation): 新增 SelfEvaluationService，在 quality_gate 前运行 5 项确定性自检（摘要质量/证据覆盖/置信度校准/连续性一致/实体一致），问题自动注入 quality_gate_notes；严重问题触发 needs_human_review。
+
+  Changelist: `CL-self-evaluation-01`
+
+  Constraint: 纯确定性检查，不调用 LLM，零额外延迟
+  Tested: 32 analysis tests passed
+  Not-tested: 自评估对最终输出质量的实际改善
+
+
+- benchmark(deconstruction/phase4): Phase 4 全栈 benchmark：单章 241.3s（含因果图+置信度校准+自评估），比原始基线 330.4s 快 27%，分析质量层面新增因果链检测、校准置信度、自动 self-critique。
+
+  Changelist: `CL-benchmark-phase4-01`
+
+  Tested: deepseek-v4-flash 真实 API 调用
+
+
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-importance-score-perf-01`
