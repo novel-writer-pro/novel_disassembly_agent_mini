@@ -38,6 +38,7 @@
 - `POST /api/pipeline/start-range`
 - `GET /api/pipeline/status?pipeline_run_id=...`
 - `GET /api/pipeline/runs?branch_id=...`
+- `GET /api/pipeline/progress-stream?pipeline_run_id=...`
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
 - `GET /api/quality-dashboard?branch_id=...`

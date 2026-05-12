@@ -2429,6 +2429,58 @@ class ExportService:
                 })
         return chains
 
+    def export_causal_mermaid(self, branch_id: str, chapter_index: int) -> str:
+        """Generate a Mermaid flowchart from causal chains up to a given chapter."""
+        chains = self._export_causal_chains(branch_id, chapter_index)
+        if not chains:
+            return ''
+        lines = ['graph LR']
+        node_ids: dict[str, str] = {}
+        counter = [0]
+
+        def _node_id(label: str) -> str:
+            if label not in node_ids:
+                counter[0] += 1
+                node_ids[label] = f'N{counter[0]}'
+            return node_ids[label]
+
+        edge_labels = {
+            'causes': '导致',
+            'enables': '使得',
+            'prevents': '阻止',
+            'triggers': '触发',
+            'blocks': '阻断',
+        }
+        for chain in chains:
+            src = _node_id(str(chain['source']))
+            tgt = _node_id(str(chain['target']))
+            edge_type = str(chain.get('edge_type', 'causes'))
+            label = edge_labels.get(edge_type, edge_type)
+            ch = chain.get('chapter', '?')
+            lines.append(f'    {src}["{chain["source"]}"] -->|{label} ch{ch}| {tgt}["{chain["target"]}"]')
+        return '\n'.join(lines)
+
+    def export_foreshadowing_timeline_mermaid(self, branch_id: str, chapter_index: int) -> str:
+        """Generate a Mermaid gantt chart for foreshadowing thread lifecycles."""
+        threads = self._export_foreshadowing(branch_id, chapter_index)
+        if not threads:
+            return ''
+        lines = [
+            'gantt',
+            '    title 伏笔生命周期',
+            '    dateFormat X',
+            '    axisFormat Ch%s',
+        ]
+        for t in threads:
+            status_tag = 'active' if t['status'] in ('planted', 'reinforced') else 'done'
+            start = t['chapter_planted']
+            end = t['chapter_last_seen']
+            duration = max(1, end - start + 1)
+            lines.append(
+                f'    {t["label"]} :{status_tag}, {start}, {duration}'
+            )
+        return '\n'.join(lines)
+
     def export_chapter_qa_context(self, branch_id: str, chapter_index: int) -> dict[str, object]:
         """Return a question-answering context package for one chapter."""
 

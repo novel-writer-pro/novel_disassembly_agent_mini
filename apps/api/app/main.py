@@ -107,8 +107,10 @@ _API_ENDPOINT_SPECS: list[dict[str, str]] = [
     {"method": "POST", "path": "/api/pipeline/start-range"},
     {"method": "GET", "path": "/api/pipeline/status"},
     {"method": "GET", "path": "/api/pipeline/runs"},
+    {"method": "GET", "path": "/api/pipeline/progress-stream"},
     {"method": "GET", "path": "/api/runtime-health"},
     {"method": "GET", "path": "/api/provider-health"},
+    {"method": "GET", "path": "/api/quality-dashboard"},
     {"method": "GET", "path": "/api/whole-book-imitation-readiness"},
     {"method": "POST", "path": "/api/whole-book-imitation-run"},
     {"method": "POST", "path": "/api/search-branch"},
@@ -2175,6 +2177,60 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         return _response(
             start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]}
         )
+
+    if path == "/api/pipeline/progress-stream":
+        pipeline_run_id = params.get("pipeline_run_id")
+        if not pipeline_run_id:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "pipeline_run_id required"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = params.get("database_url")
+        if database_url:
+            runtime.database_url = database_url
+
+        def _progress_iter():
+            import time as _time
+            factory = create_session_factory(runtime)
+            last_chapter = -1
+            for _ in range(600):
+                try:
+                    snapshot = get_pipeline_run_status(
+                        pipeline_run_id=pipeline_run_id,
+                        database_url=database_url,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    yield _sse_event({"type": "error", "message": str(exc)[:200]})
+                    break
+                summary = snapshot.summary_json or {}
+                current_ch = int(summary.get("current_chapter", 0) or 0)
+                last_completed = int(summary.get("last_completed_chapter", 0) or 0)
+                if last_completed > last_chapter:
+                    last_chapter = last_completed
+                    yield _sse_event({
+                        "type": "chapter_completed",
+                        "chapter_index": last_completed,
+                        "current_chapter": current_ch,
+                        "status": snapshot.status,
+                    })
+                if snapshot.status in ("completed", "failed", "cancelled"):
+                    yield _sse_event({
+                        "type": "pipeline_finished",
+                        "status": snapshot.status,
+                        "last_completed_chapter": last_completed,
+                    })
+                    break
+                yield _sse_event({
+                    "type": "heartbeat",
+                    "status": snapshot.status,
+                    "current_chapter": current_ch,
+                    "last_completed_chapter": last_completed,
+                })
+                _time.sleep(3.0)
+
+        return _stream_response(start_response, _progress_iter())
 
     if (
         path in {"/api/pipeline/pause", "/api/pipeline/resume", "/api/pipeline/cancel"}

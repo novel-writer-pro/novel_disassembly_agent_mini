@@ -455,4 +455,48 @@ class BranchQAService:
                     'confidence': min(result.confidence, 0.45),
                 }
             )
+        calibrated_confidence = self._calibrate_qa_confidence(
+            hits, result, question_type, len(foreshadow_lines), len(causal_lines),
+        )
+        if calibrated_confidence != result.confidence:
+            result = result.model_copy(update={'confidence': calibrated_confidence})
         return result
+
+    @classmethod
+    def _calibrate_qa_confidence(
+        cls,
+        hits: list[RetrievalHit],
+        result: BranchQAResult,
+        question_type: str,
+        foreshadow_context_count: int,
+        causal_context_count: int,
+    ) -> float:
+        if not hits:
+            return 0.1
+
+        avg_hit_score = sum(h.score for h in hits) / len(hits)
+        hit_score_factor = min(avg_hit_score / 3.0, 1.0)
+
+        evidence_count = len(result.evidence or [])
+        evidence_factor = min(evidence_count / 4.0, 1.0)
+
+        context_richness = min(
+            (foreshadow_context_count + causal_context_count) / 4.0, 1.0
+        )
+
+        type_bonus = 0.0
+        if question_type == 'character' and evidence_count >= 2:
+            type_bonus = 0.1
+        elif question_type == 'foreshadow' and foreshadow_context_count >= 2:
+            type_bonus = 0.15
+        elif question_type == 'timeline' and causal_context_count >= 1:
+            type_bonus = 0.1
+
+        raw = (
+            0.35 * hit_score_factor
+            + 0.30 * evidence_factor
+            + 0.15 * context_richness
+            + 0.10
+            + type_bonus
+        )
+        return max(0.1, min(0.95, raw))

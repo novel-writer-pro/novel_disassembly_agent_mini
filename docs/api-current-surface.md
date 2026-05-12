@@ -47,6 +47,7 @@
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
 - `GET /api/quality-dashboard`
+- `GET /api/pipeline/progress-stream`
 - `GET /api/whole-book-imitation-readiness`
 - `POST /api/whole-book-imitation-run`
 - `POST /api/search-branch`
