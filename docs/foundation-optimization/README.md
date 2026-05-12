@@ -35,12 +35,12 @@
 
 | 环节 | 优先级 | 必要性 | 当前状态 | 目标 |
 |------|--------|--------|---------|------|
-| 分词领域词典 | P0 | 极高 | 通用 simple/jieba | 自动从分析结果构建领域词典 |
-| Embedding query expansion | P0 | 高 | 直接查询 | 查询扩展 + 同义词注入 |
-| Prompt few-shot | P1 | 高 | 纯指令 | 加入真实样本示例 |
-| Context 压缩率 | P1 | 中高 | 固定比例 | 按信息密度动态压缩 |
-| Calibration 批量化 | P2 | 中 | 已完成 N+1→batch | - |
-| Entity Resolution 缓存 | P2 | 中 | 每章重建 | 增量更新 |
+| 分词领域词典 | P0 | 极高 | **已实现** ✓ | 自动从分析结果构建领域词典 |
+| Embedding query expansion | P0 | 高 | **已实现** ✓ | 1-hop 图邻居扩展 + 别名扩展 |
+| Prompt few-shot | P1 | 高 | **已实现** ✓ | 动态注入上一章真实输出 |
+| Context 压缩率 | P1 | 中高 | **已实现** ✓ | confidence-weighted 动态压缩 |
+| Calibration 批量化 | P2 | 中 | **已实现** ✓ | batch corroboration + contradiction |
+| Entity Resolution 缓存 | P2 | 中 | **已实现** ✓ | 增量版本缓存 |
 
 ---
 
