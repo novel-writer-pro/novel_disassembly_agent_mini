@@ -301,24 +301,40 @@ class AnalysisService:
     def _compact_prior_context_json(
         prior_context: dict[str, object],
         *,
-        max_facts: int = 8,
+        max_facts: int = 12,
+        high_confidence_threshold: float = 0.6,
     ) -> str:
         compact: dict[str, object] = {}
         facts = prior_context.get('facts')
         if isinstance(facts, list) and facts:
+            sorted_facts = sorted(
+                [f for f in facts if isinstance(f, dict)],
+                key=lambda f: (-float(f.get('confidence', 0)), -int(f.get('chapter_index', 0))),
+            )
             compact_facts: list[dict[str, object]] = []
-            for item in facts[:max_facts]:
-                if not isinstance(item, dict):
-                    continue
-                row: dict[str, object] = {}
-                for key in ('chapter_index', 'fact_type', 'label', 'confidence'):
-                    value = item.get(key)
-                    if value not in (None, '', []):
-                        row[key] = value
-                if row:
-                    compact_facts.append(row)
+            for item in sorted_facts[:max_facts]:
+                confidence = float(item.get('confidence', 0))
+                if confidence >= high_confidence_threshold:
+                    row: dict[str, object] = {}
+                    for key in ('chapter_index', 'fact_type', 'label', 'confidence'):
+                        value = item.get(key)
+                        if value not in (None, '', []):
+                            row[key] = value
+                    if row:
+                        compact_facts.append(row)
+                else:
+                    label = item.get('label')
+                    if label:
+                        compact_facts.append({'label': label, 'chapter_index': item.get('chapter_index')})
             if compact_facts:
                 compact['facts'] = compact_facts
+        foreshadow_threads = prior_context.get('open_foreshadowing_threads')
+        if isinstance(foreshadow_threads, list) and foreshadow_threads:
+            compact['open_foreshadowing'] = [
+                {'label': t.get('label'), 'age': t.get('age')}
+                for t in foreshadow_threads[:5]
+                if isinstance(t, dict) and t.get('label')
+            ]
         previous_summary = prior_context.get('previous_summary')
         if isinstance(previous_summary, str) and previous_summary.strip():
             compact['previous_summary'] = previous_summary.strip()[:200]
