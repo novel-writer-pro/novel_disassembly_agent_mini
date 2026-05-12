@@ -1,6 +1,15 @@
 ## Unreleased
 
 
+- feat(loom/llm-prompt-memory-injection): `build_llm_draft` 在 `loom_memory_mode=enabled/ab` 时注入 `previous_summary` 到 LLM prompt（`build_chapter_imitation_prompt` 新增 `previous_summary`/`active_characters`/`unresolved_threads` 参数）；当前仅注入 summary（角色/线索列表暂不注入，避免约束过多）；LLM judge 单次对比显示 baseline 仍占优（confidence=0.85），但单次对比不具统计意义，需多次运行取平均；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-llm-prompt-memory-injection-01`
+
+  Constraint: 单次 LLM 对比有随机性，需 5-10 次运行取平均才能得出可靠结论
+  Tested: test_loom_phase1-5 (125 passed), 手工 LLM judge 验证
+  Not-tested: 多次运行统计验证（需更多 API 调用）
+
+
 - fix(loom/character-count-filter): `_count_active_characters` 改为只计算 `importance_score >= 0.35` 的节点，避免把所有 164 个历史实体都算入 `character_count`；修复后 ch7 `character_count=12`（之前为 164）；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-character-count-filter-01`
@@ -231,6 +240,13 @@
   Changelist: `CL-benchmark-phase4-01`
 
   Tested: deepseek-v4-flash 真实 API 调用
+
+
+- benchmark(deconstruction/phase4-merged): Phase 4 + merged stages 最终配置 benchmark：单章 170.2s，比原始基线 330.4s 快 48%，同时具备全部质量增强（因果图/置信度校准/自评估/实体消解/弧记忆/伏笔追踪）。
+
+  Changelist: `CL-benchmark-phase4-merged-01`
+
+  Tested: deepseek-v4-flash 真实 API 调用，NOVEL_ANALYZER_USE_MERGED_STAGES=true
 
 
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。

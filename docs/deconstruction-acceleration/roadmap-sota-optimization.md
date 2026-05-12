@@ -94,7 +94,8 @@
 - Merged (3 calls): 254.0s/chapter (Phase 1)
 - Phase 3 (adaptive + entity + arc): 136.0s/chapter
 - Phase 4 (full stack + causal + calibration + self-eval): 241.3s/chapter
-- Total speedup vs baseline: **27% faster** with significantly richer analysis quality
+- Phase 4 + merged stages (recommended config): 170.2s/chapter
+- Total speedup vs baseline: **48% faster** (merged) with full quality stack
 - Quality-only overhead (Phase 4 vs Phase 3): +105s for causal graph + calibration + self-eval
 
 ---
