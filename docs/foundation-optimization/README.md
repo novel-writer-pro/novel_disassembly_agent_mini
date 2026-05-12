@@ -195,3 +195,11 @@ Week 3: P2-1 (entity cache) + 30 章稳定性验证
 | Claim Grounding | 分词 → 关键词提取更准 |
 | Self-evaluation | context 压缩 → 小模型判断更准 |
 | Auto-repair | 所有底座提升 → 需要修复的问题更少 |
+
+---
+
+## 详细建设指南
+
+| 文档 | 说明 |
+|------|------|
+| [embedding-rerank-dictionary-guide.md](./embedding-rerank-dictionary-guide.md) | Embedding/Rerank 微调 + 分词词典建设全流程 |
