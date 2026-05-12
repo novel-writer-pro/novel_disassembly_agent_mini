@@ -249,6 +249,42 @@
   Tested: deepseek-v4-flash 真实 API 调用，NOVEL_ANALYZER_USE_MERGED_STAGES=true
 
 
+- fix(risk/silent-exceptions): 所有新增 service 的 exception handler 从 silent pass 改为 logger.warning/debug，确保故障可观测；涉及 foreshadowing、entity resolution、causal graph、confidence calibration、self-evaluation 五处。
+
+  Changelist: `CL-risk-silent-exceptions-01`
+
+  Tested: 31/32 analysis tests passed (1 pre-existing API connectivity failure)
+
+
+- fix(risk/rate-limit-backoff): _invoke_with_retry 新增 rate-limit 感知退避（429 → 5s*attempt, 503 → 3s*attempt），替代原有固定 1s 退避；减少 rate-limit 场景下的无效重试。
+
+  Changelist: `CL-risk-rate-limit-backoff-01`
+
+  Tested: 31/32 analysis tests passed
+
+
+- feat(risk/provider-circuit-breaker): _invoke_with_retry 集成 provider_health 读写，每次调用后记录成功/失败状态；degraded 状态下发出 warning 日志，为后续自动熔断打基础。
+
+  Changelist: `CL-risk-provider-circuit-breaker-01`
+
+  Constraint: 当前仅记录+告警，不自动阻断调用（避免误杀）
+  Tested: 31/32 analysis tests passed
+
+
+- fix(risk/materialization-timeout-monitor): materialization 阶段新增耗时监控，超过 60s 发出 warning 日志，便于定位慢物化问题。
+
+  Changelist: `CL-risk-materialization-timeout-01`
+
+  Tested: 31/32 analysis tests passed
+
+
+- fix(risk/merged-stage-fallback): merged stage 解析失败时自动降级到非合并路径（分别调用 intake/facts 和 evidence/analysis），避免因 LLM 返回格式异常导致整章失败。
+
+  Changelist: `CL-risk-merged-stage-fallback-01`
+
+  Tested: 31/32 analysis tests passed
+
+
 - perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。
 
   Changelist: `CL-loom-importance-score-perf-01`

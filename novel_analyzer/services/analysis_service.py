@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import logging
 import re
 import time
 from collections.abc import Sequence
@@ -17,6 +18,8 @@ from sqlalchemy.orm import Session
 
 from novel_analyzer.agent.pipeline import ChapterAgentContext, build_agent_stage_prompts
 from novel_analyzer.config.settings import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 from novel_analyzer.database.models import (
     ChapterManifest,
     ChapterSegment,
@@ -36,6 +39,7 @@ from novel_analyzer.domain.schemas import (
 )
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
+from novel_analyzer.runtime.provider_health import read_provider_health, record_provider_health
 from novel_analyzer.services.causal_graph_service import CausalGraphService
 from novel_analyzer.services.confidence_calibration_service import ConfidenceCalibrationService
 from novel_analyzer.services.context_service import ContextService
@@ -197,15 +201,32 @@ class AnalysisService:
         return cast(dict[str, object], loaded)
 
     def _invoke_with_retry(self, model: object, prompt: str) -> BaseMessage:
+        health = read_provider_health(self.settings)
+        if health.degraded_events >= 5 and health.last_status == 'degraded':
+            logger.warning("provider degraded (%d events), pre-check passed but monitoring", health.degraded_events)
+
         last_error: Exception | None = None
         for attempt in range(1, 4):
             try:
-                return cast(BaseMessage, model.invoke(prompt))  # type: ignore[attr-defined]
+                result = cast(BaseMessage, model.invoke(prompt))  # type: ignore[attr-defined]
+                record_provider_health(ok=True, settings=self.settings)
+                return result
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
+                record_provider_health(ok=False, error_message=str(exc)[:200], settings=self.settings)
                 if attempt == 3:
                     raise
-                time.sleep(float(attempt))
+                error_text = str(exc).lower()
+                if '429' in error_text or 'rate limit' in error_text:
+                    wait = float(attempt) * 5.0
+                    logger.warning("rate limited (attempt %d/3), backing off %.1fs", attempt, wait)
+                    time.sleep(wait)
+                elif '503' in error_text or 'service temporarily unavailable' in error_text:
+                    wait = float(attempt) * 3.0
+                    logger.warning("provider 503 (attempt %d/3), backing off %.1fs", attempt, wait)
+                    time.sleep(wait)
+                else:
+                    time.sleep(float(attempt))
         assert last_error is not None
         raise last_error
 
@@ -712,8 +733,8 @@ class AnalysisService:
                 self.foreshadowing_service.update_from_facts(
                     branch_id, chapter_index, foreshadowing_dicts, state_summary,
                 )
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("foreshadowing lifecycle update failed ch%d: %s", chapter_index, exc)
 
     def _update_causal_graph(
         self,
@@ -736,8 +757,8 @@ class AnalysisService:
             self.causal_graph.detect_logic_breaks(
                 branch_id, chapter_index, facts_data,
             )
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("causal graph update failed ch%d: %s", chapter_index, exc)
 
     def analyze_range(
         self,
@@ -843,16 +864,30 @@ class AnalysisService:
                         )
                     )
                     if self.settings.use_merged_stages:
-                        intake, facts = self._invoke_merged_stage(
-                            stage_model,
-                            prompts['intake_and_facts'],
-                            'intake', ChapterIntakeOutput,
-                            'facts', ChapterFactExtractionOutput,
-                        )
-                        intake = cast(ChapterIntakeOutput, intake)
-                        facts = cast(ChapterFactExtractionOutput, facts).ensure_minimum_facts(
-                            intake.cleaned_text
-                        )
+                        try:
+                            intake, facts = self._invoke_merged_stage(
+                                stage_model,
+                                prompts['intake_and_facts'],
+                                'intake', ChapterIntakeOutput,
+                                'facts', ChapterFactExtractionOutput,
+                            )
+                            intake = cast(ChapterIntakeOutput, intake)
+                            facts = cast(ChapterFactExtractionOutput, facts).ensure_minimum_facts(
+                                intake.cleaned_text
+                            )
+                        except (ValueError, KeyError) as merge_exc:
+                            logger.warning(
+                                "merged intake+facts failed ch%d, falling back to separate stages: %s",
+                                segment.chapter_index, merge_exc,
+                            )
+                            intake = cast(
+                                ChapterIntakeOutput,
+                                self._invoke_stage(
+                                    stage_model,
+                                    prompts['chapter_intake'],
+                                    ChapterIntakeOutput,
+                                ),
+                            )
                     else:
                         intake = cast(
                             ChapterIntakeOutput,
@@ -924,31 +959,84 @@ class AnalysisService:
                         emit_event=True,
                     )
                     if self.settings.use_merged_stages:
-                        ea_prompt_map = build_agent_stage_prompts(
-                            ChapterAgentContext(
-                                chapter_index=segment.chapter_index,
-                                normalized_title=segment.normalized_title,
-                                chapter_content=stage_chapter_content,
-                                previous_summary=previous_summary,
-                                intake_json=intake.model_dump_json(indent=2),
-                                prior_context_json=adaptive_prior_json,
-                                graph_context_json=adaptive_graph_json,
-                                state_summary_json=compact_state_summary_json,
-                                cleaned_text=intake.cleaned_text,
-                                window_summary=window_summary,
-                                fact_json=facts.model_dump_json(indent=2),
+                        try:
+                            ea_prompt_map = build_agent_stage_prompts(
+                                ChapterAgentContext(
+                                    chapter_index=segment.chapter_index,
+                                    normalized_title=segment.normalized_title,
+                                    chapter_content=stage_chapter_content,
+                                    previous_summary=previous_summary,
+                                    intake_json=intake.model_dump_json(indent=2),
+                                    prior_context_json=adaptive_prior_json,
+                                    graph_context_json=adaptive_graph_json,
+                                    state_summary_json=compact_state_summary_json,
+                                    cleaned_text=intake.cleaned_text,
+                                    window_summary=window_summary,
+                                    fact_json=facts.model_dump_json(indent=2),
+                                )
                             )
-                        )
-                        evidence, analysis = self._invoke_merged_stage(
-                            active_model,
-                            ea_prompt_map['evidence_and_analysis'],
-                            'evidence', EvidenceBindingOutput,
-                            'analysis', ChapterAnalysisLayerOutput,
-                        )
-                        evidence = cast(EvidenceBindingOutput, evidence).ensure_from_facts(facts)
-                        analysis = cast(
-                            ChapterAnalysisLayerOutput, analysis
-                        ).ensure_minimum_analysis(segment.normalized_title, evidence)
+                            evidence, analysis = self._invoke_merged_stage(
+                                active_model,
+                                ea_prompt_map['evidence_and_analysis'],
+                                'evidence', EvidenceBindingOutput,
+                                'analysis', ChapterAnalysisLayerOutput,
+                            )
+                            evidence = cast(EvidenceBindingOutput, evidence).ensure_from_facts(facts)
+                            analysis = cast(
+                                ChapterAnalysisLayerOutput, analysis
+                            ).ensure_minimum_analysis(segment.normalized_title, evidence)
+                        except (ValueError, KeyError) as merge_exc:
+                            logger.warning(
+                                "merged evidence+analysis failed ch%d, falling back: %s",
+                                segment.chapter_index, merge_exc,
+                            )
+                            evidence_prompt_map = build_agent_stage_prompts(
+                                ChapterAgentContext(
+                                    chapter_index=segment.chapter_index,
+                                    normalized_title=segment.normalized_title,
+                                    chapter_content=stage_chapter_content,
+                                    previous_summary=previous_summary,
+                                    intake_json=intake.model_dump_json(indent=2),
+                                    prior_context_json=adaptive_prior_json,
+                                    graph_context_json=adaptive_graph_json,
+                                    state_summary_json='{}',
+                                    cleaned_text=intake.cleaned_text,
+                                    window_summary='',
+                                    fact_json=facts.model_dump_json(indent=2),
+                                )
+                            )
+                            evidence = cast(
+                                EvidenceBindingOutput,
+                                self._invoke_stage(
+                                    active_model,
+                                    evidence_prompt_map['evidence_binder'],
+                                    EvidenceBindingOutput,
+                                ),
+                            ).ensure_from_facts(facts)
+                            analysis_prompt_map = build_agent_stage_prompts(
+                                ChapterAgentContext(
+                                    chapter_index=segment.chapter_index,
+                                    normalized_title=segment.normalized_title,
+                                    chapter_content=stage_chapter_content,
+                                    previous_summary=previous_summary,
+                                    intake_json=intake.model_dump_json(indent=2),
+                                    prior_context_json=adaptive_prior_json,
+                                    graph_context_json=adaptive_graph_json,
+                                    state_summary_json=compact_state_summary_json,
+                                    cleaned_text=intake.cleaned_text,
+                                    window_summary=window_summary,
+                                    fact_json=facts.model_dump_json(indent=2),
+                                    evidence_bound_json=evidence.model_dump_json(indent=2),
+                                )
+                            )
+                            analysis = cast(
+                                ChapterAnalysisLayerOutput,
+                                self._invoke_stage(
+                                    active_model,
+                                    analysis_prompt_map['analysis_generator'],
+                                    ChapterAnalysisLayerOutput,
+                                ),
+                            ).ensure_minimum_analysis(segment.normalized_title, evidence)
                     else:
                         evidence_prompt_map = build_agent_stage_prompts(
                             ChapterAgentContext(
@@ -1223,8 +1311,8 @@ class AnalysisService:
                                 result.needs_human_review or not self_eval.passed
                             ),
                         })
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("self-evaluation failed ch%d: %s", segment.chapter_index, exc)
                 gate = QualityGateService.evaluate(chapter_content, result)
                 result = result.model_copy(update={
                     'quality_gate_notes': gate.notes,
@@ -1261,16 +1349,23 @@ class AnalysisService:
                     progress_percent=95,
                     emit_event=True,
                 )
+                mat_start = time.time()
                 self.retrieval_service.materialize_for_artifact(artifact.id)
                 self.fact_service.materialize_for_artifact(artifact.id)
                 self.graph_service.materialize_for_artifact(artifact.id)
+                mat_elapsed = time.time() - mat_start
+                if mat_elapsed > 60.0:
+                    logger.warning(
+                        "materialization slow ch%d: %.1fs (retrieval+fact+graph)",
+                        segment.chapter_index, mat_elapsed,
+                    )
                 self._update_foreshadowing_lifecycle(
                     branch_id, segment.chapter_index, stage_payload, state_summary,
                 )
                 try:
                     self.entity_resolution.build_alias_map(branch_id)
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("entity resolution failed ch%d: %s", segment.chapter_index, exc)
                 self._update_causal_graph(
                     branch_id, segment.chapter_index, stage_payload, state_summary,
                 )
@@ -1278,8 +1373,8 @@ class AnalysisService:
                     self.confidence_calibration.calibrate_chapter_facts(
                         branch_id, segment.chapter_index,
                     )
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("confidence calibration failed ch%d: %s", segment.chapter_index, exc)
                 self.fact_service.materialize_window_if_ready(
                     branch_id,
                     segment.chapter_index,
