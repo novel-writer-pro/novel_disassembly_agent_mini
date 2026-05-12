@@ -317,6 +317,14 @@
   Not-tested: 跳过 checker 对 risk card 覆盖率的影响
 
 
+- feat(product/quality-dashboard-api): 新增 `GET /api/quality-dashboard?branch_id=...` 端点，返回分支级质量仪表盘数据：章节数、事实总数、平均置信度、低置信度比例、伏笔追踪状态、每章概要（实体数/事件数/是否需人工复核/profile 状态）。
+
+  Changelist: `CL-product-quality-dashboard-api-01`
+
+  Tested: import verification
+  Not-tested: 前端消费与渲染
+
+
 - fix(risk/silent-exceptions): 所有新增 service 的 exception handler 从 silent pass 改为 logger.warning/debug，确保故障可观测；涉及 foreshadowing、entity resolution、causal graph、confidence calibration、self-evaluation 五处。
 
   Changelist: `CL-risk-silent-exceptions-01`

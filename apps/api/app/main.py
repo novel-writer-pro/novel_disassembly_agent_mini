@@ -2232,6 +2232,83 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             )
         return _response(start_response, status="200 OK", payload=asdict(report))
 
+    if path == "/api/quality-dashboard":
+        branch_id = params.get("branch_id")
+        if not branch_id:
+            return _response(start_response, status="400 Bad Request", payload={"error": "branch_id required"})
+        try:
+            factory = create_session_factory(get_settings())
+            with factory() as session:
+                from novel_analyzer.services.foreshadowing_service import ForeshadowingService
+                from novel_analyzer.services.confidence_calibration_service import ConfidenceCalibrationService
+                from novel_analyzer.services.claim_grounding_service import ClaimGroundingService
+                from novel_analyzer.database.models import ChapterArtifact as CA
+
+                artifacts = session.scalars(
+                    select(CA)
+                    .where(CA.branch_id == branch_id)
+                    .where(CA.visibility == 'active')
+                    .order_by(CA.chapter_index)
+                ).all()
+                facts_all = session.scalars(
+                    select(FactRecord)
+                    .where(FactRecord.branch_id == branch_id)
+                    .order_by(FactRecord.chapter_index)
+                ).all()
+
+                chapter_count = len(artifacts)
+                total_facts = len(facts_all)
+                avg_confidence = (
+                    sum(f.confidence for f in facts_all) / total_facts
+                    if total_facts else 0.0
+                )
+                low_confidence_count = sum(1 for f in facts_all if f.confidence < 0.4)
+
+                fs = ForeshadowingService(session)
+                open_threads = fs.get_open_threads(branch_id, before_chapter=9999, limit=50)
+
+                chapter_summaries = []
+                for art in artifacts[:50]:
+                    payload_data = art.payload_json or {}
+                    profile = payload_data.get('_deconstruction_profile', {})
+                    chapter_summaries.append({
+                        'chapter_index': art.chapter_index,
+                        'has_summary': bool(str(payload_data.get('chapter_summary', '')).strip()),
+                        'entity_count': len(payload_data.get('key_entities', [])),
+                        'event_count': len(payload_data.get('key_events', [])),
+                        'needs_human_review': payload_data.get('needs_human_review', False),
+                        'profile': profile.get('profile', 'unknown'),
+                        'writer_lens_status': profile.get('writer_lens_status', 'unknown'),
+                    })
+
+                dashboard = {
+                    'branch_id': branch_id,
+                    'chapter_count': chapter_count,
+                    'total_facts': total_facts,
+                    'avg_confidence': round(avg_confidence, 3),
+                    'low_confidence_facts': low_confidence_count,
+                    'low_confidence_ratio': round(low_confidence_count / total_facts, 3) if total_facts else 0.0,
+                    'open_foreshadowing_threads': [
+                        {
+                            'label': t.label,
+                            'status': t.status,
+                            'chapter_planted': t.chapter_planted,
+                            'age': (chapter_count - t.chapter_planted) if chapter_count else 0,
+                            'reinforcements': t.reinforcement_count,
+                        }
+                        for t in open_threads
+                    ],
+                    'foreshadowing_open_count': len(open_threads),
+                    'chapters': chapter_summaries,
+                }
+            return _response(start_response, status="200 OK", payload=dashboard)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+
     if path == "/api/whole-book-imitation-readiness":
         try:
             payload = _whole_book_readiness_payload(
