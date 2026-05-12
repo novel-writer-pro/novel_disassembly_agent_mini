@@ -46,6 +46,7 @@
 |------|------|--------|
 | [cli-operations-manual.md](./cli-operations-manual.md) | CLI 命令真相源 | 使用者 |
 | [direct-usage-guide.md](./direct-usage-guide.md) | 日常操作顺序 | 使用者 |
+| [novel-ingest-input-spec.md](./novel-ingest-input-spec.md) | 小说输入规范 (novel.txt 格式) | 使用者 |
 | [api-current-surface.md](./api-current-surface.md) | 当前 API 端点清单 | 接入者 |
 | [interface-manifest.md](./interface-manifest.md) | 稳定接口结构 | 后端 |
 | [deconstruction-acceleration/roadmap-sota-optimization.md](./deconstruction-acceleration/roadmap-sota-optimization.md) | SOTA 优化路线图 + 架构图 | 架构师 |
