@@ -9356,5 +9356,62 @@ def loom_reference_eval(
                 echo(f"  ch{ch}: fidelity={result_a.overall_fidelity:.3f} ({result_a.evaluation_method})")
 
 
+@app.command()
+def loom_benchmark(
+    branch_id: str = typer.Argument(..., help="Branch ID to benchmark against."),
+    chapters: str = typer.Option("2,3,4,5", "--chapters", help="Comma-separated chapter indices."),
+    use_llm: bool = typer.Option(False, "--use-llm", help="Use LLM for imitation and reference eval."),
+    model_name: str = typer.Option("", "--model-name"),
+    output_file: Path | None = typer.Option(None, "--output-file", help="Write JSON report to this path."),
+    database_url: str | None = None,
+) -> None:
+    """Run comprehensive model benchmark: deconstruction + imitation + risk check scoring."""
+    from novel_analyzer.services.model_benchmark_service import ModelBenchmarkService
+
+    settings = _safe_settings(database_url)
+    settings = settings.model_copy(update={
+        "loom_memory_mode": "enabled",
+        "loom_pairwise_enabled": True,
+        "loom_style_enabled": True,
+        "loom_character_enabled": True,
+    })
+
+    chapter_list = [int(c.strip()) for c in chapters.split(",") if c.strip()]
+    factory = create_session_factory(settings)
+
+    llm_client = None
+    if use_llm:
+        llm_client = _loom_build_llm_client(True, database_url, model_name)
+
+    with factory() as session:
+        svc = ModelBenchmarkService(session, settings)
+        report = svc.run_benchmark(branch_id, chapter_list, llm_client=llm_client)
+
+    echo("=== Model Benchmark Report ===")
+    echo(f"model:               {report.model_name}")
+    echo(f"branch:              {report.branch_id}")
+    echo(f"chapters:            {report.chapters_tested}")
+    echo(f"elapsed:             {report.elapsed_seconds:.1f}s")
+    echo("")
+    echo("scores:")
+    echo(f"  deconstruction:    {report.deconstruction_score:.4f}")
+    echo(f"  imitation:         {report.imitation_score:.4f}")
+    echo(f"  risk_check:        {report.risk_check_score:.4f}")
+    echo(f"  ────────────────────────────")
+    echo(f"  composite:         {report.composite_score:.4f}")
+    echo("")
+    echo("dimensions:")
+    for d in report.dimensions:
+        echo(f"  {d.name:25s} {d.score:.4f}")
+
+    if output_file is not None:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(
+            json.dumps(report.to_dict(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        echo(f"\nreport written to: {output_file}")
+
+
 if __name__ == "__main__":
     app()
