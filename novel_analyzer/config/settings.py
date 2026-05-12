@@ -63,6 +63,20 @@ class Settings(BaseSettings):
     gate_model_name: str = Field(default="")
     use_merged_stages: bool = Field(default=True)
 
+    embedding_api_base: str = Field(default="")
+    embedding_api_key: str = Field(default="")
+    embedding_api_format: str = Field(default="openai")
+    embedding_http_timeout: float = Field(default=30.0)
+    embedding_http_max_retries: int = Field(default=2)
+    embedding_http_verify_ssl: bool = Field(default=True)
+
+    rerank_api_base: str = Field(default="")
+    rerank_api_key: str = Field(default="")
+    rerank_api_format: str = Field(default="tei")
+    rerank_http_timeout: float = Field(default=30.0)
+    rerank_http_max_retries: int = Field(default=2)
+    rerank_http_verify_ssl: bool = Field(default=True)
+
     # ------------------------------------------------------------------
     # Loom feature flags
     # disabled  – Loom is off, existing pipeline unchanged
