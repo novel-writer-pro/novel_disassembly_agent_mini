@@ -40,7 +40,9 @@ from novel_analyzer.domain.schemas import (
 from novel_analyzer.llm.client import build_chat_model
 from novel_analyzer.llm.prompts import build_chapter_analysis_prompt
 from novel_analyzer.runtime.provider_health import read_provider_health, record_provider_health
+from novel_analyzer.services.auto_repair_service import AutoRepairService
 from novel_analyzer.services.causal_graph_service import CausalGraphService
+from novel_analyzer.services.claim_grounding_service import ClaimGroundingService
 from novel_analyzer.services.confidence_calibration_service import ConfidenceCalibrationService
 from novel_analyzer.services.context_service import ContextService
 from novel_analyzer.services.entity_resolution_service import EntityResolutionService
@@ -1313,6 +1315,25 @@ class AnalysisService:
                         })
                 except Exception as exc:  # noqa: BLE001
                     logger.debug("self-evaluation failed ch%d: %s", segment.chapter_index, exc)
+                try:
+                    result = ClaimGroundingService.apply_grounding_to_result(
+                        chapter_content, result,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("claim grounding failed ch%d: %s", segment.chapter_index, exc)
+                try:
+                    local_facts = facts if 'facts' in dir() else ChapterFactExtractionOutput()
+                    local_evidence = evidence if 'evidence' in dir() else EvidenceBindingOutput()
+                    result, local_facts, repair_report = AutoRepairService.repair(
+                        result, local_facts, local_evidence, chapter_content,
+                    )
+                    if repair_report.actions_taken:
+                        logger.info(
+                            "auto-repair ch%d: %d fixes", segment.chapter_index,
+                            len(repair_report.actions_taken),
+                        )
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("auto-repair failed ch%d: %s", segment.chapter_index, exc)
                 gate = QualityGateService.evaluate(chapter_content, result)
                 result = result.model_copy(update={
                     'quality_gate_notes': gate.notes,

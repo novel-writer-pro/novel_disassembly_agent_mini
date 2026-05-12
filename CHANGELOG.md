@@ -249,6 +249,33 @@
   Tested: deepseek-v4-flash 真实 API 调用，NOVEL_ANALYZER_USE_MERGED_STAGES=true
 
 
+- feat(gate/claim-grounding): 新增 ClaimGroundingService，对 continuity_notes/state_transition_notes/resolutions/unresolved_threads 中的每条分析声称做原文锚定验证（关键词匹配 + bigram 覆盖率）；无法锚定的声称自动降级到 ambiguous_points，grounding_ratio < 30% 触发 needs_human_review。
+
+  Changelist: `CL-gate-claim-grounding-01`
+
+  Constraint: 纯确定性文本匹配，零 LLM 成本
+  Tested: 31/32 analysis tests passed
+  Not-tested: 中文分词边界对 grounding 精度的影响
+
+
+- feat(gate/auto-repair): 新增 AutoRepairService，在 quality_gate 前自动修复 4 类问题：overclaim 降级（unsupported → ambiguous）、重复去重、thin facts 回填、空摘要兜底生成。修复后的 result 直接用于后续 commit，减少人工复核负担。
+
+  Changelist: `CL-gate-auto-repair-01`
+
+  Constraint: 修复策略保守（只降级/去重/回填），不会凭空创造新内容
+  Tested: 31/32 analysis tests passed
+  Not-tested: 修复对下游 QA/search 质量的影响
+
+
+- feat(gate/confidence-gated-activation): 新增 ConfidenceGatedActivationService，根据章节 fact 置信度分布动态决定哪些 risk checker 需要运行、severity 阈值如何调整；高置信度章节跳过冗余 checker（如 power_scaling），低置信度章节加严所有 checker。
+
+  Changelist: `CL-gate-confidence-gated-activation-01`
+
+  Constraint: 当前为独立 service，尚未集成到 RiskAuditService 主循环（需后续接入）
+  Tested: import verification
+  Not-tested: 动态门控对 risk card 生成数量的影响
+
+
 - fix(risk/silent-exceptions): 所有新增 service 的 exception handler 从 silent pass 改为 logger.warning/debug，确保故障可观测；涉及 foreshadowing、entity resolution、causal graph、confidence calibration、self-evaluation 五处。
 
   Changelist: `CL-risk-silent-exceptions-01`

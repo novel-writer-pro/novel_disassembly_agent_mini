@@ -80,6 +80,24 @@
 - **Change**: `SelfEvaluationService` 5 项确定性自检
 - **Files**: `novel_analyzer/services/self_evaluation_service.py`
 
+### 4D. Claim-level Grounding
+- **Status**: Done
+- **Impact**: 每条分析声称必须有原文锚定，无锚定自动降级
+- **Change**: `ClaimGroundingService` 关键词 + bigram 多策略原文匹配；ungrounded claims 移入 ambiguous_points
+- **Files**: `novel_analyzer/services/claim_grounding_service.py`
+
+### 4E. Auto-repair Loop
+- **Status**: Done
+- **Impact**: 检测到问题后自动修复而非仅标记
+- **Change**: `AutoRepairService` 4 类修复（overclaim 降级、去重、thin facts 回填、空摘要兜底）
+- **Files**: `novel_analyzer/services/auto_repair_service.py`
+
+### 4F. Confidence-gated Checker Activation
+- **Status**: Done
+- **Impact**: 低置信度章节加严检查，高置信度章节跳过冗余 checker
+- **Change**: `ConfidenceGatedActivationService` 动态决定 checker 激活和 severity 调整
+- **Files**: `novel_analyzer/services/confidence_gated_activation_service.py`
+
 ---
 
 ## Phase 5 - 未来优化方向 (Planned)
