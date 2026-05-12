@@ -7,6 +7,83 @@
 - 面向作家的阅读型工作台
 - 拆书结果卡片化渲染
 - 原文回看与章节跳转
+- 仿写工作台与质量监控
+
+## 开发环境
+
+建议 Node.js 版本：
+- Node.js 20+
+
+建议先设置 npm 源：
+
+```bash
+npm config set registry https://registry.npmmirror.com/
+```
+
+## 安装依赖
+
+```bash
+cd apps/web
+npm install
+```
+
+## 开发启动
+
+```bash
+npm run dev
+```
+
+默认地址：`http://127.0.0.1:4173`
+
+## 后端 API
+
+前端依赖两个后端服务：
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| 旧 WSGI API | 8011 | 拆书/导入/分析/阅读/问答 |
+| 新 FastAPI | 8100 | Loom 信号/仿写/质量中心 |
+
+启动后端：
+
+```bash
+# 旧 WSGI（拆书核心）
+source .venv/bin/activate
+python -m apps.api.app.main
+
+# 新 FastAPI（仿写 + Loom）
+uvicorn apps.api.app.fastapi_app:app --port 8100
+```
+
+## 页面结构
+
+| 路径 | 页面 | 功能 |
+|------|------|------|
+| `/library` | 小说空间 | 多本小说管理、导入 |
+| `/control` | 开始整理 | 导入、分析进度、流水线 |
+| `/reader` | 章节阅读 | 拆书结果、人物/事件/线索 |
+| `/writing` | 仿写工作台 | 仿写生成、Loom 信号、还原度评估 |
+| `/quality` | 质量中心 | 健康度、趋势、Pairwise 进度 |
+| `/qa` | 小说问答 | 检索与追问 |
+| `/ops` | 导出与恢复 | 导出手册、异常恢复 |
+
+## 技术栈
+
+- Next.js 15 + React 18
+- Ant Design 5
+- TypeScript 5.8
+
+## 目录结构
+
+```
+src/
+├── components/     # 共享组件（WorkbenchLayout, ChapterSidebar 等）
+├── hooks/          # 状态管理（useWorkbenchState）
+├── lib/            # API 客户端（api.ts, loom-api.ts）
+├── pages/          # 页面路由
+├── styles/         # 全局样式
+└── types/          # TypeScript 类型定义
+```
 
 ## 开发环境
 

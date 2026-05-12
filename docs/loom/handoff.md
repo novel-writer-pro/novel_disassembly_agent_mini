@@ -296,6 +296,64 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
    - enhanced: `quality-hold`、`style_signal_count=2`、`chapter_quality_signal_count=2`
    - 这证明 enhanced 会真实改变执行器侧产物，但还不能证明最终仿写效果提升。
 
+### 4.0.19 Web + API 全面覆盖（2026-05-12）
+
+**Changelist marker**：`CL-web-api-full-coverage-01`
+
+**这次解决了什么：**
+
+1. **FastAPI v0.3.0 模块化后端（8 个路由模块，32 个 API 端点）**
+   - `routers/loom.py` — Loom 信号（4 端点）
+   - `routers/writer.py` — 仿写 + 流式输出（3 端点）
+   - `routers/quality.py` — 质量中心（4 端点）
+   - `routers/library.py` — 小说库（2 端点）
+   - `routers/chapters.py` — 章节数据（5 端点）
+   - `routers/risk_review.py` — 风险检查（5 端点）
+   - `routers/pipeline.py` — 流水线 + 问答 + 搜索（5 端点）
+   - `routers/import_recovery.py` — 导入 + 恢复（3 端点）
+
+2. **流式输出端点（SSE）**
+   - `POST /api/writer/imitate-stream` — LLM 仿写正文流式
+   - `POST /api/ask-branch-stream` — 小说问答流式
+
+3. **前端新增页面**
+   - `/writing` — 仿写工作台
+   - `/quality` — 质量中心
+   - 导航栏新增两个入口
+
+4. **启动方式**
+   ```bash
+   uvicorn apps.api.app.fastapi_app:app --port 8100 --reload
+   ```
+   OpenAPI docs: `http://127.0.0.1:8100/docs`
+
+**测试结果：** TypeScript 0 errors, 130 Loom tests passed, 端到端验证通过
+
+### 4.0.18 Web + API 模块化开发（2026-05-12）
+
+**Changelist marker**：`CL-web-api-modular-frontend-01`
+
+**这次解决了什么：**
+
+1. **FastAPI 模块化后端**
+   - `apps/api/app/fastapi_app.py` — 应用入口（CORS + 路由注册）
+   - `apps/api/app/routers/loom.py` — Loom 信号端点（status/assemble/signals/reference-eval）
+   - `apps/api/app/routers/writer.py` — 仿写端点（imitate/signals）
+   - `apps/api/app/routers/quality.py` — 质量端点（health/trend/gate-summary/pairs-stats）
+   - 启动：`uvicorn apps.api.app.fastapi_app:app --port 8100`
+   - OpenAPI docs：`http://127.0.0.1:8100/docs`
+
+2. **前端新增页面**
+   - `/writing` — 仿写工作台（章节选择 + 目标输入 + LLM/Skeleton 切换 + Loom 信号面板 + 记忆上下文 + 还原度详情）
+   - `/quality` — 质量中心（健康度 + 趋势 + Pairwise 进度 + Gate 状态）
+   - 导航栏新增"仿写工作台"和"质量中心"入口
+
+3. **前端 API 客户端**
+   - `src/lib/loom-api.ts` — 10 个 API 调用函数
+   - `src/types/loom.ts` — 完整类型定义
+
+**测试结果：** TypeScript 编译通过，130 个 Loom 测试全部通过，FastAPI /health 验证通过
+
 ### 4.0.17 reference-eval 批量对比 + gate fidelity-blocked（2026-05-12）
 
 **Changelist marker**：`CL-loom-reference-eval-batch-compare-01`

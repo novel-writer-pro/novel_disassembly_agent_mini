@@ -719,9 +719,75 @@ novel-analyzer loom-ab-compare output/baseline/ output/loom/ \
   --output-file output/ab-report.json
 ```
 
-对比两个 writer-imitate 输出目录的 `character_ooc` 触发率，输出 reduction%，判断是否达到 ≥20% 目标。
+对比两个 writer-imitate 输出目录的 `character_ooc` 触发率和 Loom 信号差异。
 
-### 12.12 export-whole-book-imitation-run — 导出整书仿写执行报告（含 Loom 摘要）
+输出包含：
+- character_ooc 触发率对比（目标下降 ≥20%）
+- risk level / verdict 分布变化
+- Loom 信号对比（tension / hook / style_drift / chars / reader_sim / fidelity）
+
+### 12.12 loom-reference-eval — 仿写还原度评估（vs 原文）
+
+```bash
+# 单章评估
+novel-analyzer loom-reference-eval <branch_id> <chapter_index> <draft_dir>
+
+# 批量评估（chapter_index=0 扫描目录内所有章节）
+novel-analyzer loom-reference-eval <branch_id> 0 <draft_dir>
+
+# 两个目录对比（A vs B 各自对原文的 fidelity）
+novel-analyzer loom-reference-eval <branch_id> 0 <draft_dir_a> --compare-dir <draft_dir_b>
+```
+
+以原文为 gold standard，评估仿写草案的还原程度。6 个维度：
+
+| 维度 | 含义 |
+|------|------|
+| `structure_fidelity` | 场景节拍、推进节奏是否与原文一致 |
+| `character_fidelity` | 角色行为、语气、动机是否与原文一致 |
+| `style_fidelity` | 文风、用词习惯、叙事视角是否与原文一致 |
+| `continuity_fidelity` | 是否正确承接前文、保持世界观一致 |
+| `tension_fidelity` | 冲突密度、悬念设置是否与原文水平匹配 |
+| `information_density` | 每千字推进量是否与原文匹配 |
+
+输出示例（单章）：
+```
+=== Loom Reference Eval (chapter 2) ===
+original_title:      二姑卫荭
+draft_len:           1363
+evaluation_method:   llm_reference_judge
+overall_fidelity:    0.4900
+confidence:          0.8200
+suggestion:          将大段连续叙述拆解为原文式的短句短段...
+
+dimensions:
+  structure_fidelity: 0.3200
+  character_fidelity: 0.5200
+  style_fidelity: 0.3800
+  continuity_fidelity: 0.6800
+  tension_fidelity: 0.5000
+  information_density: 0.5800
+```
+
+输出示例（批量对比）：
+```
+=== Loom Reference Eval (batch) ===
+branch_id:   62e636f0-c901-4167-aa1c-aff3da9c83ef
+draft_dir:   /tmp/enhanced/
+compare_dir: /tmp/baseline/
+
+  ch2: A=0.350  B=0.150  delta=-0.200
+  ch3: A=0.300  B=0.450  delta=+0.150
+  ch4: A=0.450  B=0.150  delta=-0.300
+```
+
+**关键说明**：
+- Reference-based 评估是**主评估方式**（衡量"像不像原作"）
+- Pairwise A vs B 是辅助评估（衡量"哪个更好看"）
+- `overall_fidelity < 0.5` 时 gate summary 触发 `fidelity-blocked`
+- 需要 LLM provider 可用；不可用时 fallback 到 heuristic（基于文本长度和字符重叠）
+
+### 12.13 export-whole-book-imitation-run — 导出整书仿写执行报告（含 Loom 摘要）
 
 当你需要把整书仿写的 dry-run / sandbox execute 结果交给下游系统、评估层或后续执行器消费时，使用：
 
@@ -762,8 +828,10 @@ python3 -m novel_analyzer.cli.app export-whole-book-imitation-run \
 | `session_loom_signals.average_tension_score` | whole-book 平均张力分 |
 | `session_loom_signals.average_style_drift_score` | 风格漂移均值 |
 | `session_loom_signals.average_hook_density` | 爽点/钩子密度均值 |
+| `session_loom_signals.average_reader_sim_score` | 读者模拟满意度均值 |
+| `session_loom_signals.average_reference_fidelity` | 对原文还原度均值 |
 | `session_loom_gate_summary.quality_verdict` | `quality-pass` / `quality-hold` |
-| `session_loom_gate_summary.gate_status` | 当前 whole-book Loom gate 状态 |
+| `session_loom_gate_summary.gate_status` | 当前 whole-book Loom gate 状态（monitoring / fidelity-blocked / reader-sim-warn） |
 | `executed_steps[*].loom_signals` | 每章真实 harness Loom 输出的聚合快照 |
 
 #### 解决的问题
@@ -780,7 +848,7 @@ python3 -m pytest tests/test_whole_book_imitation_service.py tests/test_cli.py -
 
 重点检查导出 JSON 中是否存在：
 - `session_loom_signals.contract_version=whole-book-session-loom-signals.v1`
-- `session_loom_gate_summary.contract_version=loom-gate-summary.v1`
+- `session_loom_gate_summary.contract_version=loom-gate-summary.v2`
 
 ### 12.13 bootstrap_weitu_validation_workspace.py — 卫图样例验证工作区一键初始化
 

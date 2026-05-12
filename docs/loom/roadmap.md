@@ -135,30 +135,41 @@ Phase 5 🔄 进行中：读者模拟 + 多线调度 + 自适应编排（7/10 �
 
 ---
 
-## Phase 3 🔲：Reward Model + 生产部署
+## Phase 3 🔄：Reward Model + Reference Eval + 生产部署
 
 ### 前提条件
 
 1. **Alembic migration 在 PostgreSQL 生产环境运行**
    ```bash
-   poetry run novel-analyzer db-upgrade
-   # 或直接：
    alembic upgrade head
    ```
    migration 文件：`alembic/versions/20260509_01_loom_memory_fields.py`
 
-2. **积累 500+ pairwise 对比数据**（从 harness 迭代产物 + manual_eval_record 提取）
+2. **积累 500+ pairwise 对比数据**（当前 30 pairs = 6%）
 
-3. **A/B 实验验证**：同一本书 20 章，旧路径 vs Loom enabled 路径，确认 `character_ooc` 触发率下降 ≥ 20%
+3. **Reference fidelity 验证**：enhanced fidelity 在 ch≥10 时稳定 ≥1.5x baseline
 
 ### 任务清单
+
+**P0：Reference-based 评估验证**
+
+```
+✅ ReferenceEvalService 实现（6 维度 LLM judge + heuristic fallback）
+✅ loom-reference-eval CLI（单章 + 批量 + --compare-dir 对比）
+✅ _loom_reference_fidelity 自动集成到 writer-imitate --use-llm 产物
+✅ reference_fidelity 进入 whole-book 聚合（average_reference_fidelity）
+✅ reference_fidelity 进入 gate summary（fidelity-blocked 状态）
+✅ 卫图 ch2 验证：enhanced fidelity=0.78 vs baseline=0.18（4.3x）
+□ 多章节统计验证（ch10-30 跑 5 次取平均）
+□ 连续写作场景验证（ch10→ch11→ch12 carry_over 传递）
+```
 
 **P1：生产部署**
 
 ```
 □ 在 PostgreSQL 生产环境运行 Alembic migration 20260509_01
 □ 将 NOVEL_ANALYZER_LOOM_MEMORY_MODE 从 shadow 切换到 ab（50/50 分流）
-✅ 运行 A/B 实验工具：loom-ab-compare（character_ooc 触发率对比，目标下降 ≥ 20%）
+✅ 运行 A/B 实验工具：loom-ab-compare + loom-reference-eval
 □ 验收通过后切换到 enabled
 □ 更新 carry-over-migration.md 记录实验结果
 ```

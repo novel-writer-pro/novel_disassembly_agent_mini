@@ -1,4 +1,4 @@
-import { AppstoreOutlined, BookOutlined, DashboardOutlined, ExportOutlined, MessageOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, BookOutlined, DashboardOutlined, EditOutlined, ExportOutlined, LineChartOutlined, MessageOutlined } from "@ant-design/icons";
 import { Layout, Menu, Space, Tag, Typography } from "antd";
 import type { ReactNode } from "react";
 
@@ -30,6 +30,16 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
       title: "章节阅读",
       subtitle: "围绕当前章节查看人物、事件、线索与原文，按作家的阅读习惯来组织。",
       tip: "按章节阅读与回看",
+    },
+    writing: {
+      title: "仿写工作台",
+      subtitle: "基于原文生成仿写草案，实时查看 Loom 信号和还原度评估。",
+      tip: "仿写与评估",
+    },
+    quality: {
+      title: "质量中心",
+      subtitle: "整书健康度、质量趋势、Gate 状态和 Pairwise 数据积累进度。",
+      tip: "质量监控",
     },
     qa: {
       title: "小说问答",
@@ -66,6 +76,8 @@ export default function WorkbenchLayout({ activeKey, chapterMenu, onNavigate, cu
             { key: "library", icon: <AppstoreOutlined />, label: "小说空间" },
             { key: "control", icon: <DashboardOutlined />, label: "开始整理" },
             { key: "reader", icon: <BookOutlined />, label: "章节阅读" },
+            { key: "writing", icon: <EditOutlined />, label: "仿写工作台" },
+            { key: "quality", icon: <LineChartOutlined />, label: "质量中心" },
             { key: "qa", icon: <MessageOutlined />, label: "小说问答" },
             { key: "ops", icon: <ExportOutlined />, label: "导出与恢复" },
           ]}

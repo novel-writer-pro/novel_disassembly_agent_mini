@@ -2,42 +2,107 @@
 
 独立 Web backend 目录。
 
-当前阶段：
-- 已完成 shared application seam
-- 当前由这里承接 HTTP 路由、章节读取、恢复动作、导出下载
-- 当前实现契约以 `docs/api-current-surface.md` 为准；未来目标契约仍参考 `docs/api-contract.md`
+## 架构
 
-当前可以直接运行一个轻量 WSGI 原型后端：
+当前有两套后端：
+
+| 服务 | 文件 | 端口 | 说明 |
+|------|------|------|------|
+| 旧 WSGI | `app/main.py` | 8011 | 原始单体后端，兼容现有前端 |
+| **新 FastAPI** | `app/fastapi_app.py` | 8100 | 模块化后端，推荐使用 |
+
+## 启动新 FastAPI 后端
 
 ```bash
-.venv/bin/python -m apps.api.app.main
+source .venv/bin/activate
+uvicorn apps.api.app.fastapi_app:app --port 8100 --reload
 ```
 
-提供：
-- `GET /health`
-- `GET /api/meta`
-- `GET /api/mock/import?profile=auto-lite`
-- `POST /api/import`
-- `POST /api/start`
-- `POST /api/recovery`
-- `GET /api/run-snapshot?run_id=...&branch_id=...`
-- `GET /api/branch-snapshot?run_id=...&branch_id=...`
-- `GET /api/chapter-bundle?branch_id=...&chapter_index=...`
-- `GET /api/chapter-qa-context?branch_id=...&chapter_index=...`
-- `GET /api/chapter-source?branch_id=...&chapter_index=...`
-- `GET /api/chapter-jobs?branch_id=...&limit=200`
-- `GET /api/chapter-job-events?branch_id=...&chapter_index=...&limit=100`
-- `GET /api/review-clusters?run_id=...&branch_id=...`
-- `GET /api/review-cluster-summary?run_id=...&branch_id=...`
-- `GET /api/review-cluster-history?branch_id=...&cluster_key=...`
-- `POST /api/review-cluster-update`
-- `POST /api/review-batch-execute`
-- `GET /api/review-batch-history?branch_id=...`
-- `GET /api/library`
-- `GET /api/job-events?branch_id=...&limit=100`
-- `POST /api/pipeline/start-range`
-- `GET /api/pipeline/status?pipeline_run_id=...`
-- `GET /api/pipeline/runs?branch_id=...`
+访问 API 文档：`http://127.0.0.1:8100/docs`
+
+## 路由模块
+
+```
+app/
+├── fastapi_app.py          # FastAPI 应用入口
+├── main.py                 # 旧 WSGI 后端（保留兼容）
+└── routers/
+    ├── __init__.py         # 共享工具（get_db_session, resolve_settings）
+    ├── loom.py             # Loom 信号（status/assemble/signals/reference-eval）
+    ├── writer.py           # 仿写（imitate/imitate-stream/signals）
+    ├── quality.py          # 质量中心（health/trend/gate-summary/pairs-stats）
+    ├── library.py          # 小说库（library/run-snapshot）
+    ├── chapters.py         # 章节数据（bundle/source/qa-context/jobs/branch-snapshot）
+    ├── risk_review.py      # 风险检查（clusters/summary/update/audit/signals）
+    ├── pipeline.py         # 流水线 + 问答（start-range/runs/ask/search）
+    └── import_recovery.py  # 导入 + 恢复（import/recovery/branch-exports）
+```
+
+## API 端点清单（32 个）
+
+### 小说管理
+- `GET /api/library` — 小说列表
+- `POST /api/import` — 导入小说（multipart file upload）
+- `GET /api/run-snapshot` — 运行快照
+- `GET /api/branch-exports` — 分支导出概览
+
+### 章节数据
+- `GET /api/chapter-bundle` — 章节分析包
+- `GET /api/chapter-source` — 原文
+- `GET /api/chapter-qa-context` — QA 上下文
+- `GET /api/chapter-jobs` — 章节任务列表
+- `GET /api/branch-snapshot` — 分支完整快照
+
+### Loom 信号
+- `GET /api/loom/status` — 分支 Loom 状态
+- `GET /api/loom/assemble` — carry_over_state
+- `GET /api/loom/signals` — 章节信号详情
+- `GET /api/loom/reference-eval` — 还原度评估
+
+### 仿写
+- `POST /api/writer/imitate` — 触发仿写（JSON 响应）
+- `POST /api/writer/imitate-stream` — 流式仿写（SSE）
+- `GET /api/writer/imitate/signals` — 仿写信号
+
+### 质量中心
+- `GET /api/quality/health` — 整书健康度
+- `GET /api/quality/trend` — 质量趋势
+- `GET /api/quality/gate-summary` — Gate 状态
+- `GET /api/quality/pairs-stats` — Pairwise 统计
+
+### 风险检查
+- `GET /api/review-clusters` — 风险聚类列表
+- `GET /api/review-cluster-summary` — 风险聚类摘要
+- `POST /api/review-cluster-update` — 更新聚类状态
+- `GET /api/risk-audit` — 章节风险审计
+- `GET /api/risk-signals` — 风险语义信号
+
+### 流水线 + 问答
+- `POST /api/pipeline/start-range` — 启动批量分析
+- `GET /api/pipeline/runs` — 流水线运行列表
+- `POST /api/ask-branch` — 小说问答（JSON）
+- `POST /api/ask-branch-stream` — 小说问答（SSE 流式）
+- `GET /api/search-branch` — 语义搜索
+
+### 恢复
+- `POST /api/recovery` — 恢复失败章节
+
+### 系统
+- `GET /health` — 健康检查
+
+## 流式输出
+
+以下端点使用 Server-Sent Events (SSE) 格式：
+
+- `POST /api/writer/imitate-stream` — LLM 仿写正文流式输出
+- `POST /api/ask-branch-stream` — 小说问答流式输出
+
+事件格式：
+```
+data: {"type": "chunk", "content": "..."}
+data: {"type": "done"}
+data: {"type": "error", "content": "..."}
+```
 - `GET /api/pipeline/progress-stream?pipeline_run_id=...`
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
