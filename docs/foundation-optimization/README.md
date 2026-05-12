@@ -203,6 +203,7 @@ Week 3: P2-1 (entity cache) + 30 章稳定性验证
 | 文档 | 说明 |
 |------|------|
 | [embedding-rerank-dictionary-guide.md](./embedding-rerank-dictionary-guide.md) | Embedding/Rerank 微调 + 分词词典建设全流程 |
+| [pg-jieba-userdict-ops.md](./pg-jieba-userdict-ops.md) | 领域词典接入 pg_jieba 运维指南（P0 运维侧半程） |
 | [http-backend-guide.md](./http-backend-guide.md) | HTTP Backend 配置指南 (OpenAI/TEI 协议支持) |
 
 ---
