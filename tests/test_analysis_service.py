@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import json
 import pytest
 from langchain_core.messages import AIMessage
 from sqlalchemy import create_engine, select
@@ -1065,3 +1066,164 @@ def test_stage_prompts_use_compacted_previous_summary(monkeypatch, tmp_path: Pat
         assert ('上一章摘要' * 200) not in joined
         assert '…' in joined
         assert len(joined) < 12000
+
+
+def test_merged_stages_invoke_merged_stage_parses_both_keys(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=True))
+
+        intake_obj = ChapterIntakeOutput(
+            chapter_index=1,
+            normalized_title='一',
+            cleaned_text='第1章 一\n卫图觉醒命格。',
+            paragraph_blocks=[],
+            dialogue_candidates=[],
+            scene_candidates=[],
+            notes=[],
+        )
+        facts_obj = ChapterFactExtractionOutput(
+            characters=[EvidenceNote(label='卫图', evidence=['卫图觉醒命格'], confidence=0.9)],
+            events=[EvidenceNote(label='觉醒命格', evidence=['命格：大器晚成'], confidence=0.9)],
+        )
+        evidence_obj = EvidenceBindingOutput(
+            retained_items=[EvidenceNote(label='卫图', evidence=['卫图觉醒命格'], confidence=0.9)],
+            unsupported_items=[],
+            coverage_summary='ok',
+        )
+        analysis_obj = ChapterAnalysisLayerOutput(
+            summary=AnalysisSummary(one_sentence='卫图觉醒。', short='卫图觉醒命格。', detailed='卫图觉醒命格。'),
+            themes=[],
+            pacing={'overall': '平稳'},
+            emotional_curve={'start': '平静', 'end': '振奋'},
+            continuity_notes=['主线开启'],
+        )
+        guard_obj = AntiFabricationGuardOutput()
+
+        merged_call_count = [0]
+
+        def _fake_merged(_model, _prompt, key_a, schema_a, key_b, schema_b):
+            merged_call_count[0] += 1
+            if key_a == 'intake':
+                return (intake_obj, facts_obj)
+            return (evidence_obj, analysis_obj)
+
+        def _fake_stage(_model, _prompt, schema):
+            return guard_obj
+
+        fallback_json = json.dumps({
+            'chapter_index': 1, 'normalized_title': '一',
+            'chapter_summary': '卫图觉醒命格。', 'key_entities': ['卫图'],
+            'key_events': ['觉醒命格'], 'continuity_notes': [], 'dimensions': [],
+            'writer_learning_notes': [], 'unsupported_inferences': [],
+            'ambiguous_points': [], 'needs_human_review': False,
+            'quality_gate_notes': [], 'hook_score': 4.0,
+            'state_transition_notes': [], 'evidence_backed_resolutions': [],
+            'unresolved_threads': [],
+        })
+
+        def _fake_retry(_model, _prompt):
+            return AIMessage(content=fallback_json)
+
+        service._invoke_merged_stage = _fake_merged  # type: ignore[method-assign]
+        service._invoke_stage = _fake_stage  # type: ignore[method-assign]
+        service._invoke_with_retry = _fake_retry  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        artifact = session.scalar(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .where(ChapterArtifact.visibility == 'active')
+        )
+        assert artifact is not None
+        assert artifact.payload_json['chapter_summary'] == '卫图觉醒命格。'
+        assert '卫图' in artifact.payload_json['key_entities']
+
+
+def test_merged_stages_fallback_on_bad_response(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=True))
+
+        intake_obj = ChapterIntakeOutput(
+            chapter_index=1,
+            normalized_title='一',
+            cleaned_text='第1章 一\n卫图觉醒命格。',
+            paragraph_blocks=[],
+            dialogue_candidates=[],
+            scene_candidates=[],
+            notes=[],
+        )
+        facts_obj = ChapterFactExtractionOutput(
+            characters=[EvidenceNote(label='卫图', evidence=['卫图'], confidence=0.9)],
+            events=[EvidenceNote(label='觉醒', evidence=['觉醒'], confidence=0.9)],
+        )
+        evidence_obj = EvidenceBindingOutput(
+            retained_items=[EvidenceNote(label='卫图', evidence=['卫图'], confidence=0.9)],
+            unsupported_items=[],
+            coverage_summary='ok',
+        )
+        analysis_obj = ChapterAnalysisLayerOutput(
+            summary=AnalysisSummary(short='卫图觉醒。'),
+            continuity_notes=['开启'],
+        )
+        guard_obj = AntiFabricationGuardOutput()
+
+        merged_call_count = [0]
+        fallback_triggered = [False]
+
+        def _fake_merged(_model, _prompt, key_a, schema_a, key_b, schema_b):
+            merged_call_count[0] += 1
+            if merged_call_count[0] == 1:
+                raise ValueError('bad merged response')
+            return (evidence_obj, analysis_obj)
+
+        def _fake_stage(_model, _prompt, schema):
+            if schema.__name__ == 'ChapterIntakeOutput':
+                fallback_triggered[0] = True
+                return intake_obj
+            if schema.__name__ == 'ChapterFactExtractionOutput':
+                return facts_obj
+            if schema.__name__ == 'EvidenceBindingOutput':
+                return evidence_obj
+            if schema.__name__ == 'ChapterAnalysisLayerOutput':
+                return analysis_obj
+            return guard_obj
+
+        fallback_json = json.dumps({
+            'chapter_index': 1, 'normalized_title': '一',
+            'chapter_summary': '卫图觉醒。', 'key_entities': ['卫图'],
+            'key_events': ['觉醒'], 'continuity_notes': [], 'dimensions': [],
+            'writer_learning_notes': [], 'unsupported_inferences': [],
+            'ambiguous_points': [], 'needs_human_review': False,
+            'quality_gate_notes': [], 'hook_score': 4.0,
+            'state_transition_notes': [], 'evidence_backed_resolutions': [],
+            'unresolved_threads': [],
+        })
+
+        def _fake_retry(_model, _prompt):
+            return AIMessage(content=fallback_json)
+
+        service._invoke_merged_stage = _fake_merged  # type: ignore[method-assign]
+        service._invoke_stage = _fake_stage  # type: ignore[method-assign]
+        service._invoke_with_retry = _fake_retry  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        assert fallback_triggered[0]
+        artifact = session.scalar(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .where(ChapterArtifact.visibility == 'active')
+        )
+        assert artifact is not None
+        assert artifact.payload_json['chapter_summary']
