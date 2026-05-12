@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import time
+import urllib.request
+import urllib.error
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -134,6 +138,92 @@ class OnnxCrossEncoderRerankProvider:
         return cast(list[float], logits.astype(np.float32).tolist())
 
 
+@dataclass(slots=True)
+class HttpRerankProvider:
+    model_name: str
+    api_base: str
+    api_key: str = ""
+    api_format: str = "tei"
+    timeout: float = 30.0
+    max_retries: int = 2
+    verify_ssl: bool = True
+
+    def rerank(self, query: str, documents: list[str]) -> list[float]:
+        if not documents:
+            return []
+
+        api_base = self.api_base.rstrip("/")
+        
+        if self.api_format == "tei":
+            url = f"{api_base}/rerank"
+            body = {
+                "query": query,
+                "texts": documents,
+                "raw_scores": False,
+                "return_text": False,
+                "truncate": True,
+            }
+        else:
+            raise ValueError(f"Unsupported api_format: {self.api_format}")
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(body).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                
+                if self.api_key:
+                    req.add_header("Authorization", f"Bearer {self.api_key}")
+
+                context = None
+                if not self.verify_ssl:
+                    import ssl
+                    context = ssl._create_unverified_context()
+
+                with urllib.request.urlopen(req, timeout=self.timeout, context=context) as response:
+                    response_data = json.loads(response.read().decode("utf-8"))
+                    
+                    scores = [0.0] * len(documents)
+                    for item in response_data:
+                        idx = item["index"]
+                        score = item["score"]
+                        if 0 <= idx < len(documents):
+                            scores[idx] = score
+                    
+                    return scores
+
+            except urllib.error.HTTPError as exc:
+                status_code = exc.code
+                response_body = exc.read().decode("utf-8", errors="replace")[:500]
+                
+                if 400 <= status_code < 500:
+                    raise RuntimeError(
+                        f"HTTP {status_code} from {url}: {response_body}"
+                    ) from exc
+                
+                if attempt < self.max_retries:
+                    time.sleep(0.5 * (2 ** attempt))
+                    continue
+                
+                raise RuntimeError(
+                    f"HTTP {status_code} from {url} after {self.max_retries + 1} attempts: {response_body}"
+                ) from exc
+
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                if attempt < self.max_retries:
+                    time.sleep(0.5 * (2 ** attempt))
+                    continue
+                
+                raise RuntimeError(
+                    f"Failed to connect to {url} after {self.max_retries + 1} attempts: {exc}"
+                ) from exc
+
+        raise RuntimeError(f"Unexpected: exhausted retries for {url}")
+
+
 @lru_cache(maxsize=8)
 def _cached_rerank_provider(
     backend: str,
@@ -141,6 +231,12 @@ def _cached_rerank_provider(
     model_path: str,
     cache_dir: str,
     max_length: int,
+    api_base: str,
+    api_key: str,
+    api_format: str,
+    http_timeout: float,
+    http_max_retries: int,
+    http_verify_ssl: bool,
 ) -> RerankProvider:
     if not model_name:
         return DisabledRerankProvider()
@@ -150,6 +246,16 @@ def _cached_rerank_provider(
             model_path=model_path or None,
             cache_dir=cache_dir or None,
             max_length=max_length,
+        )
+    if backend in ('http', 'tei'):
+        return HttpRerankProvider(
+            model_name=model_name,
+            api_base=api_base,
+            api_key=api_key,
+            api_format=api_format,
+            timeout=http_timeout,
+            max_retries=http_max_retries,
+            verify_ssl=http_verify_ssl,
         )
     return DisabledRerankProvider()
 
@@ -164,4 +270,10 @@ def get_rerank_provider(settings: Settings | None = None) -> RerankProvider:
         runtime.rerank_model_path,
         runtime.rerank_cache_dir,
         runtime.rerank_max_length,
+        runtime.rerank_api_base,
+        runtime.rerank_api_key,
+        runtime.rerank_api_format,
+        runtime.rerank_http_timeout,
+        runtime.rerank_http_max_retries,
+        runtime.rerank_http_verify_ssl,
     )
