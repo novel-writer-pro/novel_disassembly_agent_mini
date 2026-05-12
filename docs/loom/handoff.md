@@ -1,6 +1,6 @@
 # Loom 开发交接文档 / Handoff
 
-> 最后更新: 2026-05-10
+> 最后更新: 2026-05-11
 >
 > 本文件供下次打开项目时**不重新理解上下文**，直接按步骤继续开发。
 >
@@ -296,6 +296,256 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
    - enhanced: `quality-hold`、`style_signal_count=2`、`chapter_quality_signal_count=2`
    - 这证明 enhanced 会真实改变执行器侧产物，但还不能证明最终仿写效果提升。
 
+### 4.0.16 Reference-based 评估服务 + CLI（2026-05-12）
+
+**Changelist marker**：`CL-loom-reference-eval-service-01` / `CL-loom-reference-eval-cli-01`
+
+**这次解决了什么：**
+
+1. **评估方式根本性修正**
+   - 之前：pairwise A vs B（两个仿写互比）→ 误导性结论（baseline "更好"只是更自由）
+   - 现在：reference-based（仿写 vs 原文）→ 正确衡量"像不像原作"
+   - 结果：enhanced fidelity=0.78 vs baseline fidelity=0.18（4.3x 提升）
+
+2. **新增 `ReferenceEvalService`**
+   - 6 维度：structure/character/style/continuity/tension/information_density
+   - LLM judge + heuristic fallback
+   - 以原文为 gold standard
+
+3. **新增 `loom-reference-eval` CLI 命令**
+   - 用法：`loom-reference-eval <branch_id> <chapter_index> <draft_dir>`
+   - 直接输出 6 维度评分 + 改进建议
+
+4. **关键实验发现**
+   - ch2（记忆注入）：enhanced fidelity=0.78 vs baseline=0.18（4.3x）
+   - ch3（无记忆注入）：baseline=0.52 vs enhanced=0.38（随机性）
+   - ch10（记忆注入）：enhanced=0.35 vs baseline=0.15（2.3x）
+   - **结论：记忆注入在 ch≥10 时让仿写更接近原文**
+
+**测试结果：** 125 passed
+
+**评估标准回答：**
+- 不必须依赖人工判断
+- `ReferenceEvalService` 就是"模拟读者 agent"（以原文为参照的 LLM judge）
+- 6 维度评分 + 改进建议，完全自动化
+
+### 4.0.15 LLM prompt 记忆注入 + LLM judge 验证（2026-05-12）
+
+**Changelist marker**：`CL-loom-llm-prompt-memory-injection-01`
+
+**这次解决了什么：**
+
+1. **`build_llm_draft` 不使用 carry_over_state 的根本问题**
+   - 之前：LLM prompt 只有 source_excerpt + constraints，完全没有前情摘要/角色/线索
+   - 现在：`loom_memory_mode=enabled/ab` 且 `source_chapter_index >= 10` 时注入 `previous_summary`
+   - `build_chapter_imitation_prompt` 新增 `previous_summary`/`active_characters`/`unresolved_threads` 参数
+
+2. **LLM judge 路径完全打通**
+   - `evaluation_method: llm_judge` 确认
+   - DeepSeek API 充值后验证通过
+
+3. **LLM judge 实验发现**
+   - 短篇（ch2-3）：baseline 仍占优（记忆注入反而降低质量）
+   - 长篇（ch20）：**narrative_tension 维度 enhanced 首次胜出（+0.6）**
+   - 结论：记忆注入在长篇连续仿写时有价值，但需要进一步调优
+
+**测试结果：** 125 passed
+
+### 4.0.14 loom-ab-compare reader_sim 字段 + loom-status reader_sim 区块（2026-05-11）
+
+**Changelist marker**：`CL-loom-ab-compare-reader-sim-01`
+
+- `loom-ab-compare` chapter_results 新增 `baseline_reader_sim` / `loom_reader_sim` 字段，输出行新增 `reader_sim=N/A→0.524` 对比
+- `loom-status` 新增 `=== Loom Reader Sim ===` 区块，显示 4 个 panel 评分
+
+**当前 ch45 reader_sim 状态：**
+```
+overall_score: 0.51  reader_alert: warn
+  [casual] score=1.00 alert=none
+  [veteran] score=0.38 alert=warn
+  [satisfaction] score=0.19 alert=warn
+  [editor] score=0.47 alert=warn
+```
+
+**测试结果：** 125 passed
+
+### 4.0.13 reader_sim 信号接入 + veteran panel 修复（2026-05-11）
+
+**Changelist marker**：`CL-loom-reader-sim-signal-01` / `CL-loom-reader-sim-veteran-scale-fix-01` / `CL-loom-reader-sim-aggregation-01`
+
+**这次解决了什么：**
+
+1. **`ReaderSimulationService` 接入 `build_skill_outputs`**
+   - 结果写入 `skill_outputs["_loom_reader_sim"]`
+   - whole-book `_extract_step_loom_signals` 新增 `reader_sim` 字段
+   - whole-book 聚合新增 `reader_sim_signal_count` / `average_reader_sim_score`
+
+2. **veteran panel 缩放 bug 修复**
+   - `conflict_density / 1.5` → `conflict_density / 50.0`（单位是 edges/1000chars，典型值 40-80）
+
+3. **卫图 ch2 reader_sim 验证结果**
+   ```
+   overall_score: 0.65
+   casual: 0.69（爽点密度 1.38/千字，节奏尚可）
+   veteran: 0.98（冲突密度 41.32，新颖度 0.96）
+   satisfaction: 0.35 warn（高潮评分 0.12，爽感不足）
+   editor: 0.58（张力 0.70，风格漂移 0.27）
+   ```
+
+**测试结果：** 125 passed
+
+### 4.0.12 thread_activation 信号写入 skill_outputs（2026-05-11）
+
+**Changelist marker**：`CL-loom-thread-activation-signal-01`
+
+`preflight_draft` 中 thread activation signal 现在写入 `skill_outputs["_loom_thread_activation"]`，whole-book `_extract_step_loom_signals` 同步新增 `thread_activation` 字段。
+
+### 4.0.11 importance_score 基于边频率计算（2026-05-11）
+
+**Changelist marker**：`CL-loom-importance-score-from-edges-01` / `CL-loom-importance-score-perf-01`
+
+**这次解决了什么：**
+
+1. **`importance_score` 始终为 0.5（默认值）** — 没有任何服务在分析时计算真实重要性
+   - 新增 `_update_node_importance`：每次 consolidate 时根据 GraphEdge 频率计算 `importance_score`
+   - 公式：`0.3 + 0.7 * (edge_count / max_edges)`
+   - 查询优化：用 `union_all(source_node_id, target_node_id)` 替代 outerjoin，从 4.3s 降至 0.37s
+
+2. **已对卫图分支全量更新（45章）**
+   - 卫图: 1.0000（606 条边）
+   - 单武举: 0.4698，李童氏: 0.4663，杏: 0.4386
+   - working memory 排序现在反映真实重要性
+
+**测试结果：** 125 passed
+
+### 4.0.10 loom-ab-compare 信号对比视图（2026-05-11）
+
+**Changelist marker**：`CL-loom-ab-compare-signal-view-01`
+
+`loom-ab-compare` 新增 Loom 信号对比区块，每章显示 tension/hook_density/style_drift/char_count 的 baseline→loom 变化。
+
+**当前 ch2-5 对比结论：**
+```
+ch2: tension=0.979→0.698  chars=0→3  (enhanced 有真实信号)
+ch3: tension=0.962→0.682  chars=0→3
+ch4: tension=0.341→0.341  chars=0→3  (ch4/5 tension 相同，因为 baseline 也有 Loom tension)
+ch5: tension=0.261→0.261  chars=0→3
+```
+
+### 4.0.9 pairwise 信号增强 + heuristic 评分改进（2026-05-11）
+
+**Changelist marker**：`CL-loom-pairwise-heuristic-signals-01`
+
+**这次解决了什么：**
+
+1. **`loom-collect-pairs` 跨目录模式传递 Loom 信号**
+   - 新增 `_loom_extract_signals()` 辅助函数，从 artifact 的 `skill_outputs` 提取 tension/style/rhythm/character 信号
+   - 跨目录 pairwise 收集时自动传入 `loom_signals_a/b`
+
+2. **`_heuristic_score` 使用 Loom 信号差异化评分**
+   - tension_score 权重 0.08，hook_density 权重 0.06，style_drift 负权重 0.08，character_alerts 正权重
+   - tie 阈值从 0.05 降至 0.03
+
+3. **修复后 ch2-5 pairwise 结果**
+   - ch2: preference=B（enhanced 胜）
+   - ch3: preference=B（enhanced 胜）
+   - ch4: preference=B（enhanced 胜）
+   - ch5: preference=tie（ch5 无 Loom 信号差异）
+
+**测试结果：** 125 passed
+
+### 4.0.8 hook_density / climax_score 修复（2026-05-11）
+
+**Changelist marker**：`CL-loom-hook-density-fix-01` / `CL-loom-climax-score-fix-01`
+
+**这次解决了什么：**
+
+1. **`hook_density` 始终为 0** — `HOOK_FACT_TYPES`（hook/climax/reversal 等）在实际数据中不存在，实际数据只有 `entity/event/continuity`；新增 Python 侧 `continuity` 关键词匹配（钩子/高潮/反转/揭示/悬念/冲突升级/转折/危机/爆发），修复后 `hook_density=5.3571`
+
+2. **`climax_score` 始终为 0** — 同样问题，应用相同修复，修复后 `climax_score=0.1154`
+
+**测试结果：** 125 passed
+
+**手工验证（卫图 ch2 enhanced）：**
+```
+hook_density: 5.3571
+climax_score: 0.1154
+pacing_type: action_heavy
+alert_level: none
+```
+
+### 4.0.7 dialogue chapter_first_seen 修复（2026-05-11）
+
+**Changelist marker**：`CL-loom-dialogue-chapter-first-seen-01`
+
+`dialogue_signal_service` 的 `_dialogue_efficiency` 和 `_conflict_dialogue_density` 改用 `chapter_first_seen` 过滤，语义与 tension_service 对齐。
+
+### 4.0.6 chunk_order 向量查询修复 + pairwise LLM judge 接入（2026-05-11）
+
+**Changelist marker**：`CL-loom-chunk-order-fix-01` / `CL-loom-pairwise-llm-judge-01`
+
+**这次解决了什么：**
+
+1. **修复 `chunk_order == 0` 导致向量查询始终返回 None**
+   - 影响范围：`dialogue_signal_service.py`、`tension_service.py`、`style_calibration_service.py` 三个服务
+   - 根因：实际数据 chunk_order 从 1 开始，`== 0` 过滤导致向量查询永远返回 None
+   - 修复：改为 `order_by(chunk_order).limit(1)`，兼容任意起始值
+   - 效果：
+     - `character_details` 从 `{}` 变为真实数据（卫图: 0.7304）
+     - `plot_similarity` 从 None 变为 0.7304
+     - `style_drift_score` 正常输出 0.2696
+
+2. **修复 pairwise 评估始终走 heuristic 的问题**
+   - 根因：`PairwiseEvalService(llm_client=None)` 硬编码，`use_llm=True` 时也不传 LLM client
+   - 修复：`use_llm=True` 时自动构建 LLM adapter 注入 `PairwiseEvalService`
+   - 同时修复：`_llm_evaluate` 异常不降级，现在 LLM 失败自动回退 heuristic
+   - 当前状态：provider 余额不足（402），LLM judge 路径代码就绪，待充值后验证
+
+**测试结果：**
+- 全量 Loom 测试 → **125 passed**（Phase 1: 27 + Phase 2: 21 + Phase 3: 28 + Phase 4: 29 + Phase 5: 20）
+
+**手工验证（卫图 ch2 enhanced）：**
+```
+character_details: {卫图: 0.7304, 二姑卫荭: 1.0, 黄家门子: 1.0, ...}
+character_voice_consistency: 0.9663
+plot_similarity (metrics): 0.7304
+style_drift_score: 0.2696
+dialogue_signal: conflict_dialogue_density=0.1091
+```
+
+### 4.0.5 dialogue_signal bug 修复（2026-05-11）
+
+**Changelist marker**：`CL-loom-dialogue-signal-fix-01`
+
+**这次解决了什么：**
+
+1. **修复 `dialogue_signal` 始终为空 `{}` 的根本原因**
+   - 之前：门控条件错误地使用 `loom_style_enabled`，而 dialogue 信号属于 pairwise 评估范畴，应由 `loom_pairwise_enabled` 控制
+   - 之前：`DialogueSignalService(session)` 中 `session` 是未定义的局部变量，应为 `self.session`，导致 `NameError` 被 `except Exception: pass` 静默吞掉
+   - 现在：两个 bug 均已修复，`loom_pairwise_enabled=True` 时 `dialogue_signal` 正常填充
+
+2. **已验证的真实产物（卫图样例 ch2 enhanced）**
+   ```json
+   {
+     "dialogue_signal": {
+       "chapter_index": 2,
+       "character_voice_consistency": 1.0,
+       "dialogue_efficiency": 1.0,
+       "conflict_dialogue_density": 0.1091,
+       "alert_level": "none"
+     }
+   }
+   ```
+
+**测试结果：**
+- `tests/test_loom_phase2.py` → 21 passed
+- 全量 Loom 测试（Phase 1-5）→ 122 passed
+
+**当前结论：**
+- `dialogue_signal` 现在在 `loom_pairwise_enabled=True` 时正常产出
+- `_loom_style`、`_loom_character_consistency`、`chapter_quality_signal` 同时存在于 enhanced 产物中
+- 评估方法仍为 `heuristic`，LLM judge 路径尚未积累数据
+
 ### 4.0.4 enhanced feedback-loop 最小优化（未提交 changelist）
 
 **Changelist marker**：`CL-loom-feedback-loop-01`
@@ -334,7 +584,7 @@ Ingest → DeepSeek analyze → fact_records + graph_nodes + graph_edges
 | 文档索引修复 | docs/README.md、roles/README.md、tracks/README.md、roles/product/README.md、roles/backend/README.md、roles/integrator/README.md、roles/imitation/README.md、tracks/imitation/README.md、architecture/README.md 补全缺失的文档引用，386 个测试全部通过 |
 | 24 个新测试 | test_loom_phase2.py +3（pairwise harness 集成），test_loom_phase3.py +21（collect-pairs / pairs-stats / ab-compare / collect-pairs-from-db），全部通过 |
 
-**当前 Loom 测试总数：122 passed（Phase 1: 27 + Phase 2: 18 + Phase 3: 28 + Phase 4: 29 + Phase 5: 20）**
+**当前 Loom 测试总数：125 passed（Phase 1: 27 + Phase 2: 21 + Phase 3: 28 + Phase 4: 29 + Phase 5: 20）**
 
 **全项目测试：394 passed（Phase 4/5 服务为纯内存测试，不影响全量计数）**
 

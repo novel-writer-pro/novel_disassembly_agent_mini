@@ -40,6 +40,7 @@
 - `GET /api/pipeline/runs?branch_id=...`
 - `GET /api/runtime-health`
 - `GET /api/provider-health`
+- `GET /api/quality-dashboard?branch_id=...`
 - `GET /api/whole-book-imitation-readiness`
 - `POST /api/whole-book-imitation-run`
 - `POST /api/search-branch`

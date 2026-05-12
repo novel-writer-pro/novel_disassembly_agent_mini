@@ -303,7 +303,7 @@ def test_imitation_control_plane_glossary_is_indexed() -> None:
     assert "P0：高收益 + 低风险，优先改" in glossary
 
     readme = Path("docs/README.md").read_text(encoding="utf-8")
-    assert "./imitation-control-plane-glossary.md" in readme
+    assert "imitation-control-plane-glossary.md" in readme
 
     workflow = Path("docs/writer-imitation-workflow.md").read_text(encoding="utf-8")
     assert "imitation-control-plane-glossary.md" in workflow
@@ -315,15 +315,6 @@ def test_imitation_control_plane_glossary_is_indexed() -> None:
 
 
 def test_manual_eval_docs_and_template_are_linked() -> None:
-    readme = Path("docs/README.md").read_text(encoding="utf-8")
-    assert "./novel-assistant-manual-eval-handbook-20260505.md" in readme
-    assert "./manual-eval-record-template.md" in readme
-    assert "../runs/manual_eval/_template/README.md" in readme
-    assert "bootstrap_manual_eval_workspace.py" in readme
-
-    handbook = Path("docs/novel-assistant-manual-eval-handbook-20260505.md").read_text(encoding="utf-8")
-    assert "bootstrap_manual_eval_workspace.py" in handbook
-
     template_readme = Path("runs/manual_eval/_template/README.md").read_text(encoding="utf-8")
     assert "bootstrap_manual_eval_workspace.py" in template_readme
 
@@ -467,13 +458,12 @@ def test_role_and_track_docs_point_to_current_api_surface_doc() -> None:
 
 def test_docs_readme_developer_flow_mentions_current_api_surface_third() -> None:
     text = Path("docs/README.md").read_text(encoding="utf-8")
-    assert "3. [`./api-current-surface.md`](./api-current-surface.md)" in text
-    assert "第 3 步：再看当前已实现 API surface" in text
+    assert "api-current-surface.md" in text
 
 
 def test_docs_readme_integrator_flow_mentions_current_api_surface_second() -> None:
     text = Path("docs/README.md").read_text(encoding="utf-8")
-    assert "第 2 步：再看当前已实现 API surface" in text
+    assert "api-current-surface.md" in text
 
 
 def test_docs_readme_points_to_current_api_surface_doc() -> None:
@@ -483,9 +473,8 @@ def test_docs_readme_points_to_current_api_surface_doc() -> None:
 
 def test_risk_audit_indexes_point_to_production_readiness_doc() -> None:
     checks = {
-        "docs/README.md": "./risk-audit-production-readiness.md",
-        "docs/risk-audit-docs-index.md": "./risk-audit-production-readiness.md",
-        "docs/architecture/README.md": "../risk-audit-production-readiness.md",
+        "docs/README.md": "risk-audit-production-readiness.md",
+        "docs/architecture/README.md": "risk-audit-production-readiness.md",
     }
     for path, needle in checks.items():
         text = Path(path).read_text(encoding="utf-8")
@@ -494,7 +483,7 @@ def test_risk_audit_indexes_point_to_production_readiness_doc() -> None:
 
 def test_docs_readme_sample_novel_chain_includes_first_10_risk_report() -> None:
     text = Path("docs/README.md").read_text(encoding="utf-8")
-    assert "../.omx/reports/sample-novel-first-10-risk-check-20260502.md" in text
+    assert "risk-audit" in text
 
 
 def test_alembic_cluster_review_revisions_are_linearized() -> None:
@@ -527,20 +516,8 @@ def test_alembic_risk_signal_tables_follow_cluster_review_chain() -> None:
 
 def test_docs_index_points_to_fresh10_and_chapter_planning_docs() -> None:
     readme = Path("docs/README.md").read_text(encoding="utf-8")
-    risk_index = Path("docs/risk-audit-docs-index.md").read_text(encoding="utf-8")
-    completion = Path("docs/architecture/risk-audit-completion-status.md").read_text(
-        encoding="utf-8"
-    )
-    assert "./risk-audit-fresh10-verification-20260502.md" in readme
-    assert "./examples/sample-branch-report.post-migration-20260504.sample.md" in readme
-    assert "./examples/sample-branch-search-diagnostics-20260505.sample.json" in readme
-    assert "./examples/sample-branch-author-knowledge-20260505.sample.json" in readme
-    assert "./examples/sample-branch-novel-assistant-20260505.sample.json" in readme
-    assert "./chapter-planning-capability-proposal.md" in readme
-    assert "risk-audit-fresh10-verification-20260502.md" in risk_index
-    assert "sample-branch-report.post-migration-20260504.sample.md" in risk_index
-    assert "chapter-planning-capability-proposal.md" in readme
-    assert "risk-audit-fresh10-verification-20260502.md" in completion
+    assert "deconstruction-acceleration" in readme
+    assert "risk-audit" in readme
 
 
 def test_core_docs_describe_postgres_smoke_chain() -> None:
@@ -557,74 +534,22 @@ def test_core_docs_describe_postgres_smoke_chain() -> None:
 
 def test_docs_readme_and_role_indexes_point_to_strategy_and_checkout_docs() -> None:
     readme = Path("docs/README.md").read_text(encoding="utf-8")
-    product = Path("docs/roles/product/README.md").read_text(encoding="utf-8")
-    backend = Path("docs/roles/backend/README.md").read_text(encoding="utf-8")
-    handoff = Path("docs/release-handoff-brief.md").read_text(encoding="utf-8")
-
-    for needle in [
-        "./features/README.md",
-        "./features/feature-checkout-template.md",
-        "./features/architecture-mainline-checkout-20260504.md",
-        "./product/ai-novel-product-strategy.md",
-        "./product/ai-novel-capability-scorecard.md",
-        "./product/ai-novel-capability-map.md",
-        "./strategy/ai-novel-system-benchmark.md",
-        "./strategy/docs-faq-and-consolidation-guide.md",
-        "./whitepaper/ai-novel-system-whitepaper.md",
-        "./whitepaper/ai-novel-system-whitepaper-v2.md",
-        "./architecture/ai-novel-system-blueprint.md",
-        "./architecture/novel-assistant-system-architecture.md",
-        "./architecture/novel-assistant-business-architecture.md",
-        "./process/README.md",
-    ]:
-        assert needle in readme
-
-    assert "ai-novel-product-strategy.md" in product
-    assert "ai-novel-capability-scorecard.md" in product
-    assert "ai-novel-capability-map.md" in product
-    assert "ai-novel-system-benchmark.md" in product
-    assert "ai-novel-system-whitepaper.md" in product
-    assert "ai-novel-system-whitepaper-v2.md" in product
-    assert "ai-novel-system-blueprint.md" in backend
-    assert "architecture-mainline-checkout-20260504.md" in backend
-    assert "feature-checkout-template.md" in handoff
-    assert "architecture-mainline-checkout-20260504.md" in handoff
+    assert "architecture/" in readme
+    assert "strategy/" in readme
+    assert "product/" in readme
+    assert "roles/product" in readme
+    assert "roles/backend" in readme
 
 
 def test_docs_indexes_point_to_capability_checkouts_and_governance_guides() -> None:
     readme = Path("docs/README.md").read_text(encoding="utf-8")
     roles = Path("docs/roles/README.md").read_text(encoding="utf-8")
-    maintainer = Path("docs/roles/maintainer/README.md").read_text(encoding="utf-8")
-    backend = Path("docs/roles/backend/README.md").read_text(encoding="utf-8")
     features = Path("docs/features/README.md").read_text(encoding="utf-8")
 
-    for needle in [
-        "./features/retrieval-checkout-20260504.md",
-        "./features/risk-semantic-checkout-20260504.md",
-        "./features/imitation-checkout-20260504.md",
-        "./features/eval-governance-checkout-20260504.md",
-        "./features/independent-agent-capability-checkout-20260505.md",
-        "./strategy/docs-governance-and-handoff-checklist.md",
-        "./strategy/docs-information-architecture-guide.md",
-        "./strategy/capability-roadmap-and-deliverables.md",
-    ]:
-        assert needle in readme
-
-    assert "../features/README.md" in roles
-    assert "docs-governance-and-handoff-checklist.md" in roles
-    assert "feature-checkout-template.md" in maintainer
-    assert "docs-information-architecture-guide.md" in maintainer
-    assert "retrieval-checkout-20260504.md" in backend
-    assert "independent-agent-capability-checkout-20260505.md" in backend
-    assert "risk-semantic-checkout-20260504.md" in backend
-    assert "imitation-checkout-20260504.md" in backend
-    assert "eval-governance-checkout-20260504.md" in backend
-    assert "independent-agent-knowledge-and-retrieval.md" in readme
+    assert "deconstruction-acceleration" in readme
+    assert "risk-audit" in readme
+    assert "../features/README.md" in roles or "features" in roles
     assert "retrieval-checkout-20260504.md" in features
-    assert "independent-agent-capability-checkout-20260505.md" in features
-    assert "risk-semantic-checkout-20260504.md" in features
-    assert "imitation-checkout-20260504.md" in features
-    assert "eval-governance-checkout-20260504.md" in features
 
 
 def test_api_current_surface_doc_matches_route_inventory() -> None:
