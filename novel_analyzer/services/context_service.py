@@ -73,6 +73,54 @@ class ContextService:
         ]
         return {'facts': facts}
 
+    def _expand_queries_from_graph(
+        self,
+        branch_id: str,
+        chapter_index: int,
+        query_entities: list[str],
+        max_expansion: int = 6,
+    ) -> list[str]:
+        """Expand query terms using 1-hop graph neighbors for better recall."""
+        if not query_entities:
+            return []
+        from novel_analyzer.database.models import GraphEdge, GraphNode
+        entity_nodes = self.session.scalars(
+            select(GraphNode)
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.label.in_(query_entities))
+            .where(GraphNode.chapter_first_seen < chapter_index)
+        ).all()
+        if not entity_nodes:
+            return []
+        node_ids = [n.id for n in entity_nodes]
+        neighbor_edges = self.session.scalars(
+            select(GraphEdge)
+            .where(GraphEdge.branch_id == branch_id)
+            .where(
+                GraphEdge.source_node_id.in_(node_ids)
+                | GraphEdge.target_node_id.in_(node_ids)
+            )
+            .order_by(GraphEdge.weight.desc())
+            .limit(max_expansion * 2)
+        ).all()
+        neighbor_ids: set[str] = set()
+        for edge in neighbor_edges:
+            if edge.source_node_id not in node_ids:
+                neighbor_ids.add(edge.source_node_id)
+            if edge.target_node_id not in node_ids:
+                neighbor_ids.add(edge.target_node_id)
+        if not neighbor_ids:
+            return []
+        neighbors = self.session.scalars(
+            select(GraphNode)
+            .where(GraphNode.id.in_(list(neighbor_ids)[:max_expansion]))
+        ).all()
+        existing = {q.lower() for q in query_entities}
+        return [
+            n.label for n in neighbors
+            if n.label.lower() not in existing and len(n.label) >= 2
+        ][:max_expansion]
+
     @staticmethod
     def _label_matches(label: str, queries: set[str]) -> float:
         """Score how well a fact label matches the query entities/events."""
@@ -111,6 +159,9 @@ class ContextService:
             er.resolve_canonical(branch_id, e) for e in query_entities
         ]
         all_query_terms = list(set(query_entities + resolved_entities))
+
+        graph_expanded = self._expand_queries_from_graph(branch_id, chapter_index, all_query_terms)
+        all_query_terms = list(set(all_query_terms + graph_expanded))
 
         queries = {
             q.strip().lower()

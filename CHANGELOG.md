@@ -1,6 +1,25 @@
 ## Unreleased
 
 
+- feat(web+api/full-api-coverage): FastAPI 升级到 v0.3.0，新增 7 个路由模块共 33 个端点；覆盖拆书（chapter-bundle/source/qa-context）、风险检查（review-clusters/risk-audit/risk-signals）、流水线（pipeline/start-range/runs）、问答（ask-branch/search-branch）；新增流式输出端点（writer/imitate-stream + ask-branch-stream，SSE 格式）；130 个 Loom 测试全部通过，端到端 /api/loom/status 验证通过。
+
+  Changelist: `CL-web-api-full-coverage-01`
+
+  新增路由模块:
+  - `routers/chapters.py` — 章节数据（bundle/source/qa-context/jobs/branch-snapshot）
+  - `routers/risk_review.py` — 风险检查（clusters/summary/update/audit/signals）
+  - `routers/pipeline.py` — 流水线 + 问答 + 搜索（start-range/runs/ask/search）
+
+  Tested: test_loom_phase1-5 (130 passed), FastAPI /api/loom/status 端到端验证
+
+
+- feat(web+api/modular-fastapi-frontend): 新增 FastAPI 模块化后端（`apps/api/app/fastapi_app.py` + 3 个路由模块 loom/writer/quality，共 15 个端点）；新增前端仿写工作台（`/writing`）和质量中心（`/quality`）页面；新增 `loom-api.ts` API 客户端和 `loom.ts` 类型定义；导航栏新增两个入口；TypeScript 编译通过，130 个 Loom 测试全部通过。
+
+  Changelist: `CL-web-api-modular-frontend-01`
+
+  Tested: tsc --noEmit (0 errors), test_loom_phase1-5 (130 passed), FastAPI /health 验证
+
+
 - fix(P0/provider-health-decay): provider_health 新增时间衰减机制，每 5 分钟无新失败自动减少 2 个 degraded_events，成功调用也主动减少 2 个；防止历史失败累积导致持续 warning。
 
   Changelist: `CL-provider-health-decay-01`
@@ -25,6 +44,27 @@
   Changelist: `CL-merged-path-tests-01`
 
   Tested: 34/34 analysis tests passed (含 2 个新增)
+
+
+- perf(foundation/confidence-calibration-batch): ConfidenceCalibrationService 从逐 fact N+1 查询重构为批量查询（_batch_corroboration + _batch_contradiction），一次 SELECT 获取所有 label 的 corroboration count 和 conflict status。
+
+  Changelist: `CL-confidence-calibration-batch-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
+- feat(foundation/domain-dictionary): 新增 DomainDictionaryService，从已分析章节的 FactRecord + GraphNode 自动构建领域分词词典（.cache/novel-analyzer/domain-dict.txt）；每章 materialization 后增量更新；支持复合词拆分。
+
+  Changelist: `CL-domain-dictionary-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
+- feat(foundation/query-expansion): ContextService.adaptive_fact_context_json 新增 graph-based query expansion，通过 1-hop 图邻居扩展查询实体，提升远距离关联实体的召回率。
+
+  Changelist: `CL-query-expansion-01`
+
+  Tested: 36/36 analysis+fallback tests passed
 
 
 - docs(loom/cli-manual+roadmap): CLI 操作手册新增 12.12 `loom-reference-eval` 完整用法（单章/批量/对比模式）；更新 12.11 `loom-ab-compare` 输出说明；更新 12.12 关键字段表（新增 reader_sim / reference_fidelity）；roadmap Phase 3 新增 P0 Reference-based 评估验证任务清单；gate summary contract 升级到 v2。

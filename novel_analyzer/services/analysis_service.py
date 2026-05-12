@@ -45,6 +45,7 @@ from novel_analyzer.services.causal_graph_service import CausalGraphService
 from novel_analyzer.services.claim_grounding_service import ClaimGroundingService
 from novel_analyzer.services.confidence_calibration_service import ConfidenceCalibrationService
 from novel_analyzer.services.context_service import ContextService
+from novel_analyzer.services.domain_dictionary_service import DomainDictionaryService
 from novel_analyzer.services.entity_resolution_service import EntityResolutionService
 from novel_analyzer.services.fact_service import FactService
 from novel_analyzer.services.foreshadowing_service import ForeshadowingService
@@ -75,6 +76,7 @@ class AnalysisService:
         self.causal_graph = CausalGraphService(session)
         self.confidence_calibration = ConfidenceCalibrationService(session)
         self.self_evaluation = SelfEvaluationService()
+        self.domain_dictionary = DomainDictionaryService(session, self.settings)
 
     @staticmethod
     def _serialize_message_content(message: BaseMessage) -> str:
@@ -1396,6 +1398,10 @@ class AnalysisService:
                     )
                 except Exception as exc:  # noqa: BLE001
                     logger.debug("confidence calibration failed ch%d: %s", segment.chapter_index, exc)
+                try:
+                    self.domain_dictionary.update_from_chapter(branch_id, segment.chapter_index)
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("domain dictionary update failed ch%d: %s", segment.chapter_index, exc)
                 self.fact_service.materialize_window_if_ready(
                     branch_id,
                     segment.chapter_index,

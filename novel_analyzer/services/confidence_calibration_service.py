@@ -41,7 +41,6 @@ class ConfidenceCalibrationService:
         branch_id: str,
         chapter_index: int,
     ) -> dict[str, CalibrationResult]:
-        """Recalibrate confidence for all facts in a chapter based on cross-chapter signals."""
         facts = self.session.scalars(
             select(FactRecord)
             .where(FactRecord.branch_id == branch_id)
@@ -51,9 +50,14 @@ class ConfidenceCalibrationService:
         if not facts:
             return {}
 
+        corroboration_map = self._batch_corroboration(branch_id, facts)
+        contradiction_map = self._batch_contradiction(branch_id, facts)
+
         results: dict[str, CalibrationResult] = {}
         for fact in facts:
-            calibrated = self._calibrate_single(branch_id, chapter_index, fact)
+            calibrated = self._calibrate_single(
+                chapter_index, fact, corroboration_map, contradiction_map,
+            )
             results[fact.label] = calibrated
             fact.confidence = calibrated.calibrated_confidence
 
@@ -65,16 +69,23 @@ class ConfidenceCalibrationService:
         branch_id: str,
         up_to_chapter: int,
     ) -> int:
-        """Batch recalibrate all facts in a branch up to a given chapter."""
         facts = self.session.scalars(
             select(FactRecord)
             .where(FactRecord.branch_id == branch_id)
             .where(FactRecord.chapter_index <= up_to_chapter)
         ).all()
 
+        if not facts:
+            return 0
+
+        corroboration_map = self._batch_corroboration(branch_id, facts)
+        contradiction_map = self._batch_contradiction(branch_id, facts)
+
         updated = 0
         for fact in facts:
-            result = self._calibrate_single(branch_id, up_to_chapter, fact)
+            result = self._calibrate_single(
+                up_to_chapter, fact, corroboration_map, contradiction_map,
+            )
             if abs(result.calibrated_confidence - result.original_confidence) > 0.01:
                 fact.confidence = result.calibrated_confidence
                 updated += 1
@@ -82,11 +93,43 @@ class ConfidenceCalibrationService:
         self.session.flush()
         return updated
 
-    def _calibrate_single(
+    def _batch_corroboration(
         self,
         branch_id: str,
+        facts: list[FactRecord],
+    ) -> dict[str, int]:
+        labels = list({f.label for f in facts})
+        if not labels:
+            return {}
+        rows = self.session.execute(
+            select(FactRecord.label, func.count(FactRecord.id))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.label.in_(labels))
+            .group_by(FactRecord.label)
+        ).all()
+        return {str(row[0]): int(row[1]) for row in rows}
+
+    def _batch_contradiction(
+        self,
+        branch_id: str,
+        facts: list[FactRecord],
+    ) -> dict[str, str]:
+        labels = list({f.label for f in facts})
+        if not labels:
+            return {}
+        nodes = self.session.scalars(
+            select(GraphNode)
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.label.in_(labels))
+        ).all()
+        return {node.label: node.conflict_status for node in nodes}
+
+    def _calibrate_single(
+        self,
         current_chapter: int,
         fact: FactRecord,
+        corroboration_map: dict[str, int],
+        contradiction_map: dict[str, str],
     ) -> CalibrationResult:
         original = fact.confidence
         factors: dict[str, float] = {}
@@ -94,13 +137,17 @@ class ConfidenceCalibrationService:
         evidence_score = self._evidence_factor(fact)
         factors['evidence'] = evidence_score
 
-        corroboration_score = self._corroboration_factor(branch_id, fact)
+        corroboration_score = self._corroboration_factor_from_map(
+            corroboration_map, fact.label,
+        )
         factors['corroboration'] = corroboration_score
 
         recency_score = self._recency_factor(fact.chapter_index, current_chapter)
         factors['recency'] = recency_score
 
-        contradiction_score = self._contradiction_factor(branch_id, fact)
+        contradiction_score = self._contradiction_factor_from_map(
+            contradiction_map, fact.label,
+        )
         factors['contradiction'] = contradiction_score
 
         calibrated = (
@@ -129,13 +176,9 @@ class ConfidenceCalibrationService:
             return 0.7
         return min(0.9, 0.7 + 0.05 * (count - 2))
 
-    def _corroboration_factor(self, branch_id: str, fact: FactRecord) -> float:
-        mention_count = self.session.scalar(
-            select(func.count(FactRecord.id))
-            .where(FactRecord.branch_id == branch_id)
-            .where(FactRecord.label == fact.label)
-        ) or 0
-
+    @staticmethod
+    def _corroboration_factor_from_map(corroboration_map: dict[str, int], label: str) -> float:
+        mention_count = corroboration_map.get(label, 0)
         if mention_count <= 1:
             return 0.3
         if mention_count == 2:
@@ -155,16 +198,10 @@ class ConfidenceCalibrationService:
             return 0.5
         return 0.3
 
-    def _contradiction_factor(self, branch_id: str, fact: FactRecord) -> float:
-        node = self.session.scalar(
-            select(GraphNode)
-            .where(GraphNode.branch_id == branch_id)
-            .where(GraphNode.label == fact.label)
-        )
-        if node is None:
-            return 1.0
-        status = node.conflict_status
-        if status == 'clean':
+    @staticmethod
+    def _contradiction_factor_from_map(contradiction_map: dict[str, str], label: str) -> float:
+        status = contradiction_map.get(label)
+        if status is None or status == 'clean':
             return 1.0
         if status == 'evolution':
             return 0.7
