@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  tei-embed:
+    image: ${TEI_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-1.6}
+    container_name: tei-embed
+    ports:
+      - "${TEI_EMBED_PORT:-8080}:80"
+    volumes:
+      - ${TEI_CACHE_DIR:-../../.cache/tei}:/data
+    environment:
+      - HF_ENDPOINT=${TEI_HF_ENDPOINT:-https://hf-mirror.com}
+    command:
+      - --model-id
+      - ${TEI_EMBED_MODEL:-BAAI/bge-m3}
+      - --max-client-batch-size
+      - "32"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: "no"
+
+  tei-rerank:
+    image: ${TEI_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-1.6}
+    container_name: tei-rerank
+    ports:
+      - "${TEI_RERANK_PORT:-8081}:80"
+    volumes:
+      - ${TEI_CACHE_DIR:-../../.cache/tei}:/data
+    environment:
+      - HF_ENDPOINT=${TEI_HF_ENDPOINT:-https://hf-mirror.com}
+    command:
+      - --model-id
+      - ${TEI_RERANK_MODEL:-BAAI/bge-reranker-v2-m3}
+      - --max-client-batch-size
+      - "32"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: "no"
