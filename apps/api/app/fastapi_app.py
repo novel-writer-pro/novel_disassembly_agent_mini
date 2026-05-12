@@ -11,6 +11,8 @@ from apps.api.app.routers.chapters import router as chapters_router
 from apps.api.app.routers.risk_review import router as risk_review_router
 from apps.api.app.routers.pipeline import router as pipeline_router
 from apps.api.app.routers.import_recovery import router as import_recovery_router
+from apps.api.app.routers.whole_book import router as whole_book_router
+from apps.api.app.routers.steering_character import router as steering_character_router
 
 
 def create_app() -> FastAPI:
@@ -37,6 +39,8 @@ def create_app() -> FastAPI:
     app.include_router(risk_review_router)
     app.include_router(pipeline_router)
     app.include_router(import_recovery_router)
+    app.include_router(whole_book_router)
+    app.include_router(steering_character_router)
 
     @app.get("/health")
     def health():
