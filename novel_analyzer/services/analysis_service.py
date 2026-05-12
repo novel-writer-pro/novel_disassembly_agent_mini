@@ -1452,7 +1452,7 @@ class AnalysisService:
                 mat_elapsed = time.time() - mat_start
                 if mat_elapsed > 60.0:
                     logger.warning(
-                        "materialization slow ch%d: %.1fs (retrieval+fact+graph)",
+                        "materialization slow ch%d: %.1fs",
                         segment.chapter_index, mat_elapsed,
                     )
                 self._update_foreshadowing_lifecycle(

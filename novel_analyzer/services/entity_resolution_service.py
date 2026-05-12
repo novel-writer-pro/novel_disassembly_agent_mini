@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import FactRecord, GraphNode
@@ -29,12 +29,18 @@ class EntityResolutionService:
     SIMILARITY_THRESHOLD = 0.6
     MIN_LABEL_LENGTH = 2
 
+    _branch_cache: dict[str, dict[str, str]] = {}
+    _branch_cache_version: dict[str, int] = {}
+
     def __init__(self, session: Session) -> None:
         self.session = session
         self._alias_cache: dict[str, str] = {}
 
     def resolve_canonical(self, branch_id: str, label: str) -> str:
         """Return the canonical label for a given alias, or the label itself."""
+        cached_map = self._branch_cache.get(branch_id)
+        if cached_map and label in cached_map:
+            return cached_map[label]
         if label in self._alias_cache:
             return self._alias_cache[label]
         node = self.session.scalar(
@@ -51,6 +57,15 @@ class EntityResolutionService:
 
     def build_alias_map(self, branch_id: str) -> dict[str, str]:
         """Build a complete alias -> canonical mapping for all character nodes."""
+        node_count = self.session.scalar(
+            select(func.count(GraphNode.id))
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.node_type == 'character')
+        ) or 0
+        cached_version = self._branch_cache_version.get(branch_id, -1)
+        if cached_version == node_count and branch_id in self._branch_cache:
+            return self._branch_cache[branch_id]
+
         nodes = self.session.scalars(
             select(GraphNode)
             .where(GraphNode.branch_id == branch_id)
@@ -91,6 +106,8 @@ class EntityResolutionService:
             canonical.metadata_json = canonical_meta
 
         self._alias_cache = alias_map
+        self._branch_cache[branch_id] = alias_map
+        self._branch_cache_version[branch_id] = node_count
         return alias_map
 
     def merge_fact_labels(
