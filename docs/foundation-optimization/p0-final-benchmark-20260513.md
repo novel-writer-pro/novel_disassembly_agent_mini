@@ -68,31 +68,56 @@ P0 之后：差距收窄到 +3-5%（卫图 0.70 vs 0.68；诛仙 0.83 vs 0.80）
 
 ---
 
-## 4. 已知 caveat
+## 4. Full-Pipeline 基准（多路 RRF + rerank）
+
+BM25-only 是诊断指标；生产实际跑的是 BM25 + trigram + LIKE + entity_exact + vector → RRF → rerank 的多路融合。
+2026-05-13 抽样 10 query/branch（fullpipeline 单 query ~10s，跑全 bank 不现实）。
+
+| 小说 | BM25 (jiebacfg) R@5 | Fullpipeline R@5 | ΔR@5 | 备注 |
+|---|---|---|---|---|
+| 卫图 | 0.6000 | **1.0000** | **+0.40** | 多路把 BM25 漏掉的 4 个全找回 |
+| 掌门低调点 | 1.0000 | 1.0000 | +0.00 | BM25 已饱和 |
+| 诛仙 | 1.0000 | 1.0000 | +0.00 | BM25 已饱和 |
+| 武道宗师 | 0.7000 | 0.9000 | +0.20 | 多路把 BM25 漏掉的 2 个找回 |
+| 雪中悍刀行 | 0.7000 | **1.0000** | **+0.30** | 多路把 BM25 漏掉的 3 个全找回 |
+
+**生产层面**：3/5 小说的剩余召回缺口被多路融合 + rerank 完全填平，1/5 部分填平。BM25 单路看起来还有 30-40% 缺口的小说，在生产 pipeline 里几乎没有缺口。
+
+**对 P1 决策的意义**：
+- BM25 + 现有 embedding（bge-m3）+ rerank 的组合在 5 本小说 sample 上已经达到 0.9-1.0 的 R@5
+- 进一步换 embedding（Conan-v2 / Qwen3-4B）的边际收益空间几乎为零
+- **正式确认预研的"P1 不该做"结论**——BM25 已被 P0 修复到不是瓶颈
+
+数据来源：`.sisyphus/evidence/retrieval-bench-FULLPIPE-*-20260513.json`
+
+---
+
+## 5. 已知 caveat
 
 1. **武道宗师召回偏低**：归因于 keyword_list 噪声，不是 retrieval pipeline 缺陷。等 entity extraction 修复后重测。
 2. **掌门低调点 query bank 只剩 6 query**：DF 过滤后样本太少，置信度低。需要更多章节稀释 DF 才有意义。
 3. **没测 jiebaqry**：上一份报告（`retrieval-benchmark-report-20260513.md`）测过；jiebaqry 比 jiebacfg 略差，本次省略。
-4. **没测向量召回**：本期只测 BM25 路径。RetrievalService 本身还有 trigram / entity_exact / vector 路由，融合后 RRF 表现会更好。
+4. **Fullpipeline 是 10 query 抽样**：完整 bank 跑代价过高（每 query ~10s），需要 query embedding cache 才能跑全量。
 
 ---
 
-## 5. 下一步候选（按 ROI 排序）
+## 6. 下一步候选（按 ROI 排序）
 
 | 候选 | 触发条件 | 收益 |
 |---|---|---|
 | **B. 转向 whole-book 真书完本** | 当前位置 | 直接对标商业化目标，最高 ROI |
 | C. 武道宗师 entity-extraction 清洗 | 想把 5 本小说 R@5 都拉到 >0.7 | 清洗工程量中等 |
-| A. P1 embedding 升级 (Conan-v2 / Qwen3-4B) | BM25 已不够用、向量路径成瓶颈 | 净增益 +3-6%，成本 1 周 |
-| D. 多召回路 RRF 融合 benchmark | 想看完整 retrieval 综合分 | 验证假设，工程量低 |
+| ~~A. P1 embedding 升级 (Conan-v2 / Qwen3-4B)~~ | ~~BM25 已不够用、向量路径成瓶颈~~ | **fullpipeline 数据已证伪此假设——R@5 已 0.9-1.0** |
+| D. Query embedding cache | 想跑 fullpipeline full bank | 工程量低，让基准变得可重复 |
 
-**强推 B**。BM25 的 P0 红利已经吃完，simple R@5 从 0.18 → 0.81 的提升在 5 本小说里已经稳了。下一站应该是产品层。
+**强推 B**。BM25 的 P0 红利已经吃完，simple R@5 从 0.18 → 0.81 的提升在 5 本小说里已经稳了；多路融合后 R@5 进一步到 0.9-1.0。下一站应该是产品层。
 
 ---
 
-## 6. 引用
+## 7. 引用
 
 - 详细 BEFORE/AFTER 数据：`.sisyphus/evidence/retrieval-bench-FINAL2-*-20260513.json`
+- Fullpipeline 数据：`.sisyphus/evidence/retrieval-bench-FULLPIPE-*-20260513.json`
 - 运维 quickstart：[`p0-quickstart-and-handoff.md`](./p0-quickstart-and-handoff.md)
 - pg_jieba 接入细节：[`pg-jieba-userdict-ops.md`](./pg-jieba-userdict-ops.md)
 - 原始预研：[`priority-and-roi-research-20260512.md`](./priority-and-roi-research-20260512.md)
