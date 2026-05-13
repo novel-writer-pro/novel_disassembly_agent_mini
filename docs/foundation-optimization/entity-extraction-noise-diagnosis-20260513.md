@@ -485,3 +485,88 @@ LLM 调用失败 (e.g. 402 Insufficient Balance)
 由于 57% 的数据受污染,任何"修 prompt"或"加规则过滤"都救不回已受损数据 — 必须从**源头隔离 fallback 数据进入下游索引**开始。
 
 → 下一步即将实施:§11.6 选定的方案(详见 implementation plan)
+
+## 13. Fallback isolation Phase 1-3 实施记录(2026-05-13)
+
+> §11/§12 把根因和影响范围锁定后,当晚就推完 Phase 1-3。本节是事后施工记录。
+> Phase 4(销毁性数据清理)需要用户显式授权,未做。
+
+### 13.1 Phase 1 — Write-side tagging(commit `ec7c0a6`)
+
+`novel_analyzer/services/run_service.py:record_chapter_artifact`(单一写入入口)新增 9 行,在写入前用 `continuity_notes[0]` legacy marker 检测,把 `payload_json["extraction_source"]` 设为 `"llm" | "heuristic"`。
+
+- 不改 Pydantic 模型(避免 schema 变更连锁)
+- shallow copy 避免污染 caller 的 dict
+- idempotent:已 tag 的 payload 不覆盖
+- 3 个 unit test:`tests/test_run_service.py`(`llm` / `heuristic` / `preserve` 路径)
+
+### 13.2 Phase 2 — Guard utility + backfill(commit `33a8cfd`)
+
+新增模块:
+- `novel_analyzer/services/_fallback_guard.py`:`is_heuristic_artifact(payload)` 共享读侧工具,先看显式 `extraction_source`,无 tag 的 legacy row 回退到 marker 检测
+- `scripts/backfill_extraction_source.py`:幂等的 `--dry-run` SQL 工具,用 `jsonb_set` 给历史行打 tag
+
+实测在项目 PG 上跑过:
+
+| 阶段 | heuristic | llm | untagged | total |
+|------|-----------|-----|----------|-------|
+| 跑前 | 0 | 3 | 571 | 574 |
+| 跑后 | 326 | 248 | **0** | 574 |
+| 第二次跑 | 326 | 248 | 0 | 574(0 changes,确认 idempotent) |
+
+Spot check:`e5becabd-e2f3-4045-9249-fa91f382dc9a` ch16 `extraction_source = "heuristic"` ✓
+
+7 个 unit test:`tests/test_fallback_guard.py`(覆盖 None / empty / explicit tag / explicit override / legacy marker / unrelated notes / marker not in [0])
+
+### 13.3 Phase 3 — Consumer-side guards(commit `9956a0f`)
+
+6 个服务在所有 `payload['key_entities']` 读点之前调用 `is_heuristic_artifact`:
+
+| 文件 | 函数 | 行为 |
+|------|------|------|
+| `retrieval_service.py` | `_normalize_keywords` | heuristic → `[]` |
+| `retrieval_service.py` | `_query_hints` | heuristic → 仅保留 title-based hint |
+| `fact_service.py` | `materialize_for_artifact` | heuristic → 不创建 entity FactRecord |
+| `fact_service.py` | 5-章 window 累计 | heuristic → 跳过该章 entity counter |
+| `graph_service.py` | `_chapter_reasoning_inputs` | heuristic → 不 fallback 到 `key_entities` |
+| `tension_service.py` | `_get_chapter_keywords` | heuristic → `set()` |
+| `risk_semantic_signal_service.py` | `common_signals`(覆盖 9 处 risk_audit 调用) | heuristic → `key_entities=[]` |
+| `author_knowledge_service.py` | `chapter_cards` | heuristic → `key_entities: []` |
+
+8 个集成测试:`tests/test_fallback_guard_consumers.py`,覆盖 retrieval/risk consumers + legacy marker fallback。
+全量回归:83 个 consumer service 现有测试全绿。
+
+### 13.4 Phase 3 完成后的 retrieval-benchmark 数据
+
+post-Phase-3 重跑 `retrieval-benchmark` 验证未引入回归:
+
+| 分支 | 预期行为 | 实测 jiebacfg MRR | 评估 |
+|------|----------|------------------|------|
+| GOOD 72da24e9(0% fallback) | 不变 | 0.567(§7 时 0.560) | ✓ 噪声范围内,无回归 |
+| BAD-b3 e5becabd(87% fallback) | 暂时不变(retrieval_documents 仍含历史污染) | 0.152(§7 时 0.164) | ✓ 预期之内 — guards 只防新写入,Phase 4 才清旧数据 |
+
+Evidence:
+- `.sisyphus/evidence/post-phase3-bench-72da24e9-20260513.json`
+- `.sisyphus/evidence/post-phase3-bench-e5becabd-20260513.json`
+
+### 13.5 三阶段成果汇总
+
+实测确认的修复效果:
+- ✅ 新写入的 fallback chapter_artifact **不再污染** retrieval_documents/fact_records/graph_nodes/author knowledge packs(8 个集成测试 + 83 个回归测试通过)
+- ✅ 历史 326 行已被 retro-tag,read-side guard 能识别它们
+- ✅ GOOD 分支零回归
+- ⏸️ BAD 分支 retrieval MRR 暂未恢复 — 需 Phase 4 清理已写入下游表的污染数据
+
+### 13.6 Phase 4(待授权,未实施)
+
+Phase 4 需要 destructive SQL 操作:
+- `DELETE FROM retrieval_documents WHERE (branch_id, chapter_index)` 是 heuristic chapters
+- `DELETE FROM retrieval_chunks` + `chunk_embeddings`(连带 cascade 或单独清)
+- `DELETE FROM fact_records WHERE (branch_id, chapter_index)` 是 heuristic
+- `graph_nodes` / `graph_edges`:节点跨章共享,需要更细的策略(本备忘倾向:不清,等下一次完整重跑)
+
+预期 Phase 4 完成后:
+- BAD 分支 MRR 应回升到接近 GOOD 分支水平(假设 jieba+干净 entity 是相似数据特征)
+- 风险信号 / 章节卡 / 知识包不再含噪声
+
+需要用户显式授权后再做(本次拒绝静默执行)。
