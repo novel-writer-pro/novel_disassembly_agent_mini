@@ -6,7 +6,7 @@ from novel_analyzer.config.settings import Settings
 from novel_analyzer.database.models import AnalysisRun, ChapterArtifact, ChapterJob
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.services.ingest_service import IngestService
-from novel_analyzer.services.run_service import RunService
+from novel_analyzer.services.run_service import RunService, _HEURISTIC_NOTE_MARKER
 
 
 def _session() -> Session:
@@ -240,3 +240,52 @@ def test_retry_refused_when_readable_artifact_already_exists(tmp_path) -> None:
             assert "already has an active canonical artifact" in str(exc)
         else:
             raise AssertionError("expected retry guard to refuse completed chapter")
+
+
+def test_record_chapter_artifact_tags_llm_payload_by_default(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session)
+        _, branch = service.create_run(novel.id, manifest.id)
+        artifact = service.record_chapter_artifact(
+            branch.id, 1, {"chapter_index": 1, "chapter_summary": "hello"},
+        )
+        assert artifact.payload_json.get("extraction_source") == "llm"
+
+
+def test_record_chapter_artifact_tags_heuristic_via_marker(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session)
+        _, branch = service.create_run(novel.id, manifest.id)
+        artifact = service.record_chapter_artifact(
+            branch.id, 1, {
+                "chapter_index": 1,
+                "continuity_notes": ["本地启发式分析保底生成 — heuristic fallback"],
+            },
+        )
+        assert artifact.payload_json.get("extraction_source") == "heuristic"
+
+
+def test_record_chapter_artifact_preserves_existing_tag(tmp_path) -> None:
+    novel_path = tmp_path / "novel.txt"
+    novel_path.write_text("第1章 一\nA\n", encoding="utf-8")
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), "样例")
+        service = RunService(session)
+        _, branch = service.create_run(novel.id, manifest.id)
+        artifact = service.record_chapter_artifact(
+            branch.id, 1, {
+                "chapter_index": 1,
+                "extraction_source": "llm",
+                "continuity_notes": ["本地启发式分析保底生成 — heuristic fallback"],
+            },
+        )
+        assert artifact.payload_json.get("extraction_source") == "llm"

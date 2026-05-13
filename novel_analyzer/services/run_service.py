@@ -26,6 +26,9 @@ from novel_analyzer.database.models import (
 from novel_analyzer.services.job_event_service import JobEventService
 
 
+_HEURISTIC_NOTE_MARKER = "本地启发式分析保底生成"
+
+
 def default_readable_artifact_clause() -> object:
     """Return the canonical active-artifact filter used by default readers."""
 
@@ -558,6 +561,16 @@ class RunService:
         branch = self.session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
         if branch is None:
             raise ValueError(f"Unknown branch_id: {branch_id}")
+
+        if "extraction_source" not in payload:
+            notes = payload.get("continuity_notes") or []
+            is_heuristic = (
+                isinstance(notes, list)
+                and len(notes) > 0
+                and isinstance(notes[0], str)
+                and _HEURISTIC_NOTE_MARKER in notes[0]
+            )
+            payload = {**payload, "extraction_source": "heuristic" if is_heuristic else "llm"}
 
         if participates_in_downstream:
             self.session.execute(
