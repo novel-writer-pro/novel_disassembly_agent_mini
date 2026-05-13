@@ -182,7 +182,9 @@ class RetrievalBenchmarkService:
             ),
             {"bid": branch_id},
         ).all()
-        bank: list[tuple[int, str]] = []
+
+        term_doc_freq: dict[str, int] = {}
+        chapter_terms: list[tuple[int, list[str]]] = []
         for chapter_index, keywords in rows:
             if not keywords:
                 continue
@@ -191,13 +193,23 @@ class RetrievalBenchmarkService:
                 if k and 2 <= len(k.strip()) <= 10
                 and "。" not in k and " " not in k
             ]
-            if len(short_kws) >= 2:
-                query = " ".join(short_kws[:3])
-            elif short_kws:
-                query = short_kws[0]
-            else:
+            chapter_terms.append((chapter_index, short_kws))
+            for kw in set(short_kws):
+                term_doc_freq[kw] = term_doc_freq.get(kw, 0) + 1
+
+        total_chapters = len(chapter_terms) or 1
+        max_df_ratio = 0.4
+
+        bank: list[tuple[int, str]] = []
+        for chapter_index, kws in chapter_terms:
+            discriminative = [
+                k for k in kws
+                if term_doc_freq.get(k, 0) / total_chapters <= max_df_ratio
+            ]
+            chosen = discriminative[:3] if len(discriminative) >= 2 else (kws[:3] if kws else [])
+            if not chosen:
                 continue
-            bank.append((chapter_index, query))
+            bank.append((chapter_index, " ".join(chosen)))
             if max_queries and len(bank) >= max_queries:
                 break
         return bank
