@@ -134,17 +134,74 @@ SELECT to_tsvector('jiebacfg', '卫图修炼养生功');
 | 动作 | 归属 | 触发时机 |
 |------|------|----------|
 | 产出 `jieba-user-dict.txt` | 应用（`DomainDictionaryService`） | 每次 `update_from_branch` / `update_from_chapter` |
-| 装 pg_jieba / 建 text search config | 运维 | 环境初始化一次 |
-| 重启 PG 让 userdict 生效 | 运维 | 词典文件变化后 |
+| 将 `jieba-user-dict.txt` 复制为 `novel_analyzer.dict` 到 `jieba/dicts/` | 运维 | 词典文件更新后 |
+| 更新 `docker-compose.yml` 的 `PG_JIEBA_USER_DICT` 加入 `novel_analyzer` | 运维 | 首次接入时一次 |
+| 重启容器让 userdict 生效 | 运维 | 词典文件变化后 |
+| **重建 bm25_vector 索引** | 运维 | 重启后必须执行（见下方 §5.1） |
 | 选用 `jiebacfg` 做 BM25 查询 | 应用（`retrieval_service`） | 自动，扩展在则用 |
 
 **关键边界**：应用层只负责写好 `<term> <freq> <pos>` 格式；是否真正加载到 PG 取决于运维动作。应用层**不会也不应该**通过 SQL 去 `load_dict`——那是扩展自身的职责。
+
+### 5.1 重建 bm25_vector 索引（必须步骤）
+
+**背景**：`bm25_vector` 是 `GENERATED ALWAYS AS (to_tsvector('jiebacfg', bm25_text)) STORED` 列。PG 在 INSERT/UPDATE 时计算并存储该值。当 pg_jieba 加载了新的 userdict 后，**已有行的 bm25_vector 不会自动更新**——因为 PG 的 stored generated column 只在行被写入时重新计算，而 jieba tokenizer 的状态是 per-backend 缓存的。
+
+**症状**：重启 PG 后，`to_tsvector('jiebacfg', '路朝歌')` 返回 `'路朝歌':1`（正确），但 `bm25_vector @@ plainto_tsquery('jiebacfg', '路朝歌')` 无命中（旧行的 bm25_vector 仍是旧分词）。
+
+**修复步骤**（在 PG 重启后、新连接中执行）：
+
+```sql
+-- 在新连接（新 backend）中执行，确保使用新 jieba tokenizer 状态
+-- Step 1: 验证新 tokenizer 已生效
+SELECT to_tsvector('jiebacfg', '路朝歌养生功龟息养气功');
+-- 期望: '养生功':2 '路朝歌':1 '龟息养气功':3
+
+-- Step 2: 重建 bm25_vector 列（强制全表重写，使用新 tokenizer）
+ALTER TABLE retrieval_documents DROP COLUMN bm25_vector;
+ALTER TABLE retrieval_documents
+  ADD COLUMN bm25_vector tsvector
+  GENERATED ALWAYS AS (to_tsvector('jiebacfg'::regconfig, COALESCE(bm25_text, ''::text))) STORED;
+
+-- Step 3: 验证
+SELECT left(bm25_vector::text, 100)
+FROM retrieval_documents
+WHERE chapter_index = 1
+LIMIT 1;
+-- 期望: 包含中文词条，如 '卫图':1 '养生功':3 等
+```
+
+**重要**：必须在 **PG 重启后的新连接** 中执行 ALTER TABLE。如果在重启前的旧连接中执行，ALTER TABLE 会使用旧 backend 的 jieba tokenizer 缓存，导致重建后的向量仍然是旧分词。
+
+**Python 脚本版本**（推荐，自动验证）：
+
+```python
+import psycopg
+
+conn = psycopg.connect('host=127.0.0.1 port=5432 dbname=novel_analyzer user=d2 password=d2pass')
+conn.autocommit = True
+
+# 验证 tokenizer
+v = conn.execute("SELECT to_tsvector('jiebacfg', '路朝歌养生功')::text").fetchone()[0]
+assert '路朝歌' in v, f"tokenizer not updated: {v}"
+print(f"tokenizer OK: {v}")
+
+# 重建
+conn.execute('ALTER TABLE retrieval_documents DROP COLUMN bm25_vector')
+conn.execute("""
+    ALTER TABLE retrieval_documents
+    ADD COLUMN bm25_vector tsvector
+    GENERATED ALWAYS AS (to_tsvector('jiebacfg'::regconfig, COALESCE(bm25_text, ''::text))) STORED
+""")
+print("bm25_vector rebuilt")
+conn.close()
+```
 
 ---
 
 ## 6. 已知限制 & 未来
 
-- **无热重载**：上游 pg_jieba 暂无 `pg_jieba.reload_userdict()` 函数；社区有 PR 但未合。
+- **无热重载**：上游 pg_jieba 暂无 `pg_jieba.reload_userdict()` 函数；社区有 PR 但未合。重启 + ALTER TABLE 是目前唯一可靠路径。
+- **ALTER TABLE 必须在新连接中执行**：pg_jieba tokenizer 状态是 per-backend 缓存的。旧连接的 ALTER TABLE 会用旧 tokenizer 重建，导致向量仍然错误。
 - **多租户**：若一台 PG 服务多个 branch，jieba_user.dict 是全局的，所有 branch 的词会混在一起；目前实现接受这个简化。
 - **量级**：词典破万条后 PG 启动慢，建议配合 `domain-dict.txt` 人工 trim 再同步到 pg_jieba。
 
@@ -154,6 +211,8 @@ SELECT to_tsvector('jiebacfg', '卫图修炼养生功');
 
 - [ ] `SELECT extversion FROM pg_extension WHERE extname='pg_jieba';` 返回非空
 - [ ] `SELECT cfgname FROM pg_ts_config WHERE cfgname='jiebacfg';` 返回一行
-- [ ] 容器内 `ls /usr/share/postgresql/*/tsearch_data/jieba_user.dict` 文件存在且非空
-- [ ] `SELECT to_tsvector('jiebacfg', '卫图修炼养生功');` 切出 `'卫图'` 一词
-- [ ] 重启后以上仍然成立
+- [ ] 容器内 `ls /opt/postgresql/share/tsearch_data/novel_analyzer.dict` 文件存在且非空
+- [ ] `SHOW pg_jieba.user_dict;` 包含 `novel_analyzer`
+- [ ] `SELECT to_tsvector('jiebacfg', '路朝歌养生功');` 返回 `'养生功':2 '路朝歌':1`（单词，非拆分）
+- [ ] 执行 §5.1 的 ALTER TABLE 重建 bm25_vector
+- [ ] `SELECT COUNT(*) FROM retrieval_documents WHERE bm25_vector @@ plainto_tsquery('jiebacfg', '路朝歌');` 返回 > 0

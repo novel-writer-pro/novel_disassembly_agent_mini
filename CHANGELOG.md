@@ -1,6 +1,33 @@
 ## Unreleased
 
 
+- feat(foundation/P0-complete): novel_analyzer 领域词典接入 pg_jieba userdict，完成 P0 全链路闭环。
+
+  Changelist: `CL-foundation-p0-jieba-dict-complete`
+
+  **变更内容**：
+  - `jieba/dicts/novel_analyzer.dict`（3930 词条）写入 pgsql17 容器的 `/bootstrap/jieba/` 挂载目录
+  - `docker-compose.yml` 的 `PG_JIEBA_USER_DICT` 追加 `novel_analyzer`
+  - 容器重启后 pg_jieba 加载新词典，`bm25_vector` 通过 `ALTER TABLE DROP+ADD GENERATED ALWAYS` 强制重建
+  - `pg-jieba-userdict-ops.md` 补充 §5.1 bm25_vector 重建步骤（含 per-backend tokenizer 缓存的根因说明）
+  - `retrieval_benchmark_service.py` 修复 tsvector 解析 regex（`\n` token 导致误判为 0 terms）
+
+  **实测 P0 净增益**（5 本小说，BEFORE vs AFTER novel_analyzer dict）：
+
+  | 小说 | BEFORE simple MRR | BEFORE jieba MRR | AFTER simple MRR | AFTER jieba MRR |
+  |------|---|---|---|---|
+  | 卫图 (103 docs) | 0.184 | 0.555 | **0.527** | **0.534** |
+  | 掌门低调点 (41 docs) | 0.000 | 0.096 | **0.098** | **0.098** |
+  | 诛仙 (83 docs) | 0.060 | 0.127 | **0.094** | **0.106** |
+  | 武道宗师 (80 docs) | 0.013 | 0.069 | **0.069** | **0.069** |
+  | 雪中悍刀行 (83 docs) | 0.012 | 0.042 | **0.042** | **0.042** |
+
+  **关键发现**：novel_analyzer dict 使专有名词（路朝歌、养生功、龟息养气功等）在 bm25_vector 中以单词存储，simple 和 jiebacfg 的 tsquery 均能精确命中，导致 simple MRR 大幅提升（卫图 +187%），两种配置趋于收敛。
+
+  Tested: 5 本小说端到端 benchmark，bm25_vector 重建验证，FTS 命中率验证。
+  Not-tested: pg_jieba userdict 热重载（上游不支持，重启是唯一路径）。
+
+
 - feat(foundation/retrieval-benchmark): 新增 `retrieval-benchmark` CLI 命令，对比 FTS 配置（simple vs jiebacfg）在 BM25 召回率/MRR/延迟上的净增益；使用每章 keyword_list 自动构建 query bank，无需人工标注；支持 --configs / --max-queries / --k-values / --output-file 参数。
 
   Changelist: `CL-retrieval-benchmark-01`

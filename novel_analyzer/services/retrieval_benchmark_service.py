@@ -223,3 +223,8 @@ class RetrievalBenchmarkService:
         )
         rows = self.session.execute(sql, {"bid": branch_id, "limit": limit}).all()
         return [r[0] for r in rows]
+
+    @staticmethod
+    def _tsvector_terms(vec_text: str) -> set[str]:
+        import re
+        return set(re.findall(r"'((?:[^']|'')+)'", vec_text))
