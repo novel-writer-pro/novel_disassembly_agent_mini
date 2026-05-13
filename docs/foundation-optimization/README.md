@@ -214,3 +214,5 @@ Week 3: P2-1 (entity cache) + 30 章稳定性验证
 |------|------|
 | [priority-and-roi-research-20260512.md](./priority-and-roi-research-20260512.md) | 底座优化优先级与 ROI 预研(含商业 API / 自研微调 / GitHub 精华对比结论) |
 | [tei-integration-postmortem-20260512.md](./tei-integration-postmortem-20260512.md) | TEI 集成复盘：9 个坑 / 决策回顾 / 性能边界 / SOP |
+| [retrieval-benchmark-report-20260513.md](./retrieval-benchmark-report-20260513.md) | 检索基准首份实测：三分支 simple/jiebacfg/jiebaqry 对比 + 上游瓶颈发现 |
+| [entity-extraction-noise-diagnosis-20260513.md](./entity-extraction-noise-diagnosis-20260513.md) | key_entities 噪声诊断：噪声分类 + 假设根因 + 排查动作清单 |
