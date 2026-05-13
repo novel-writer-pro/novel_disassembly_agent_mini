@@ -218,3 +218,6 @@ Week 3: P2-1 (entity cache) + 30 章稳定性验证
 | [tei-integration-postmortem-20260512.md](./tei-integration-postmortem-20260512.md) | TEI 集成复盘：9 个坑 / 决策回顾 / 性能边界 / SOP |
 | [retrieval-benchmark-report-20260513.md](./retrieval-benchmark-report-20260513.md) | 检索基准首份实测：三分支 simple/jiebacfg/jiebaqry 对比 + 上游瓶颈发现 |
 | [entity-extraction-noise-diagnosis-20260513.md](./entity-extraction-noise-diagnosis-20260513.md) | key_entities 噪声诊断：噪声分类 + 假设根因 + 排查动作清单 |
+| [fallback-isolation-plan-20260513.md](./fallback-isolation-plan-20260513.md) | Fallback 隔离历史设计草稿(已被实际实现覆盖) |
+| [fallback-isolation-handoff-20260513.md](./fallback-isolation-handoff-20260513.md) | Fallback 隔离一页纸交接 + 紧急排查路径 |
+

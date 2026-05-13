@@ -1,6 +1,34 @@
 ## Unreleased
 
 
+- feat(foundation/data-integrity): 修复 LLM 调用失败导致的启发式 fallback 数据污染。
+
+  Changelist: `CL-foundation-fallback-isolation`
+
+  **诊断**：568 章 chapter_artifacts 中 326 章(57.4%)的 `key_entities` 由 18 行启发式 fallback 写入(LLM `402 Insufficient Balance` 等错误触发 `analysis_service.py:573-588`),污染下游 6 个 consumer 服务。
+
+  **修复 Phase 1-4**：
+  - **Phase 1**(`run_service.py`):`record_chapter_artifact` 单一写入入口注入 `payload_json["extraction_source"]` = `"llm" | "heuristic"`
+  - **Phase 2**(`_fallback_guard.py` + `backfill_extraction_source.py`):共享读侧 utility + 幂等 SQL backfill 326 + 248 行
+  - **Phase 3**(6 个 consumer service):`retrieval_service` / `fact_service` / `graph_service` / `tension_service` / `risk_semantic_signal_service` / `author_knowledge_service` 在所有 `key_entities` 读点之前 guard
+  - **Phase 4**(`rematerialize_heuristic_artifacts.py`):非破坏性 sweep,利用 Phase 3 guards 让 `materialize_for_artifact` upsert 自动产出干净结果(无 SQL DELETE)
+
+  **实测效果**(jiebacfg MRR):
+  - e5becabd: 0.163 → 0.756(+4.6×)
+  - 62e636f0: 0.262 → 0.561(+2.1×)
+  - 8af4f620: 0.109 → 0.364(+3.3×)
+  - 2cd9c1ff: 0.104 → 0.292(+2.8×)
+  - GOOD 分支 72da24e9(0% fallback)不变,作为 control
+
+  **新增工件**：
+  - 诊断文档：`docs/foundation-optimization/entity-extraction-noise-diagnosis-20260513.md`(663 行,§1-§14)
+  - Handoff 一页纸：`docs/foundation-optimization/fallback-isolation-handoff-20260513.md`
+  - 单元测试 7 + 集成测试 8 + run_service tag 测试 3
+
+  **待办**：
+  - LLM provider quota 告警(`'fallback': 'local-heuristic'` emit WARN log,防止再次静默污染)
+  - graph_nodes/edges 跨章共享 entity 清理(等下次完整 LLM 重跑)
+
 - feat(foundation/P0-automation): 新增两个运维 CLI 命令自动化领域词典 → pg_jieba → bm25_vector 全链路。
 
   Changelist: `CL-foundation-p0-automation`
