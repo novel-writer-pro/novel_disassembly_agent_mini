@@ -905,3 +905,114 @@ python3 scripts/bootstrap_weitu_validation_workspace.py \
 若后续引入 companion / manual artifact，请记住：
 - 不是所有 active artifact 都会进入默认读路径
 - 默认 reader 只消费 canonical/default-readable artifact
+
+
+## 底座优化运维（P0 闭环）
+
+P0 链路：领域词典 → pg_jieba → bm25_vector。完整说明见 [foundation-optimization/p0-quickstart-and-handoff.md](./foundation-optimization/p0-quickstart-and-handoff.md)。
+
+### `domain-dict-rebuild`
+
+从 DB 重建 `domain-dict.txt` + `jieba-user-dict.txt`。
+
+```bash
+# 默认：自动发现所有有 retrieval_documents 的 branch
+python -m novel_analyzer.cli.app domain-dict-rebuild
+
+# 可选：指定 branch 子集
+python -m novel_analyzer.cli.app domain-dict-rebuild \
+  --branch-id 72da24e9-... --branch-id 2ac6f639-...
+```
+
+输出文件位置：`.cache/novel-analyzer/{domain-dict.txt, jieba-user-dict.txt}`。
+
+### `bm25-reindex`
+
+强制重建 `retrieval_documents.bm25_vector` 列（`ALTER TABLE DROP+ADD GENERATED ALWAYS`），用当前 jieba tokenizer 状态全表重写。
+
+```bash
+# 必须先 dry-run 确认 tokenizer 已加载新 userdict
+python -m novel_analyzer.cli.app bm25-reindex
+
+# 确认后真正执行
+python -m novel_analyzer.cli.app bm25-reindex --confirm
+```
+
+**前置条件**：先重启 PG 容器加载新 userdict。dry-run 会做 tokenizer 自检并 WARN 但不会拒绝执行。
+
+### `rematerialize-retrieval`
+
+修复缺失的 `retrieval_chunks` / `chunk_embeddings`（典型场景：诊断时手工 DELETE 留下的孤儿 retrieval_documents）。
+
+```bash
+# dry-run 列出所有缺 chunks 的 doc
+python -m novel_analyzer.cli.app rematerialize-retrieval
+
+# 真正执行（会重跑 ONNX embedding，每章 ~1-2s）
+python -m novel_analyzer.cli.app rematerialize-retrieval --confirm
+
+# 限定 branch
+python -m novel_analyzer.cli.app rematerialize-retrieval \
+  --branch-id 72da24e9-... --confirm
+```
+
+### `retrieval-benchmark`
+
+跑 BM25 召回率 + MRR 基准，对比不同 FTS config，可选多路融合 fullpipeline 模式。
+
+```bash
+# BM25-only 对比 simple vs jiebacfg（默认）
+python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
+  --output-file /tmp/bench.json
+
+# 带 fullpipeline（多路 RRF + rerank，慢，建议配 --max-queries）
+python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
+  --configs simple,jiebacfg,fullpipeline \
+  --max-queries 10 --output-file /tmp/bench.json
+```
+
+Query bank 自动从 `keyword_list` 构建，DF >40% 的常见词被过滤；输出 JSON 含 per-config Recall@1/3/5/10、MRR、平均延迟。
+
+### `loom-benchmark`
+
+跑 LLM 综合能力基准（拆书 / 仿写 / 风险检查三维），需要可用 LLM。
+
+```bash
+python -m novel_analyzer.cli.app loom-benchmark <branch_id> \
+  --chapters "2,3,4,5" --use-llm \
+  --output-file /tmp/loom.json
+```
+
+详见 `novel_analyzer/services/model_benchmark_service.py`。
+
+### 完整 P0 刷新流程
+
+字典更新后的标准动作（每次都跑一遍）：
+
+```bash
+# 1) 重建词典文件
+python -m novel_analyzer.cli.app domain-dict-rebuild
+
+# 2) 复制 + 过滤到 PG 容器挂载目录
+python <<'PY'
+import re
+src = open('.cache/novel-analyzer/jieba-user-dict.txt', encoding='utf-8').readlines()
+def ok(t):
+    if len(t) < 2 or len(t) > 10: return False
+    if re.search(r'[，。！？、；：「」【】()（）\s\u3000]', t): return False
+    return len(re.findall(r'[\u4e00-\u9fff]', t)) >= 2
+keep = [l.strip() for l in src if l.strip() and ok(l.strip().split()[0])]
+open('/home/user/pgsql17-ubuntu24/jieba/dicts/novel_analyzer.dict','w',encoding='utf-8').write('\n'.join(keep)+'\n')
+print(f'wrote {len(keep)} terms')
+PY
+
+# 3) 重启 PG 容器
+sudo docker restart d2-pg17 && sleep 15
+
+# 4) 重建 bm25_vector（必须新连接）
+python -m novel_analyzer.cli.app bm25-reindex --confirm
+
+# 5) 验证
+python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
+  --output-file /tmp/post-bench.json
+```
