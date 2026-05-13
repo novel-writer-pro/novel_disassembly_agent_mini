@@ -1328,6 +1328,15 @@ class AnalysisService:
                     except Exception as fallback_exc:
                         if not self._is_provider_unavailable_error(fallback_exc):
                             raise
+                        logger.warning(
+                            "LLM unavailable for branch=%s chapter=%d; falling back to "
+                            "local-heuristic key_entities (will be tagged extraction_source=heuristic "
+                            "and skipped by downstream guards). stage_error=%s fallback_error=%s",
+                            branch_id,
+                            segment.chapter_index,
+                            str(stage_exc)[:200],
+                            str(fallback_exc)[:200],
+                        )
                         result = self._build_local_heuristic_analysis(
                             segment.chapter_index,
                             segment.normalized_title,
