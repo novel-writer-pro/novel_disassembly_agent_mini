@@ -9552,5 +9552,73 @@ def bm25_reindex(
     conn.close()
 
 
+@app.command()
+def rematerialize_retrieval(
+    branch_id: list[str] = typer.Option([], "--branch-id", help="Restrict to these branches; empty = all branches with docs missing chunks."),
+    confirm: bool = typer.Option(False, "--confirm", help="Required to proceed (re-runs ONNX embedding per doc)."),
+    database_url: str | None = None,
+) -> None:
+    """Re-materialize retrieval_chunks + chunk_embeddings for docs missing them."""
+    from novel_analyzer.services.retrieval_service import RetrievalService
+    from novel_analyzer.database.models import ChapterArtifact, RetrievalDocument
+    from sqlalchemy import select
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+
+    with factory() as session:
+        gap_query = text(
+            """
+            SELECT rd.branch_id, rd.chapter_index, rd.id
+            FROM retrieval_documents rd
+            LEFT JOIN retrieval_chunks rc ON rc.document_id = rd.id
+            WHERE rd.deleted_at IS NULL
+            GROUP BY rd.branch_id, rd.chapter_index, rd.id
+            HAVING COUNT(rc.id) = 0
+            ORDER BY rd.branch_id, rd.chapter_index
+            """
+        )
+        rows = session.execute(gap_query).all()
+        if branch_id:
+            wanted = set(branch_id)
+            rows = [r for r in rows if r[0] in wanted]
+        echo(f"docs missing chunks: {len(rows)}")
+        if not rows:
+            return
+        if not confirm:
+            by_branch: dict[str, int] = {}
+            for r in rows:
+                by_branch[r[0][:8]] = by_branch.get(r[0][:8], 0) + 1
+            for k, v in by_branch.items():
+                echo(f"  {k}: {v} chapters")
+            echo("DRY RUN. Re-run with --confirm to actually rematerialize.")
+            return
+
+        svc = RetrievalService(session, settings)
+        success = 0
+        failed = 0
+        for bid, ch, doc_id in rows:
+            art = session.scalars(
+                select(ChapterArtifact)
+                .where(ChapterArtifact.branch_id == bid)
+                .where(ChapterArtifact.chapter_index == ch)
+                .where(ChapterArtifact.status == 'validated')
+                .order_by(ChapterArtifact.created_at.desc())
+            ).first()
+            if not art:
+                echo(f"  {bid[:8]} ch{ch}: no validated artifact, skip")
+                failed += 1
+                continue
+            try:
+                svc.materialize_for_artifact(art.id)
+                success += 1
+                if success % 10 == 0:
+                    echo(f"  progress: {success}/{len(rows)}")
+            except Exception as exc:
+                echo(f"  {bid[:8]} ch{ch}: ERROR {exc}")
+                failed += 1
+        echo(f"done. success={success} failed={failed}")
+
+
 if __name__ == "__main__":
     app()
