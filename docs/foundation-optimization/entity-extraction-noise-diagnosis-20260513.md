@@ -279,3 +279,74 @@ intake prompt 的 git 历史只有 2 次提交(`0efa1a6` 引入 + `26df01f` sche
 - 不把"立即加过滤器"上升为 blocker(系统当前可用)
 - 不重跑全量 BAD 分支(成本高,先确认 §10 多章样本)
 - 不把单章结论等同于统计结论(N=1 是信号,不是证明)
+
+## 10. Level-3 N=3 扩展验证(2026-05-13)
+
+> §9 单样本 ch16 表明 hypothesis C primary,本节计划用 N=3(ch10/ch16/ch44)的历史 `chapter_raw_outputs.parsed_json.intake.cleaned_text` 重跑 prompt,排除内容长度混淆。**实际执行时遇到数据缺失,触发 BLOCKED 分支并产出新假设 D**。
+
+### 10.1 实验设置(计划)
+
+- 分支:`e5becabd-e2f3-4045-9249-fa91f382dc9a`
+- 章节:ch10(verb_or_negation)/ ch16(ordinal+onomatopoeia)/ ch44(truncated_tail)
+- 输入:`chapter_raw_outputs.parsed_json.intake.cleaned_text`
+- Prompt:当前 `chapter-intake-and-facts/prompts/main.md` 原样,通过 `render_skill_prompt` 渲染
+- 模型:`build_chat_model()` 默认(`.env.local` 配置 `deepseek-v4-pro` via `card.nassaapi.xyz`)
+- 不写 DB
+- Evidence: `.sisyphus/evidence/l3-n3-dryrun-e5becabd-20260513.json`
+
+### 10.2 实际数据状况(BLOCKED)
+
+DB 探查结果(`chapter_raw_outputs` for branch `e5becabd…` ch10/ch16/ch44):
+
+| 章 | parse_status | prompt_version | raw_response_text 长度 | parsed_json.intake | LLM 实际调用? |
+|----|--------------|------------------|--------------------------|---------------------|----------------|
+| ch10 | parsed | chapter_analysis_v0_2 | 354 bytes | `{}`(空) | 否 |
+| ch16 | parsed | chapter_analysis_v0_2 | 354 bytes | `{}`(空) | 否 |
+| ch44 | parsed | chapter_analysis_v0_2 | 354 bytes | `{}`(空) | 否 |
+
+三章 `raw_response_text` 内容均为同一形态的 stage_error JSON:
+
+```json
+{
+  "stage_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', ...}}",
+  "fallback_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', ...}}",
+  "fallback": "local-heuristic"
+}
+```
+
+整个 e5becabd 分支 98 行 `chapter_raw_outputs` 中,**无任何一行携带非空的 `intake.cleaned_text`**。
+
+### 10.3 判定
+
+`verdict = "inconclusive (no cleaned_text data)"`
+
+§10 计划基于的关键前提(历史 LLM 输入存留在 `parsed_json.intake.cleaned_text`)对这 3 章不成立。无法用当前数据重跑 prompt,LLM 调用次数 = 0。
+
+### 10.4 衍生发现 — 假设 D(deterministic-fallback)
+
+针对 e5becabd ch10/ch16/ch44:
+
+- 历史 LLM 调用因 402 Insufficient Balance 全部失败(stage + fallback 双失败)
+- 最终落库的 `chapter_artifacts.payload_json`(即 §9 表格中那组噪声 entities)由 `fallback: local-heuristic` 路径产出
+- `chapter_artifacts.source_kind='model'`(命名误导,不代表 LLM 实际产生)
+
+这意味着:**§9 隐含的"transient LLM 噪声"模型,对这 3 个 BAD 章节并不适用**。它们的噪声是**确定性**的本地 heuristic 输出,而非 LLM 输出的概率扰动。
+
+新假设 **D**:`local-heuristic` fallback 抽取器是 BAD-e5becabd 至少这 3 章 `key_entities` 噪声的直接源头。
+
+### 10.5 结论与下一步建议
+
+- §9 "hypothesis C primary"(N=1 ch16)在数据基础上即可疑:它对比的是 fallback heuristic 输出 vs 当前 LLM 输出,而非"历史 LLM" vs "当前 LLM"。结论需要修订或重新设计样本。
+- 对 hypothesis A / C 的真正 N=3 验证需先满足:
+  - 在 LLM 可用的分支(余额恢复后)重新触发处理,使 `chapter_raw_outputs` 携带真实 LLM 响应
+  - 或选取一个历史成功(有 `intake.cleaned_text`)的分支替代 e5becabd
+- 假设 D 可立即在源代码中验证(read-only):
+  - 定位 fallback 路径(grep `local-heuristic` / `fallback`),核对其 `key_entities` 抽取规则,看是否能解释 ordinal / onomatopoeia / truncated_tail 三类噪声
+- 修复优先级在 N=3 真验证前**不应基于 §9 重排**
+
+### 10.6 不立即做的事
+
+- 不在余额恢复前重跑 LLM(防止再次浪费 fallback)
+- 不修改 §9 表格(保留为历史记录,§10 提供修订)
+- 不在源码中加过滤器(假设 D 未代码侧确认,可能改错位置)
+- 不把假设 D 当成结论(它解释为何 §10 数据缺失,但需要 fallback 抽取器源码核对才能升级为根因)
