@@ -35,6 +35,7 @@ DomainDictionaryService          ← 应用侧，每次 materialization 自动�
 | 从 DB 重建领域词典 | `python -m novel_analyzer.cli.app domain-dict-rebuild` |
 | 把更新后的字典推到 pg 容器 | 见 §3 步骤 2-3 |
 | 重建 bm25_vector 列 | `python -m novel_analyzer.cli.app bm25-reindex --confirm` |
+| 修复缺失的 chunks/embeddings | `python -m novel_analyzer.cli.app rematerialize-retrieval --confirm` |
 | 跑 retrieval 基准 | `python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> --output-file /tmp/bench.json` |
 
 ---
@@ -134,6 +135,7 @@ python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> --output-file /
 **当前可用 CLI**：
 - `domain-dict-rebuild [--branch-id ID]` — 重建词典文件
 - `bm25-reindex [--confirm]` — 重建 bm25_vector 列
+- `rematerialize-retrieval [--branch-id ID] [--confirm]` — 修复缺失的 chunks/embeddings
 - `retrieval-benchmark BRANCH_ID [--configs simple,jiebacfg] [--output-file PATH]` — 跑 BM25 召回率 benchmark
 - `loom-benchmark BRANCH_ID [--use-llm] [--output-file PATH]` — 跑 LLM 综合能力 benchmark
 
