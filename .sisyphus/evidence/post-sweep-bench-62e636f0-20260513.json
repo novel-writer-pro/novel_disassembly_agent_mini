@@ -1,0 +1,39 @@
+{
+  "contract_version": "retrieval-benchmark.v2",
+  "branch_id": "62e636f0-c901-4167-aa1c-aff3da9c83ef",
+  "total_docs": 45,
+  "queries_used": 21,
+  "elapsed_seconds": 0.08,
+  "k_values": [
+    1,
+    3,
+    5
+  ],
+  "results": [
+    {
+      "config": "simple",
+      "query_count": 21,
+      "mrr": 0.4897,
+      "recall@1": 0.381,
+      "recall@3": 0.5714,
+      "recall@5": 0.6667,
+      "avg_latency_ms": 2.25
+    },
+    {
+      "config": "jiebacfg",
+      "query_count": 21,
+      "mrr": 0.5611,
+      "recall@1": 0.4286,
+      "recall@3": 0.6667,
+      "recall@5": 0.7619,
+      "avg_latency_ms": 1.53
+    }
+  ],
+  "delta": {
+    "mrr": 0.0714,
+    "avg_latency_ms": -0.72,
+    "recall@1": 0.0476,
+    "recall@3": 0.0952,
+    "recall@5": 0.0952
+  }
+}

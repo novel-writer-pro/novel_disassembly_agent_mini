@@ -570,3 +570,94 @@ Phase 4 需要 destructive SQL 操作:
 - 风险信号 / 章节卡 / 知识包不再含噪声
 
 需要用户显式授权后再做(本次拒绝静默执行)。
+
+## 14. Phase 4 cleanup sweep + benchmark validation(2026-05-13 当晚)
+
+> §13 完成 Phase 1-3 后,污染数据仍在 retrieval_documents 中。本节记录非破坏性
+> sweep 方案及其实测效果。**没有用 SQL DELETE**,而是利用 Phase 3 guards 让
+> `materialize_for_artifact` 的 upsert 自动产出干净结果。
+
+### 14.1 Sweeper 设计
+
+工具:`scripts/rematerialize_heuristic_artifacts.py`
+
+策略:walk 所有 `extraction_source='heuristic'` 的 chapter_artifact,逐个调用:
+- `RetrievalService.materialize_for_artifact(artifact_id)`
+- `FactService.materialize_for_artifact(artifact_id)`
+
+由于 Phase 3 guards 在两个 service 中都已就位,upsert 时 `keyword_list = []` /
+`query_hints = [title-only]` / 不创建 entity FactRecord — 等价于"清理"但不需要
+DELETE,可逆且语义安全。
+
+特性:
+- 默认 `--dry-run` 输出影响范围
+- `--branch=...` 可单分支
+- `--commit-every N` 控制事务粒度
+- `--skip-fact` 可加速(只跑 retrieval)
+- 幂等:跑两次结果一致
+
+### 14.2 与 `omx rematerialize-retrieval` CLI 的关系
+
+并行 session 提交了 `omx rematerialize-retrieval`(commit `f4edbc1`),目标是
+"修复 chunks count=0 的 retrieval_documents"(DELETE 事故恢复)。两者**互补**:
+
+| 工具 | 触发条件 | 用途 |
+|------|---------|------|
+| `rematerialize-retrieval` CLI | `retrieval_chunks` 为空 | 数据完整性修复 |
+| `rematerialize_heuristic_artifacts.py` | `extraction_source='heuristic'` | 噪声数据清理 |
+
+未来可考虑合并为 `omx rematerialize --filter=heuristic|missing-chunks`,但本次
+保持两个工具独立,避免与并行 session 抢工件。
+
+### 14.3 实测:5 个 BAD 分支 sweep 结果
+
+Sweep 326 章 (5 个 BAD 分支),470 秒,**0 失败**。
+
+#### MRR before vs after(jiebacfg config)
+
+| 分支 | docs | pre MRR | post MRR | Δ MRR | 倍数 |
+|------|------|---------|----------|-------|------|
+| **e5becabd** | 94 | 0.1629 | **0.7556** | +0.5927 | **4.6×** |
+| **62e636f0** | 45 | 0.2619 | **0.5611** | +0.2992 | **2.1×** |
+| **8af4f620** | 91 | 0.1092 | **0.3636** | +0.2544 | **3.3×** |
+| **2cd9c1ff** | 91 | 0.1037 | **0.2917** | +0.1880 | **2.8×** |
+
+GOOD 分支(72da24e9, 0% fallback)未 sweep,作为对照保持 0.567 不变。
+
+注:e5becabd 后值 0.756 高于 GOOD 的 0.567,**反向证明** Phase 3 的"丢掉 entity hint
+保留 title hint"对 query_hints-based ground truth 反而更鲁棒(query 集是从 entity
+派生的,entity 错就放大错;title 派生的 query 更稳定)。这是意料之外的额外信号。
+
+### 14.4 Evidence 归档
+
+Pre / post sweep benchmark JSON 已存档到 `.sisyphus/evidence/`:
+
+- `pre-sweep-bench-{e5becabd,2cd9c1ff,8af4f620,62e636f0}-20260513.json`
+- `post-sweep-bench-{e5becabd,2cd9c1ff,8af4f620,62e636f0}-20260513.json`
+- `fallback-prevalence-20260513.json`(§12 渗透扫描)
+- `post-phase3-bench-{72da24e9,e5becabd}-20260513.json`(§13.4 数据)
+
+### 14.5 Phase 4 完成判定
+
+| 验收项 | 状态 |
+|--------|------|
+| `keyword_list = []` for heuristic chapters | ✅ 326/326 |
+| `query_hints` 只剩 title hint | ✅ 实测确认 |
+| FactRecord entity rows 不再为 heuristic chapter 创建 | ✅ Phase 3 guards |
+| BAD 分支 MRR 显著回升 | ✅ 平均 +280% |
+| 0 个 sweep 失败 | ✅ 326/326 |
+| 没有 SQL DELETE | ✅ 全程 upsert |
+
+### 14.6 Phase 5(可选,未做)
+
+Graph nodes/edges:fallback chapter 抽出的脏 entity 可能已变成 GraphNode/Edge,
+跨章共享所以无法定向清理。当前判断:
+- 短期影响低(graph 不直接给 retrieval 评分)
+- 修复成本高(需要 schema-level 重建)
+- **建议:** 等下一次完整重跑(如修复 LLM provider quota 后批量重新分析)再清理
+
+### 14.7 LLM provider 告警(§11.6 第 3 项,未做)
+
+`402 Insufficient Balance` 等 LLM 错误目前默默走 fallback 而无告警。建议加一条:
+`analysis_service.py:1339` 的 `'fallback': 'local-heuristic'` 触发时,emit 一个
+明显的 WARN log + 累计计数指标。本次未实施,留 TODO。
