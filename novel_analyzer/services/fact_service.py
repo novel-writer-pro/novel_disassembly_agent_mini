@@ -9,6 +9,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, FactRecord, WindowArtifact
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 from novel_analyzer.services.run_service import default_readable_artifact_clause
 
 
@@ -34,7 +35,10 @@ class FactService:
         )
 
         rows: list[FactRecord] = []
-        key_entities = cast(list[Any], payload.get('key_entities', []))
+        if is_heuristic_artifact(payload):
+            key_entities: list[Any] = []
+        else:
+            key_entities = cast(list[Any], payload.get('key_entities', []))
         key_events = cast(list[Any], payload.get('key_events', []))
         continuity_notes = cast(list[Any], payload.get('continuity_notes', []))
 
@@ -146,6 +150,8 @@ class FactService:
         for artifact in artifacts:
             payload = artifact.payload_json
             summaries.append(f"第{artifact.chapter_index}章：{payload.get('chapter_summary', '')}")
+            if is_heuristic_artifact(payload):
+                continue
             key_entities = cast(list[Any], payload.get('key_entities', []))
             key_events = cast(list[Any], payload.get('key_events', []))
             entity_counter.update(

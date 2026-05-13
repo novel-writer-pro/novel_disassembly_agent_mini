@@ -16,6 +16,7 @@ import numpy as np
 from novel_analyzer.config.settings import Settings, get_settings
 from novel_analyzer.database.models import FactRecord
 from novel_analyzer.embedding.service import get_embedding_provider
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,13 +159,17 @@ class RiskSemanticSignalService:
 
     @classmethod
     def common_signals(cls, artifact_payload: dict[str, object]) -> CommonRiskSignals:
+        if is_heuristic_artifact(cast(dict, artifact_payload)):
+            key_entities: list[str] = []
+        else:
+            key_entities = cls._text_list(artifact_payload, "key_entities")
         return CommonRiskSignals(
             unsupported=cls._text_list(artifact_payload, "unsupported_inferences"),
             ambiguous=cls._text_list(artifact_payload, "ambiguous_points"),
             transition_notes=cls._text_list(artifact_payload, "state_transition_notes"),
             resolutions=cls._text_list(artifact_payload, "evidence_backed_resolutions"),
             unresolved_threads=cls._text_list(artifact_payload, "unresolved_threads"),
-            key_entities=cls._text_list(artifact_payload, "key_entities"),
+            key_entities=key_entities,
         )
 
     @classmethod

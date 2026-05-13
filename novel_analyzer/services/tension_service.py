@@ -25,6 +25,7 @@ from novel_analyzer.database.models import (
     RetrievalChunk,
     RetrievalDocument,
 )
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 
 # Edge types that count as "conflict" for conflict_density
 CONFLICT_EDGE_TYPES: frozenset[str] = frozenset(
@@ -210,6 +211,8 @@ class TensionService:
         if artifact is None:
             return set()
         payload = artifact.payload_json or {}
+        if is_heuristic_artifact(payload):
+            return set()
         entities: list[object] = list(payload.get("key_entities", []))
         events: list[object] = list(payload.get("key_events", []))
         return {str(x).strip().lower() for x in entities + events if x}

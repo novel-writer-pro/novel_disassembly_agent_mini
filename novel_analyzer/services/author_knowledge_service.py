@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, FactRecord
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 from novel_analyzer.services.context_service import ContextService
 
 
@@ -295,7 +296,11 @@ class AuthorKnowledgeService:
                 "chapter_index": artifact.chapter_index,
                 "title": str(artifact.payload_json.get("normalized_title", "")),
                 "summary": str(artifact.payload_json.get("chapter_summary", "")),
-                "key_entities": list(artifact.payload_json.get("key_entities", []))[:5],
+                "key_entities": (
+                    []
+                    if is_heuristic_artifact(artifact.payload_json)
+                    else list(artifact.payload_json.get("key_entities", []))[:5]
+                ),
                 "key_events": list(artifact.payload_json.get("key_events", []))[:5],
                 "continuity_notes": list(artifact.payload_json.get("continuity_notes", []))[:3],
             }

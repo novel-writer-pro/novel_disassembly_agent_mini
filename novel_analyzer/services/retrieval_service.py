@@ -21,6 +21,7 @@ from novel_analyzer.database.models import (
 )
 from novel_analyzer.embedding.service import get_embedding_provider
 from novel_analyzer.rerank.service import DisabledRerankProvider, get_rerank_provider
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +84,8 @@ class RetrievalService:
 
     @staticmethod
     def _normalize_keywords(payload: dict[str, Any]) -> list[str]:
+        if is_heuristic_artifact(payload):
+            return []
         keywords = []
         for item in payload.get("key_entities", []):
             if isinstance(item, str) and item.strip():
@@ -101,6 +104,8 @@ class RetrievalService:
     @staticmethod
     def _query_hints(payload: dict[str, Any], title: str) -> list[str]:
         hints = [f"第{payload.get('chapter_index', '?')}章 {title} 讲了什么"]
+        if is_heuristic_artifact(payload):
+            return hints
         for item in payload.get("key_entities", [])[:3]:
             if isinstance(item, str) and item.strip():
                 hints.append(f"{item.strip()} 在这一章发生了什么")
