@@ -159,3 +159,77 @@ GOOD 分支的 valid 率(96.6%)因此是**下界**,真实可能 ≥ 98.5%。BAD 
 ### 7.5 数据再现命令
 
 完整扫描脚本未入库(一次性诊断脚本,不进项目)。复现请在 Python REPL 跑分类器逻辑(`NEGATION_VERB_PREFIXES` / `ORDINAL_RE` / `ONOMATOPOEIA_RE` 三组规则)对 `chapter_artifacts.payload_json[key_entities]` 做分类计数。
+
+## 8. Level-2 排查执行结果(2026-05-13 当日跑出)
+
+> §7 量化了噪声,本节定位到具体代码 + prompt 文件,3 个假设的高置信判定。
+
+### 8.1 抽取链路实际位置
+
+噪声进入 `key_entities` 的代码路径:
+
+1. **Prompt**: `skills_dir/chapter-intake-and-facts/prompts/main.md` 让 LLM 输出 `facts.characters[].label`
+2. **Service**: `novel_analyzer/services/analysis_service.py:773`
+   ```python
+   key_entities=[item.label for item in facts.characters],
+   ```
+3. **Persistence**: 直接写入 `chapter_artifacts.payload_json["key_entities"]`,无中间过滤
+
+也就是说 LLM 写什么 label 就直接成为 entity,**整条链路上没有任何过滤层**。
+
+### 8.2 Prompt 文本审查结果
+
+`skills_dir/chapter-intake-and-facts/prompts/main.md` 当前(67 行)对 `characters[].label` 的指引:
+
+- ✅ 给出 1 个干净示例(`{"label": "卫图", "evidence": [...], "confidence": 0.98}`)
+- ❌ **无负样本**(没有"以下不应被作为 character label"清单)
+- ❌ **无排除性指令**(没有禁止动词短语/章节序数/拟声词/JSON 残尾)
+- ❌ **无 label 类型约束**(没说必须是人/组织/地名,只说"标签")
+- ✅ §44 处理别名("卫图"="那个少年")已写到 prompt
+- ✅ §40 "没证据就不要写"
+
+### 8.3 时间线证据 — 排除假设 D(prompt 版本飘移)
+
+| 分支 | chapter_artifacts 时间区间 | count |
+|------|---------------------------|-------|
+| GOOD 72da24e9 | 2026-04-26 22:05 → 2026-04-29 03:25 | 115 |
+| BAD-b2 2cd9c1ff | 2026-05-13 15:48 → 2026-05-13 19:08 | 91 |
+| BAD-b3 e5becabd | 2026-05-13 15:10 → 2026-05-13 19:05 | 96 |
+
+intake prompt 的 git 历史只有 2 次提交(`0efa1a6` 引入 + `26df01f` schema 微调),从 GOOD 分支处理到 BAD 分支处理之间**未变更**。两个 BAD 分支用的是**同一个**当前 prompt。
+
+→ **假设 D(prompt 版本飘移)被排除**。两 BAD 分支 vs GOOD 分支的差异不是 prompt 变了,而是**小说内容本身的对话密度/语言风格不同**(雪中悍刀行/诛仙的散文化对话 vs 卫图叙事的简单白描)。
+
+### 8.4 假设结论(高置信)
+
+| 假设 | §4 编号 | 结论 | 证据 |
+|------|---------|------|------|
+| A: prompt 无负样本 | A | **成立** | §8.2 直接 grep 验证 |
+| B: complexity router 副作用 | B | **未排查**(本次 Level 2 未涉及,Level 3 重跑可隔离) | — |
+| C: 后处理过滤缺失 | C | **成立** | §8.1 line 773 验证,链路无过滤 |
+| D: prompt 版本飘移 | D | **排除** | §8.3 时间线 + git 历史 |
+
+### 8.5 后续修复方向(暂不实施)
+
+如果 Level 3 重跑确认假设 A/C 是主因,最小修复成本估计:
+
+1. **Prompt 增 5-8 行负样本** — `skills_dir/chapter-intake-and-facts/prompts/main.md`
+   - 显式列出禁止类型(动词短语 / 章节序数 / 拟声词 / 否定虚词 / JSON 残尾)
+   - 给 2-3 个反例对照
+   - 改动量:< 0.1 KB
+2. **加 `_filter_entity_label()` 后处理** — `novel_analyzer/services/analysis_service.py` 附近
+   - 复用 §7.2 的规则分类器
+   - 拒收 `truncated_tail` / `onomatopoeia` / `ordinal`(高置信噪声类型)
+   - 对 `verb_or_negation` 因为有官职(都军使/都教头)假阳性,先白名单+人审,不直接拒
+   - 改动量:1 个函数 + 单测,< 30 行
+
+两者顺序:**先做 prompt(0 风险)→ 跑 1 章 dry-run → 再加后处理过滤**。
+
+### 8.6 显式不做的事(本轮)
+
+- 不立即改 prompt(等 Level 3 跑完隔离 prompt vs 内容因素)
+- 不立即加过滤器(同上)
+- 不重跑 BAD 分支的全量章节分析(成本高,先小规模 Level 3 验证)
+- 不把"BAD 分支必须修"上升为 blocker(系统当前可用)
+
+→ 下一步建议:做 Level 3(用现行 prompt 重跑 BAD 分支 5 章,看新结果是否仍噪声),最终判定假设 A/C 各占多少比重。
