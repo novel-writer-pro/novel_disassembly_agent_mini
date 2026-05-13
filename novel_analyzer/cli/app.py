@@ -9468,5 +9468,89 @@ def retrieval_benchmark(
         echo(f"\nreport written to: {output_file}")
 
 
+@app.command()
+def domain_dict_rebuild(
+    branch_id: list[str] = typer.Option([], "--branch-id", help="Branch IDs to rebuild from. Empty = all branches with retrieval_documents."),
+    database_url: str | None = None,
+) -> None:
+    """Rebuild domain-dict.txt + jieba-user-dict.txt from one or more branches."""
+    from novel_analyzer.services.domain_dictionary_service import DomainDictionaryService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    with factory() as session:
+        if not branch_id:
+            rows = session.execute(text(
+                "SELECT DISTINCT branch_id FROM retrieval_documents WHERE deleted_at IS NULL"
+            )).all()
+            branch_id = [r[0] for r in rows]
+            echo(f"discovered {len(branch_id)} branches")
+
+        svc = DomainDictionaryService(session, settings)
+        total = 0
+        for bid in branch_id:
+            n = svc.update_from_branch(bid)
+            total += n
+            echo(f"  branch {bid[:8]}: +{n} new terms")
+        terms = svc.get_terms()
+        echo(f"total new={total} dict_size={len(terms)}")
+        plain = settings.runtime_cache_dir + "/domain-dict.txt"
+        jieba_p = settings.runtime_cache_dir + "/jieba-user-dict.txt"
+        echo(f"plain dict: {plain}")
+        echo(f"jieba dict: {jieba_p}")
+
+
+@app.command()
+def bm25_reindex(
+    confirm: bool = typer.Option(False, "--confirm", help="Required to proceed (DROP+ADD bm25_vector column)."),
+    database_url: str | None = None,
+) -> None:
+    """Reindex bm25_vector after pg_jieba userdict change (DROP+ADD GENERATED ALWAYS)."""
+    if not confirm:
+        echo("DRY RUN. This command will DROP and re-ADD the bm25_vector column.")
+        echo("This forces a full table rewrite with the current jieba tokenizer state.")
+        echo("Re-run with --confirm to actually execute.")
+        echo("")
+        echo("Prerequisite: PG container must be RESTARTED with new userdict before running this.")
+        echo("This command opens a fresh connection so the rewrite uses the new tokenizer.")
+        return
+
+    settings = _safe_settings(database_url)
+    import psycopg
+    import re as _re
+
+    parts = settings.resolved_database_url.replace("postgresql+psycopg://", "postgresql://")
+    conn = psycopg.connect(parts)
+    conn.autocommit = True
+
+    sample = conn.execute("SELECT to_tsvector('jiebacfg', '路朝歌养生功龟息养气功')::text").fetchone()[0]
+    sample_terms = set(_re.findall(r"'((?:[^']|'')+)'", sample))
+    echo(f"tokenizer check: {sample}")
+    expected = {"路朝歌", "养生功", "龟息养气功"}
+    missing = expected - sample_terms
+    if missing:
+        echo(f"WARN: tokenizer missing {missing} - userdict not loaded? proceeding anyway.")
+
+    cur = conn.execute("""
+        SELECT attgenerated FROM pg_attribute
+        JOIN pg_class ON pg_class.oid = pg_attribute.attrelid
+        WHERE pg_class.relname='retrieval_documents' AND attname='bm25_vector'
+    """).fetchone()
+    if cur:
+        echo(f"current attgenerated: {cur[0]!r}")
+
+    echo("dropping bm25_vector...")
+    conn.execute("ALTER TABLE retrieval_documents DROP COLUMN bm25_vector")
+    echo("adding bm25_vector as GENERATED ALWAYS (full table rewrite)...")
+    conn.execute("""
+        ALTER TABLE retrieval_documents
+        ADD COLUMN bm25_vector tsvector
+        GENERATED ALWAYS AS (to_tsvector('jiebacfg'::regconfig, COALESCE(bm25_text, ''::text))) STORED
+    """)
+    cnt = conn.execute("SELECT COUNT(*) FROM retrieval_documents").fetchone()[0]
+    echo(f"done. {cnt} rows reindexed.")
+    conn.close()
+
+
 if __name__ == "__main__":
     app()

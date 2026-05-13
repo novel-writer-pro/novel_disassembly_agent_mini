@@ -1,6 +1,45 @@
 ## Unreleased
 
 
+- feat(foundation/P0-automation): 新增两个运维 CLI 命令自动化领域词典 → pg_jieba → bm25_vector 全链路。
+
+  Changelist: `CL-foundation-p0-automation`
+
+  **新增 CLI**：
+  - `domain-dict-rebuild` - 从指定 branch（或全部 branch）重建 `domain-dict.txt` + `jieba-user-dict.txt`，无 branch 参数时自动发现所有有 retrieval_documents 的 branch
+  - `bm25-reindex --confirm` - 在新连接中执行 `ALTER TABLE DROP+ADD GENERATED ALWAYS` 强制全表重写 bm25_vector，使用当前 jieba tokenizer 状态（含 dry-run + tokenizer 自检）
+
+  **完整运维流程**（替代手工 SQL）：
+  ```
+  # 1. 从 DB 重建字典文件（应用侧）
+  python -m novel_analyzer.cli.app domain-dict-rebuild
+
+  # 2. 同步到 pg 容器挂载目录（运维侧）
+  cp .cache/novel-analyzer/jieba-user-dict.txt /path/to/pgsql17/jieba/dicts/novel_analyzer.dict
+
+  # 3. 重启容器加载新字典（运维侧）
+  sudo docker restart d2-pg17
+
+  # 4. 重建 bm25_vector 列（应用侧，新连接）
+  python -m novel_analyzer.cli.app bm25-reindex --confirm
+  ```
+
+  **扩展词典实测增益**（4528 词条，5 本小说 533 docs，post-reindex）：
+
+  | 小说 | docs | simple Recall@5 | jiebacfg Recall@5 | 备注 |
+  |---|---|---|---|---|
+  | 卫图 | 103 | 0.7245 | 0.7245 | simple 从 0.18 跳到 0.72 |
+  | 掌门低调点 | 41 | **1.0000** | **1.0000** | 完美命中 |
+  | 诛仙 | 94 | **1.0000** | **1.0000** | 完美命中 |
+  | 武道宗师 | 91 | 0.8182 | 0.8182 | |
+  | 雪中悍刀行 | 91 | 0.9167 | 0.9167 | |
+
+  关键洞察：领域词典扩展后，所有 5 本小说的 Recall@5 均跳到 0.72-1.00 区间。simple 与 jiebacfg 配置完全收敛——因为 bm25_vector 用 jiebacfg 索引，而专有名词都被存储为单 lexeme，simple tsquery 也产生同样的 lexeme，二者 @@ 命中相同的 row。
+
+  Tested: 5 本小说端到端 benchmark；CLI dry-run + --confirm 流程验证；tokenizer 自检通过。
+  Not-tested: 字典词条 > 10K 时 PG 启动时间影响（当前 4528 词无感）。
+
+
 - feat(foundation/P0-complete): novel_analyzer 领域词典接入 pg_jieba userdict，完成 P0 全链路闭环。
 
   Changelist: `CL-foundation-p0-jieba-dict-complete`
