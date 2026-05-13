@@ -213,3 +213,4 @@ Week 3: P2-1 (entity cache) + 30 章稳定性验证
 | 文档 | 说明 |
 |------|------|
 | [priority-and-roi-research-20260512.md](./priority-and-roi-research-20260512.md) | 底座优化优先级与 ROI 预研(含商业 API / 自研微调 / GitHub 精华对比结论) |
+| [tei-integration-postmortem-20260512.md](./tei-integration-postmortem-20260512.md) | TEI 集成复盘：9 个坑 / 决策回顾 / 性能边界 / SOP |
