@@ -105,6 +105,7 @@ class RetrievalBenchmarkReport:
 class RetrievalBenchmarkService:
     DEFAULT_K_VALUES = [1, 3, 5]
     DEFAULT_FETCH_LIMIT = 10
+    FULLPIPELINE_CONFIG = "fullpipeline"
 
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
@@ -124,7 +125,10 @@ class RetrievalBenchmarkService:
         if configs is None:
             configs = [c for c in ["simple", "jiebacfg"] if c in available_configs]
         else:
-            configs = [c for c in configs if c in available_configs]
+            configs = [
+                c for c in configs
+                if c == self.FULLPIPELINE_CONFIG or c in available_configs
+            ]
 
         query_bank = self._build_query_bank(branch_id, max_queries)
         total_docs = self._count_docs(branch_id)
@@ -135,7 +139,10 @@ class RetrievalBenchmarkService:
             cr = ConfigResult(config_name=cfg)
             for relevant_chapter, query in query_bank:
                 t0 = time.perf_counter()
-                ranked = self._fts_search(branch_id, query, cfg, fetch_limit)
+                if cfg == self.FULLPIPELINE_CONFIG:
+                    ranked = self._fullpipeline_search(branch_id, query, fetch_limit)
+                else:
+                    ranked = self._fts_search(branch_id, query, cfg, fetch_limit)
                 latency_ms = (time.perf_counter() - t0) * 1000
                 cr.query_results.append(
                     QueryResult(
@@ -155,6 +162,15 @@ class RetrievalBenchmarkService:
             configs=config_results,
             k_values=k_vals,
         )
+
+    def _fullpipeline_search(
+        self, branch_id: str, query: str, limit: int
+    ) -> list[int]:
+        from novel_analyzer.services.retrieval_service import RetrievalService
+
+        svc = RetrievalService(self.session, self.settings)
+        diag = svc.search_branch_with_diagnostics(branch_id, query, limit=limit)
+        return [hit.chapter_index for hit in diag.reranked_hits]
 
     def _available_configs(self) -> set[str]:
         rows = self.session.execute(
