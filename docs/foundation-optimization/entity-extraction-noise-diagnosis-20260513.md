@@ -233,3 +233,49 @@ intake prompt 的 git 历史只有 2 次提交(`0efa1a6` 引入 + `26df01f` sche
 - 不把"BAD 分支必须修"上升为 blocker(系统当前可用)
 
 → 下一步建议:做 Level 3(用现行 prompt 重跑 BAD 分支 5 章,看新结果是否仍噪声),最终判定假设 A/C 各占多少比重。
+
+---
+
+## 9. Level-3 诊断版执行结果(2026-05-13)
+
+> §8 把根因缩到假设 A+C,本节用 1 章 dry-run 隔离 prompt 本身 vs 章节内容因素。
+
+### 9.1 实验设置
+
+- 目标:`e5becabd-e2f3-4045-9249-fa91f382dc9a` ch16(诛仙 驱物)
+- 当前 prompt 原样调用(`skills_dir/chapter-intake-and-facts/prompts/main.md`),不修改任何代码
+- 不写 DB(脚本只读 + 调 LLM 一次)
+- LLM 配置:`deepseek-v4-flash`(通过 `build_chat_model` 默认)
+- Prompt 字符数:3316;响应字符数:7419;耗时:28.3s
+- Evidence: `.sisyphus/evidence/l3-dryrun-e5becabd-ch16-20260513.json`
+- 章节原文来源:`/tmp/zhuxian_fixed.txt` 字节偏移 [70630:75519](1655 chars)
+
+### 9.2 输出对比
+
+| | stored(历史抽取) | new(本次重跑) |
+|---|---|---|
+| key_entities | `['第十六章', '驱物', '汪汪汪', '吱吱吱吱', '犬吠声与']` | `['张小凡', '田灵儿', '苏茹', '宋大仁', '其他五个弟子']` |
+| 噪声分类(规则) | ordinal=1 / onomatopoeia=2 / truncated_tail=1 / valid=1 | valid=5 |
+| 噪声项数 | 4/5 (80%) | 0/5 (0%) |
+| 重叠 | — | preserved=0(无一保留) |
+
+### 9.3 判定
+
+**假设 C 是主因**:新输出完全干净(5/5 valid),与历史存储的 4/5 噪声形成鲜明对比,且两次输出无任何重叠。这说明历史抽取时存在 transient 因素(模型不稳定 / context 注入差异 / merged-stage JSON 截断),而非 prompt 本身无法区分噪声。
+
+### 9.4 推论
+
+- **修复优先级 reorder**:
+  1. **后处理过滤优先**(假设 C):加 `_filter_entity_label()` 规则过滤器,拦截 ordinal / onomatopoeia / truncated_tail 类噪声,防止 transient 输出污染存储
+  2. **Prompt 负样本次之**(假设 A):prompt 在本次重跑中表现正常,但加负样本可进一步降低 transient 噪声概率,属于防御性加固
+- **仍未排除的因素**:
+  - 本次仅 1 章,无法排除 ch16 内容本身恰好干净(人物密集,拟声词少)
+  - 历史抽取的 transient 原因尚未定位(可能是 complexity router 副作用 / 多 skill 串联时 JSON 截断)
+  - 需 §10 扩大到 5+ 章验证结论稳定性
+
+### 9.5 不立即做的事(同 §6/§8 原则保持)
+
+- 不在本节提出 prompt 修改 PR
+- 不把"立即加过滤器"上升为 blocker(系统当前可用)
+- 不重跑全量 BAD 分支(成本高,先确认 §10 多章样本)
+- 不把单章结论等同于统计结论(N=1 是信号,不是证明)
