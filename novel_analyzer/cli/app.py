@@ -9413,5 +9413,60 @@ def loom_benchmark(
         echo(f"\nreport written to: {output_file}")
 
 
+
+
+@app.command()
+def retrieval_benchmark(
+    branch_id: str = typer.Argument(..., help="Branch ID to benchmark against."),
+    configs: str = typer.Option("simple,jiebacfg", "--configs", help="Comma-separated FTS configs to compare."),
+    max_queries: int = typer.Option(0, "--max-queries", help="Max queries to use (0 = all)."),
+    k_values: str = typer.Option("1,3,5", "--k-values", help="Comma-separated k values for Recall@k."),
+    output_file: Path | None = typer.Option(None, "--output-file", help="Write JSON report to this path."),
+    database_url: str | None = None,
+) -> None:
+    """Benchmark BM25 retrieval: compare FTS configs on Recall@k and MRR."""
+    from novel_analyzer.services.retrieval_benchmark_service import RetrievalBenchmarkService
+
+    settings = _safe_settings(database_url)
+    factory = create_session_factory(settings)
+    config_list = [c.strip() for c in configs.split(",") if c.strip()]
+    k_list = [int(k.strip()) for k in k_values.split(",") if k.strip()]
+    mq = max_queries if max_queries > 0 else None
+
+    with factory() as session:
+        svc = RetrievalBenchmarkService(session, settings)
+        report = svc.run(branch_id, configs=config_list, max_queries=mq, k_values=k_list)
+
+    echo("=== Retrieval Benchmark Report ===")
+    echo(f"branch:        {report.branch_id}")
+    echo(f"total_docs:    {report.total_docs}")
+    echo(f"queries_used:  {report.queries_used}")
+    echo(f"elapsed:       {report.elapsed_seconds:.2f}s")
+    echo("")
+    for cr in report.configs:
+        echo(f"[{cr.config_name}]")
+        echo(f"  MRR:           {cr.mrr():.4f}")
+        for k in k_list:
+            echo(f"  Recall@{k}:      {cr.recall_at_k(k):.4f}")
+        echo(f"  avg_latency:   {cr.avg_latency_ms():.1f}ms")
+        echo("")
+
+    if len(report.configs) >= 2:
+        delta = report.to_dict()["delta"]
+        echo("[delta: configs[1] - configs[0]]")
+        echo(f"  ΔMRR:          {delta['mrr']:+.4f}")
+        for k in k_list:
+            echo(f"  ΔRecall@{k}:    {delta[f'recall@{k}']:+.4f}")
+        echo(f"  Δlatency:      {delta['avg_latency_ms']:+.1f}ms")
+
+    if output_file is not None:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(
+            __import__("json").dumps(report.to_dict(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        echo(f"\nreport written to: {output_file}")
+
+
 if __name__ == "__main__":
     app()

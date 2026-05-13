@@ -1,6 +1,18 @@
 ## Unreleased
 
 
+- feat(foundation/retrieval-benchmark): 新增 `retrieval-benchmark` CLI 命令，对比 FTS 配置（simple vs jiebacfg）在 BM25 召回率/MRR/延迟上的净增益；使用每章 keyword_list 自动构建 query bank，无需人工标注；支持 --configs / --max-queries / --k-values / --output-file 参数。
+
+  Changelist: `CL-retrieval-benchmark-01`
+
+  实测结果（两个分支）：
+  - 卫图分支 (103 docs, 98 queries): jiebacfg vs simple → MRR +0.37 (+202%), Recall@5 +0.46, 延迟 -2.7ms
+  - 掌门低调点分支 (41 docs, 41 queries): jiebacfg vs simple → MRR +0.10, Recall@5 +0.15, simple 完全无法命中专有名词
+
+  Tested: 两个分支端到端 benchmark 运行通过，JSON 报告产出正常。
+  Not-tested: 单元测试（benchmark service 依赖 PG，不适合 sqlite in-memory）。
+
+
 - feat(foundation/P0): DomainDictionaryService 同步产出 jieba userdict 格式（`jieba-user-dict.txt`，`<term> <freq> <pos>`），与纯词表 `domain-dict.txt` 并列落盘；为 BM25 + jieba / pg_jieba 真正消费领域词典打通前置一半（另一半属运维侧 pg_jieba userdict 重载）。
 
   Changelist: `CL-foundation-domain-dict-jieba-01`
