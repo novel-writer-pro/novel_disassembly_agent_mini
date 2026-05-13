@@ -350,3 +350,95 @@ DB 探查结果(`chapter_raw_outputs` for branch `e5becabd…` ch10/ch16/ch44):
 - 不修改 §9 表格(保留为历史记录,§10 提供修订)
 - 不在源码中加过滤器(假设 D 未代码侧确认,可能改错位置)
 - 不把假设 D 当成结论(它解释为何 §10 数据缺失,但需要 fallback 抽取器源码核对才能升级为根因)
+
+## 11. Hypothesis D 最终验证(2026-05-13 当晚)
+
+> §10 暴露了 hypothesis D(脏数据来自启发式 fallback 而非 LLM)。本节用代码追踪 + 实测复现把 D 升级到 100% 确认。
+
+### 11.1 启发式 fallback 代码(凶手)
+
+`novel_analyzer/services/analysis_service.py:573-588`(共 18 行):
+
+\`\`\`python
+@staticmethod
+def _heuristic_entities(chapter_content: str, limit: int = 5) -> list[str]:
+    candidates = re.findall(r"[一-龥]{2,4}", chapter_content)
+    stop_words = {
+        "第章", "求收藏", "求追读", "本章完", "说道", "一个", "两个",
+        "没有", "可以", "自己", "什么", "这样",
+    }
+    seen: set[str] = set()
+    results: list[str] = []
+    for item in candidates:
+        if item in stop_words or item in seen:
+            continue
+        seen.add(item)
+        results.append(item)
+        if len(results) >= limit:
+            break
+    return results
+\`\`\`
+
+调用链(`analysis_service.py:1331,604`):
+
+```
+LLM 调用失败 (e.g. 402 Insufficient Balance)
+  → _invoke_with_retry 重试耗尽
+  → _build_local_heuristic_analysis(chapter_index, title, chapter_content)
+  → key_entities = _heuristic_entities(content, limit=5)
+  → 直接写入 chapter_artifacts.payload_json["key_entities"]
+  → 被 retrieval/risk/QA 当作真实 entities 消费
+```
+
+### 11.2 字面级复现(0 LLM 调用)
+
+实验:对 e5becabd ch16 章节真实内容(`/tmp/zhuxian_fixed.txt` offset 209197 起 4888 字符,以 "第十六章 驱物\n\"汪汪汪!\"" 开头)直接调 `AnalysisService._heuristic_entities`。
+
+| 来源 | 输出 |
+|------|------|
+| `_heuristic_entities(true_ch16, limit=5)` | `['第十六章', '驱物', '汪汪汪', '吱吱吱吱', '犬吠声与']` |
+| `chapter_artifacts.key_entities`(stored) | `['第十六章', '驱物', '汪汪汪', '吱吱吱吱', '犬吠声与']` |
+
+**逐字符相同。** Hypothesis D 100% 确认。
+
+### 11.3 为什么 §9 的 dry-run 看起来"干净"
+
+§9 单样本 dry-run 用的是 `chapter_segments` 字节切片(start_offset=70630, end=72285,共 1655 字符),**不是真实的 ch16 起点**。这段切片落在前一章的中段,内容里根本不含 "第十六章" / "汪汪汪" 等字符,所以新 LLM 输出当然干净。
+
+§9 的"hypothesis C primary"结论因此是误判 — 它真正测的是"LLM 在不相关的 1655 字符上能不能产出干净 entities",不是测 prompt vs 启发式。
+
+### 11.4 重新校正诊断结论
+
+| 假设 | §4 编号 | §11 后结论 |
+|------|---------|-----------|
+| A: prompt 缺负样本 | A | **未验证**(LLM 当时根本没跑成功,与 prompt 无关) |
+| B: complexity router | B | **未验证**(本次未涉及) |
+| C: 后处理过滤缺失 | C | **部分成立** — analysis_service.py:773 直拉无过滤;但当前噪声主因不是 C,是 D |
+| D: 启发式 fallback 直接污染 | D | **100% 确认** |
+
+§9 的"hypothesis C primary"判定**在此校正为 hypothesis D primary**。
+
+### 11.5 影响范围(待量化)
+
+需扫:三分支里有多少章 `chapter_artifacts.continuity_notes[0]` 含 "本地启发式分析保底生成"。这个数应当与 §7 测出的 chapters_with_noise 数字高度吻合(GOOD 28% / BAD-b2 40% / BAD-b3 87%)— 若吻合,则 D 解释了几乎所有噪声。
+
+本节不立即跑这个统计,留到下一轮(避免无限扩展本备忘)。
+
+### 11.6 修复方向(高置信,但仍待与人确认)
+
+修复优先级 reorder(从 §8.5 的 prompt+filter 转为):
+
+1. **关键:防止 fallback 输出污染下游** — 三选一(待 review):
+   - a. `chapter_artifacts.payload_json` 增 `extraction_source` 字段(`llm` / `heuristic`),retrieval/risk/QA 消费时跳过 `heuristic`
+   - b. `analysis_service.py:1339`(`fallback: 'local-heuristic'`)已存于 `invocation_metadata`,可让 retrieval_service 在物化时检测并 skip
+   - c. fallback 模式下不写 `retrieval_documents` / 不参与 BM25 索引(最激进)
+2. **次要:启发式本身改进** — 扩 stop_words 覆盖 ordinal(`第\d+章` 正则)/ onomatopoeia(连续 ASCII 重复)/ verb_phrase 前缀;但这是补丁,根本问题在 1
+3. **三:LLM 失败时的告警** — 让 402 这类 quota 错误更早被人看到(currently 走 fallback 后默默继续)
+
+### 11.7 不立即做的事
+
+- 不立即扫"多少章是 fallback"(§11.5 留作下一轮)
+- 不立即修代码(等 §11.6 三方案选定)
+- 不立即重跑 BAD 分支(等修复方案敲定)
+
+→ 下一步:确定 §11.6 用方案 a/b/c 哪个,或是组合。
