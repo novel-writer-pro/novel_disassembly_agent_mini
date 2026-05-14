@@ -24,7 +24,7 @@ docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'dify|n8n|langfuse|
    ```bash
    export NOVEL_ANALYZER_LLM_BASE_URL_OVERRIDE='http://localhost:8585/v1/openai'
    export N8N_WEBHOOK_PIPELINE_COMPLETE_URL='http://localhost:5678/webhook/pipeline-complete'
-   .venv/bin/python -m apps.api.app.main 8001 &  # 或 make api-dev
+   make api-dev &  # FastAPI on :8011 (uvicorn)
    ```
 4. **前端**（如需 Dify iframe 验证）：
    ```bash
@@ -36,15 +36,15 @@ docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'dify|n8n|langfuse|
 ### Step 1 — alice 上传一本书
 ```bash
 curl -X POST -H "X-User-Id: alice" -F file=@samples/alice-book.txt \
-  http://localhost:8001/api/import
+  http://localhost:8011/api/import
 # 期望：返回 run_id / branch_id
 ```
 
 ### Step 2 — 验证 alice 的 library 只属于 alice
 ```bash
-curl -H "X-User-Id: alice" 'http://localhost:8001/api/library' \
+curl -H "X-User-Id: alice" 'http://localhost:8011/api/library' \
   | jq '.items | length'   # ≥ 1
-curl -H "X-User-Id: bob"   'http://localhost:8001/api/library' \
+curl -H "X-User-Id: bob"   'http://localhost:8011/api/library' \
   | jq '.items | length'   # 0（前提是 bob 没上传过）
 ```
 
@@ -52,7 +52,7 @@ curl -H "X-User-Id: bob"   'http://localhost:8001/api/library' \
 ```bash
 curl -X POST -H "X-User-Id: alice" -H "Content-Type: application/json" \
   -d '{"branch_id":"<branch_id>","chapter_index":1,"goal":"测试仿写"}' \
-  http://localhost:8001/api/whole-book-imitation-run
+  http://localhost:8011/api/whole-book-imitation-run
 # 期望：响应 200，含 contract_version
 ```
 
@@ -114,7 +114,7 @@ tail -f /tmp/ai-books-api.log | grep "X-User-Id"
 
 ai-books 当前不验签，401/403 来自 Dify 自身。检查：
 1. Custom Tool 的 Authorization 设的是 None
-2. URL 用 `host.docker.internal:8001`（不是 `localhost:8001`，容器内访问主机）
+2. URL 用 `host.docker.internal:8011`（不是 `localhost:8011`，容器内访问主机）
 
 ### 症状 4：alice 的隔离失效（看到 bob 的书）
 

@@ -126,8 +126,9 @@ alembic upgrade head
 
 ### 3. 启动后端
 ```bash
-.venv/bin/python -m apps.api.app.main
-# 默认监听 :8001
+make api-dev
+# uvicorn 启动 FastAPI on http://127.0.0.1:8011
+# legacy fallback (cutover 完成后移除): make api-wsgi-legacy
 ```
 
 ### 4. 启动前端

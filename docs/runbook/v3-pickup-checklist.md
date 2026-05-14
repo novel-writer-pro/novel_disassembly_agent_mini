@@ -10,7 +10,7 @@
 - [ ] `docker compose version` 返回 v2.24+
 - [ ] 当前 user 在 docker group 或有 sudo
 - [ ] 至少 10GB 可用磁盘
-- [ ] 端口 8001 / 4173 / 8080 / 5678 / 3030 / 8585 / 8586 全部空闲
+- [ ] 端口 8011 / 4173 / 8080 / 5678 / 3030 / 8585 / 8586 全部空闲
 
 ## Stage 1 — 起 4 套 docker stack
 
@@ -70,7 +70,7 @@
   export N8N_WEBHOOK_PIPELINE_COMPLETE_URL='http://localhost:5678/webhook/pipeline-complete'
   ```
 - [ ] 跑 alembic upgrade head（v2 的 owner_user_id 列）
-- [ ] 起后端：`.venv/bin/python -m apps.api.app.main 8001`
+- [ ] 起后端：`make api-dev   # FastAPI on :8011 via uvicorn`
 
 ## Stage 6 — 端到端 smoke（按 `docs/runbook/business-loop.md` 6 步）
 
