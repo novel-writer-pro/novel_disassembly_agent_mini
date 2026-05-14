@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -7785,7 +7786,9 @@ def writer_imitate_range(
                 "rule_overrides": list(rule_override),
                 "forbidden_transformations": list(forbidden_transformation),
             }
-        for source_chapter_index, target_goal in parsed:
+        for idx, (source_chapter_index, target_goal) in enumerate(parsed, start=1):
+            chapter_started_at = time.perf_counter()
+            echo(f"[{idx}/{len(parsed)}] ch{source_chapter_index} target_goal={target_goal!r} ...")
             report = service.run_harness(
                 branch_id,
                 source_chapter_index=source_chapter_index,
@@ -7797,15 +7800,32 @@ def writer_imitate_range(
                 mapping_pack=mapping_pack_dict,
             )
             payload = report.model_dump(mode="json")
-            outputs.append(
-                {
-                    "source_chapter_index": source_chapter_index,
-                    "target_goal": target_goal,
-                    "final_verdict": payload.get("final_verdict"),
-                    "stop_reason": payload.get("stop_reason"),
-                    "final_draft": payload.get("final_draft", {}),
-                    "policy_summary": payload.get("policy_summary", {}),
-                }
+            item = {
+                "source_chapter_index": source_chapter_index,
+                "target_goal": target_goal,
+                "final_verdict": payload.get("final_verdict"),
+                "stop_reason": payload.get("stop_reason"),
+                "final_draft": payload.get("final_draft", {}),
+                "policy_summary": payload.get("policy_summary", {}),
+            }
+            outputs.append(item)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            per_chapter_path = output_dir / f"writer-imitate-ch{source_chapter_index}.json"
+            per_chapter_payload = {
+                "branch_id": branch_id,
+                **item,
+                "steering_pack": steering,
+                **({"mapping_pack": mapping_pack_dict} if mapping_pack_dict is not None else {}),
+            }
+            per_chapter_path.write_text(
+                json.dumps(per_chapter_payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            elapsed = time.perf_counter() - chapter_started_at
+            text_len = len(item["final_draft"].get("draft_text", "") or "")
+            echo(
+                f"[{idx}/{len(parsed)}] ch{source_chapter_index} done in {elapsed:.1f}s "
+                f"chars={text_len} verdict={item['final_verdict']} -> {per_chapter_path}"
             )
         stem = f"writer-imitate-range-{parsed[0][0]}-{parsed[-1][0]}"
         json_path, md_path = _write_writer_imitation_outputs(
