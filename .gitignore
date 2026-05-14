@@ -22,4 +22,3 @@ apps/web/tsconfig.tsbuildinfo
 **/__pycache__/
 *.py[cod]
 .tmp
->>>>>>> 3c0862f (Wire CI gates and pickup automation for v2 framework migration)
