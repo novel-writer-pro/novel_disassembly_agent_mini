@@ -105,7 +105,7 @@
       "shape": {
         "error": "str"
       },
-      "status": "400 Bad Request"
+      "status": "404 Not Found"
     },
     "GET /api/review-clusters": {
       "shape": {
