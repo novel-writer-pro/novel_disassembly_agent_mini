@@ -1,21 +1,73 @@
 # writer-imitate-ch3
 
 ## Steering Pack
-- worldview_capsule: 
-- trope_axes: 
-- innovation_directives: 
-- taboo_innovations: 
-- external_knowledge_refs: 
-
-## Steering Retrieval Meta
-
-### Hit Reasons
+- worldview_capsule: []
+- trope_axes: []
+- innovation_directives: []
+- taboo_innovations: []
+- external_knowledge_refs: []
 
 ## Draft Title
 养生功法
 
+## Original Title
+养生功法
+
+## Target Goal
+延续卫图得法与初练
+
 ## Draft Text
 卫图在账房领了下个月的月钱，转身时瞥见管事赵伯正翻看一本泛黄的小册子。他犹豫片刻，上前低声请教：“赵伯，府上可有教人强身的粗浅功夫？”赵伯抬眼打量他，慢悠悠将册子合上：“你一个马夫，练那作甚？规矩摆着，下人不许私习武艺。”卫图心头一沉，但未退让：“侄孙只想学些养身门道，不妄动拳脚。若赵伯有方便，愿将月钱折半酬谢。”赵伯沉吟半晌，从袖中抽出一卷破旧的《调息舒筋法》扔给他：“这是当年老账房留下的，算不得武功，养身罢了。七日内还我，莫要声张。”卫图接住册子，道谢离去。待回到马厩侧屋，他挑灯翻看，图字简单，不过三十六个呼吸坐姿。他依图盘坐，调整呼吸，却觉气滞胸腹，难以沉入丹田。练了二十余遍，眼前金紫命格浮现一行字迹：「调息舒筋法（1/100）：一日三练，十年方成。」卫图苦笑，十年太久，但随即想起命格之名——“大器晚成”，虽慢却必成。他默念册末小注：“此法通体舒泰，可入气血调和之境。”到底何为调和，他不得而知，但至少有了方向。他将册子贴身藏好，心想：十年之后，自己也不过二十七岁。
+
+## Method Notes
+- 保留原章‘求艺受阻-妥协获得-初练发现命格提示’的核心结构。
+- 将‘二姑冷淡’替换为‘赵伯以规矩为由推脱’，体现身份阻力。
+- 将‘龟息养气功’替换为‘调息舒筋法’，性质同为粗浅养生功，符合世界规则。
+- 保持命格显示时长较长、但必成的设定，延续‘大器晚成’逻辑。
+- 结尾留下‘气血调和之境’作为下一步可执行钩子，与原文‘感气之境’对应。
+- 优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。
+- 继续约束角色反应，避免把克制型推进写成情绪化爆发。
+- 如涉及关系变化，补足中间证据，不要只写结果。
+- 1:rhythm
+- 2:reader_engagement
+- 2:ending_hook
+- 2:character_motivation
+- 2:relationship_transition
+- 2:world_rule_support
+- 3:dialogue
+- 3:fact_relations
+- 3:research_pack
+- 3:fact_rules
+- 优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。
+- 继续约束角色反应，避免把克制型推进写成情绪化爆发。
+- 如涉及关系变化，补足中间证据，不要只写结果。
+- 1:rhythm
+- 2:reader_engagement
+- 2:ending_hook
+- 2:character_motivation
+- 2:relationship_transition
+- 2:world_rule_support
+- 3:dialogue
+- 3:fact_relations
+- 3:research_pack
+- 3:fact_rules
+
+## Comparison Notes
+- 对应原章【求恳-答应】阶段：卫图找赵伯请求学功夫，赵伯先拒绝后接受（原章二姑答应）。
+- 对应原章【获得功法】阶段：赵伯抛出旧册子，要求七日内归还（原章阮武师扔图册并要七日后归还）。
+- 对应原章【初练发现命格】阶段：练了二十余遍后命格显示进度，并指明‘十年方成’（原章‘五年即成’）。
+- 对应原章【对境界的疑惑】阶段：结尾卫图思考‘气血调和之境’是何意（原章‘感气之境’）。
+- 只字未抄原文句子，仅复用结构模式和冲突-应对节奏。
+- ACTION:repair_rhythm:rhythm
+- ACTION:repair_reader_engagement:reader_engagement
+- ACTION:reinforce_ending_hook:ending_hook
+- ACTION:repair_character_motivation:character_motivation
+- {"ordered_actions": [{"action_type": "repair_rhythm", "issue_family": "rhythm", "target": "rhythm", "severity": "medium", "priority": 1, "instructions": ["补足节奏起伏与章尾驱动力，避免章节推进过平。"]}, {"action_type": "repair_reader_engagement", "issue_family": "reader_sim", "target": "reader_engagement", "severity": "
+- ACTION:repair_rhythm:rhythm
+- ACTION:repair_reader_engagement:reader_engagement
+- ACTION:reinforce_ending_hook:ending_hook
+- ACTION:repair_character_motivation:character_motivation
+- {"ordered_actions": [{"action_type": "repair_rhythm", "issue_family": "rhythm", "target": "rhythm", "severity": "medium", "priority": 1, "instructions": ["补足节奏起伏与章尾驱动力，避免章节推进过平。"]}, {"action_type": "repair_reader_engagement", "issue_family": "reader_sim", "target": "reader_engagement", "severity": "
 
 ## Risk Gate Notes
 - 风险1：赵伯身份是否超出李宅既有设定？建议确认原章中李宅是否有账房管事，若无则需改为更合理角色（如老园丁）。
@@ -23,6 +75,27 @@
 - 风险3：十年方成是否与‘大器晚成’命格匹配？命格说明是‘费时更长但必成’，十年比原章五年更长，但仍在合理范围。可进一步核查软约束中‘持续通过修炼累积可转化能力’，十年过长可能影响剧情推进，需平衡。
 - 风险4：无明示‘身份与身契限制’，但赵伯的‘下人不许私习武艺’已隐含此约束，未直接突破硬约束。
 - 风险5：需要检查是否引入了未准备的大设定（如‘气血调和之境’是否在原世界观中有铺垫）。若无，则建议改为更模糊的‘养身门道’即可。
+- 风险1：赵伯身份是否超出李宅既有设定？建议确认原章中李宅是否有账房管事，若无则需改为更合理角色（如老园丁）。
+- 风险2：月钱折半是否与卫图经济状况相符？原章中卫图是马夫，月钱应较少，折半后是否影响后续生存？建议在草案中保持逻辑：卫图甘愿节约。
+- 风险3：十年方成是否与‘大器晚成’命格匹配？命格说明是‘费时更长但必成’，十年比原章五年更长，但仍在合理范围。可进一步核查软约束中‘持续通过修炼累积可转化能力’，十年过长可能影响剧情推进，需平衡。
+- 风险4：无明示‘身份与身契限制’，但赵伯的‘下人不许私习武艺’已隐含此约束，未直接突破硬约束。
+- 风险5：需要检查是否引入了未准备的大设定（如‘气血调和之境’是否在原世界观中有铺垫）。若无，则建议改为更模糊的‘养身门道’即可。
+- 补一个明确的下一步钩子，避免章节收束过平。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
+- 风险1：赵伯身份是否超出李宅既有设定？建议确认原章中李宅是否有账房管事，若无则需改为更合理角色（如老园丁）。
+- 风险2：月钱折半是否与卫图经济状况相符？原章中卫图是马夫，月钱应较少，折半后是否影响后续生存？建议在草案中保持逻辑：卫图甘愿节约。
+- 风险3：十年方成是否与‘大器晚成’命格匹配？命格说明是‘费时更长但必成’，十年比原章五年更长，但仍在合理范围。可进一步核查软约束中‘持续通过修炼累积可转化能力’，十年过长可能影响剧情推进，需平衡。
+- 风险4：无明示‘身份与身契限制’，但赵伯的‘下人不许私习武艺’已隐含此约束，未直接突破硬约束。
+- 风险5：需要检查是否引入了未准备的大设定（如‘气血调和之境’是否在原世界观中有铺垫）。若无，则建议改为更模糊的‘养身门道’即可。
+- 风险1：赵伯身份是否超出李宅既有设定？建议确认原章中李宅是否有账房管事，若无则需改为更合理角色（如老园丁）。
+- 风险2：月钱折半是否与卫图经济状况相符？原章中卫图是马夫，月钱应较少，折半后是否影响后续生存？建议在草案中保持逻辑：卫图甘愿节约。
+- 风险3：十年方成是否与‘大器晚成’命格匹配？命格说明是‘费时更长但必成’，十年比原章五年更长，但仍在合理范围。可进一步核查软约束中‘持续通过修炼累积可转化能力’，十年过长可能影响剧情推进，需平衡。
+- 风险4：无明示‘身份与身契限制’，但赵伯的‘下人不许私习武艺’已隐含此约束，未直接突破硬约束。
+- 风险5：需要检查是否引入了未准备的大设定（如‘气血调和之境’是否在原世界观中有铺垫）。若无，则建议改为更模糊的‘养身门道’即可。
+- 补一个明确的下一步钩子，避免章节收束过平。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
 - 补一个明确的下一步钩子，避免章节收束过平。
 - 补充 relationship_watchpoints，明确关系推进敏感点。
 - 补充 rule_watchpoints，明确世界规则敏感点。
@@ -45,4 +118,4 @@
 - gate_verdict: aligned_but_needs_revision
 - risk_overall_level: low
 - overall_score: 84
-- issue_families: ['rhythm', 'reader_sim', 'hook', 'motivation', 'relationship', 'rule', 'dialogue', 'relationship', 'research', 'rule']
+- issue_families: ["rhythm", "reader_sim", "hook", "motivation", "relationship", "rule", "dialogue", "relationship", "research", "rule"]

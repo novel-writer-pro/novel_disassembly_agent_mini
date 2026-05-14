@@ -49,3 +49,42 @@
 | D. 跨题材完本（如卫图 → 科幻完整 102 章） | 证明 mapping_pack 在百章规模稳定 | ~2-3h LLM + 7 项 mapping |
 
 **强推 A**：技术 pipeline 已经稳定，瓶颈在内容审核和质量循环。
+
+---
+
+## 2026-05-14 19:16 后续:发现 + 修复 prose 污染
+
+完成 FULL 聚合后,审查产物时发现两类系统级污染影响 ALL 三本完本(297 章):
+
+### 污染 1:Harness Action Queue 调试尾巴泄漏
+- **范围**:297/297 章 100% 中招
+- **根因**:`HarnessControllerService._apply_actions_to_draft` (`novel_analyzer/services/imitation_harness_service.py:241-257`) 把 telemetry 拼到 `draft_text` 末尾
+- **CLI 显示侧** (cli/app.py:3149/3195/3279) 用 `.split("【Harness Action Queue】", 1)[0]` 兜了一下,但 JSON 落盘 + FULL md 没做相同处理
+- **影响**:每章末 ~600-800 字是 `[P1|high] expand_middle:draft_body` 之类的调试行
+- **真实有效 prose**:之前的 "avg ~2000 字/章" 实际是 ~1500 字(含尾巴的统计高估了 30-40%)
+
+### 污染 2:scaffold-only 章节
+- **范围**:47/297 章 (16%) 是 prose-empty 的结构骨架
+  - 卫图 5/92,诛仙 23/102,雪中悍刀行 19/103
+- **特征**:`draft_text` 只有 `【章节目标】场景1:承接...场景2:...【硬约束】...【说明】当前为仿写结构草案`
+- **机制**:疑似 LLM 调用失败/降级时 fallback 到 skeleton,但被静默当成 final_draft 落盘
+- **后果**:reviewers 无法在打开文件前判断章节是否有正文
+
+### 已应用修复(离线侧)
+1. `scripts/clean_imitation_drafts.py` — regex 剥离 actq + 标记 scaffold-only
+2. `scripts/render_workspace_chapter_md.py` — 工作区 .md 重渲染工具(--clean 模式)
+3. 三本完本输出 `*-imitation-fullbook-clean.md` + `chapter-index-clean.md` + `contamination-report.json`
+4. 工作区 `runs/manual_eval/{zhuxian,xuezhong}-llm-baseline` 的 ch2-5 .md 已用 clean 模式重渲染
+
+### 真实有效产出(去污染后)
+| 小说 | 总章 | 有效章 | scaffold | 真实字数 |
+|---|---:|---:|---:|---:|
+| 卫图 | 92 | 87 | 5 | 119,187 |
+| 诛仙 | 102 | 79 | 23 | 144,681 |
+| 雪中悍刀行 | 103 | 84 | 19 | 113,854 |
+| **合计** | **297** | **250** | **47** | **377,722** |
+
+### 阻塞下一阶段的根因修复(待 Oracle 返回方案)
+- [ ] writer-imitate-range 落盘前 strip 调试尾巴
+- [ ] scaffold-only fallback 显式 mark 而非静默落盘
+- [ ] 单元测试覆盖 `_apply_actions_to_draft` 不再污染 draft_text

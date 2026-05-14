@@ -1,0 +1,142 @@
+# writer-imitate-ch2
+
+## Steering Pack
+- worldview_capsule: []
+- trope_axes: []
+- innovation_directives: []
+- taboo_innovations: []
+- external_knowledge_refs: []
+
+## Draft Title
+白狐儿脸
+
+## Original Title
+白狐儿脸
+
+## Target Goal
+徐凤年游学回归
+
+## Draft Text
+陵州城门处，折冲都尉李沉舟勒住缰绳，望着瘫软在地的世子殿下，眉头拧成了疙瘩。他是凉州军中资历最老的牙将之一，是北凉王麾下“一虎二犬三狼”中的“病犬”，素来以沉稳持重著称。可这位殿下……李沉舟心中暗叹，殿下此番游学归来，形容枯槁，形同乞儿，与三年前离府时的翩翩公子判若两人。该如何送回府？总不能让亲兵像扛沙袋般扛回去，那成何体统？
+
+正踌躇间，蹄声如雷。一骑自城内狂奔而出，通体乌黑，神骏非凡，正是小王爷的坐骑“墨玉”。马背上的少年身形瘦小，却力能扛鼎，正是小王爷徐青象。他远远瞧见城门口的阵仗，猛拉缰绳，马王人立而起，却温顺地落蹄。徐青象翻身下马，直冲过来，见兄长双目紧闭，顿时哇哇大哭，扑上去就要摇晃。李沉舟连忙拦住：“小王爷，殿下只是极度疲累，昏迷了，并无大碍。”徐青象闻言止住哭声，一把将李沉舟推开，后者竟踉跄数步，心中骇然：这少年天生神力，果然名不虚传。
+
+随行的老仆黄三儿操着一口西蜀腔调，低声道：“二少爷，让老奴先扶大少爷上马吧，别耽搁了。”徐青象这才点头，小心翼翼地将徐凤年背起，动作轻柔得与方才判若两人。那匹名为“黑牙”的骏马凑过来，用脑袋亲昵地蹭着黄三儿牵着的另一匹红马，红马却扭头啃了它一口，黑牙委屈地躲开，又不舍离去。
+
+队伍入城，陵州主道顿时鸡飞狗跳。那些平日里矜持的小姐贵妇们，此刻提着裙摆尖叫逃窜，生怕沾上这位殿下半分。更有些机灵的老鸨龟公，喜极而泣，急忙吩咐楼里最出挑的姑娘们梳妆打扮，盼着那位“冤家”能早些上门。而城中大小青楼，精神也为之一振。
+
+队伍末尾，一人悄然缀行。白袍胜雪，腰悬双刀，黛眉入鬓，丹凤眼微挑，美得令人心悸。这俊美非凡的“女子”行至一卦摊前，开口问道：“老先生，那被铁骑护着的，是何人？”摆摊的算卦老人浑浊的眼珠被对方容貌所慑，半晌才回过神，苦笑道：“姑娘是外地人吧？这陵州城里，除了北凉王的世子，谁还能有这等声势？便是邻州的藩王子孙，见了他也要绕道走。”
+
+“姑娘？”白袍人黛眉微蹙，未再计较，望向远去的队伍，桃花眼中闪过一丝冷意，低语道：“徐骁……当真生了个好儿子。”
+
+北凉王府，世子院落。
+
+此处的陈设极尽奢华，临窗大案上古鼎高悬，紫檀木桌文玩堆积，室内地龙烧得极旺，温暖如春。大床上，徐凤年盖着锦被，昏睡未醒。床边，北凉王徐骁与小王爷徐青象守着，另有龙虎山的一位老道士与黄三儿在侧。
+
+“天师，凤年他……”徐骁第无数次问道，声音里满是焦虑。这位在沙场上令人闻风丧胆的杀神，此刻只像个担忧孩子的普通父亲。
+
+“王爷放心，殿下只是心力交瘁，并无大碍。静养些时日，自会康复。”老道士抚须保证，心中却肉疼不已——徐骁此前恨不得将府中所有珍稀药材都给儿子灌下去，被他好一番劝阻。
+
+徐凤年整整睡了两日才醒。睁眼便见弟弟徐青象守在床边，眼下乌青，显然是不眠不休。徐骁闻讯赶来，刚要开口，一只宣德炉便裹挟着风声砸来。徐骁歪头躲过，徐凤年已跳下床，抄起手边能及之物便砸了过去，一路追打至院中，拾起一把扫帚便追着徐骁打。徐骁抱头鼠窜，还不忘喊：“鞋！穿上鞋！天凉！”
+
+几位老管家见怪不怪，双手拢袖，望着天，仿佛早已习惯了这父子间的“晨间活动”。
+
+## Method Notes
+- 沿用原章‘归城-冲击-归府-父子冲突’的四段式结构，信息释放顺序一致（先外部视角烘托声势，再内部视角展开家庭互动）
+- 以‘归城引发的秩序扰动’替代原章的‘风流行径’，保持冲突的社会性层面
+- 白袍人作为外部观察者与潜在冲突源被保留，其台词暗示对徐骁父子的关注，为后续身份线埋伏笔
+- 父子冲突从‘砸炉子追打’升级为更激烈的‘一路砸一路追’，强化戏剧性但未改变行为逻辑（徐凤年记恨三年流浪，徐骁愧疚但笨拙）
+- 小王爷的‘天生神力’与‘对兄长小心翼翼’的反差，老仆的西蜀腔调与细致关照，均予以保留并融入新语境
+- 优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。
+- 继续约束角色反应，避免把克制型推进写成情绪化爆发。
+- 如涉及关系变化，补足中间证据，不要只写结果。
+- 1:rhythm
+- 2:reader_engagement
+- 2:ending_hook
+- 2:character_motivation
+- 2:relationship_transition
+- 2:world_rule_support
+- 3:dialogue
+- 3:fact_relations
+- 3:research_pack
+- 3:fact_rules
+- 优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。
+- 继续约束角色反应，避免把克制型推进写成情绪化爆发。
+- 如涉及关系变化，补足中间证据，不要只写结果。
+- 1:rhythm
+- 2:reader_engagement
+- 2:ending_hook
+- 2:character_motivation
+- 2:relationship_transition
+- 2:world_rule_support
+- 3:dialogue
+- 3:fact_relations
+- 3:research_pack
+- 3:fact_rules
+
+## Comparison Notes
+- 核心骨架完全对应：折冲都尉犯难→小王爷解围→入城轰动→白袍人尾随询问→王府守候→苏醒后父子冲突
+- 家庭线与身份线交叉：徐骁的焦虑体现父亲身份，世子归来的声势体现政治身份，两线在归府后汇合于冲突场景
+- 资源/身份压力体现：游学三年的代价（形同乞儿）暗示主角需重新证明自己或获取资源以巩固地位，白袍人的出现暗示外部势力对北凉的关注，抬高行动代价
+- 章尾钩子：父子冲突未解决，白袍人身份未明，均为后续章节提供推进点
+- ACTION:repair_rhythm:rhythm
+- ACTION:repair_reader_engagement:reader_engagement
+- ACTION:reinforce_ending_hook:ending_hook
+- ACTION:repair_character_motivation:character_motivation
+- {"ordered_actions": [{"action_type": "repair_rhythm", "issue_family": "rhythm", "target": "rhythm", "severity": "medium", "priority": 1, "instructions": ["补足节奏起伏与章尾驱动力，避免章节推进过平。"]}, {"action_type": "repair_reader_engagement", "issue_family": "reader_sim", "target": "reader_engagement", "severity": "
+- ACTION:repair_rhythm:rhythm
+- ACTION:repair_reader_engagement:reader_engagement
+- ACTION:reinforce_ending_hook:ending_hook
+- ACTION:repair_character_motivation:character_motivation
+- {"ordered_actions": [{"action_type": "repair_rhythm", "issue_family": "rhythm", "target": "rhythm", "severity": "medium", "priority": 1, "instructions": ["补足节奏起伏与章尾驱动力，避免章节推进过平。"]}, {"action_type": "repair_reader_engagement", "issue_family": "reader_sim", "target": "reader_engagement", "severity": "
+
+## Risk Gate Notes
+- 检查人物行为逻辑：徐凤年对父亲的愤怒是否建立在‘三年流浪’的合理动机上？徐骁的退让是否符合其‘杀神但宠子’的设定？
+- 检查战力/设定无突兀升级：小王爷的天生神力为已知设定，白袍人仅展现外貌与气质，未展示超规格武力
+- 检查白袍人引入是否铺垫充分：其外貌、双刀、对徐骁的评价，均为身份伏笔，未直接揭示其与徐凤年的关系或目的，留有余地
+- 检查节奏把控：四段式结构是否紧凑，信息释放是否维持了悬念（白袍人是谁？他/她为何关注徐凤年？）
+- 检查家庭线兑现：父子冲突是情感核心，是否足够驱动后续章节的身份突破或资源积累？
+- 检查人物行为逻辑：徐凤年对父亲的愤怒是否建立在‘三年流浪’的合理动机上？徐骁的退让是否符合其‘杀神但宠子’的设定？
+- 检查战力/设定无突兀升级：小王爷的天生神力为已知设定，白袍人仅展现外貌与气质，未展示超规格武力
+- 检查白袍人引入是否铺垫充分：其外貌、双刀、对徐骁的评价，均为身份伏笔，未直接揭示其与徐凤年的关系或目的，留有余地
+- 检查节奏把控：四段式结构是否紧凑，信息释放是否维持了悬念（白袍人是谁？他/她为何关注徐凤年？）
+- 检查家庭线兑现：父子冲突是情感核心，是否足够驱动后续章节的身份突破或资源积累？
+- 补一个明确的下一步钩子，避免章节收束过平。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
+- 检查人物行为逻辑：徐凤年对父亲的愤怒是否建立在‘三年流浪’的合理动机上？徐骁的退让是否符合其‘杀神但宠子’的设定？
+- 检查战力/设定无突兀升级：小王爷的天生神力为已知设定，白袍人仅展现外貌与气质，未展示超规格武力
+- 检查白袍人引入是否铺垫充分：其外貌、双刀、对徐骁的评价，均为身份伏笔，未直接揭示其与徐凤年的关系或目的，留有余地
+- 检查节奏把控：四段式结构是否紧凑，信息释放是否维持了悬念（白袍人是谁？他/她为何关注徐凤年？）
+- 检查家庭线兑现：父子冲突是情感核心，是否足够驱动后续章节的身份突破或资源积累？
+- 检查人物行为逻辑：徐凤年对父亲的愤怒是否建立在‘三年流浪’的合理动机上？徐骁的退让是否符合其‘杀神但宠子’的设定？
+- 检查战力/设定无突兀升级：小王爷的天生神力为已知设定，白袍人仅展现外貌与气质，未展示超规格武力
+- 检查白袍人引入是否铺垫充分：其外貌、双刀、对徐骁的评价，均为身份伏笔，未直接揭示其与徐凤年的关系或目的，留有余地
+- 检查节奏把控：四段式结构是否紧凑，信息释放是否维持了悬念（白袍人是谁？他/她为何关注徐凤年？）
+- 检查家庭线兑现：父子冲突是情感核心，是否足够驱动后续章节的身份突破或资源积累？
+- 补一个明确的下一步钩子，避免章节收束过平。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
+- 补一个明确的下一步钩子，避免章节收束过平。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
+
+## Final Verdict
+- needs_revision
+
+## Stop Reason
+- critical_action_required
+
+## Policy Summary
+- final_verdict: needs_revision
+- stop_reason: critical_action_required
+- highest_action_priority: 1
+- highest_action_severity: medium
+- action_count: 10
+- weak_lane_action_count: 3
+- blocking_issue_count: 0
+- recommended_action_count: 21
+- gate_verdict: aligned_but_needs_revision
+- risk_overall_level: low
+- overall_score: 84
+- issue_families: ["rhythm", "reader_sim", "hook", "motivation", "relationship", "rule", "dialogue", "relationship", "research", "rule"]

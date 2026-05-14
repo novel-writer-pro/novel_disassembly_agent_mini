@@ -1,18 +1,20 @@
 # writer-imitate-ch4
 
 ## Steering Pack
-- worldview_capsule: 
-- trope_axes: 
-- innovation_directives: 
-- taboo_innovations: 
-- external_knowledge_refs: 
-
-## Steering Retrieval Meta
-
-### Hit Reasons
+- worldview_capsule: []
+- trope_axes: []
+- innovation_directives: []
+- taboo_innovations: []
+- external_knowledge_refs: []
 
 ## Draft Title
 珍惜眼下
+
+## Original Title
+珍惜眼下
+
+## Target Goal
+延续卫图苦练养生功并面临新身份变化
 
 ## Draft Text
 大奶奶李童氏放下茶盏，脸上带着温和的笑，但话语却透出几分郑重：“卫哥儿，你和杏的事，我和老爷商量过了。杏是个好姑娘，你也是咱家勤快人，按理该成全你们。只是……”她顿了顿，目光扫过卫图身上的粗布短褐，“你签的是死契，身契还押在李家帐上。若要成家，得先脱籍。老爷说了，赎身银子按规矩是三两，但念你六年辛劳，给你减到二两半。银子凑齐了，就放你自由，另给你们拨一间偏院，杏的嫁妆李家也出一份。”
@@ -35,12 +37,82 @@
 
 （章末钩子：卫图走到阮家门前，却见门口站着两个穿短打的汉子，正与门房争执。其中一人嚷道：“阮家武师前日得的养生功是假的！我按图练了七日，气血翻涌，差点走火入魔！”卫图脚步一顿，手心沁出汗来。）
 
+## Method Notes
+- 1. 承接上一章结果：直接引用大奶奶召见的结果，以婚事和赎身需求作为当前目标，延续原章“珍惜眼下”的心态——不因未来机缘而轻视已有关系。
+- 2. 信息释放顺序：先展示大奶奶提出的条件（阻力），再通过春兰给出阮家机会（资源），然后通过卫图内心权衡（克制回应），最后用打听来的护镖任务（行动线）推进。
+- 3. 冲突-应对-收束节奏：冲突（赎身缺钱）→应对（春兰提供线索、卫图选择不立刻投靠阮家，而是寻找短期任务）→收束（出发去阮家面前，但留下功法有假的悬念）。
+- 4. 人物选择逻辑：卫图不因暖流成就而高看自己，保持谨慎，优先考虑稳定积累（练功、攒钱），并优先保护与杏的关系（“杏，等我回来”）。
+- 5. 场景节拍：明确需求（二两半赎银）→制造成本（阮家帮闲要挤占练功时间，护镖有风险）→主角给出行动（应征护镖）→章尾钩子（功法争议暗示后续冲突）。
+- 6. 软约束应用：通过春兰提及阮家对功法的反馈，将“关键关系带来机会”具体化为月钱和资源，同时“抬高代价”表现为对练功时间的挤压和风险；同时保持家庭协作（杏偷偷给荷包，婚约仍维持）。
+- 优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。
+- 继续约束角色反应，避免把克制型推进写成情绪化爆发。
+- 如涉及关系变化，补足中间证据，不要只写结果。
+- 1:rhythm
+- 2:reader_engagement
+- 2:ending_hook
+- 2:relationship_transition
+- 2:world_rule_support
+- 3:dialogue
+- 3:fact_relations
+- 3:research_pack
+- 3:fact_rules
+- 优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。
+- 继续约束角色反应，避免把克制型推进写成情绪化爆发。
+- 如涉及关系变化，补足中间证据，不要只写结果。
+- 1:rhythm
+- 2:reader_engagement
+- 2:ending_hook
+- 2:relationship_transition
+- 2:world_rule_support
+- 3:dialogue
+- 3:fact_relations
+- 3:research_pack
+- 3:fact_rules
+
+## Comparison Notes
+- 骨架对应：原章第1-3段（阶级固化与卫图的自省）→仿写中卫图面对赎身对银子的沉思（身份固化限制）。
+- 原章第4-7段（通过养生功突破暖流）→仿写中龟息养气功进度（25/100）的延续，以及体内暖流在白天不再明显（描述变化）。
+- 原章第8-12段（大奶奶召见、谈论婚事）→仿写中大奶奶直接提出赎身条件，并提及杏的嫁妆（延续婚事线索）。
+- 原章第13-16段（卫图克制不骄，珍惜眼下）→仿写中卫图拒绝轻易投靠阮家，选择稳妥护镖任务，以及最后对杏的低语（珍惜感情）。
+- 原章结尾（养生功进度数字与睡去）→仿写结尾以功法争议悬念替代，功能相同：为下一章提供推进动力。
+- ACTION:repair_rhythm:rhythm
+- ACTION:repair_reader_engagement:reader_engagement
+- ACTION:reinforce_ending_hook:ending_hook
+- ACTION:repair_relationship_transition:relationship_transition
+- {"ordered_actions": [{"action_type": "repair_rhythm", "issue_family": "rhythm", "target": "rhythm", "severity": "medium", "priority": 1, "instructions": ["补足节奏起伏与章尾驱动力，避免章节推进过平。"]}, {"action_type": "repair_reader_engagement", "issue_family": "reader_sim", "target": "reader_engagement", "severity": "
+- ACTION:repair_rhythm:rhythm
+- ACTION:repair_reader_engagement:reader_engagement
+- ACTION:reinforce_ending_hook:ending_hook
+- ACTION:repair_relationship_transition:relationship_transition
+- {"ordered_actions": [{"action_type": "repair_rhythm", "issue_family": "rhythm", "target": "rhythm", "severity": "medium", "priority": 1, "instructions": ["补足节奏起伏与章尾驱动力，避免章节推进过平。"]}, {"action_type": "repair_reader_engagement", "issue_family": "reader_sim", "target": "reader_engagement", "severity": "
+
 ## Risk Gate Notes
 - 风险1：战力升级无铺垫。卫图此时尚未完全进入感气境，护镖路上的冲突不能突然爆发内力或学会新招式，应保持依靠基本体魄和桩功积累，最多通过暖流增强耐力。
 - 风险2：功法争议不能过度展开。阮家门前那人喊“养生功是假的”，不能立即实锤是功法问题，而应作为外部干扰，后续通过卫图验证或自己体内感受来澄清，避免引入“原功法缺陷”的大设定。
 - 风险3：赎身金额和途径需符合世界规则。二两半银子在源章语境中合理（李宅一旬吃两次肉，经济拮据）；护镖工钱一两五钱也符合短期体力劳动的高回报。不能出现突然获得巨款或天降横财。
 - 风险4：人物行为不能脱离既有逻辑。卫图选择暂时不求助二姑，符合他之前“不想欠人情”的谨慎性格；他接受护镖而非依赖阮家帮闲，也符合他“优先自己积累”的稳健逻辑。
 - 风险5：不能破坏家庭协作稳定。杏主动给荷包、大奶奶允诺偏院和嫁妆，这些均维持了原章中李宅对卫图的善意为度，避免引入婆媳矛盾或恶仆情节。
+- 风险1：战力升级无铺垫。卫图此时尚未完全进入感气境，护镖路上的冲突不能突然爆发内力或学会新招式，应保持依靠基本体魄和桩功积累，最多通过暖流增强耐力。
+- 风险2：功法争议不能过度展开。阮家门前那人喊“养生功是假的”，不能立即实锤是功法问题，而应作为外部干扰，后续通过卫图验证或自己体内感受来澄清，避免引入“原功法缺陷”的大设定。
+- 风险3：赎身金额和途径需符合世界规则。二两半银子在源章语境中合理（李宅一旬吃两次肉，经济拮据）；护镖工钱一两五钱也符合短期体力劳动的高回报。不能出现突然获得巨款或天降横财。
+- 风险4：人物行为不能脱离既有逻辑。卫图选择暂时不求助二姑，符合他之前“不想欠人情”的谨慎性格；他接受护镖而非依赖阮家帮闲，也符合他“优先自己积累”的稳健逻辑。
+- 风险5：不能破坏家庭协作稳定。杏主动给荷包、大奶奶允诺偏院和嫁妆，这些均维持了原章中李宅对卫图的善意为度，避免引入婆媳矛盾或恶仆情节。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
+- 补充关系变化敏感点。
+- 风险1：战力升级无铺垫。卫图此时尚未完全进入感气境，护镖路上的冲突不能突然爆发内力或学会新招式，应保持依靠基本体魄和桩功积累，最多通过暖流增强耐力。
+- 风险2：功法争议不能过度展开。阮家门前那人喊“养生功是假的”，不能立即实锤是功法问题，而应作为外部干扰，后续通过卫图验证或自己体内感受来澄清，避免引入“原功法缺陷”的大设定。
+- 风险3：赎身金额和途径需符合世界规则。二两半银子在源章语境中合理（李宅一旬吃两次肉，经济拮据）；护镖工钱一两五钱也符合短期体力劳动的高回报。不能出现突然获得巨款或天降横财。
+- 风险4：人物行为不能脱离既有逻辑。卫图选择暂时不求助二姑，符合他之前“不想欠人情”的谨慎性格；他接受护镖而非依赖阮家帮闲，也符合他“优先自己积累”的稳健逻辑。
+- 风险5：不能破坏家庭协作稳定。杏主动给荷包、大奶奶允诺偏院和嫁妆，这些均维持了原章中李宅对卫图的善意为度，避免引入婆媳矛盾或恶仆情节。
+- 风险1：战力升级无铺垫。卫图此时尚未完全进入感气境，护镖路上的冲突不能突然爆发内力或学会新招式，应保持依靠基本体魄和桩功积累，最多通过暖流增强耐力。
+- 风险2：功法争议不能过度展开。阮家门前那人喊“养生功是假的”，不能立即实锤是功法问题，而应作为外部干扰，后续通过卫图验证或自己体内感受来澄清，避免引入“原功法缺陷”的大设定。
+- 风险3：赎身金额和途径需符合世界规则。二两半银子在源章语境中合理（李宅一旬吃两次肉，经济拮据）；护镖工钱一两五钱也符合短期体力劳动的高回报。不能出现突然获得巨款或天降横财。
+- 风险4：人物行为不能脱离既有逻辑。卫图选择暂时不求助二姑，符合他之前“不想欠人情”的谨慎性格；他接受护镖而非依赖阮家帮闲，也符合他“优先自己积累”的稳健逻辑。
+- 风险5：不能破坏家庭协作稳定。杏主动给荷包、大奶奶允诺偏院和嫁妆，这些均维持了原章中李宅对卫图的善意为度，避免引入婆媳矛盾或恶仆情节。
+- 补充 relationship_watchpoints，明确关系推进敏感点。
+- 补充 rule_watchpoints，明确世界规则敏感点。
+- 补充关系变化敏感点。
 - 补充 relationship_watchpoints，明确关系推进敏感点。
 - 补充 rule_watchpoints，明确世界规则敏感点。
 - 补充关系变化敏感点。
@@ -63,4 +135,4 @@
 - gate_verdict: aligned_but_needs_revision
 - risk_overall_level: low
 - overall_score: 84
-- issue_families: ['rhythm', 'reader_sim', 'hook', 'relationship', 'rule', 'dialogue', 'relationship', 'research', 'rule']
+- issue_families: ["rhythm", "reader_sim", "hook", "relationship", "rule", "dialogue", "relationship", "research", "rule"]
