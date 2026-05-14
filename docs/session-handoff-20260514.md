@@ -77,10 +77,12 @@ Aggregated at `output/whole-book-zhuxian-FULL/`. zhuxian is **2.6x faster** than
 | `7c21c25` | 9 unit tests covering mapping_pack injection paths |
 | `d73ce60` | 30-chapter scale validation: 97.7% accuracy, 28/30 chapters clean |
 | `682d790` | second-pass prompt fix for dense chapters |
+| `5fbbe79` | strip marketing tags from draft_title (求收藏 / 求追读 / 加更 etc.) |
 
 **Validation summary**:
 - 5-chapter spike: 0 leaks / 20 mapped hits / 100% accuracy
 - 30-chapter scale: 4 leaks / 172 mapped hits / **97.7% accuracy**
+- Title cleanup: 3/3 chapters verified clean post-fix
 - Mapping is **prompt-time translation**, not regex replace — characters/dialogue/motivation all coherent.
 - +49% character growth vs unmapped baseline (mapping gives LLM richer setting material).
 
