@@ -25,6 +25,32 @@ from novel_analyzer.database.models import FactRecord, GraphNode
 _JIEBA_DEFAULT_FREQ = 100
 _JIEBA_DEFAULT_POS = "n"
 
+# A proper-noun term must fit in this length budget. Long inputs (e.g. fact
+# narrative summaries) being added as a single jieba userdict line collapses an
+# entire sentence into one token, which DESTROYS BM25 recall — the inverse of
+# the intended effect.
+_TERM_MIN_LEN = 2
+_TERM_MAX_LEN = 12  # 12 chars covers nearly all proper nouns + short titles
+
+# Reject any term containing characters that strongly indicate it is a
+# sentence/paragraph rather than a noun phrase.
+_TERM_REJECT_CHARS = frozenset(
+    "，。、；：！？“”‘’（）《》〈〉【】「」『』·…—— "
+    ",.;:!?\"'()<>[]{}|\\/\t\n\r"
+)
+
+
+def _is_valid_term(term: str) -> bool:
+    """True iff term is shaped like a proper-noun (short, no sentence punctuation)."""
+    if not term:
+        return False
+    if len(term) < _TERM_MIN_LEN or len(term) > _TERM_MAX_LEN:
+        return False
+    for ch in term:
+        if ch in _TERM_REJECT_CHARS:
+            return False
+    return True
+
 
 class DomainDictionaryService:
     """Builds and maintains a domain-specific dictionary from analysis results."""
@@ -40,13 +66,14 @@ class DomainDictionaryService:
         return Path(self.settings.runtime_cache_dir) / "jieba-user-dict.txt"
 
     def _load_existing(self) -> set[str]:
+        """Return existing valid terms; silently drops sentence-like noise on read."""
         path = self._dict_path()
         if not path.exists():
             return set()
         return {
             line.strip()
             for line in path.read_text(encoding='utf-8').splitlines()
-            if line.strip() and len(line.strip()) >= 2
+            if _is_valid_term(line.strip())
         }
 
     def update_from_branch(self, branch_id: str) -> int:
@@ -68,12 +95,12 @@ class DomainDictionaryService:
         new_terms: set[str] = set()
         for label in entity_labels + fact_labels:
             term = str(label).strip()
-            if len(term) >= 2 and term not in existing:
-                new_terms.add(term)
-                sub_terms = self._extract_sub_terms(term)
-                for sub in sub_terms:
-                    if sub not in existing:
-                        new_terms.add(sub)
+            if not _is_valid_term(term) or term in existing:
+                continue
+            new_terms.add(term)
+            for sub in self._extract_sub_terms(term):
+                if _is_valid_term(sub) and sub not in existing:
+                    new_terms.add(sub)
 
         if not new_terms:
             return 0
@@ -99,11 +126,12 @@ class DomainDictionaryService:
         new_terms: set[str] = set()
         for fact in facts:
             term = fact.label.strip()
-            if len(term) >= 2 and term not in existing:
-                new_terms.add(term)
-                for sub in self._extract_sub_terms(term):
-                    if sub not in existing:
-                        new_terms.add(sub)
+            if not _is_valid_term(term) or term in existing:
+                continue
+            new_terms.add(term)
+            for sub in self._extract_sub_terms(term):
+                if _is_valid_term(sub) and sub not in existing:
+                    new_terms.add(sub)
 
         if not new_terms:
             return 0
@@ -117,14 +145,16 @@ class DomainDictionaryService:
         return sorted(self._load_existing())
 
     def _persist(self, all_terms: list[str]) -> None:
+        valid_terms = sorted(t for t in all_terms if _is_valid_term(t))
+
         plain = self._dict_path()
         plain.parent.mkdir(parents=True, exist_ok=True)
-        plain.write_text('\n'.join(all_terms) + '\n', encoding='utf-8')
+        plain.write_text('\n'.join(valid_terms) + '\n', encoding='utf-8')
 
         jieba = self._jieba_dict_path()
         lines = [
             f"{term} {_JIEBA_DEFAULT_FREQ} {_JIEBA_DEFAULT_POS}"
-            for term in all_terms
+            for term in valid_terms
         ]
         jieba.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 

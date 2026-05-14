@@ -76,6 +76,59 @@ def test_update_from_chapter_writes_plain_and_jieba_dict(tmp_path) -> None:
     assert jieba_terms == plain_terms
 
 
+def test_sentence_like_labels_are_rejected(tmp_path) -> None:
+    """Long fact summaries must not enter userdict — they collapse BM25 tokens."""
+    settings = _settings(tmp_path)
+    sentence = (
+        '本章延续了前文兽妖围攻青云山的大规模战斗场景，'
+        '具体聚焦于年轻一代弟子的战场表现。'
+    )
+    with _session() as session:
+        branch = _branch(session, tmp_path)
+        session.add_all([
+            FactRecord(
+                branch_id=branch.id,
+                chapter_index=1,
+                fact_type='entity',
+                label='卫图',
+                evidence_list=[],
+                confidence=0.9,
+            ),
+            FactRecord(
+                branch_id=branch.id,
+                chapter_index=1,
+                fact_type='foreshadowing',
+                label=sentence,
+                evidence_list=[],
+                confidence=0.8,
+            ),
+            FactRecord(
+                branch_id=branch.id,
+                chapter_index=1,
+                fact_type='entity',
+                label='路朝歌、慕容',
+                evidence_list=[],
+                confidence=0.7,
+            ),
+        ])
+        session.flush()
+
+        service = DomainDictionaryService(session, settings)
+        service.update_from_chapter(branch.id, 1)
+
+    plain_terms = {
+        line for line in
+        (tmp_path / 'cache' / 'domain-dict.txt').read_text(encoding='utf-8').splitlines()
+        if line
+    }
+    assert '卫图' in plain_terms
+    assert sentence not in plain_terms
+    assert '路朝歌、慕容' not in plain_terms
+    for term in plain_terms:
+        assert 2 <= len(term) <= 12, f'unexpected length: {term!r}'
+        assert ',' not in term and '，' not in term and '。' not in term
+
+
 def test_update_from_branch_rewrites_both_files(tmp_path) -> None:
     settings = _settings(tmp_path)
     with _session() as session:
