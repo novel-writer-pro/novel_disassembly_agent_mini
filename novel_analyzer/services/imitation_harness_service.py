@@ -269,7 +269,6 @@ class HarnessControllerService:
         return revised.model_copy(
             update={
                 "risk_gate_notes": revised.risk_gate_notes + preflight.recommended_actions[:3],
-                "method_notes": revised.method_notes + [f"{item.priority}:{item.target}" for item in actions],
                 "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]] + [json.dumps(revise_payload, ensure_ascii=False)[:300]],
                 "action_queue": list(actions[:6]),
                 "is_scaffold_only": draft.is_scaffold_only,
