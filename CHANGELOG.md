@@ -1,5 +1,54 @@
 ## Unreleased
 
+- feat(whole-book): 跨题材整本仿写 MVP 落地 + 双完本验证 + mapping_pack 全链路修复。
+
+  ChangeLists（按时序）:
+  - `CL-whole-book-mvp-quickstart` — `writer-imitate-range` 多章批量入口的 MVP 操作手册（5/10/19/30/43 章渐进验证）
+  - `CL-whole-book-weitu-fullbook` — 卫图分支整本生成（102 章 / 199,981 字 / 3.5h）
+  - `CL-whole-book-cross-novel` — 掌门低调点 + 诛仙 5 章 spike（跨题材鲁棒性）
+  - `CL-whole-book-zhuxian-fullbook` — 诛仙整本生成（102 章 / 230,118 字 / 80 min，2.6× 速度）
+  - `CL-cli-writer-imitate-range-split` — 把多章 range JSON 拆为 per-chapter
+  - `CL-mapping-pack-injection-fix` — `mapping_pack` 真正注入 LLM prompt（`584758f`）
+  - `CL-mapping-pack-tests` — 9 个单测覆盖 mapping_pack 注入路径
+  - `CL-mapping-pack-30ch-validation` — 30 章规模验证：97.7% 准确率
+  - `CL-prompts-second-pass-check` — 密集章节二次检查 prompt 加固
+  - `CL-prompts-title-cleanup` — 自动剥离"求收藏/求追读"等营销标签
+
+  **双书完本实测**：
+
+  | 小说 | 章数 | 字数 | avg/章 | 时间 |
+  |---|---|---|---|---|
+  | 卫图 | 102 | 199,981 | 1,960 | 3.5h |
+  | 诛仙 | 102 | 230,118 | 2,256 | 80 min |
+  | **合计** | **204** | **430,099** | **2,108** | — |
+
+  **mapping_pack 跨题材验证**（仙侠 → 科幻）：
+  - 5 章 spike: 0 leak / 20 mapped hits / 100% 准确率
+  - 30 章规模: 4 leak / 172 mapped hits / **97.7% 准确率**
+  - +49% 字数提升 vs 无映射 baseline（mapping 提供的设定细节让 LLM 有更多素材）
+
+  **新增 CLI**：
+  - `writer-imitate-range-split` — 把 range JSON 拆为 per-chapter writer-imitate-ch{N}.json
+  - `writer-imitate` / `writer-imitate-range` 新增 6 个 mapping flag（--world-map / --character-map / --faction-map / --power-map / --rule-override / --forbidden-transformation）
+
+  **新增文档（5 篇）**：
+  - `docs/whole-book-quickstart-20260514.md` — MVP 操作手册
+  - `docs/whole-book-progress-20260514.md` — 卫图渐进进度日志
+  - `docs/whole-book-zhuxian-progress-20260514.md` — 诛仙完本进度
+  - `docs/whole-book-cross-novel-20260514.md` — 跨题材鲁棒性证据
+  - `docs/whole-book-mapping-scale-20260514.md` — 30 章 mapping 验证
+  - `docs/session-handoff-20260514.md` — 两日工作完整 handoff
+
+  **关键发现**：
+  - whole-book pipeline 跨原作稳定（卫图 + 诛仙 双完本，零代码改动）
+  - mapping 是 prompt-time 整体翻译（非 regex），人物关系/对话/动机连贯
+  - LLM 速度差异源于 proxy 队列负载，非内容复杂度
+  - 唯一未解决的是 Loom gate 阈值（102/102 章 verdict=needs_revision，blocking_issue_count=0），属于多日 tuning 工作，未在本次范围内
+
+  Tested: 30 imitation/prompt/whole-book unit tests 全部通过（含 9 个新 mapping_pack 测试）；4 次端到端 LLM 长跑（每次 ~30 章）；3 次 cross-novel spike。
+  Not-tested: 100 章规模的 mapping_pack 长程稳定性（推断为 hold，基于 5/30 章趋势）；Loom gate 阈值调整。
+
+
 - feat(reader-studio/v4): 独立读者端 `/reader/*` 路由上线，核心能力全部暴露。
 
   Changelist: `CL-reader-studio-v4` (3 commits: Wave A + Wave B + README)
