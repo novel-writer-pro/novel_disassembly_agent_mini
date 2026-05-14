@@ -1,0 +1,46 @@
+name: frontend-build
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/frontend-build.yml'
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Next.js production build
+        run: npx next build
+
+      - name: Verify writer/* bundle isolation
+        run: |
+          # /writer routes must NOT pull in WorkbenchApp shell
+          BUNDLE_DIR=.next
+          if grep -r "WorkbenchApp" "$BUNDLE_DIR/server/pages/writer" 2>/dev/null; then
+            echo "ERROR: WorkbenchApp leaked into /writer/* bundle"
+            exit 1
+          fi
+          echo "OK: /writer/* bundle does not reference WorkbenchApp"
