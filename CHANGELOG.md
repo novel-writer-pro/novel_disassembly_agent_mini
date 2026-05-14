@@ -1,5 +1,32 @@
 ## Unreleased
 
+- feat(writer-studio/v3): 业务闭环完成 — identity 透传 + n8n 完成通知 + Helicone trace 覆盖。
+
+  Changelist: `CL-writer-studio-v3-business-loop` (PR #9, 6 atomic commits)
+
+  v2 retro 暴露的 4 个 gap，v3 全部闭合：
+  - **Identity 透传**：新增 `IdentityMiddleware` 读 X-User-Id header → RequestContext；service 层 (`RunService.create_run`/`IngestService.ingest_*`) 接受 owner_user_id 关键字参数；`_library_payload` 加 WHERE 子句；`/api/library` 从 WSGI environ 读 HTTP_X_USER_ID；Dify Custom Tool OpenAPI 加 X-User-Id header。
+  - **n8n 业务接入**：新增 `novel_analyzer/runtime/notify.py`，2s timeout、catch all、env-gated；hook 写在 `WholeBookImitationService.run_in_sandbox()` 末尾 return 之前。imitation 算法 0 改动。
+  - **Helicone trace 覆盖**：新增 `Settings.llm_base_url_override` env 字段，`build_chat_model()` 优先用它；业务代码 0 import langfuse/dify/helicone。一键 env 切换 / 降级。
+  - **Runbook 收口**：`docs/runbook/business-loop.md` 6 步端到端 smoke + 5 故障定位症状；`make v3-smoke` 跑 docker-free 测试套件 (21 tests / 11s)。
+
+  零回归保证（F1 APPROVE）：
+  - `apps/api/app/main.py` 2497 → 2503 (+6 行，dispatch 表 0 改动)
+  - `prompts.py` / `run_graph.py` 0 改动
+  - imitation 算法仅 18 行 hook 块
+  - 业务代码 0 langfuse/dify/helicone import
+  - 92/92 测试绿（46 v2 + 46 v3-new）
+
+  v3 Must NOT 锁定：不 IDP / 不 RLS / 不搬 prompt 到 Dify Studio / 不动 imitation 算法 / 不动 main.py dispatch / 不引入新 framework。
+
+  待操作员手动验证（不在代码 PR 范围）：v2 N4-N7 + v3 Stage 2-6 见 `docs/runbook/v3-pickup-checklist.md`。
+
+  关联文档：
+  - Plan: `.sisyphus/plans/writer-studio-v3-business-loop.md`
+  - Roadmap: `docs/strategy/writer-studio-roadmap.md`
+  - Runbook: `docs/runbook/business-loop.md`
+  - Pickup checklist: `docs/runbook/v3-pickup-checklist.md`
+  - Handoff: `docs/process/writer-studio-v3-handoff.md`
 - feat(foundation/P0): 完成「领域词典 → pg_jieba → bm25_vector」全链路闭环 + 完整文档套件 + 4 个运维 CLI。
 
   本期 P0 工作覆盖 10 个 commits，从应用侧 dict 双格式输出到运维侧自动化命令再到完整文档套件，最终在 5 本小说 587 docs 的语料上达成 simple Recall@5 0.18 → 0.81（~3x 提升），fullpipeline 多路融合 R@5 0.9-1.0。
