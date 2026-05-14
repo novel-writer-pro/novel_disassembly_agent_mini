@@ -1,0 +1,72 @@
+{
+  "name": "pipeline-complete-notify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pipeline-complete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "pipeline-complete"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.status }}",
+              "rightValue": "success",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-success",
+      "name": "IF status=success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const branch = $json.body.branch_id || 'unknown';\nconst chapter = $json.body.chapter_index;\nconst when = new Date().toISOString();\nconsole.log(`[notify] ${when} pipeline complete branch=${branch} chapter=${chapter}`);\nreturn [{ json: { logged: true, branch, chapter, when } }];"
+      },
+      "id": "log-success",
+      "name": "Log to console",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, ...$json }) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[ { "node": "IF status=success", "type": "main", "index": 0 } ]] },
+    "IF status=success": {
+      "main": [
+        [ { "node": "Log to console", "type": "main", "index": 0 } ],
+        [ { "node": "Respond", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Log to console": { "main": [[ { "node": "Respond", "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
