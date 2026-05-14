@@ -169,6 +169,11 @@ def build_chapter_imitation_prompt(
 4. 输出只允许 JSON，不要 Markdown。
 5. 若给出了"设定替换映射"，draft_text 中必须使用映射后的名称，不得保留原名。
 6. draft_title 必须是干净标题，去掉源章可能携带的营销标签（例如"（求收藏，求追读）"、"（求月票）"、"（加更）"等），只保留章节正文标题。
+7. draft_text 必须是连续的小说正文段落。**严禁**在 draft_text 中出现规划性标签或元描述，例如：
+   - "目标明确：..." / "阻力浮现：..." / "主角回应：..." / "章尾钩子：..."（这些规划维度只能写在 method_notes 或 comparison_notes 里）
+   - "（本章完）" / "（章末钩子：...）" / "【硬约束】" / "【软约束】" / "【说明】..." / "【修订提示】..."（这些是结构脚手架，不是小说语言）
+   - 任何形如 "1:rhythm / 2:ending_hook / 3:dialogue" 的优先级标签
+   draft_text 读起来必须就是给读者看的章节正文，不是给系统看的报告。
 
 源章节：
 - chapter_index: {source_chapter_index}

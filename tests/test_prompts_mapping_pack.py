@@ -97,3 +97,21 @@ def test_prompt_imperative_appears_in_rules_section_unconditionally():
     assert "draft_text 中必须使用映射后的名称" in with_pack
     assert "人物名替换（必须执行）" not in no_pack
     assert "人物名替换（必须执行）" in with_pack
+
+
+def test_prompt_explicitly_forbids_method_label_bleed_in_draft_text():
+    """Cross-book manual review surfaced LLM writing planning vocabulary into prose:
+    xuezhong ch4 dumped '目标明确：/阻力浮现：/主角回应：/章尾钩子：' into draft_text;
+    weitu ch4-5 dumped '（章末钩子：...）' and '（本章完）'. Prompt must explicitly
+    forbid these so the model knows draft_text is reader-facing prose, not a report.
+    """
+    prompt = build_chapter_imitation_prompt(**_base_kwargs(), mapping_pack=None)
+    # Explicit method-label bans
+    for label in ("目标明确：", "阻力浮现：", "主角回应：", "章尾钩子："):
+        assert label in prompt, f"expected prompt to mention forbidden label {label!r}"
+    # Scaffold marker bans
+    for marker in ("（本章完）", "【硬约束】", "【说明】", "【修订提示】"):
+        assert marker in prompt, f"expected prompt to mention forbidden marker {marker!r}"
+    # The clause must explicitly say these belong elsewhere
+    assert "method_notes" in prompt
+    assert "comparison_notes" in prompt
