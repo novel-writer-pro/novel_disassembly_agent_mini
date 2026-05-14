@@ -325,14 +325,18 @@ class BranchQAService:
             degraded_reason=error_message[:240],
         )
 
-    def answer_question(self, branch_id: str, question: str, limit: int = 5) -> BranchQAResult:
-        """Answer a question from retrieval hits only."""
+    def answer_question(self, branch_id: str, question: str, limit: int = 5, max_chapter: int | None = None) -> BranchQAResult:
+        """Answer a question from retrieval hits only.
+
+        Args:
+            max_chapter: If set, only use chapters <= max_chapter (anti-spoiler mode).
+        """
 
         question_type = self._classify_question(question)
         resolved_question = self._resolve_entities_in_question(branch_id, question)
-        hits = self.retrieval_service.search_branch(branch_id, resolved_question, limit)
+        hits = self.retrieval_service.search_branch(branch_id, resolved_question, limit, max_chapter=max_chapter)
         if len(hits) < limit:
-            original_hits = self.retrieval_service.search_branch(branch_id, question, limit)
+            original_hits = self.retrieval_service.search_branch(branch_id, question, limit, max_chapter=max_chapter)
             seen = {h.chapter_index for h in hits}
             for h in original_hits:
                 if h.chapter_index not in seen:

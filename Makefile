@@ -1,4 +1,5 @@
-.PHONY: help tei-prefetch tei-up tei-down tei-doctor tei-restart
+.PHONY: help tei-prefetch tei-up tei-down tei-doctor tei-restart \
+	api-dev api-wsgi-legacy
 
 help:
 	@echo "TEI Development Targets:"
@@ -19,6 +20,10 @@ help:
 	@echo "  make v2-up-all     - (needs docker) bring up dify + n8n + langfuse"
 	@echo "  make v2-down-all   - (needs docker) tear down dify + n8n + langfuse"
 	@echo "  make v2-pickup-checklist - Step-by-step pickup guide for next session"
+	@echo ""
+	@echo "Backend launch (v5 cutover):"
+	@echo "  make api-dev          - Start FastAPI backend on :8011 via uvicorn (default)"
+	@echo "  make api-wsgi-legacy  - Start WSGI fallback (will be removed after T10 cutover)"
 
 tei-prefetch:
 	.venv/bin/python scripts/dev/tei-prefetch.py
@@ -119,3 +124,14 @@ v2-down-all:
 	-docker compose -f infra/dify/upstream/docker/docker-compose.yaml down 2>/dev/null
 	-docker compose -f infra/n8n/docker-compose.yml down
 	-docker compose -f infra/langfuse/upstream/docker-compose.yml down 2>/dev/null
+
+# --- v5: backend launch ---
+api-dev:
+	@echo "Starting FastAPI backend on http://127.0.0.1:8011 (uvicorn)..."
+	.venv/bin/uvicorn apps.api.app.fastapi_app:app --host 127.0.0.1 --port 8011 --reload
+
+api-wsgi-legacy:
+	@echo "[deprecated] Launching WSGI dispatch backend on :8011..."
+	@echo "  This path is retained only for v5 cutover rollback."
+	@echo "  Default launch is 'make api-dev' (uvicorn + FastAPI)."
+	.venv/bin/python -m apps.api.app.main

@@ -1,0 +1,12 @@
+T2 — trace_context 模块
+================================================
+
+File: novel_analyzer/runtime/trace_context.py
+Tests: tests/runtime/test_trace_context.py
+
+  $ .venv/bin/pytest tests/runtime/test_trace_context.py -v
+    13 passed in 0.20s
+
+零渗透验证:
+  $ grep -rn "trace_context" novel_analyzer/services/
+    (no output — 业务代码 0 引用)

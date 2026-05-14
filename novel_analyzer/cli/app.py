@@ -7679,6 +7679,12 @@ def writer_imitate(
     trope_doc: list[str] = typer.Option([], "--trope-doc"),
     worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
     audience_doc: list[str] = typer.Option([], "--audience-doc"),
+    world_map: list[str] = typer.Option([], "--world-map", help="Pairs like 郑国=星际联邦"),
+    character_map: list[str] = typer.Option([], "--character-map", help="Pairs like 卫图=魏拓"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Writer-facing imitation entrypoint that writes artifacts into output/."""
@@ -7696,6 +7702,16 @@ def writer_imitate(
             worldview_doc,
             audience_doc,
         )
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         report = _imitation_harness_service(session, settings).run_harness(
             branch_id,
             source_chapter_index=source_chapter_index,
@@ -7704,10 +7720,13 @@ def writer_imitate(
             use_llm=use_llm,
             model_name=model_name or None,
             steering_pack=steering,
+            mapping_pack=mapping_pack_dict,
         )
         payload = report.model_dump(mode="json")
         payload["steering_pack"] = steering
         payload["steering_retrieval_meta"] = retrieval_meta
+        if mapping_pack_dict is not None:
+            payload["mapping_pack"] = mapping_pack_dict
         stem = f"writer-imitate-ch{source_chapter_index}"
         json_path, md_path = _write_writer_imitation_outputs(output_dir, stem, payload)
         echo(f"writer_imitate_json={json_path}")
@@ -7730,6 +7749,12 @@ def writer_imitate_range(
     trope_doc: list[str] = typer.Option([], "--trope-doc"),
     worldview_doc: list[str] = typer.Option([], "--worldview-doc"),
     audience_doc: list[str] = typer.Option([], "--audience-doc"),
+    world_map: list[str] = typer.Option([], "--world-map", help="Pairs like 郑国=星际联邦"),
+    character_map: list[str] = typer.Option([], "--character-map", help="Pairs like 卫图=魏拓"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Batch writer-facing imitation entrypoint for multiple source chapters."""
@@ -7750,6 +7775,16 @@ def writer_imitate_range(
             worldview_doc,
             audience_doc,
         )
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         for source_chapter_index, target_goal in parsed:
             report = service.run_harness(
                 branch_id,
@@ -7759,6 +7794,7 @@ def writer_imitate_range(
                 use_llm=use_llm,
                 model_name=model_name or None,
                 steering_pack=steering,
+                mapping_pack=mapping_pack_dict,
             )
             payload = report.model_dump(mode="json")
             outputs.append(
@@ -7775,7 +7811,13 @@ def writer_imitate_range(
         json_path, md_path = _write_writer_imitation_outputs(
             output_dir,
             stem,
-            {"items": outputs, "branch_id": branch_id, "steering_pack": steering, "steering_retrieval_meta": retrieval_meta},
+            {
+                "items": outputs,
+                "branch_id": branch_id,
+                "steering_pack": steering,
+                "steering_retrieval_meta": retrieval_meta,
+                **({"mapping_pack": mapping_pack_dict} if mapping_pack_dict is not None else {}),
+            },
         )
         echo(f"writer_imitate_range_json={json_path}")
         echo(f"writer_imitate_range_markdown={md_path}")

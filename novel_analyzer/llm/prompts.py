@@ -106,6 +106,7 @@ def build_chapter_imitation_prompt(
     previous_summary: str = "",
     active_characters: list[str] | None = None,
     unresolved_threads: list[str] | None = None,
+    mapping_pack: dict[str, object] | None = None,
 ) -> str:
 
     style_text = "\n".join(f"- {item}" for item in style_axes) or "- 保持原章结构功能"
@@ -124,6 +125,36 @@ def build_chapter_imitation_prompt(
             parts.append(f"待回收线索：\n" + "\n".join(f"- {t}" for t in unresolved_threads[:5]))
         memory_block = "\n\n记忆上下文：\n" + "\n".join(parts)
 
+    mapping_block = ""
+    if mapping_pack:
+        mp_parts: list[str] = []
+        cm = mapping_pack.get("character_mapping") or {}
+        wm = mapping_pack.get("world_mapping") or {}
+        fm = mapping_pack.get("faction_mapping") or {}
+        pm = mapping_pack.get("power_mapping") or {}
+        rules = mapping_pack.get("rule_overrides") or []
+        forbids = mapping_pack.get("forbidden_transformations") or []
+        if isinstance(cm, dict) and cm:
+            mp_parts.append("人物名替换（必须执行）：" + "；".join(f"{k}→{v}" for k, v in cm.items()))
+        if isinstance(wm, dict) and wm:
+            mp_parts.append("世界设定替换（必须执行）：" + "；".join(f"{k}→{v}" for k, v in wm.items()))
+        if isinstance(fm, dict) and fm:
+            mp_parts.append("势力替换（必须执行）：" + "；".join(f"{k}→{v}" for k, v in fm.items()))
+        if isinstance(pm, dict) and pm:
+            mp_parts.append("力量体系替换（必须执行）：" + "；".join(f"{k}→{v}" for k, v in pm.items()))
+        if isinstance(rules, list) and rules:
+            mp_parts.append("规则覆盖：" + "；".join(str(r) for r in rules[:5]))
+        if isinstance(forbids, list) and forbids:
+            mp_parts.append("禁止转化：" + "；".join(str(f) for f in forbids[:5]))
+        if mp_parts:
+            mapping_block = (
+                "\n\n设定替换映射（draft_text 中所有出现都必须按映射后名称写）：\n"
+                + "\n".join(f"- {p}" for p in mp_parts)
+                + "\n\n二次检查：在生成完 draft_text 后，请逐项检查上述每个替换对，"
+                "确保**任何源端名称**都未在 draft_text 中残留。如果章节信息密集（多角色/多地点同时出场），"
+                "尤其要在转折段落（情节节奏变化处）再次扫描。"
+            )
+
     return f"""
 你是一个"章节仿写规划执行器"。
 
@@ -136,6 +167,8 @@ def build_chapter_imitation_prompt(
 2. 不要擅自突破世界规则。
 3. 不要让人物行为脱离既有逻辑。
 4. 输出只允许 JSON，不要 Markdown。
+5. 若给出了"设定替换映射"，draft_text 中必须使用映射后的名称，不得保留原名。
+6. draft_title 必须是干净标题，去掉源章可能携带的营销标签（例如"（求收藏，求追读）"、"（求月票）"、"（加更）"等），只保留章节正文标题。
 
 源章节：
 - chapter_index: {source_chapter_index}
@@ -146,7 +179,7 @@ def build_chapter_imitation_prompt(
 
 本次目标：
 {target_goal}
-{memory_block}
+{memory_block}{mapping_block}
 
 风格轴：
 {style_text}

@@ -24,7 +24,8 @@ async def import_novel(
     settings = resolve_settings(database_url)
 
     if file is None:
-        return {"error": "file is required"}
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=400, content={"error": "missing uploaded file or `chapters` list"})
 
     content = await file.read()
     text = content.decode("utf-8", errors="ignore")
@@ -87,18 +88,49 @@ def branch_exports(
     run_id: str = Query(...),
     branch_id: str = Query(...),
     database_url: str | None = Query(None),
-) -> dict:
+):
+    from fastapi.responses import JSONResponse
     from novel_analyzer.services.export_service import ExportService
 
     with get_db_session(database_url) as session:
         try:
             bundle = ExportService(session).export_branch_bundle(run_id, branch_id)
-            return {
-                "run_id": run_id,
-                "branch_id": branch_id,
-                "has_risk_summary": "risk_summary" in bundle,
-                "chapter_count": bundle.get("chapter_count", 0),
-                "export_keys": list(bundle.keys()),
-            }
         except Exception as e:
-            return {"error": str(e)}
+            return JSONResponse(status_code=500, content={"error": str(e)})
+        return {
+            "run_id": run_id,
+            "branch_id": branch_id,
+            "has_risk_summary": "risk_summary" in bundle,
+            "chapter_count": bundle.get("chapter_count", 0),
+            "export_keys": list(bundle.keys()),
+        }
+
+
+class StartRequest(BaseModel):
+    run_id: str
+    branch_id: str
+    pipeline_profile: str = "auto-lite"
+    max_chapters: int | None = None
+    database_url: str | None = None
+
+
+@router.post("/start")
+def start_pipeline_route(req: StartRequest):
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.application import start_pipeline as _start_pipeline
+
+    try:
+        processed_chapters, next_chapter, pipeline_state = _start_pipeline(
+            run_id=req.run_id,
+            branch_id=req.branch_id,
+            pipeline_profile=req.pipeline_profile,
+            max_chapters=req.max_chapters,
+            database_url=req.database_url,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return {
+        "processed_chapters": processed_chapters,
+        "next_chapter": next_chapter,
+        "pipeline_state": pipeline_state,
+    }

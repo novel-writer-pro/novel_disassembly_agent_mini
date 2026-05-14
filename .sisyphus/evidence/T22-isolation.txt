@@ -1,0 +1,31 @@
+T22 — 内部多用户：library scoping
+================================================
+
+DB Migration: alembic/versions/20260513_01_add_owner_user_id.py
+  Revision: 20260513_01 (revises 20260511_02)
+  Tables: novel_sources, analysis_runs, run_branches
+  Column: owner_user_id VARCHAR(64) NOT NULL DEFAULT 'local-default' INDEXED
+
+Migration applied:
+  $ .venv/bin/alembic upgrade head
+  INFO Running upgrade 20260511_02 -> 20260513_01
+
+Model changes (3 classes追加单字段，零旧字段动):
+  novel_analyzer/database/models.py
+    - NovelSource.owner_user_id
+    - AnalysisRun.owner_user_id
+    - RunBranch.owner_user_id
+
+Tests:
+  $ .venv/bin/pytest tests/test_owner_scoping.py -v
+    test_owner_user_id_default_is_local_default PASSED
+    test_run_owner_user_id_default              PASSED
+    test_branch_owner_user_id_default           PASSED
+    test_two_users_isolated                     PASSED
+    test_owner_user_id_indexed                  PASSED
+  5 passed in 4.40s
+
+Regression check after model changes:
+  - 3 contract test failures = 边角断言 (pre-existing, unrelated to T22)
+  - 3 test_api_main.py failures = README content checks (pre-existing, unrelated)
+  - 0 new regressions from T22

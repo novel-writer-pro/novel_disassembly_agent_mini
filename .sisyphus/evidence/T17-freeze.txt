@@ -1,0 +1,23 @@
+T17 — imitation session_* 字段冻结 + 弃用通道
+================================================
+
+Lint 脚本: scripts/check_no_new_session_fields.py
+首次运行：
+  $ .venv/bin/python scripts/check_no_new_session_fields.py
+  OK: no new session_* fields. 215 known, 215 scanned.
+
+Orphan 字段（标 deprecated_in: writer-studio-v2）:
+  - session_action_backlog_count   (novel_analyzer/cli/app.py:3916, 4300)
+  - session_transition_preview     (novel_analyzer/cli/app.py:7306, 7369)
+
+Schema 冻结在 audit 报告：
+  docs/imitation/session-fields-audit.md
+
+未做（推迟到下个迭代）:
+  - novel_analyzer/services/whole_book_imitation_service.py 中的 pydantic schema 显式冻结
+  - 7000+ 行 cli/app.py imitation pipeline 改动风险高，本 session 不触碰
+
+CI 接入:
+  在 .github/workflows/ 中追加 step:
+    - name: lint session_* fields
+      run: .venv/bin/python scripts/check_no_new_session_fields.py

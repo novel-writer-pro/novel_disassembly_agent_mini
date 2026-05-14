@@ -23,6 +23,7 @@ interface Props {
   branchId: string;
   databaseUrl: string;
   onJumpChapter: (chapterIndex: number) => void;
+  maxChapter?: number;
 }
 
 interface ChatMessage {
@@ -83,7 +84,7 @@ const chunkText = (value: string, size = 18) => {
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
-export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpChapter }: Props) {
+export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpChapter, maxChapter }: Props) {
   const [searchText, setSearchText] = useState("");
   const [question, setQuestion] = useState("");
   const [hits, setHits] = useState<RetrievalHit[]>([]);
@@ -175,7 +176,7 @@ export default function BranchQaPanel({ apiBase, branchId, databaseUrl, onJumpCh
     };
 
     try {
-      await askBranchStream(apiBase, branchId, q, handleEvent, databaseUrl);
+      await askBranchStream(apiBase, branchId, q, handleEvent, databaseUrl, 6, maxChapter);
       return;
     } catch {
       const payload = await askBranch(apiBase, branchId, q, databaseUrl);

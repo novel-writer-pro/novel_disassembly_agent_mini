@@ -134,3 +134,26 @@ P0（BM25 索引）+ B（whole-book MVP）双线打通：
 - 调 Loom gate 阈值让 needs_revision 章节能升级 quality-pass
 - 把 102 章接入 manual_eval mailbox 流程做人工 reviewer 抽样
 - 跑诛仙/雪中悍刀行 同样规模，验证跨题材鲁棒性
+
+## 验证：mapping_pack 注入修复（2026-05-14 后续）
+
+修复 `mapping_pack` silently dropped 的 bug 后，跨题材映射验证：
+
+- 命令：`writer-imitate-range ch2-6 --world-map "郑国=星际联邦" --character-map "卫图=魏拓" --power-map "养生功=星能调息术" ...`
+- 输出：`output/mapping-validation-weitu-scifi/`
+- 总字数：15,145（5 章，**avg 3029/章** — 比无映射 baseline 高 50%）
+- **source-name leaks: 0**（卫图/郑国/庆丰府/养生功/龟息养气功 全部消失）
+- **mapped-name hits: 20**（魏拓/星际联邦/星辰城/星能调息术/灵核休眠诀 在各章正确出现）
+- 文本含丰富的科幻设定（"星灶炉火"/"低品能量块"/"合成肉"/"星舰后勤区"），不是简单字面替换
+
+per-chapter 详情：
+
+| ch | chars | leaks | mapped hits |
+|---|---|---|---|
+| 2 | 3030 | [] | 魏拓, 星际联邦, 星辰城 |
+| 3 | 3165 | [] | 魏拓, 星际联邦, 星辰城, 星能调息术, 灵核休眠诀 |
+| 4 | 3193 | [] | 魏拓, 星际联邦, 星能调息术, 灵核休眠诀 |
+| 5 | 2773 | [] | 魏拓, 星辰城, 星能调息术, 灵核休眠诀 |
+| 6 | 2984 | [] | 魏拓, 星际联邦, 星辰城, 星能调息术 |
+
+**关键发现**：mapping 不是字面替换。LLM 把整个章节"翻译"到了科幻语境（封建仆役→星舰后勤工，胭脂铺→消费物资，铜钱→能量块），人物关系/对话/动机全部连贯。这是 prompt-time 注入 vs post-process regex 的根本区别。

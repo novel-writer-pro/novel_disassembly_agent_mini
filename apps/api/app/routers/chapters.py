@@ -107,3 +107,33 @@ def branch_snapshot(
 
     with get_db_session(database_url) as session:
         return ExportService(session).export_branch_bundle(run_id, branch_id)
+
+
+
+@router.get("/job-events")
+def job_events(
+    branch_id: str = Query(...),
+    database_url: str | None = Query(None),
+    limit: int = Query(100),
+):
+    from fastapi.responses import JSONResponse
+    from apps.api.app.main import _job_events_payload
+    try:
+        return _job_events_payload(branch_id, database_url, limit)
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+
+
+@router.get("/chapter-job-events")
+def chapter_job_events(
+    branch_id: str = Query(...),
+    chapter_index: int = Query(...),
+    database_url: str | None = Query(None),
+    limit: int = Query(100),
+):
+    from fastapi.responses import JSONResponse
+    from apps.api.app.main import _chapter_job_events_payload
+    try:
+        return _chapter_job_events_payload(branch_id, chapter_index, database_url, limit)
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})

@@ -1,27 +1,98 @@
-# novel-analyzer
+# novel-analyzer · AI 小说助手平台
 
-PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
+> v0.2.4 — 面向作家与读者的 AI 小说理解、创作辅助与阅读增强系统。
 
-## Next-stage structure
-- `novel_analyzer/application/`: shared application/orchestration seam for CLI and future Web/API
-- `apps/api/`: separate backend surface prototype
-- `apps/web/`: separate frontend surface prototype
+---
 
-## Current scope
-- 文本导入与章节规范化
-- PostgreSQL-only runtime
-- Alembic 迁移驱动的数据库演进
-- 运行 / 分支 / checkpoint / chapter_job / raw_output 数据模型
-- 逻辑隐藏式回退分支
-- 手工产物保留但默认不参与下游上下文
-- LangGraph 工作流骨架
-- `skills_dir/` + SkillKit(`skillkit[langchain]`) 技能加载
-- JSON-first chapter analysis -> PostgreSQL -> Markdown pipeline
-- PostgreSQL 内 BM25 / trigram / vector 扩展探测与启用
+## 产品定位
+
+这不是通用 AI 写作器，而是面向长篇小说的**内容理解 + 风险门控 + 受控生成**平台，服务两类用户：
+
+| 用户 | 核心价值 |
+|------|---------|
+| **作家 / 工作室** | 仿写辅助、Loom 信号实时反馈、风险门控、连续性审查 |
+| **读者** | 章节 Q&A、引用跳转、人物事件检索、防剧透摘要 |
+
+---
+
+## 核心能力
+
+### 拆书与检索
+- 章节切分 + 规范化
+- BM25 / trigram / vector 混合检索（PostgreSQL 原生）
+- 推理图谱（人物 / 事件 / 因果 / 伏笔）
+- 窗口摘要 / 状态机
+
+### 风险门控
+- 语义风险信号（OOC / 规则漂移 / 时间线 / 战力）
+- 集群审查工作流（review cluster / batch execute）
+- 风险证据包导出
+
+### 受控仿写
+- 章节级仿写（chapter imitation）
+- 整本仿写编排（whole-book orchestration）
+- Loom 信号：节奏 / 张力 / 风格对照 / 读者模拟（4 视角）
+- 修复通道 + 长篇连续性诊断
+
+### 读者 Q&A
+- 流式问答（RAG + 图谱推理）
+- 引用章节可跳转
+- 人物 / 事件检索
+- 证据摘要 + 推理路径渲染
+
+---
+
+## 技术栈
+
+| 层 | 技术 |
+|----|------|
+| 后端 | Python 3.11 · FastAPI / WSGI · LangGraph · SQLAlchemy |
+| 数据库 | PostgreSQL（pg_trgm / pgvector / pg_jieba） |
+| 前端 | Next.js 15 · React 18 · Ant Design 5 |
+| AI 编排 | Dify（Chatbot / Workflow / Prompt Studio） |
+| 外围自动化 | n8n（通知 / 日报 / 第三方集成） |
+| 可观测性 | Langfuse（Dify 内置集成）· Helicone（LLM proxy trace） |
+| Embedding | ONNX（本地）/ HTTP（TEI / OpenAI / Jina） |
+
+---
+
+## 用户界面入口
+
+### 作家端 — Writer Studio
+```
+http://127.0.0.1:4173/writer/<branch_id>
+```
+- 编辑器画布（autosave）
+- Loom 信号侧栏（节奏 / 张力 / 风格 / 伏笔密度）
+- AI 副驾（Dify Chatbot iframe，流式 + 引用）
+- 版本树（仿写分支管理）
+
+### 读者端 — Reader Studio
+```
+http://127.0.0.1:4173/reader/<branch_id>
+```
+- 三栏布局：左侧章节导航 / 中央阅读 / 右侧 Q&A
+- 章节导航：摘要预览 + 吸引度评分 + 风险标签 + 搜索过滤
+- 防剧透 Q&A：默认只用 ≤ 当前章节的数据回答，可关闭
+- 读者体验评分：4视角（普通读者 / 资深读者 / 情感满足 / 编辑视角）
+- 读者反馈：1-5 星评分 + 评论，汇总展示
+
+### 旧工作台（Workbench）
+```
+http://127.0.0.1:4173
+```
+| 页面 | 功能 |
+|------|------|
+| `/control` | 导入 + 启动 + 恢复 |
+| `/reader` | 章节阅读 + 原文回看 |
+| `/qa` | 整本问答 / 人物事件检索（流式 + 引用跳转） |
+| `/pipeline` | Pipeline 编排与进度 |
+| `/quality` | 质量仪表盘 |
+| `/ops` | 导出 + 恢复 |
+
+---
 
 ## 文档入口
-
-> 所有文档统一在 [`./docs/README.md`](./docs/README.md) 管理，按角色快速分流：
 
 | 我是… | 入口 |
 |-------|------|
@@ -31,75 +102,122 @@ PostgreSQL-first scaffold for a chapter-progressive 小说拆书系统.
 | 维护者 / 接手人 | [`docs/roles/maintainer/`](./docs/roles/maintainer/README.md) |
 | 仿写 / 创作 | [`docs/roles/imitation/`](./docs/roles/imitation/README.md) |
 | 直接使用 CLI | [`docs/cli-operations-manual.md`](./docs/cli-operations-manual.md) |
-| 浏览全部文档 | [`docs/README.md`](./docs/README.md) |
+| 商业化路线图 | [`docs/strategy/writer-studio-roadmap.md`](./docs/strategy/writer-studio-roadmap.md) |
+| 端到端运维 | [`docs/runbook/business-loop.md`](./docs/runbook/business-loop.md) |
+| 全部文档 | [`docs/README.md`](./docs/README.md) |
 
-## 当前工作台入口
+---
 
-- `apps/web/`：Next.js + React + Ant Design 前端
-- `apps/api/`：本地工作台后端
+## 快速启动
 
-当前面向作家的主入口页面：
-- `/control`：导入与继续整理
-- `/reader`：章节阅读与原文回看
-- `/qa`：整本小说问答 / 人物事件检索
-- `/ops`：导出与恢复
-
-其中 `/qa` 已支持：
-- 聊天式问答输入
-- 流式回答展示
-- 引用章节跳转
-- 证据摘要、推理摘要、图谱信号分组渲染
-
-## Environment
-
-### PostgreSQL example
+### 1. 安装依赖
 ```bash
-export NOVEL_ANALYZER_DB_DIALECT=postgresql
-export NOVEL_ANALYZER_DB_HOST=127.0.0.1
-export NOVEL_ANALYZER_DB_PORT=5432
-export NOVEL_ANALYZER_DB_USER=d2
-export NOVEL_ANALYZER_DB_PASSWORD=d2pass
-export NOVEL_ANALYZER_DB_NAME=novel_analyzer
-export NOVEL_ANALYZER_DB_ADMIN_NAME=postgres
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### LLM example
+### 2. 初始化数据库
 ```bash
-export NOVEL_ANALYZER_LLM_API_KEY='your-key'
-export NOVEL_ANALYZER_LLM_BASE_URL='https://api.vip1129.cc/v1'
-export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4-mini'
-
-or copy `.env.example` -> `.env.local` and fill the secrets locally
+cp .env.example .env.local   # 填写 DB / LLM 配置
+.venv/bin/python -m novel_analyzer.cli.app init-db
+alembic upgrade head
 ```
 
-
-### Recommended workbench runtime (current)
+### 3. 启动后端
 ```bash
-export NOVEL_ANALYZER_LLM_PROVIDER_NAME='vip1129'
-export NOVEL_ANALYZER_LLM_BASE_URL='https://api.vip1129.cc/v1'
-export NOVEL_ANALYZER_LLM_API_KEY='your-key'
-export NOVEL_ANALYZER_LLM_MODEL_NAME='gpt-5.4-mini'
-export NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME='gpt-5.4-mini'
-export NOVEL_ANALYZER_LLM_QA_MODEL_NAME='gpt-5.4-mini'
-export NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME='gpt-5.4-mini'
+make api-dev
+# uvicorn 启动 FastAPI on http://127.0.0.1:8011
+# legacy fallback (cutover 完成后移除): make api-wsgi-legacy
 ```
 
-### Embedding backend example
+### 4. 启动前端
 ```bash
-export NOVEL_ANALYZER_EMBEDDING_BACKEND=onnx
-export NOVEL_ANALYZER_EMBEDDING_MODEL_NAME=BAAI/bge-m3
-export NOVEL_ANALYZER_EMBEDDING_MODEL_PATH=
-export NOVEL_ANALYZER_EMBEDDING_CACHE_DIR=.cache/embeddings
+cd apps/web
+npm install
+npm run dev
+# 默认监听 :4173
 ```
 
-See [`./docs/agent-skills-and-embedding.md`](./docs/agent-skills-and-embedding.md) for the internal staged agent pipeline and ONNX embedding details.
+### 5. 导入小说并开始分析
+```bash
+# CLI 一键导入
+.venv/bin/python -m novel_analyzer.cli.app auto-run /path/to/novel.txt --max-chapters 0
 
-## Architecture Overview
+# 或通过 Workbench UI
+open http://127.0.0.1:4173/control
+```
+
+---
+
+## 环境变量
+
+### 数据库
+```bash
+NOVEL_ANALYZER_DB_DIALECT=postgresql
+NOVEL_ANALYZER_DB_HOST=127.0.0.1
+NOVEL_ANALYZER_DB_PORT=5432
+NOVEL_ANALYZER_DB_USER=d2
+NOVEL_ANALYZER_DB_PASSWORD=replace-me
+NOVEL_ANALYZER_DB_NAME=novel_analyzer
+NOVEL_ANALYZER_DB_ADMIN_NAME=postgres
+```
+
+### LLM
+```bash
+NOVEL_ANALYZER_LLM_PROVIDER_NAME=deepseek
+NOVEL_ANALYZER_LLM_BASE_URL=https://api.deepseek.com/v1
+NOVEL_ANALYZER_LLM_API_KEY=replace-me
+NOVEL_ANALYZER_LLM_MODEL_NAME=deepseek-v4-flash
+NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME=deepseek-v4-flash
+NOVEL_ANALYZER_LLM_QA_MODEL_NAME=deepseek-v4-flash
+NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME=deepseek-v4-flash
+
+# v3: 透明 LLM proxy（Helicone），不设则直连
+# NOVEL_ANALYZER_LLM_BASE_URL_OVERRIDE=http://localhost:8585/v1/openai
+```
+
+### Embedding
+```bash
+NOVEL_ANALYZER_EMBEDDING_BACKEND=onnx
+NOVEL_ANALYZER_EMBEDDING_MODEL_NAME=BAAI/bge-m3
+NOVEL_ANALYZER_EMBEDDING_MODEL_PATH=/absolute/path/to/bge-m3-onnx
+NOVEL_ANALYZER_EMBEDDING_CACHE_DIR=.cache/embeddings
+```
+
+### 外围集成（v3 新增，可选）
+```bash
+# n8n pipeline 完成通知（不设则静默）
+# N8N_WEBHOOK_PIPELINE_COMPLETE_URL=http://localhost:5678/webhook/pipeline-complete
+
+# Dify Writer Copilot（前端 iframe 嵌入）
+# NEXT_PUBLIC_DIFY_BASE_URL=http://localhost:8080
+# NEXT_PUBLIC_DIFY_WRITER_COPILOT_TOKEN=app-xxxxxxxxxx
+```
+
+---
+
+## 自托管 Infra（可选）
+
+所有 infra 组件均为独立 docker-compose，互不依赖，按需启动：
+
+| 组件 | 端口 | 用途 | 启动 |
+|------|------|------|------|
+| **Dify** | 8080 | Chatbot / Prompt Studio / Workflow | `infra/dify/README.md` |
+| **n8n** | 5678 | 通知 / 日报 / 第三方集成 | `cd infra/n8n && docker compose up -d` |
+| **Langfuse** | 3030 | LLM trace（Dify 内置集成） | `infra/langfuse/README.md` |
+| **Helicone** | 8585 | LLM proxy trace（imitation 主流量） | `infra/helicone/README.md` |
+
+完整启动流程见 [`docs/runbook/v3-pickup-checklist.md`](./docs/runbook/v3-pickup-checklist.md)。
+
+---
+
+## 架构概览
 
 ```mermaid
 flowchart TD
-    A[Novel TXT / Source Text] --> B[Ingest & Chapter Splitter]
-    B --> C[Manifest / Chapter Segments]
+    A[Novel TXT] --> B[Ingest & Chapter Splitter]
+    B --> C[Manifest / Segments]
     C --> D[Run / Branch / Jobs]
 
     D --> E[Chapter Analysis Pipeline]
@@ -110,162 +228,58 @@ flowchart TD
     E --> E5[writer_learning_lens]
     E --> E6[anti_fabrication_guard]
 
-    E6 --> F[Chapter Artifact JSON]
-    F --> G[Retrieval Materialization]
-    F --> H[Fact Materialization]
-    F --> I[Reasoning Graph Materialization]
-    H --> J[Window Summaries]
-    I --> K[State Machine / State Summary]
+    E6 --> F[Chapter Artifact]
+    F --> G[Retrieval / BM25+Vector]
+    F --> H[Facts / Graph / Window]
 
-    G --> L[Branch QA / Search]
-    I --> L
-    J --> L
-    K --> L
+    G --> QA[Branch Q&A / Search]
+    H --> QA
 
-    F --> M[Chapter Bundle / Markdown]
-    K --> M
-    I --> M
+    F --> RISK[Risk Audit / Review Workflow]
+    F --> LOOM[Loom Signals\nRhythm · Tension · Style · Reader Sim]
 
-    F --> N[Chapter QA Context]
-    G --> N
-    I --> N
-    K --> N
+    LOOM --> WS[Writer Studio UI\n/writer/*]
+    QA --> WS
+    QA --> RD[Reader UI\n/qa · /reader]
 
-    L --> O[Branch QA Context]
-    K --> O
-    I --> O
-    J --> O
-    O --> P[Thematic Contexts]
-    P --> P1[Character Arc]
-    P --> P2[Conflict Arc]
-    P --> P3[Foreshadow Arc]
-    P --> P4[World Rule Arc]
+    WS --> DIFY[Dify Chatbot\nAI 副驾 iframe]
+    DIFY --> LANGFUSE[Langfuse Traces]
 
-    M --> Q[Branch Report / Package Export]
-    N --> Q
-    O --> Q
+    E6 --> N8N[n8n\nPipeline Complete Notify]
+    E6 --> HELICONE[Helicone Proxy\nImitation Trace]
+    HELICONE --> LLM[LLM Provider]
 ```
 
-### Reading guide
-1. **输入层**：原始小说文本先经过导入与切章。
-2. **分析层**：按章节进入 staged agent pipeline，产出 chapter artifact。
-3. **派生层**：从 artifact 派生 retrieval、facts、reasoning graph、window、state summary。
-4. **消费层**：导出 chapter/branch bundle、QA context、thematic contexts、report、package。
+---
 
-## Python3 install (without Poetry)
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install -r requirements.txt
-python3 -m novel_analyzer.cli.app init-db
-python3 -m novel_analyzer.cli.app db-health
-```
-
-## Quick start
-
-| 场景 | Poetry | Python3 |
-|---|---|---|
-| 安装依赖 | `poetry install` | `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
-| 初始化数据库 | `poetry run novel-analyzer init-db` | `python3 -m novel_analyzer.cli.app init-db` |
-| 数据库健康检查 | `poetry run novel-analyzer db-health` | `python3 -m novel_analyzer.cli.app db-health` |
-| 查看技能 | `poetry run novel-analyzer list-skills` | `python3 -m novel_analyzer.cli.app list-skills` |
-| 测 embedding | `poetry run novel-analyzer test-embedding` | `python3 -m novel_analyzer.cli.app test-embedding` |
-| 查看切章结果 | `poetry run novel-analyzer inspect-novel /path/to/novel.txt` | `python3 -m novel_analyzer.cli.app inspect-novel /path/to/novel.txt` |
-| 导入小说 | `poetry run novel-analyzer ingest /path/to/novel.txt --title 'sample'` | `python3 -m novel_analyzer.cli.app ingest /path/to/novel.txt --title 'sample'` |
-| 一键导入并创建 run | `poetry run novel-analyzer auto-run /path/to/novel.txt --max-chapters 0` | `python3 -m novel_analyzer.cli.app auto-run /path/to/novel.txt --max-chapters 0` |
-| 创建 run | `poetry run novel-analyzer start-run <novel_id> <manifest_id>` | `python3 -m novel_analyzer.cli.app start-run <novel_id> <manifest_id>` |
-| 推进章节 | `poetry run novel-analyzer analyze-range <run_id> <branch_id> 1 3` | `python3 -m novel_analyzer.cli.app analyze-range <run_id> <branch_id> 1 3` |
-
-## Workbench
-
-### Start backend
-```bash
-.venv/bin/python -m apps.api.app.main
-```
-
-### Start frontend
-```bash
-cd apps/web
-npm config set registry https://registry.npmmirror.com/
-npm install
-npm run dev
-```
-
-Open:
-
-`http://127.0.0.1:4173`
-
-
-### Workbench notes
-- 当前控制台已经收口为面向作家的阅读型工作台，而不是技术调试页。
-- 拆书失败默认会先自动重试，当前自动重试上限为 **5 次**；只有超过 5 次仍失败，才进入人工恢复流程。
-- 如果你要重启 Web/API 原型，请确保后端进程实际加载的是 `.env.local` / `.env.runtime.local` 中的目标 provider 配置。
-
-Current workbench target capabilities:
-- 真实导入小说并创建 run / branch
-- 读取真实 run / branch snapshot
-- 启动 `manual` pipeline
-- 执行恢复动作（retry-failed / clear-running / repair）
-- 点击章节查看 chapter bundle / chapter QA context
-- 查看原始章节正文
-- 从引用里的 `第N章` 直接跳转到对应章节
-- 生成 branch bundle / branch QA context / branch report 下载链接
-- 人物 / 事件检索
-- 基于小说内容问答（保留引用章节、证据、推理路径、图谱信号）
-
-
-## Skills
-Project-local skills live under:
+## 开发命令
 
 ```bash
-skills_dir/
+make v2-test        # 后端回归测试（contract + runtime + scoping）
+make v3-smoke       # v3 e2e 测试套件（21 tests，无需 docker）
+make v2-build       # 前端 Next.js 生产构建
+make v2-audit       # 重新扫描 imitation session_* 字段
+make v2-lint        # 检查是否有新增 session_* 字段
+make v2-status      # 查看 plan 进度
+make v2-up-all      # 启动 Dify + n8n + Langfuse（需要 docker）
+make v2-pickup-checklist  # 打印 infra 启动步骤
 ```
 
-The current loader uses SkillKit with:
-- `project_skill_dir=./skills_dir`
-- `anthropic_config_dir=""`
-- no plugin dirs
+---
 
-This keeps skill discovery scoped to repo-local skills only.
+## 重要语义
 
-## Important semantics
-- 章节是最小提交单元。
-- 当前章成功后，才能继续下一章。
-- 回退后续进展采用**逻辑隐藏**，默认只读 active branch。
-- 手工结果允许保留，但默认 `participates_in_downstream = false`。
-- JSON 是标准中间产物；后续从 JSON 入库并渲染 Markdown。
-- 中文检索统一依赖 PostgreSQL 原生检索 + 扩展能力；当前强校验 `pg_trgm`、`vector`，并报告 text search config 可用性。
+- 章节是最小提交单元，当前章成功后才能继续下一章
+- 回退采用**逻辑隐藏**，默认只读 active branch
+- 手工结果允许保留，但默认 `participates_in_downstream = false`
+- 拆书失败自动重试上限 **5 次**，超过后进入人工恢复流程
+- 中文检索依赖 PostgreSQL 原生扩展（pg_trgm / pgvector / pg_jieba）
 
-## Live ONNX note
+---
 
-If the environment cannot reach `huggingface.co`, the ONNX backend will now fail with an actionable error telling you to either:
-- provide `NOVEL_ANALYZER_EMBEDDING_MODEL_PATH`, or
-- enable outbound access to Hugging Face.
+## 更多文档
 
-## More docs
-
-- 变更记录：[`./CHANGELOG.md`](./CHANGELOG.md)（每次修复 / 变动必须追加）
-- 完整文档中心：[`./docs/README.md`](./docs/README.md)
-- 当前 API surface：[`./docs/api-current-surface.md`](./docs/api-current-surface.md)
-### PostgreSQL checks
-```bash
-python3 scripts/check_postgres.py
-poetry run novel-analyzer db-capabilities
-```
-
-会检查：
-- 数据库是否存在
-- 是否可连接
-- Alembic / 关键表是否已初始化
-- `pg_trgm`
-- `vector`
-- text search config
-
-- 若 `npm run build` 出现页面模块缺失（例如 `/ops`）但源码文件实际存在，先删除 `apps/web/.next` 再重新构建。
-
-- 当 provider 额度耗尽导致章节失败时，控制台首页会直接提示失败章节与恢复入口。
-
-- 工作台现已将“小说问答”拆为单独的导航页签，不再和章节阅读混在同一长页面里。
-
-- 首页 `/` 现直接渲染控制台，不再依赖前端运行时重定向到 `/control`，避免 Next.js build 在收集 page data 时失稳。
+- 变更记录：[`CHANGELOG.md`](./CHANGELOG.md)
+- 完整文档中心：[`docs/README.md`](./docs/README.md)
+- 当前 API surface：[`docs/api-current-surface.md`](./docs/api-current-surface.md)
+- 商业化路线图：[`docs/strategy/writer-studio-roadmap.md`](./docs/strategy/writer-studio-roadmap.md)

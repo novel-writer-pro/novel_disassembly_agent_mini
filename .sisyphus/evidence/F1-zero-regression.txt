@@ -1,0 +1,36 @@
+F1 — 零回归审计 (Plan Compliance) — Final
+================================================
+
+## A. main.py 未动 ✓
+$ wc -l apps/api/app/main.py
+2630 apps/api/app/main.py
+Expected: 2630 (零行变化)
+
+## B. 业务代码无 langfuse/dify 渗透 ✓
+$ grep -rn "langfuse\|dify" novel_analyzer/services/ novel_analyzer/agent/ novel_analyzer/workflows/
+(0 matches — 零渗透 ✓)
+
+## C. trace_context 无渗透 ✓
+(0 matches — 零渗透 ✓)
+
+## D. T1 contract test 28/28 ✓ (升级自 25/28)
+
+============================= 28 passed in 24.29s ==============================
+
+## E. T22 isolation tests 5/5 ✓
+
+============================== 5 passed in 0.84s ===============================
+
+## F. T2 trace context tests 13/13 ✓
+
+============================== 13 passed in 0.06s ==============================
+
+## VERDICT
+main.py 行数 = 2630 ✓
+Langfuse/Dify 业务代码渗透 = 0 ✓
+trace_context 业务代码渗透 = 0 ✓
+Contract: 28/28 全绿 ✓
+T22 isolation: 5/5 ✓
+T2 trace_context: 13/13 ✓
+
+APPROVE — 零回归门禁 100% 通过。

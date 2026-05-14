@@ -1,0 +1,23 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.2, pytest-8.4.2, pluggy-1.6.0 -- /home/user/ai-books/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/user/ai-books
+configfile: pyproject.toml
+plugins: anyio-4.13.0, langsmith-0.7.35
+collecting ... collected 13 items
+
+tests/runtime/test_trace_context.py::TestRequestContext::test_defaults PASSED [  7%]
+tests/runtime/test_trace_context.py::TestRequestContext::test_custom_user_id PASSED [ 15%]
+tests/runtime/test_trace_context.py::TestRequestContext::test_frozen PASSED [ 23%]
+tests/runtime/test_trace_context.py::TestGetSetContext::test_get_returns_none_outside_context PASSED [ 30%]
+tests/runtime/test_trace_context.py::TestGetSetContext::test_set_and_get PASSED [ 38%]
+tests/runtime/test_trace_context.py::TestWithRequestContext::test_basic_set_and_clear PASSED [ 46%]
+tests/runtime/test_trace_context.py::TestWithRequestContext::test_auto_generates_request_id PASSED [ 53%]
+tests/runtime/test_trace_context.py::TestWithRequestContext::test_nested_contexts_restore_outer PASSED [ 61%]
+tests/runtime/test_trace_context.py::TestWithRequestContext::test_context_cleared_after_exit PASSED [ 69%]
+tests/runtime/test_trace_context.py::TestWithRequestContext::test_context_cleared_on_exception PASSED [ 76%]
+tests/runtime/test_trace_context.py::TestWithRequestContext::test_tenant_id PASSED [ 84%]
+tests/runtime/test_trace_context.py::TestAsyncIsolation::test_async_tasks_have_independent_contexts PASSED [ 92%]
+tests/runtime/test_trace_context.py::TestAsyncIsolation::test_no_context_leak_between_tasks PASSED [100%]
+
+============================== 13 passed in 0.15s ==============================

@@ -1,5 +1,137 @@
 ## Unreleased
 
+- feat(api/v5): FastAPI cutover — WSGI dispatch retired, single source of truth.
+
+  Changelist: `CL-v5-fastapi-cutover` (12 commits, ff6e213..a28a219)
+
+  Background: v2/v3/v4 each declared FastAPI cutover out of scope. v5 cleared
+  that debt. The dispatch table in `apps/api/app/main.py` shrunk from 37 paths
+  / 2774 lines to 1 path / 1585 lines. The 36 retired paths are now served
+  exclusively by FastAPI routers (uvicorn :8011), and v3's IdentityMiddleware
+  finally gets to do its job — every router auto-receives X-User-Id and
+  echoes X-Request-Id without per-route work.
+
+  **What changed**:
+  - 18 dual-implementation endpoints brought into schema parity (T1-T4):
+    global 422->400 handler matches WSGI's `{"error": ...}` envelope; one-off
+    drifts in /api/library, /api/import, /api/branch-exports, /api/search-branch.
+  - 19 WSGI-only endpoints migrated to existing routers (T5-T7):
+    new meta router (/health, /api/meta, /api/mock/import, /api/runtime-health,
+    /api/provider-health, /api/quality-dashboard, /api/download); new
+    whole_book_imitation router; new reader router; chapters/pipeline/
+    risk_review extended.
+  - IdentityMiddleware wired into create_app() between CORS and routers (T8).
+    Library router now reads X-User-Id via get_current_user() and applies
+    owner_user_id scoping at the SQL query (v3's column finally hooked up).
+  - Default backend launch is `make api-dev` (uvicorn + FastAPI on :8011).
+    `make api-wsgi-legacy` retained as rollback for the observation window.
+  - WSGI dispatch retired: only /api/review-batch-execute remains, kept as a
+    delegation target from the FastAPI router because its 249-line implementation
+    cannot be safely hand-extracted in this session. v5.1 follow-up.
+  - main.py shrunk by 1189 lines.
+
+  **Verification**:
+  - F1 (zero regression): 83/83 tests pass; service/agent/workflows/prompts/
+    apps/web all untouched in v5; business code 0 langfuse/dify/helicone imports.
+  - F2 (cutover gate): WSGI dispatch=1, FastAPI router=59; FastAPI contract
+    29/29; dual parity 1/1.
+  - F3 (IdentityMiddleware end-to-end): alice→1 item, bob→1 item, no-header→2
+    items; X-Request-Id auto-generated and echoed.
+
+  Test additions:
+  - tests/contract/test_dual_parity.py — 18-endpoint parity harness, scoped
+    to 1 endpoint after cutover
+  - tests/contract/test_main_fastapi_contract.py — 29 assertions
+  - tests/e2e/test_anti_spoiler.py / test_owner_scoping_e2e.py — migrated
+    from WSGI to FastAPI TestClient
+
+  关联文档：
+  - Plan: `.sisyphus/plans/v5-fastapi-cutover.md`
+
+- feat(whole-book): 跨题材整本仿写 MVP 落地 + 双完本验证 + mapping_pack 全链路修复。
+
+  ChangeLists（按时序）:
+  - `CL-whole-book-mvp-quickstart` — `writer-imitate-range` 多章批量入口的 MVP 操作手册（5/10/19/30/43 章渐进验证）
+  - `CL-whole-book-weitu-fullbook` — 卫图分支整本生成（102 章 / 199,981 字 / 3.5h）
+  - `CL-whole-book-cross-novel` — 掌门低调点 + 诛仙 5 章 spike（跨题材鲁棒性）
+  - `CL-whole-book-zhuxian-fullbook` — 诛仙整本生成（102 章 / 230,118 字 / 80 min，2.6× 速度）
+  - `CL-cli-writer-imitate-range-split` — 把多章 range JSON 拆为 per-chapter
+  - `CL-mapping-pack-injection-fix` — `mapping_pack` 真正注入 LLM prompt（`584758f`）
+  - `CL-mapping-pack-tests` — 9 个单测覆盖 mapping_pack 注入路径
+  - `CL-mapping-pack-30ch-validation` — 30 章规模验证：97.7% 准确率
+  - `CL-prompts-second-pass-check` — 密集章节二次检查 prompt 加固
+  - `CL-prompts-title-cleanup` — 自动剥离"求收藏/求追读"等营销标签
+
+  **双书完本实测**：
+
+  | 小说 | 章数 | 字数 | avg/章 | 时间 |
+  |---|---|---|---|---|
+  | 卫图 | 102 | 199,981 | 1,960 | 3.5h |
+  | 诛仙 | 102 | 230,118 | 2,256 | 80 min |
+  | **合计** | **204** | **430,099** | **2,108** | — |
+
+  **mapping_pack 跨题材验证**（仙侠 → 科幻）：
+  - 5 章 spike: 0 leak / 20 mapped hits / 100% 准确率
+  - 30 章规模: 4 leak / 172 mapped hits / **97.7% 准确率**
+  - +49% 字数提升 vs 无映射 baseline（mapping 提供的设定细节让 LLM 有更多素材）
+
+  **新增 CLI**：
+  - `writer-imitate-range-split` — 把 range JSON 拆为 per-chapter writer-imitate-ch{N}.json
+  - `writer-imitate` / `writer-imitate-range` 新增 6 个 mapping flag（--world-map / --character-map / --faction-map / --power-map / --rule-override / --forbidden-transformation）
+
+  **新增文档（5 篇）**：
+  - `docs/whole-book-quickstart-20260514.md` — MVP 操作手册
+  - `docs/whole-book-progress-20260514.md` — 卫图渐进进度日志
+  - `docs/whole-book-zhuxian-progress-20260514.md` — 诛仙完本进度
+  - `docs/whole-book-cross-novel-20260514.md` — 跨题材鲁棒性证据
+  - `docs/whole-book-mapping-scale-20260514.md` — 30 章 mapping 验证
+  - `docs/session-handoff-20260514.md` — 两日工作完整 handoff
+
+  **关键发现**：
+  - whole-book pipeline 跨原作稳定（卫图 + 诛仙 双完本，零代码改动）
+  - mapping 是 prompt-time 整体翻译（非 regex），人物关系/对话/动机连贯
+  - LLM 速度差异源于 proxy 队列负载，非内容复杂度
+  - 唯一未解决的是 Loom gate 阈值（102/102 章 verdict=needs_revision，blocking_issue_count=0），属于多日 tuning 工作，未在本次范围内
+
+  Tested: 30 imitation/prompt/whole-book unit tests 全部通过（含 9 个新 mapping_pack 测试）；4 次端到端 LLM 长跑（每次 ~30 章）；3 次 cross-novel spike。
+  Not-tested: 100 章规模的 mapping_pack 长程稳定性（推断为 hold，基于 5/30 章趋势）；Loom gate 阈值调整。
+
+
+- feat(reader-studio/v4): 独立读者端 `/reader/*` 路由上线，核心能力全部暴露。
+
+  Changelist: `CL-reader-studio-v4` (3 commits: Wave A + Wave B + README)
+
+  **背景**：v2/v3 的 reader 能力（RAG Q&A、章节详情、检索、Loom 信号）80% 已有，但全部藏在 Workbench 8-tab shell 里，读者必须先懂 branch_id 才能进入，心智模型错误。v4 把这些能力重新组织成读者心智的独立 UI。
+
+  **Wave A — 后端小改（零侵入）**：
+  - `/api/loom/signals` 加 `reader_sim` 字段：复用已有 tension/style/rhythm 对象，调用 `ReaderSimulationService.simulate_all_panels()` 生成 4视角评分（casual/veteran/satisfaction/editor），失败时返回 null 不影响其他字段
+  - 防剧透 `max_chapter` post-filter：`RetrievalService.search_branch` 和 `BranchQAService.answer_question` 加 `max_chapter=None` 可选参数（向后兼容），`/api/ask-branch-stream` 从 body 读取并透传
+  - 读者反馈 API：`POST /api/reader/feedback`（branch_id + chapter_index + rating 1-5 + 可选 comment）和 `GET /api/reader/feedback-summary`，委托给已有的 `ReaderFeedbackService`
+
+  **Wave B — 前端 UI（复用现有组件）**：
+  - `/reader/<branch_id>` 独立路由，bundle 323 kB（vs Workbench 420 kB，-97 kB，确认 WorkbenchApp 未加载）
+  - `ReaderLayout`：三栏（左 280px 章节导航 / 中央阅读 / 右 380px Q&A），顶部防剧透开关
+  - `ChapterNavPanel`：章节卡片含 2行摘要预览 + hook_score 进度条 + risk_level tag + 搜索 + 3种过滤（全部/高吸引/有风险）
+  - `AntiSpoilerQA`：复用 `BranchQaPanel`，防剧透开启时传 `maxChapter = currentChapterIndex`，显示"仅基于第 1–N 章回答"提示
+  - `ReaderSimPanel`：4视角评分卡，进度条 + alert 颜色 + feedback 文字，API 失败时静默隐藏
+  - `ReaderFeedbackPanel`：星级评分 + 评论提交 + 汇总展示
+
+  **零回归保证（F1 APPROVE）**：
+  - 现有 Workbench 组件（WorkbenchApp/WorkbenchLayout/ReaderPage/ChapterSidebar）0 改动
+  - `apps/api/app/main.py` dispatch 表 0 改动（仅加 2 个新 /api/reader/* 分支）
+  - imitation 算法 / prompts.py / run_graph.py 0 改动
+  - 防剧透 post-filter 不改 SQL
+  - 77/77 测试绿（含 10 个新防剧透单元测试）
+
+  **范围保真（F3 APPROVE）**：
+  - 所有新组件在 `apps/web/src/components/reader/` 和 `pages/reader/` 下
+  - `BranchQaPanel` 仅加 `maxChapter?: number` 可选 prop（向后兼容）
+  - `api.ts askBranchStream` 仅加 `maxChapter?: number` 可选参数
+
+  关联文档：
+  - Plan: `.sisyphus/plans/reader-studio-v4.md`
+  - Roadmap: `docs/strategy/writer-studio-roadmap.md`
+
 - feat(writer-studio/v3): 业务闭环完成 — identity 透传 + n8n 完成通知 + Helicone trace 覆盖。
 
   Changelist: `CL-writer-studio-v3-business-loop` (PR #9, 6 atomic commits)
