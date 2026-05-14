@@ -1129,15 +1129,18 @@ def _chapter_source_payload(
         }
 
 
-def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
+def _library_payload(database_url: str | None, limit: int, owner_user_id: str | None = None) -> dict[str, Any]:
     runtime = get_settings().model_copy(deep=True)
     if database_url:
         runtime.database_url = database_url
     factory = create_session_factory(runtime)
     rows: list[dict[str, Any]] = []
     with factory() as session:
+        query = session.query(RunBranch)
+        if owner_user_id is not None:
+            query = query.filter(RunBranch.owner_user_id == owner_user_id)
         branches = session.scalars(
-            session.query(RunBranch).order_by(RunBranch.updated_at.desc()).limit(limit).statement
+            query.order_by(RunBranch.updated_at.desc()).limit(limit).statement
         ).all()
         for branch in branches:
             run = session.get(AnalysisRun, branch.run_id)
@@ -1554,8 +1557,11 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
     if path == "/api/library":
         database_url = params.get("database_url")
         limit = int(params.get("limit", "100"))
+        owner_user_id = environ.get("HTTP_X_USER_ID") or None
+        if owner_user_id is not None:
+            owner_user_id = owner_user_id.strip() or None
         try:
-            payload = _library_payload(database_url, limit)
+            payload = _library_payload(database_url, limit, owner_user_id=owner_user_id)
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,
