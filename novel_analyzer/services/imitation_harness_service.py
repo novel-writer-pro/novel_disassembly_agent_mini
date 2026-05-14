@@ -1364,6 +1364,7 @@ class HarnessControllerService:
         model_name: str | None = None,
         strategy_input: dict[str, object] | None = None,
         steering_pack: dict[str, object] | None = None,
+        mapping_pack: dict[str, object] | None = None,
     ) -> ChapterImitationHarnessReport:
         skill_contracts = self.list_skill_contracts()
 
@@ -1388,6 +1389,7 @@ class HarnessControllerService:
                     target_goal=target_goal,
                     model_name=model_name,
                     steering_pack=steering_pack,
+                    mapping_pack=mapping_pack,
                 )
             except Exception as exc:  # noqa: BLE001
                 draft = self.chapter_imitation.build_skeleton_draft(

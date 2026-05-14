@@ -183,6 +183,7 @@ class ChapterImitationService:
         method: ChapterImitationMethod | None = None,
         model_name: str | None = None,
         steering_pack: dict[str, object] | None = None,
+        mapping_pack: dict[str, object] | None = None,
     ) -> ChapterImitationDraft:
         plan = self.build_imitation_plan(
             branch_id,
@@ -217,6 +218,7 @@ class ChapterImitationService:
             previous_summary=previous_summary,
             active_characters=active_characters,
             unresolved_threads=unresolved_threads,
+            mapping_pack=mapping_pack,
         )
         model = build_chat_model(self.settings, model_name=model_name)
         response = model.invoke(prompt)
