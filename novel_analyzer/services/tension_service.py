@@ -25,6 +25,7 @@ from novel_analyzer.database.models import (
     RetrievalChunk,
     RetrievalDocument,
 )
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 
 # Edge types that count as "conflict" for conflict_density
 CONFLICT_EDGE_TYPES: frozenset[str] = frozenset(
@@ -113,6 +114,8 @@ class TensionService:
         branch_id: str,
         chapter_index: int,
         lookback_n: int = 3,
+        rhythm_signal: dict[str, object] | None = None,
+        thread_status: dict[str, object] | None = None,
     ) -> TensionScore:
         similarity = self._plot_similarity(branch_id, chapter_index, lookback_n)
         density = self._conflict_density(branch_id, chapter_index)
@@ -126,7 +129,7 @@ class TensionService:
         )
         tension = round(max(0.0, min(1.0, tension)), 4)
 
-        alerts = self._build_alerts(similarity, density, surprise, tension)
+        alerts = self._build_alerts(similarity, density, surprise, tension, rhythm_signal, thread_status)
         return TensionScore(
             chapter_index=chapter_index,
             branch_id=branch_id,
@@ -172,8 +175,9 @@ class TensionService:
             .join(RetrievalDocument, RetrievalChunk.document_id == RetrievalDocument.id)
             .where(RetrievalDocument.branch_id == branch_id)
             .where(RetrievalDocument.chapter_index == chapter_index)
-            .where(RetrievalChunk.chunk_order == 0)
             .where(ChunkEmbedding.deleted_at.is_(None))
+            .order_by(RetrievalChunk.chunk_order)
+            .limit(1)
         )
         if row is None or not row.vector_payload:
             return None
@@ -207,6 +211,8 @@ class TensionService:
         if artifact is None:
             return set()
         payload = artifact.payload_json or {}
+        if is_heuristic_artifact(payload):
+            return set()
         entities: list[object] = list(payload.get("key_entities", []))
         events: list[object] = list(payload.get("key_events", []))
         return {str(x).strip().lower() for x in entities + events if x}
@@ -222,7 +228,7 @@ class TensionService:
         edge_count = self.session.scalar(
             select(func.count(GraphEdge.id))
             .where(GraphEdge.branch_id == branch_id)
-            .where(GraphEdge.chapter_last_seen == chapter_index)
+            .where(GraphEdge.chapter_first_seen == chapter_index)
             .where(GraphEdge.edge_type.in_(list(CONFLICT_EDGE_TYPES)))
             .where(GraphEdge.deleted_at.is_(None))
         ) or 0
@@ -230,7 +236,7 @@ class TensionService:
         node_count = self.session.scalar(
             select(func.count(GraphNode.id))
             .where(GraphNode.branch_id == branch_id)
-            .where(GraphNode.chapter_last_seen == chapter_index)
+            .where(GraphNode.chapter_first_seen == chapter_index)
             .where(GraphNode.node_type == "conflict")
             .where(GraphNode.deleted_at.is_(None))
         ) or 0
@@ -242,7 +248,20 @@ class TensionService:
         return round(conflict_count / (word_count / 1000), 4)
 
     def _get_chapter_word_count(self, branch_id: str, chapter_index: int) -> int:
-        """Approximate word count from chapter artifact summary length."""
+        from novel_analyzer.database.models import RetrievalChunk as _RC
+        from novel_analyzer.database.models import RetrievalDocument as _RD
+
+        texts = self.session.scalars(
+            select(_RC.text)
+            .join(_RD, _RC.document_id == _RD.id)
+            .where(_RD.branch_id == branch_id)
+            .where(_RD.chapter_index == chapter_index)
+            .where(_RC.deleted_at.is_(None))
+        ).all()
+        total = sum(len(t) for t in texts)
+        if total > 0:
+            return total
+
         artifact = self.session.scalar(
             select(ChapterArtifact)
             .where(ChapterArtifact.branch_id == branch_id)
@@ -252,9 +271,7 @@ class TensionService:
         if artifact is None:
             return 0
         payload = artifact.payload_json or {}
-        # Use summary length as proxy; real text length would be better
         summary = str(payload.get("chapter_summary", ""))
-        # Estimate: summary is ~10% of full chapter
         return max(len(summary) * 10, 500)
 
     # ------------------------------------------------------------------
@@ -296,6 +313,8 @@ class TensionService:
         density: float,
         surprise: float,
         tension: float,
+        rhythm_signal: dict[str, object] | None = None,
+        thread_status: dict[str, object] | None = None,
     ) -> list[TensionAlert]:
         alerts: list[TensionAlert] = []
 
@@ -329,6 +348,38 @@ class TensionService:
                 message=f"新颖度指数 {surprise:.2f}，几乎没有新元素",
                 suggestion="考虑引入新角色、新地点或新信息",
             ))
+
+        if rhythm_signal:
+            hook_density = rhythm_signal.get("hook_density")
+            rhythm_alert = rhythm_signal.get("alert_level", "none")
+            if rhythm_alert != "none" and isinstance(hook_density, (int, float)):
+                if density < _DENSITY_LOW:
+                    alerts.append(TensionAlert(
+                        alert_type="double_flat",
+                        severity="high",
+                        message=f"冲突密度（{density:.2f}）与爽点密度（{hook_density:.2f}/千字）双低，情节严重平淡",
+                        suggestion="建议同时增加冲突事件和情绪高点，或激活已有伏笔",
+                    ))
+                else:
+                    alerts.append(TensionAlert(
+                        alert_type="low_hook_density",
+                        severity="medium",
+                        message=f"爽点密度偏低（{hook_density:.2f}/千字），读者留存风险",
+                        suggestion="建议在本章增加情绪高点或意外反转",
+                    ))
+
+        if thread_status:
+            overdue = thread_status.get("overdue_threads", [])
+            if isinstance(overdue, list) and overdue:
+                best = max(overdue, key=lambda t: float(t.get("importance_score", 0)) if isinstance(t, dict) else 0)
+                label = str(best.get("label", "")) if isinstance(best, dict) else ""
+                dormant_n = int(best.get("chapters_since_last_seen", 0)) if isinstance(best, dict) else 0
+                alerts.append(TensionAlert(
+                    alert_type="overdue_thread",
+                    severity="medium",
+                    message=f"线索「{label}」已沉寂 {dormant_n} 章，建议本章激活",
+                    suggestion=f"激活线索「{label}」可提升情节新颖度和读者期待感",
+                ))
 
         return alerts
 

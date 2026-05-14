@@ -1,0 +1,94 @@
+{
+  "branch": "e5becabd-e2f3-4045-9249-fa91f382dc9a",
+  "chapters": {
+    "10": {
+      "stored_entities": [
+        "第十章",
+        "幽谷",
+        "张小凡上",
+        "得山来",
+        "来到那熟"
+      ],
+      "artifact_source_kind": "model",
+      "parsed_json_intake_keys": [],
+      "cleaned_text_chars": 0,
+      "raw_response_chars": 354,
+      "raw_response_is_stage_error_fallback": true,
+      "raw_response_summary": {
+        "stage_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}",
+        "fallback_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}",
+        "fallback": "local-heuristic"
+      },
+      "prompt_version": "chapter_analysis_v0_2",
+      "parse_status": "parsed",
+      "parse_error": null,
+      "invocation_pipeline": "small-model-skills-v1",
+      "invocation_model_name": "deepseek-v4-flash",
+      "skip_reason": "no cleaned_text in raw_outputs (LLM never produced it: 402 Insufficient Balance fallback)"
+    },
+    "16": {
+      "stored_entities": [
+        "第十六章",
+        "驱物",
+        "汪汪汪",
+        "吱吱吱吱",
+        "犬吠声与"
+      ],
+      "artifact_source_kind": "model",
+      "parsed_json_intake_keys": [],
+      "cleaned_text_chars": 0,
+      "raw_response_chars": 354,
+      "raw_response_is_stage_error_fallback": true,
+      "raw_response_summary": {
+        "stage_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}",
+        "fallback_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}",
+        "fallback": "local-heuristic"
+      },
+      "prompt_version": "chapter_analysis_v0_2",
+      "parse_status": "parsed",
+      "parse_error": null,
+      "invocation_pipeline": "small-model-skills-v1",
+      "invocation_model_name": "deepseek-v4-flash",
+      "skip_reason": "no cleaned_text in raw_outputs (LLM never produced it: 402 Insufficient Balance fallback)"
+    },
+    "44": {
+      "stored_entities": [
+        "第四十四",
+        "金铃",
+        "碧瑶怔了",
+        "一下",
+        "又仔细看"
+      ],
+      "artifact_source_kind": "model",
+      "parsed_json_intake_keys": [],
+      "cleaned_text_chars": 0,
+      "raw_response_chars": 354,
+      "raw_response_is_stage_error_fallback": true,
+      "raw_response_summary": {
+        "stage_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}",
+        "fallback_error": "Error code: 402 - {'error': {'message': 'Insufficient Balance', 'type': 'unknown_error', 'param': None, 'code': 'invalid_request_error'}}",
+        "fallback": "local-heuristic"
+      },
+      "prompt_version": "chapter_analysis_v0_2",
+      "parse_status": "parsed",
+      "parse_error": null,
+      "invocation_pipeline": "small-model-skills-v1",
+      "invocation_model_name": "deepseek-v4-flash",
+      "skip_reason": "no cleaned_text in raw_outputs (LLM never produced it: 402 Insufficient Balance fallback)"
+    }
+  },
+  "verdict": "inconclusive (no cleaned_text data)",
+  "llm_calls": 0,
+  "notes": [
+    "All 3 chapters: chapter_raw_outputs.raw_response_text is a 354-byte stage_error JSON (Error 402 Insufficient Balance) with fallback=local-heuristic.",
+    "parsed_json.intake.cleaned_text is absent (intake={} for all 3).",
+    "chapter_artifacts.payload_json (with the noisy key_entities §9 listed) was therefore written by the local-heuristic fallback path, not by the LLM running the chapter-intake-and-facts prompt.",
+    "§10 hypothesis (rerun current prompt against historically-fed cleaned_text) cannot be tested for these chapters with current data.",
+    "New hypothesis D: the stored noisy entities for e5becabd ch10/ch16/ch44 are produced deterministically by a local-heuristic fallback when LLM is unavailable, NOT by transient LLM noise. This re-frames §9 conclusions for these specific chapters."
+  ],
+  "db_count_check": {
+    "chapter_artifacts_before": 97,
+    "chapter_artifacts_after": 97,
+    "mutated": false
+  }
+}

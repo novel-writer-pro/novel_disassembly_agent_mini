@@ -24,6 +24,7 @@
 ### 第三步：了解系统全貌
 
 6. [whitepaper/ai-novel-system-whitepaper-v2.md](../../whitepaper/ai-novel-system-whitepaper-v2.md) — 系统白皮书 v2（最新）
+7. [whitepaper/ai-novel-system-whitepaper.md](../../whitepaper/ai-novel-system-whitepaper.md) — 系统白皮书 v1
 7. [strategy/capability-roadmap-and-deliverables.md](../../strategy/capability-roadmap-and-deliverables.md) — 能力路线图与交付物
 
 ### 第四步：了解核心能力线

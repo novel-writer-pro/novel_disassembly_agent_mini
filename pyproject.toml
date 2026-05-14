@@ -44,6 +44,9 @@ select = ["E", "F", "I", "B", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests requiring external services (deselect with '-m \"not integration\"')",
+]
 
 [tool.mypy]
 python_version = "3.11"

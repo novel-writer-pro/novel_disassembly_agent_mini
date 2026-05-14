@@ -106,6 +106,11 @@ poetry run novel-analyzer show-branch <branch_id>
 poetry run novel-analyzer show-run-status <run_id> <branch_id>
 ```
 
+> 默认 reader / status 口径说明：
+> - `show-run-status`、章节索引、上一章 summary、固定 window summary 默认只读取 canonical/default-readable artifact
+> - 仅 `visibility='active'` 但 `participates_in_downstream=false` 的 companion / manual artifact 会保留，但不会自动进入默认读路径
+> - 如后续引入 enrichment companion，它不能因为“也是 active artifact”就天然替代当前 canonical chapter artifact
+
 ### 4.2 查看单章 bundle
 ```bash
 poetry run novel-analyzer show-chapter <branch_id> <chapter_index>

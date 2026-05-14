@@ -13,6 +13,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.database.models import ChapterArtifact, ChapterRawOutput, GraphEdge, GraphNode
+from novel_analyzer.services._fallback_guard import is_heuristic_artifact
 
 
 @dataclass(frozen=True, slots=True)
@@ -276,11 +277,11 @@ class GraphService:
             analysis_payload = {}
 
         entity_items = self._normalize_note_list(facts_payload.get('characters', []))
-        if not entity_items:
+        if not entity_items and not is_heuristic_artifact(payload):
             entity_items = self._normalize_note_list(payload.get('key_entities', []))
 
         event_items = self._normalize_note_list(facts_payload.get('events', []))
-        if not event_items:
+        if not event_items and not is_heuristic_artifact(payload):
             event_items = self._normalize_note_list(payload.get('key_events', []))
 
         continuity_raw = analysis_payload.get(

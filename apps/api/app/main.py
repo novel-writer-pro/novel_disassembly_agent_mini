@@ -107,8 +107,10 @@ _API_ENDPOINT_SPECS: list[dict[str, str]] = [
     {"method": "POST", "path": "/api/pipeline/start-range"},
     {"method": "GET", "path": "/api/pipeline/status"},
     {"method": "GET", "path": "/api/pipeline/runs"},
+    {"method": "GET", "path": "/api/pipeline/progress-stream"},
     {"method": "GET", "path": "/api/runtime-health"},
     {"method": "GET", "path": "/api/provider-health"},
+    {"method": "GET", "path": "/api/quality-dashboard"},
     {"method": "GET", "path": "/api/whole-book-imitation-readiness"},
     {"method": "POST", "path": "/api/whole-book-imitation-run"},
     {"method": "POST", "path": "/api/search-branch"},
@@ -1127,15 +1129,18 @@ def _chapter_source_payload(
         }
 
 
-def _library_payload(database_url: str | None, limit: int) -> dict[str, Any]:
+def _library_payload(database_url: str | None, limit: int, owner_user_id: str | None = None) -> dict[str, Any]:
     runtime = get_settings().model_copy(deep=True)
     if database_url:
         runtime.database_url = database_url
     factory = create_session_factory(runtime)
     rows: list[dict[str, Any]] = []
     with factory() as session:
+        query = session.query(RunBranch)
+        if owner_user_id is not None:
+            query = query.filter(RunBranch.owner_user_id == owner_user_id)
         branches = session.scalars(
-            session.query(RunBranch).order_by(RunBranch.updated_at.desc()).limit(limit).statement
+            query.order_by(RunBranch.updated_at.desc()).limit(limit).statement
         ).all()
         for branch in branches:
             run = session.get(AnalysisRun, branch.run_id)
@@ -1552,8 +1557,11 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
     if path == "/api/library":
         database_url = params.get("database_url")
         limit = int(params.get("limit", "100"))
+        owner_user_id = environ.get("HTTP_X_USER_ID") or None
+        if owner_user_id is not None:
+            owner_user_id = owner_user_id.strip() or None
         try:
-            payload = _library_payload(database_url, limit)
+            payload = _library_payload(database_url, limit, owner_user_id=owner_user_id)
         except Exception as exc:  # noqa: BLE001
             return _response(
                 start_response,
@@ -2176,6 +2184,60 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
             start_response, status="200 OK", payload={"items": [asdict(item) for item in rows]}
         )
 
+    if path == "/api/pipeline/progress-stream":
+        pipeline_run_id = params.get("pipeline_run_id")
+        if not pipeline_run_id:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "pipeline_run_id required"},
+            )
+        runtime = get_settings().model_copy(deep=True)
+        database_url = params.get("database_url")
+        if database_url:
+            runtime.database_url = database_url
+
+        def _progress_iter():
+            import time as _time
+            factory = create_session_factory(runtime)
+            last_chapter = -1
+            for _ in range(600):
+                try:
+                    snapshot = get_pipeline_run_status(
+                        pipeline_run_id=pipeline_run_id,
+                        database_url=database_url,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    yield _sse_event({"type": "error", "message": str(exc)[:200]})
+                    break
+                summary = snapshot.summary_json or {}
+                current_ch = int(summary.get("current_chapter", 0) or 0)
+                last_completed = int(summary.get("last_completed_chapter", 0) or 0)
+                if last_completed > last_chapter:
+                    last_chapter = last_completed
+                    yield _sse_event({
+                        "type": "chapter_completed",
+                        "chapter_index": last_completed,
+                        "current_chapter": current_ch,
+                        "status": snapshot.status,
+                    })
+                if snapshot.status in ("completed", "failed", "cancelled"):
+                    yield _sse_event({
+                        "type": "pipeline_finished",
+                        "status": snapshot.status,
+                        "last_completed_chapter": last_completed,
+                    })
+                    break
+                yield _sse_event({
+                    "type": "heartbeat",
+                    "status": snapshot.status,
+                    "current_chapter": current_ch,
+                    "last_completed_chapter": last_completed,
+                })
+                _time.sleep(3.0)
+
+        return _stream_response(start_response, _progress_iter())
+
     if (
         path in {"/api/pipeline/pause", "/api/pipeline/resume", "/api/pipeline/cancel"}
         and method == "POST"
@@ -2231,6 +2293,83 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 payload={"error": str(exc)},
             )
         return _response(start_response, status="200 OK", payload=asdict(report))
+
+    if path == "/api/quality-dashboard":
+        branch_id = params.get("branch_id")
+        if not branch_id:
+            return _response(start_response, status="400 Bad Request", payload={"error": "branch_id required"})
+        try:
+            factory = create_session_factory(get_settings())
+            with factory() as session:
+                from novel_analyzer.services.foreshadowing_service import ForeshadowingService
+                from novel_analyzer.services.confidence_calibration_service import ConfidenceCalibrationService
+                from novel_analyzer.services.claim_grounding_service import ClaimGroundingService
+                from novel_analyzer.database.models import ChapterArtifact as CA
+
+                artifacts = session.scalars(
+                    select(CA)
+                    .where(CA.branch_id == branch_id)
+                    .where(CA.visibility == 'active')
+                    .order_by(CA.chapter_index)
+                ).all()
+                facts_all = session.scalars(
+                    select(FactRecord)
+                    .where(FactRecord.branch_id == branch_id)
+                    .order_by(FactRecord.chapter_index)
+                ).all()
+
+                chapter_count = len(artifacts)
+                total_facts = len(facts_all)
+                avg_confidence = (
+                    sum(f.confidence for f in facts_all) / total_facts
+                    if total_facts else 0.0
+                )
+                low_confidence_count = sum(1 for f in facts_all if f.confidence < 0.4)
+
+                fs = ForeshadowingService(session)
+                open_threads = fs.get_open_threads(branch_id, before_chapter=9999, limit=50)
+
+                chapter_summaries = []
+                for art in artifacts[:50]:
+                    payload_data = art.payload_json or {}
+                    profile = payload_data.get('_deconstruction_profile', {})
+                    chapter_summaries.append({
+                        'chapter_index': art.chapter_index,
+                        'has_summary': bool(str(payload_data.get('chapter_summary', '')).strip()),
+                        'entity_count': len(payload_data.get('key_entities', [])),
+                        'event_count': len(payload_data.get('key_events', [])),
+                        'needs_human_review': payload_data.get('needs_human_review', False),
+                        'profile': profile.get('profile', 'unknown'),
+                        'writer_lens_status': profile.get('writer_lens_status', 'unknown'),
+                    })
+
+                dashboard = {
+                    'branch_id': branch_id,
+                    'chapter_count': chapter_count,
+                    'total_facts': total_facts,
+                    'avg_confidence': round(avg_confidence, 3),
+                    'low_confidence_facts': low_confidence_count,
+                    'low_confidence_ratio': round(low_confidence_count / total_facts, 3) if total_facts else 0.0,
+                    'open_foreshadowing_threads': [
+                        {
+                            'label': t.label,
+                            'status': t.status,
+                            'chapter_planted': t.chapter_planted,
+                            'age': (chapter_count - t.chapter_planted) if chapter_count else 0,
+                            'reinforcements': t.reinforcement_count,
+                        }
+                        for t in open_threads
+                    ],
+                    'foreshadowing_open_count': len(open_threads),
+                    'chapters': chapter_summaries,
+                }
+            return _response(start_response, status="200 OK", payload=dashboard)
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
 
     if path == "/api/whole-book-imitation-readiness":
         try:

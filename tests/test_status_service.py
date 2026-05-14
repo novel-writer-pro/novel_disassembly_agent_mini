@@ -49,3 +49,26 @@ def test_run_status_reports_progress_and_counts(tmp_path: Path) -> None:
         assert status.next_chapter == 2
         assert status.fact_count > 0
         assert status.graph_node_count > 0
+
+
+def test_run_status_completed_chapters_ignores_non_downstream_active_companion(
+    tmp_path: Path,
+) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n第2章 二\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RunService(session)
+        service.record_chapter_artifact(branch.id, 1, {'chapter_summary': 'canonical'})
+        service.record_chapter_artifact(
+            branch.id,
+            1,
+            {'chapter_summary': 'companion'},
+            source_kind='manual',
+            participates_in_downstream=False,
+        )
+
+        status = StatusService(session).get_run_status(run.id, branch.id)
+        assert status.completed_chapters == 1
+        assert status.next_chapter == 2

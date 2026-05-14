@@ -1,0 +1,17 @@
+[卫图真实拆书验证 - 2026-05-11]
+DB: postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer_weitu_deconstruction_20260511
+run_id: 754b205f-22fc-4eeb-962d-6d6800c4052d
+branch_id: 03c657c8-5389-4e42-9234-b14137c04125
+source: /home/user/txt111/chapters -> merged first 20 chapters into .tmp/weitu_first20.txt
+model: deepseek-v4-flash @ https://api.deepseek.com/v1
+observed:
+- ingest/start-run/analyze-range all work on isolated DB
+- completed chapters reached 2; chapter 3 reached evidence_binder
+- show-chapter OK
+- show-context OK
+- search-branch OK
+- ask-branch OK
+- show-window pending until 5 chapters complete
+performance:
+- bottleneck is per-chapter serial LLM stage latency, not database/run orchestration
+- no failed_jobs so far

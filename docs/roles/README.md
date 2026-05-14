@@ -12,6 +12,12 @@
 | **维护者 / 接手人** | 接手项目、做文档治理、做版本交接 | [→ maintainer/README.md](./maintainer/README.md) |
 | **仿写 / 创作** | 章节仿写、全书仿写、创新导向实验 | [→ imitation/README.md](./imitation/README.md) |
 
+参见 [api-current-surface.md](../api-current-surface.md) 了解当前已实现 API surface。
+
+参见 [../features/README.md](../features/README.md) 了解各能力线当前状态。
+
+参见 [../strategy/docs-governance-and-handoff-checklist.md](../strategy/docs-governance-and-handoff-checklist.md) 了解文档治理与交接 checklist。
+
 ---
 
 返回 [文档中心](../README.md)

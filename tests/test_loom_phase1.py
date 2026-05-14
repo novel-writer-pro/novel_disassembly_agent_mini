@@ -390,6 +390,42 @@ def test_tension_alerts_generated_for_low_tension(tmp_path) -> None:
         assert score.surprise_index < 0.5
 
 
+def test_tension_with_rhythm_signal_double_flat(tmp_path) -> None:
+    """Low hook_density + low conflict_density → double_flat alert."""
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i, entities=["张三"], events=["普通事件"])
+        svc = TensionService(session)
+        rhythm_signal = {
+            "hook_density": 0.2,
+            "alert_level": "warn",
+            "pacing_type": "slow_burn",
+            "climax_score": 0.0,
+        }
+        score = svc.compute(branch_id, chapter_index=3, rhythm_signal=rhythm_signal)
+        alert_types = [a.alert_type for a in score.alerts]
+        assert "double_flat" in alert_types or "low_hook_density" in alert_types
+
+
+def test_tension_with_rhythm_signal_no_extra_alert_when_ok(tmp_path) -> None:
+    """Normal hook_density → no extra rhythm alert."""
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        _record_chapter(session, run_id, branch_id, 1, entities=["张三"])
+        svc = TensionService(session)
+        rhythm_signal = {
+            "hook_density": 2.5,
+            "alert_level": "none",
+            "pacing_type": "balanced",
+            "climax_score": 0.4,
+        }
+        score = svc.compute(branch_id, chapter_index=1, rhythm_signal=rhythm_signal)
+        alert_types = [a.alert_type for a in score.alerts]
+        assert "double_flat" not in alert_types
+        assert "low_hook_density" not in alert_types
+
+
 # ===========================================================================
 # PairwiseEvalService tests
 # ===========================================================================
@@ -532,3 +568,39 @@ def test_full_loom_pipeline(tmp_path) -> None:
         assert 0.0 <= t_score.tension_score <= 1.0
         sig = t_score.to_operator_signal()
         assert sig["loom_version"] == "1.0"
+
+
+def test_tension_with_thread_status_overdue_alert(tmp_path) -> None:
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i, entities=["张三"])
+        svc = TensionService(session)
+        thread_status = {
+            "overdue_threads": [
+                {
+                    "label": "重要伏笔",
+                    "node_type": "foreshadow",
+                    "chapters_since_last_seen": 20,
+                    "importance_score": 0.9,
+                }
+            ],
+            "active_threads": [],
+            "dormant_threads": [],
+        }
+        score = svc.compute(branch_id, chapter_index=3, thread_status=thread_status)
+        alert_types = [a.alert_type for a in score.alerts]
+        assert "overdue_thread" in alert_types
+
+
+def test_tension_with_thread_status_no_overdue() -> None:
+    with _session() as session:
+        svc = TensionService(session)
+        thread_status = {
+            "overdue_threads": [],
+            "active_threads": [{"label": "活跃线索", "chapters_since_last_seen": 2}],
+            "dormant_threads": [],
+        }
+        score = svc.compute(str(uuid.uuid4()), chapter_index=1, thread_status=thread_status)
+        alert_types = [a.alert_type for a in score.alerts]
+        assert "overdue_thread" not in alert_types

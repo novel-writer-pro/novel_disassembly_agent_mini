@@ -508,3 +508,5 @@ def test_branch_snapshot_maps_provider_connection_failure_class(
         database_url=db_url,
     )
     assert branch_snapshot.failed_summary[0]["failure_class"] == "provider_connection"
+
+

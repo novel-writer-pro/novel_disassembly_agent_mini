@@ -22,11 +22,13 @@ from novel_analyzer.database.models import (
 )
 from novel_analyzer.domain.schemas import BranchQAContextOutput, ChapterQAContextOutput
 from novel_analyzer.runtime.cluster_review_state import read_cluster_review_state
+from novel_analyzer.services.causal_graph_service import CausalGraphService, CAUSAL_EDGE_TYPES
 from novel_analyzer.services.cluster_review_service import (
     ClusterReviewService,
     ClusterReviewStorageUnavailable,
 )
 from novel_analyzer.services.chapter_index_service import ChapterIndexService
+from novel_analyzer.services.foreshadowing_service import ForeshadowingService
 from novel_analyzer.services.graph_service import GraphService
 from novel_analyzer.services.run_service import RunService
 from novel_analyzer.services.status_service import StatusService
@@ -42,6 +44,8 @@ class ExportService:
         self.graph_service = GraphService(session)
         self.run_service = RunService(session)
         self.cluster_review_service = ClusterReviewService(session)
+        self.foreshadowing_service = ForeshadowingService(session)
+        self.causal_graph = CausalGraphService(session)
 
     @staticmethod
     def _is_missing_relation_error(exc: Exception) -> bool:
@@ -2376,7 +2380,106 @@ class ExportService:
             'reasoning_graph': reasoning_graph,
             'state_summary': state_summary,
             'risk_card': risk_card.payload_json if risk_card is not None else None,
+            'foreshadowing_threads': self._export_foreshadowing(branch_id, chapter_index),
+            'causal_chains': self._export_causal_chains(branch_id, chapter_index),
         }
+
+    def _export_foreshadowing(self, branch_id: str, chapter_index: int) -> list[dict[str, object]]:
+        threads = self.foreshadowing_service.get_open_threads(
+            branch_id, before_chapter=chapter_index + 1, limit=20,
+        )
+        return [
+            {
+                'label': t.label,
+                'status': t.status,
+                'chapter_planted': t.chapter_planted,
+                'chapter_last_seen': t.chapter_last_seen,
+                'age': chapter_index - t.chapter_planted,
+                'reinforcement_count': t.reinforcement_count,
+                'evidence': t.evidence[:3],
+            }
+            for t in threads
+        ]
+
+    def _export_causal_chains(self, branch_id: str, chapter_index: int) -> list[dict[str, object]]:
+        causal_edges = self.session.scalars(
+            select(GraphEdge)
+            .where(GraphEdge.branch_id == branch_id)
+            .where(GraphEdge.edge_type.in_(list(CAUSAL_EDGE_TYPES)))
+            .where(GraphEdge.chapter_first_seen <= chapter_index)
+            .order_by(GraphEdge.weight.desc(), GraphEdge.chapter_first_seen.desc())
+            .limit(15)
+        ).all()
+        chains: list[dict[str, object]] = []
+        for edge in causal_edges:
+            source = self.session.scalar(
+                select(GraphNode).where(GraphNode.id == edge.source_node_id)
+            )
+            target = self.session.scalar(
+                select(GraphNode).where(GraphNode.id == edge.target_node_id)
+            )
+            if source and target:
+                chains.append({
+                    'source': source.label,
+                    'target': target.label,
+                    'edge_type': edge.edge_type,
+                    'chapter': edge.chapter_first_seen,
+                    'weight': edge.weight,
+                    'confidence': (edge.metadata_json or {}).get('confidence', 0.5),
+                })
+        return chains
+
+    def export_causal_mermaid(self, branch_id: str, chapter_index: int) -> str:
+        """Generate a Mermaid flowchart from causal chains up to a given chapter."""
+        chains = self._export_causal_chains(branch_id, chapter_index)
+        if not chains:
+            return ''
+        lines = ['graph LR']
+        node_ids: dict[str, str] = {}
+        counter = [0]
+
+        def _node_id(label: str) -> str:
+            if label not in node_ids:
+                counter[0] += 1
+                node_ids[label] = f'N{counter[0]}'
+            return node_ids[label]
+
+        edge_labels = {
+            'causes': '导致',
+            'enables': '使得',
+            'prevents': '阻止',
+            'triggers': '触发',
+            'blocks': '阻断',
+        }
+        for chain in chains:
+            src = _node_id(str(chain['source']))
+            tgt = _node_id(str(chain['target']))
+            edge_type = str(chain.get('edge_type', 'causes'))
+            label = edge_labels.get(edge_type, edge_type)
+            ch = chain.get('chapter', '?')
+            lines.append(f'    {src}["{chain["source"]}"] -->|{label} ch{ch}| {tgt}["{chain["target"]}"]')
+        return '\n'.join(lines)
+
+    def export_foreshadowing_timeline_mermaid(self, branch_id: str, chapter_index: int) -> str:
+        """Generate a Mermaid gantt chart for foreshadowing thread lifecycles."""
+        threads = self._export_foreshadowing(branch_id, chapter_index)
+        if not threads:
+            return ''
+        lines = [
+            'gantt',
+            '    title 伏笔生命周期',
+            '    dateFormat X',
+            '    axisFormat Ch%s',
+        ]
+        for t in threads:
+            status_tag = 'active' if t['status'] in ('planted', 'reinforced') else 'done'
+            start = t['chapter_planted']
+            end = t['chapter_last_seen']
+            duration = max(1, end - start + 1)
+            lines.append(
+                f'    {t["label"]} :{status_tag}, {start}, {duration}'
+            )
+        return '\n'.join(lines)
 
     def export_chapter_qa_context(self, branch_id: str, chapter_index: int) -> dict[str, object]:
         """Return a question-answering context package for one chapter."""

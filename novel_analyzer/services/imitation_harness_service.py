@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -821,10 +822,24 @@ class HarnessControllerService:
         # Loom: tension check (non-blocking, warn only)
         if self.settings.loom_tension_enabled:
             try:
+                rhythm_signal_for_tension: dict[str, object] | None = None
+                if self.settings.loom_style_enabled and self.session is not None:
+                    from novel_analyzer.services.rhythm_analysis_service import RhythmAnalysisService
+                    rhythm_signal_for_tension = RhythmAnalysisService(self.session).compute(
+                        branch_id, source_chapter_index
+                    ).to_rhythm_signal()
+                thread_status_for_tension: dict[str, object] | None = None
+                if self.settings.loom_character_enabled and self.session is not None:
+                    from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
+                    thread_status_for_tension = ThreadSchedulerService(self.session).analyze_thread_status(
+                        branch_id, source_chapter_index
+                    ).to_thread_status()
                 tension = self.tension_service.compute(
                     branch_id,
                     chapter_index=source_chapter_index,
                     lookback_n=self.settings.loom_tension_lookback_n,
+                    rhythm_signal=rhythm_signal_for_tension,
+                    thread_status=thread_status_for_tension,
                 )
                 tension_sig = tension.to_operator_signal()
                 if tension.alerts:
@@ -856,6 +871,136 @@ class HarnessControllerService:
                 outputs["_loom_tension"] = tension_sig  # type: ignore[index]
             except Exception:  # noqa: BLE001
                 pass  # Loom tension is non-blocking
+
+        if self.settings.loom_style_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.style_calibration_service import StyleCalibrationService
+                from novel_analyzer.services.rhythm_analysis_service import RhythmAnalysisService
+                style_svc = StyleCalibrationService(self.session)
+                rhythm_svc = RhythmAnalysisService(self.session)
+                style_result = style_svc.compute_style_drift(branch_id, source_chapter_index)
+                rhythm_result = rhythm_svc.compute(branch_id, source_chapter_index)
+                outputs["_loom_style"] = style_result.to_style_signal()  # type: ignore[index]
+                outputs["_loom_rhythm"] = rhythm_result.to_rhythm_signal()  # type: ignore[index]
+                if style_result.alert_level != "none":
+                    if style_result.suggestion and style_result.suggestion not in recommended_actions:
+                        recommended_actions.append(style_result.suggestion)
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_style_drift",
+                            status="warn",
+                            severity="medium",
+                            priority=3,
+                            notes=[style_result.suggestion or f"style_drift={style_result.style_drift_score:.3f}"],
+                        )
+                    )
+                if rhythm_result.alert_level != "none":
+                    if rhythm_result.suggestion and rhythm_result.suggestion not in recommended_actions:
+                        recommended_actions.append(rhythm_result.suggestion)
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_rhythm",
+                            status="warn",
+                            severity="medium",
+                            priority=3,
+                            notes=[rhythm_result.suggestion or f"hook_density={rhythm_result.hook_density:.3f}"],
+                        )
+                    )
+            except Exception:  # noqa: BLE001
+                pass  # Loom style is non-blocking
+
+        if self.settings.loom_style_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.reader_simulation_service import ReaderSimulationService
+                reader_svc = ReaderSimulationService(self.session)
+                reader_score = reader_svc.simulate_all_panels(branch_id, source_chapter_index)
+                reader_sig = reader_score.to_reader_satisfaction()
+                outputs["_loom_reader_sim"] = reader_sig  # type: ignore[index]
+                if reader_score.alert_level != "none" and reader_score.suggestion:
+                    if reader_score.suggestion not in recommended_actions:
+                        recommended_actions.append(reader_score.suggestion)
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_reader_sim",
+                            status="warn",
+                            severity="low",
+                            priority=4,
+                            notes=[reader_score.suggestion],
+                        )
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+
+        if self.settings.loom_character_enabled and self.session is not None:
+            try:
+                from sqlalchemy import select as _select
+                from novel_analyzer.database.models import FactRecord as _FactRecord
+                from novel_analyzer.services.character_agent_service import CharacterAgentService
+                char_svc = CharacterAgentService(self.session)
+                character_alerts: list[dict[str, object]] = []
+                main_chars = self.session.scalars(
+                    _select(_FactRecord.label)
+                    .where(_FactRecord.branch_id == branch_id)
+                    .where(_FactRecord.chapter_index == source_chapter_index)
+                    .where(_FactRecord.fact_type == "entity")
+                    .where(_FactRecord.deleted_at.is_(None))
+                    .limit(3)
+                ).all()
+                for char_name in main_chars:
+                    persona = char_svc.build_character_persona(
+                        branch_id, char_name, source_chapter_index - 1
+                    )
+                    consistency = char_svc.check_character_consistency(
+                        persona, draft.draft_text, source_chapter_index
+                    )
+                    character_alerts.append(
+                        {
+                            "character": char_name,
+                            "alert_level": consistency.alert_level,
+                            "overall_consistency_score": consistency.overall_consistency_score,
+                            "suggestion": consistency.suggestion,
+                        }
+                    )
+                    if consistency.alert_level != "none":
+                        if consistency.suggestion and consistency.suggestion not in recommended_actions:
+                            recommended_actions.append(consistency.suggestion)
+                        checks.append(
+                            ChapterImitationPreflightCheck(
+                                check_name="loom_character_consistency",
+                                status="warn",
+                                severity="medium",
+                                priority=3,
+                                notes=[consistency.suggestion or f"{char_name} consistency={consistency.overall_consistency_score:.3f}"],
+                            )
+                        )
+                outputs["_loom_character_consistency"] = {
+                    "characters": character_alerts,
+                }  # type: ignore[index]
+            except Exception:  # noqa: BLE001
+                pass  # Loom character is non-blocking
+
+        if self.settings.loom_character_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.thread_scheduler_service import ThreadSchedulerService
+                thread_svc = ThreadSchedulerService(self.session)
+                thread_signal = thread_svc.suggest_thread_activation(branch_id, source_chapter_index)
+                activation_sig = thread_signal.to_activation_signal()
+                if isinstance(activation_sig, dict):
+                    outputs["_loom_thread_activation"] = activation_sig  # type: ignore[index]
+                if thread_signal.suggested_thread is not None:
+                    checks.append(
+                        ChapterImitationPreflightCheck(
+                            check_name="loom_thread_scheduler",
+                            status="warn",
+                            severity="low",
+                            priority=4,
+                            notes=[thread_signal.suggestion],
+                        )
+                    )
+                    if thread_signal.suggested_thread not in recommended_actions:
+                        recommended_actions.append(thread_signal.suggestion)
+            except Exception:  # noqa: BLE001
+                pass
 
         verdict = "block" if blocking_issues else ("warn" if recommended_actions else "pass")
         return ChapterImitationPreflightReport(
@@ -1221,22 +1366,56 @@ class HarnessControllerService:
         steering_pack: dict[str, object] | None = None,
     ) -> ChapterImitationHarnessReport:
         skill_contracts = self.list_skill_contracts()
-        draft = (
-            self.chapter_imitation.build_llm_draft(
+
+        if steering_pack is None and self.settings.loom_character_enabled:
+            try:
+                from novel_analyzer.services.steering_library_service import SteeringLibraryService
+                auto_retrieval = SteeringLibraryService().retrieve_pack(query_text=target_goal)
+                auto_pack = auto_retrieval.get("steering_pack")
+                if auto_pack and any(
+                    auto_pack.get(k) for k in ("trope_axes", "worldview_capsule", "innovation_directives")
+                ):
+                    steering_pack = auto_pack
+            except Exception:  # noqa: BLE001
+                pass
+
+        llm_fallback_note = ""
+        if use_llm:
+            try:
+                draft = self.chapter_imitation.build_llm_draft(
+                    branch_id,
+                    source_chapter_index=source_chapter_index,
+                    target_goal=target_goal,
+                    model_name=model_name,
+                    steering_pack=steering_pack,
+                )
+            except Exception as exc:  # noqa: BLE001
+                draft = self.chapter_imitation.build_skeleton_draft(
+                    branch_id,
+                    source_chapter_index=source_chapter_index,
+                    target_goal=target_goal,
+                    steering_pack=steering_pack,
+                )
+                llm_fallback_note = f"LLM draft unavailable -> skeleton fallback: {type(exc).__name__}"
+                draft = draft.model_copy(
+                    update={
+                        "comparison_notes": [
+                            *draft.comparison_notes,
+                            llm_fallback_note,
+                        ],
+                        "risk_gate_notes": [
+                            *draft.risk_gate_notes,
+                            "当前章节因上游 provider 不可用，使用 skeleton fallback 保底生成。",
+                        ],
+                    }
+                )
+        else:
+            draft = self.chapter_imitation.build_skeleton_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
-                model_name=model_name,
                 steering_pack=steering_pack,
             )
-            if use_llm
-            else self.chapter_imitation.build_skeleton_draft(
-                branch_id,
-                source_chapter_index=source_chapter_index,
-                target_goal=target_goal,
-                steering_pack=steering_pack,
-            )
-        )
 
         rounds: list[ChapterImitationHarnessRound] = []
         stop_reason = "max_rounds_reached"
@@ -1244,8 +1423,11 @@ class HarnessControllerService:
         final_verdict = "needs_revision"
         final_actions: list[ChapterImitationHarnessAction] = []
         final_policy_summary: dict[str, object] = {}
+        initial_draft: ChapterImitationDraft | None = None
 
         for round_index in range(1, max_rounds + 1):
+            if initial_draft is None:
+                initial_draft = draft
             comparison = self.chapter_imitation.compare_with_source(
                 branch_id,
                 source_chapter_index=source_chapter_index,
@@ -1358,6 +1540,85 @@ class HarnessControllerService:
             )
 
         assert final_preflight is not None
+
+        chapter_quality_signal: dict[str, object] = {}
+        if self.settings.loom_pairwise_enabled and initial_draft is not None:
+            try:
+                from novel_analyzer.services.pairwise_eval_service import PairwiseEvalService
+                _pairwise_llm_client = None
+                if use_llm:
+                    try:
+                        from novel_analyzer.llm.client import build_chat_model
+                        from langchain_core.messages import HumanMessage as _HumanMessage
+
+                        class _LLMAdapter:
+                            def __init__(self, model: object) -> None:
+                                self._model = model
+
+                            def chat(self, prompt: str) -> str:
+                                return str(self._model.invoke([_HumanMessage(content=prompt)]).content)  # type: ignore[union-attr]
+
+                        _pairwise_llm_client = _LLMAdapter(build_chat_model(self.settings, model_name=model_name))
+                    except Exception:  # noqa: BLE001
+                        pass
+                pairwise_svc = PairwiseEvalService(llm_client=_pairwise_llm_client)
+                pair_result = pairwise_svc.evaluate(
+                    pair_id=str(uuid.uuid4()),
+                    branch_id=branch_id,
+                    chapter_index=source_chapter_index,
+                    draft_a=initial_draft.draft_text,
+                    draft_b=draft.draft_text,
+                    chapter_goal=target_goal,
+                )
+                chapter_quality_signal = pair_result.to_chapter_quality_signal()
+                if rounds:
+                    rounds[-1].skill_outputs["_loom_chapter_quality"] = chapter_quality_signal
+            except Exception:  # noqa: BLE001
+                pass
+
+        dialogue_signal: dict[str, object] = {}
+        if self.settings.loom_pairwise_enabled and self.session is not None:
+            try:
+                from novel_analyzer.services.dialogue_signal_service import DialogueSignalService
+                dialogue_svc = DialogueSignalService(self.session)
+                dialogue_result = dialogue_svc.compute(branch_id, source_chapter_index)
+                dialogue_signal = dialogue_result.to_dialogue_signal()
+            except Exception:  # noqa: BLE001
+                pass
+
+        reference_fidelity_signal: dict[str, object] = {}
+        if self.settings.loom_pairwise_enabled and use_llm and self.session is not None:
+            try:
+                from novel_analyzer.services.reference_eval_service import ReferenceEvalService
+                _, original_text = self.chapter_imitation._source_chapter_text(branch_id, source_chapter_index)  # noqa: SLF001
+                _ref_llm_client = None
+                try:
+                    from novel_analyzer.llm.client import build_chat_model as _build_ref_model
+                    from langchain_core.messages import HumanMessage as _RefHM
+
+                    class _RefAdapter:
+                        def __init__(self, m: object) -> None:
+                            self._m = m
+                        def chat(self, prompt: str) -> str:
+                            return str(self._m.invoke([_RefHM(content=prompt)]).content)  # type: ignore[union-attr]
+
+                    _ref_llm_client = _RefAdapter(_build_ref_model(self.settings, model_name=model_name))
+                except Exception:  # noqa: BLE001
+                    pass
+                ref_svc = ReferenceEvalService(llm_client=_ref_llm_client)
+                ref_result = ref_svc.evaluate(
+                    branch_id=branch_id,
+                    chapter_index=source_chapter_index,
+                    original_text=original_text,
+                    draft_text=draft.draft_text,
+                    chapter_goal=target_goal,
+                )
+                reference_fidelity_signal = ref_result.to_signal()
+                if rounds:
+                    rounds[-1].skill_outputs["_loom_reference_fidelity"] = reference_fidelity_signal
+            except Exception:  # noqa: BLE001
+                pass
+
         return ChapterImitationHarnessReport(
             source_chapter_index=source_chapter_index,
             target_goal=target_goal,
@@ -1370,6 +1631,8 @@ class HarnessControllerService:
             policy_summary=final_policy_summary,
             final_verdict=final_verdict,
             stop_reason=stop_reason,
+            chapter_quality_signal=chapter_quality_signal,
+            dialogue_signal=dialogue_signal,
         )
 
     @staticmethod

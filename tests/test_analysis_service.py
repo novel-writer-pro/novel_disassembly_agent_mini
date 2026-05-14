@@ -1,12 +1,13 @@
 from pathlib import Path
 
+import json
 import pytest
 from langchain_core.messages import AIMessage
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings
-from novel_analyzer.database.models import ChapterJob
+from novel_analyzer.database.models import ChapterArtifact, ChapterJob, ChapterJobEvent
 from novel_analyzer.database.session import create_schema
 from novel_analyzer.domain.schemas import (
     AnalysisSummary,
@@ -115,13 +116,45 @@ def test_stage_chapter_content_trims_large_input() -> None:
     assert trimmed.endswith("A")
 
 
+def test_build_deconstruction_profile_marks_deferred_writer_without_schema_rename() -> None:
+    payload = ChapterIntakeOutput.model_validate(
+        {
+            "chapter_index": 1,
+            "normalized_title": "测试章",
+            "cleaned_text": "正文",
+        }
+    )
+    profile = AnalysisService._build_deconstruction_profile(
+        chapter_content=payload.cleaned_text,
+        stage_payload={},
+        writer_deferred=True,
+    )
+    base = {
+        "chapter_index": 1,
+        "normalized_title": "测试章",
+        "writer_learning_notes": [],
+        "unsupported_inferences": [],
+        "ambiguous_points": [],
+        "quality_gate_notes": [],
+    }
+    enriched = AnalysisService._with_deconstruction_profile(base, profile)
+    assert enriched["writer_learning_notes"] == []
+    assert enriched["_deconstruction_profile"]["writer_lens_status"] == "deferred"
+    assert "writer_learning_notes" in enriched
+    assert "unsupported_inferences" in enriched
+
+
 def test_writer_learning_lens_accepts_dict_transferable_lessons() -> None:
     output = WriterLearningLensOutput.model_validate(
         {
             'transferable_lessons': [
                 {'lesson': '通过未解线索制造后续期待', 'category': 'pacing'},
                 {'summary': '让人物关系在冲突中递进'},
-                {'lesson_id': 3, 'category': 'character_relationship', 'content': '把冲突线索埋入日常互动。'},
+                {
+                    'lesson_id': 3,
+                    'category': 'character_relationship',
+                    'content': '把冲突线索埋入日常互动。',
+                },
             ]
         }
     )
@@ -286,7 +319,7 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
 
         def _boom(*_args: object, **_kwargs: object) -> dict[str, object]:
             raise RuntimeError('boom')
@@ -296,14 +329,173 @@ def test_early_context_failure_does_not_raise_unboundlocalerror(tmp_path: Path) 
             service.analyze_range(run.id, branch.id, 1, 1)
 
 
-def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_risk_audit_failure_does_not_break_main_chapter_commit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     novel_path = tmp_path / 'novel.txt'
     novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
 
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+
+        monkeypatch.setattr(
+            service,
+            '_invoke_stage',
+            lambda model, prompt, schema: schema.model_validate(
+                {
+                    'chapter_index': 1,
+                    'normalized_title': '一',
+                    'cleaned_text': '第1章 一\n卫图觉醒命格。',
+                    'paragraph_blocks': [{'order': 1, 'text': '卫图觉醒命格。'}],
+                }
+                if schema.__name__ == 'ChapterIntakeOutput'
+                else (
+                    {
+                        'characters': [{'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}],
+                        'events': [
+                            {'label': '卫图觉醒命格', 'evidence': ['觉醒命格'], 'confidence': 0.9}
+                        ],
+                        'relations': [],
+                        'conflicts': [],
+                        'foreshadowing': [],
+                        'worldbuilding_facts': [],
+                    }
+                    if schema.__name__ == 'ChapterFactExtractionOutput'
+                    else (
+                        {
+                            'retained_items': [
+                                {'label': '卫图', 'evidence': ['卫图'], 'confidence': 0.9}
+                            ],
+                            'unsupported_items': [],
+                            'coverage_summary': 'ok',
+                        }
+                        if schema.__name__ == 'EvidenceBindingOutput'
+                        else (
+                            {
+                                'summary': {'short': '卫图觉醒命格。'},
+                                'themes': [],
+                                'pacing': {},
+                                'emotional_curve': {},
+                                'continuity_notes': ['主线开启。'],
+                            }
+                            if schema.__name__ == 'ChapterAnalysisLayerOutput'
+                            else (
+                                {
+                                    'hook_notes': [],
+                                    'conflict_notes': [],
+                                    'reveal_order_notes': [],
+                                    'scene_efficiency_notes': [],
+                                    'transferable_lessons': [],
+                                }
+                                if schema.__name__ == 'WriterLearningLensOutput'
+                                else {
+                                    'overclaim_flags': [],
+                                    'ambiguous_points': [],
+                                    'needs_human_review': False,
+                                }
+                            )
+                        )
+                    )
+                )
+            ),
+        )
+
+        monkeypatch.setattr(
+            service.risk_audit_service,
+            'generate_for_chapter',
+            lambda branch_id, chapter_index: (_ for _ in ()).throw(RuntimeError('audit boom')),
+        )
+
+        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
+        assert len(artifact_ids) == 1
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'validated'
+
+
+def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() -> None:
+    output = WriterLearningLensOutput().ensure_minimum_writer_notes(
+        '测试章',
+        '这是摘要',
+        ['本章推进了关系变化。'],
+        ['前文冲突获得阶段性解决。'],
+        ['仍有未解线程待处理。'],
+    )
+    lessons = output.transferable_lessons
+    assert lessons
+    assert any('推进' in item for item in lessons)
+    assert any('可信' in item or '解决' in item for item in lessons)
+
+
+def test_provider_unavailable_uses_local_heuristic_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text(
+        '第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n',
+        encoding='utf-8',
+    )
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+
+        def _provider_down(*_args: object, **_kwargs: object) -> dict[str, object]:
+            raise RuntimeError("Error code: 403 - {'code':'SUBSCRIPTION_NOT_FOUND'}")
+
+        monkeypatch.setattr(service, '_invoke_stage', _provider_down)
+        monkeypatch.setattr(service, '_invoke_monolithic_analysis', _provider_down)
+
+        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
+        assert len(artifact_ids) == 1
+        job = session.scalar(
+            select(ChapterJob)
+            .where(ChapterJob.branch_id == branch.id)
+            .where(ChapterJob.chapter_index == 1)
+        )
+        assert job is not None
+        assert job.status == 'validated'
+
+
+def test_materialization_failure_restores_previous_active_artifact_and_blocks_job(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        previous = RunService(session).record_chapter_artifact(
+            branch.id,
+            1,
+            {
+                'chapter_index': 1,
+                'normalized_title': '旧版本',
+                'chapter_summary': '旧摘要',
+                'key_entities': ['卫图'],
+                'key_events': ['旧事件'],
+                'continuity_notes': ['旧衔接'],
+                'writer_learning_notes': [],
+                'unsupported_inferences': [],
+                'ambiguous_points': [],
+                'needs_human_review': False,
+                'quality_gate_notes': [],
+                'hook_score': 4.0,
+                'dimensions': [],
+            },
+        )
+        service = AnalysisService(session, Settings(llm_api_key='test-key', embedding_backend='stub', use_merged_stages=False))
 
         monkeypatch.setattr(
             service,
@@ -358,59 +550,680 @@ def test_risk_audit_failure_does_not_break_main_chapter_commit(tmp_path: Path, m
                 )
             ),
         )
-
         monkeypatch.setattr(
-            service.risk_audit_service,
-            'generate_for_chapter',
-            lambda branch_id, chapter_index: (_ for _ in ()).throw(RuntimeError('audit boom')),
+            service.retrieval_service,
+            'materialize_for_artifact',
+            lambda artifact_id: (_ for _ in ()).throw(RuntimeError('retrieval boom')),
         )
 
-        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
-        assert len(artifact_ids) == 1
+        with pytest.raises(RuntimeError, match='retrieval boom'):
+            service.analyze_range(run.id, branch.id, 1, 1)
+
         job = session.scalar(
             select(ChapterJob)
             .where(ChapterJob.branch_id == branch.id)
             .where(ChapterJob.chapter_index == 1)
         )
         assert job is not None
-        assert job.status == 'validated'
+        assert job.status == 'failed'
+
+        artifacts = session.scalars(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .order_by(ChapterArtifact.created_at)
+        ).all()
+        assert len(artifacts) == 2
+        active_ids = [artifact.id for artifact in artifacts if artifact.visibility == 'active']
+        assert active_ids == [previous.id]
+        assert artifacts[-1].visibility == 'hidden'
 
 
-def test_writer_learning_fallback_uses_transition_resolution_and_unresolved() -> None:
-    output = WriterLearningLensOutput().ensure_minimum_writer_notes(
-        '测试章',
-        '这是摘要',
-        ['本章推进了关系变化。'],
-        ['前文冲突获得阶段性解决。'],
-        ['仍有未解线程待处理。'],
-    )
-    lessons = output.transferable_lessons
-    assert lessons
-    assert any('推进' in item for item in lessons)
-    assert any('可信' in item or '解决' in item for item in lessons)
-
-
-def test_provider_unavailable_uses_local_heuristic_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_quick_profile_defers_writer_lens_stage_and_preserves_profile(tmp_path: Path) -> None:
     novel_path = tmp_path / 'novel.txt'
-    novel_path.write_text('第22章 卫图的拒绝\n卫图决定拒绝对方提议，但仍承受身份压力。\n', encoding='utf-8')
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
 
     with _session() as session:
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
 
-        def _provider_down(*_args: object, **_kwargs: object) -> dict[str, object]:
-            raise RuntimeError("Error code: 403 - {'code':'SUBSCRIPTION_NOT_FOUND'}")
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
 
-        monkeypatch.setattr(service, '_invoke_stage', _provider_down)
-        monkeypatch.setattr(service, '_invoke_monolithic_analysis', _provider_down)
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
 
-        artifact_ids = service.analyze_range(run.id, branch.id, 1, 1)
-        assert len(artifact_ids) == 1
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        artifact = session.scalar(
+            select(ChapterArtifact).where(ChapterArtifact.branch_id == branch.id)
+        )
+        assert artifact is not None
+        assert artifact.payload_json['writer_learning_notes'] == []
+        assert artifact.payload_json['_deconstruction_profile']['writer_lens_status'] == 'deferred'
+
+
+def test_quick_profile_defers_risk_aggregation_stage(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
         job = session.scalar(
             select(ChapterJob)
             .where(ChapterJob.branch_id == branch.id)
             .where(ChapterJob.chapter_index == 1)
         )
         assert job is not None
-        assert job.status == 'validated'
+        events = session.scalars(
+            select(ChapterJobEvent)
+            .where(ChapterJobEvent.branch_id == branch.id)
+            .where(ChapterJobEvent.chapter_index == 1)
+        ).all()
+        labels = [f"{item.event_type}:{item.stage}:{item.message}" for item in events]
+        assert any('stage_deferred:risk_aggregation:' in item for item in labels)
+
+
+def test_compact_state_summary_json_keeps_only_key_lists() -> None:
+    payload = AnalysisService._compact_state_summary_json(
+        {
+            'paid_off_foreshadowing': ['A', 'B', 'C', 'D'],
+            'escalated_conflicts': ['X'],
+            'evolved_relations': [],
+            'constraining_world_rules': ['R1', 'R2'],
+            'active_conflicts': ['should-drop'],
+            'misc': {'ignored': True},
+        }
+    )
+    assert 'should-drop' not in payload
+    assert 'misc' not in payload
+    assert 'A' in payload and 'C' in payload
+    assert 'D' not in payload
+    assert 'R1' in payload
+
+
+def test_analysis_and_guard_prompts_use_compact_state_and_no_graph_context(monkeypatch, tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+
+        captured: list[tuple[str, str]] = []
+        real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
+        original = real_build.build_agent_stage_prompts
+
+        def _capture(context):
+            prompts = original(context)
+            if context.evidence_bound_json != '{}' or context.analysis_json != '{}':
+                captured.append(prompts['analysis_generator'])
+                captured.append(prompts['anti_fabrication_guard'])
+            return prompts
+
+        monkeypatch.setattr('novel_analyzer.services.analysis_service.build_agent_stage_prompts', _capture)
+        monkeypatch.setattr(service.context_service, 'previous_summary', lambda *args, **kwargs: '前情')
+        monkeypatch.setattr(service.context_service, 'fact_context_json', lambda *args, **kwargs: {'facts': []})
+        monkeypatch.setattr(service.context_service, 'graph_context_json', lambda *args, **kwargs: {'overview': {'node_count': 999}, 'central_nodes': ['GRAPH-BIG']})
+        monkeypatch.setattr(service.context_service, 'state_summary_json', lambda *args, **kwargs: {
+            'paid_off_foreshadowing': ['伏笔A', '伏笔B', '伏笔C', '伏笔D'],
+            'escalated_conflicts': ['冲突X'],
+            'constraining_world_rules': ['规则R'],
+            'active_conflicts': ['不应进入analysis/guard prompt'],
+        })
+        monkeypatch.setattr(service.context_service, 'window_summary', lambda *args, **kwargs: '窗口摘要')
+
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        joined = '\n'.join(captured)
+        assert 'GRAPH-BIG' not in joined
+        assert '不应进入analysis/guard prompt' not in joined
+        assert '伏笔A' in joined
+        assert '伏笔D' not in joined
+
+
+def test_fact_and_evidence_prompts_drop_graph_and_minimize_state(monkeypatch, tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+
+        captured: list[tuple[str, str]] = []
+        real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
+        original = real_build.build_agent_stage_prompts
+
+        def _capture(context):
+            prompts = original(context)
+            if context.fact_json == '{}' and context.intake_json != '{}':
+                captured.append(('fact', prompts['fact_extractor']))
+            if context.fact_json != '{}':
+                captured.append(('evidence', prompts['evidence_binder']))
+            return prompts
+
+        monkeypatch.setattr('novel_analyzer.services.analysis_service.build_agent_stage_prompts', _capture)
+        monkeypatch.setattr(service.context_service, 'previous_summary', lambda *args, **kwargs: '前情')
+        monkeypatch.setattr(service.context_service, 'fact_context_json', lambda *args, **kwargs: {'facts': ['FACT-BIG']})
+        monkeypatch.setattr(service.context_service, 'graph_context_json', lambda *args, **kwargs: {'overview': {'node_count': 999}, 'central_nodes': ['GRAPH-BIG']})
+        monkeypatch.setattr(service.context_service, 'state_summary_json', lambda *args, **kwargs: {
+            'paid_off_foreshadowing': ['伏笔A', '伏笔B', '伏笔C', '伏笔D'],
+            'escalated_conflicts': ['冲突X'],
+            'constraining_world_rules': ['规则R'],
+            'active_conflicts': ['不应进入fact/evidence prompt'],
+        })
+        monkeypatch.setattr(service.context_service, 'window_summary', lambda *args, **kwargs: '窗口摘要')
+
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        fact_prompt = next(text for kind, text in captured if kind == 'fact')
+        evidence_prompt = next(text for kind, text in captured if kind == 'evidence')
+        assert 'GRAPH-BIG' not in fact_prompt
+        assert 'GRAPH-BIG' not in evidence_prompt
+        assert '不应进入fact/evidence prompt' not in fact_prompt
+        assert '窗口摘要' not in evidence_prompt
+        assert '伏笔A' in fact_prompt
+        assert '伏笔D' not in fact_prompt
+
+
+def test_compact_prior_context_json_keeps_only_small_fact_fields() -> None:
+    payload = AnalysisService._compact_prior_context_json(
+        {
+            'previous_summary': '这是一个很长的前情摘要。' * 40,
+            'facts': [
+                {'chapter_index': 1, 'fact_type': 'entity', 'label': '卫图', 'confidence': 0.9, 'evidence': ['drop-me']},
+                {'chapter_index': 2, 'fact_type': 'event', 'label': '觉醒命格', 'confidence': 0.8, 'metadata': {'drop': True}},
+            ],
+            'other': {'ignored': True},
+        }
+    )
+    assert 'drop-me' not in payload
+    assert 'metadata' not in payload
+    assert 'ignored' not in payload
+    assert '卫图' in payload and '觉醒命格' in payload
+    assert len(payload) < 600
+
+
+def test_fact_analysis_and_guard_prompts_use_compact_prior_context(monkeypatch, tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+
+        captured: list[str] = []
+        real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
+        original = real_build.build_agent_stage_prompts
+
+        def _capture(context):
+            prompts = original(context)
+            if context.intake_json != '{}' and context.fact_json == '{}':
+                captured.append(('fact', prompts['fact_extractor']))
+            if context.evidence_bound_json != '{}':
+                captured.append(('analysis', prompts['analysis_generator']))
+                captured.append(('guard', prompts['anti_fabrication_guard']))
+            return prompts
+
+        monkeypatch.setattr('novel_analyzer.services.analysis_service.build_agent_stage_prompts', _capture)
+        monkeypatch.setattr(service.context_service, 'previous_summary', lambda *args, **kwargs: '前情')
+        monkeypatch.setattr(service.context_service, 'fact_context_json', lambda *args, **kwargs: {
+            'previous_summary': '很长很长的前情摘要' * 50,
+            'facts': [
+                {'chapter_index': 1, 'fact_type': 'entity', 'label': '卫图', 'confidence': 0.9, 'evidence': ['SHOULD-DROP']},
+                {'chapter_index': 2, 'fact_type': 'event', 'label': '觉醒命格', 'confidence': 0.8, 'metadata': {'drop': True}},
+            ],
+        })
+        monkeypatch.setattr(service.context_service, 'graph_context_json', lambda *args, **kwargs: {'overview': {'node_count': 999}, 'central_nodes': ['GRAPH-BIG']})
+        monkeypatch.setattr(service.context_service, 'state_summary_json', lambda *args, **kwargs: {'paid_off_foreshadowing': ['伏笔A']})
+        monkeypatch.setattr(service.context_service, 'window_summary', lambda *args, **kwargs: '窗口摘要')
+
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        fact_prompt = next(text for kind, text in captured if kind == 'fact')
+        analysis_prompt = next(text for kind, text in captured if kind == 'analysis')
+        guard_prompt = next(text for kind, text in captured if kind == 'guard')
+        joined = '\n'.join([fact_prompt, analysis_prompt, guard_prompt])
+        assert 'SHOULD-DROP' not in joined
+        assert 'metadata' not in joined
+        assert '卫图' in joined
+        assert '觉醒命格' in joined
+
+
+def test_prompt_budget_guards_on_real_weitu_ch20_context() -> None:
+    from sqlalchemy import create_engine, select
+    from sqlalchemy.orm import Session
+    from novel_analyzer.database.models import RunBranch, ChapterManifest, ChapterSegment
+    from novel_analyzer.agent.pipeline import ChapterAgentContext, build_agent_stage_prompts
+    from novel_analyzer.services.context_service import ContextService
+
+    dburl = 'postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer_weitu_deconstruction_20260511'
+    engine = create_engine(dburl, future=True)
+    branch_id = '03c657c8-5389-4e42-9234-b14137c04125'
+    with Session(engine) as session:
+        branch = session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
+        assert branch is not None
+        manifest = session.scalar(select(ChapterManifest).where(ChapterManifest.id == branch.run.manifest_id))
+        assert manifest is not None
+        segment = session.scalar(
+            select(ChapterSegment)
+            .where(ChapterSegment.manifest_id == manifest.id)
+            .where(ChapterSegment.chapter_index == 20)
+        )
+        assert segment is not None
+        source_text = Path(branch.run.novel.source_path).read_text(encoding='utf-8')
+        chapter_content = source_text[segment.start_offset:segment.end_offset].strip()
+        staged = AnalysisService._stage_chapter_content(chapter_content)
+        ctx = ContextService(session)
+        previous_summary = ctx.previous_summary(branch_id, 20)
+        prior_context = ctx.fact_context_json(branch_id, 20)
+        state_summary = ctx.state_summary_json(branch_id, 20)
+        compact_prior_context_json = AnalysisService._compact_prior_context_json(prior_context)
+        compact_state_summary_json = AnalysisService._compact_state_summary_json(state_summary)
+
+        fact_prompt = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20,
+            normalized_title=segment.normalized_title,
+            chapter_content=staged,
+            previous_summary=previous_summary,
+            intake_json='{"chapter_index":20}',
+            prior_context_json=compact_prior_context_json,
+            graph_context_json='{}',
+            state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text',
+            window_summary=ctx.window_summary(branch_id, 20),
+        ))['fact_extractor']
+        analysis_prompt = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20,
+            normalized_title=segment.normalized_title,
+            chapter_content=staged,
+            previous_summary=previous_summary,
+            intake_json='{"chapter_index":20}',
+            prior_context_json=compact_prior_context_json,
+            graph_context_json='{}',
+            state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text',
+            window_summary=ctx.window_summary(branch_id, 20),
+            fact_json='{"events":[{"label":"x"}]}',
+            evidence_bound_json='{"retained_items":[{"label":"x"}]}',
+        ))['analysis_generator']
+        guard_prompt = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20,
+            normalized_title=segment.normalized_title,
+            chapter_content=staged,
+            previous_summary=previous_summary,
+            intake_json='{"chapter_index":20}',
+            prior_context_json=compact_prior_context_json,
+            graph_context_json='{}',
+            state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text',
+            window_summary=ctx.window_summary(branch_id, 20),
+            fact_json='{"events":[{"label":"x"}]}',
+            analysis_json='{"summary":{"short":"x"}}',
+            writer_json='{}',
+            chapter_json='{}',
+        ))['anti_fabrication_guard']
+
+        assert len(fact_prompt) < 3000
+        assert len(analysis_prompt) < 2000
+        assert len(guard_prompt) < 1200
+
+
+def test_prompt_budget_regression_ratios_on_real_weitu_ch20_context() -> None:
+    from sqlalchemy import create_engine, select
+    from sqlalchemy.orm import Session
+    from novel_analyzer.database.models import RunBranch, ChapterManifest, ChapterSegment
+    from novel_analyzer.agent.pipeline import ChapterAgentContext, build_agent_stage_prompts
+    from novel_analyzer.services.context_service import ContextService
+    import json
+
+    dburl = 'postgresql+psycopg://d2:d2pass@127.0.0.1:5432/novel_analyzer_weitu_deconstruction_20260511'
+    engine = create_engine(dburl, future=True)
+    branch_id = '03c657c8-5389-4e42-9234-b14137c04125'
+    with Session(engine) as session:
+        branch = session.scalar(select(RunBranch).where(RunBranch.id == branch_id))
+        assert branch is not None
+        manifest = session.scalar(select(ChapterManifest).where(ChapterManifest.id == branch.run.manifest_id))
+        assert manifest is not None
+        segment = session.scalar(
+            select(ChapterSegment)
+            .where(ChapterSegment.manifest_id == manifest.id)
+            .where(ChapterSegment.chapter_index == 20)
+        )
+        assert segment is not None
+        source_text = Path(branch.run.novel.source_path).read_text(encoding='utf-8')
+        chapter_content = source_text[segment.start_offset:segment.end_offset].strip()
+        staged = AnalysisService._stage_chapter_content(chapter_content)
+        ctx = ContextService(session)
+        previous_summary = ctx.previous_summary(branch_id, 20)
+        prior_context = ctx.fact_context_json(branch_id, 20)
+        graph_context = ctx.graph_context_json(branch_id, 20)
+        state_summary = ctx.state_summary_json(branch_id, 20)
+        window_summary = ctx.window_summary(branch_id, 20)
+        prior_context_json = json.dumps(prior_context, ensure_ascii=False, indent=2)
+        graph_context_json = json.dumps(graph_context, ensure_ascii=False, indent=2)
+        state_summary_json = json.dumps(state_summary, ensure_ascii=False, indent=2)
+        compact_prior_context_json = AnalysisService._compact_prior_context_json(prior_context)
+        compact_state_summary_json = AnalysisService._compact_state_summary_json(state_summary)
+
+        old_fact = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=prior_context_json,
+            graph_context_json=graph_context_json, state_summary_json=state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+        ))['fact_extractor']
+        new_fact = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=compact_prior_context_json,
+            graph_context_json='{}', state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+        ))['fact_extractor']
+        old_analysis = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=prior_context_json,
+            graph_context_json=graph_context_json, state_summary_json=state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', evidence_bound_json='{"retained_items":[{"label":"x"}]}'
+        ))['analysis_generator']
+        new_analysis = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=compact_prior_context_json,
+            graph_context_json='{}', state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', evidence_bound_json='{"retained_items":[{"label":"x"}]}'
+        ))['analysis_generator']
+        old_guard = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=prior_context_json,
+            graph_context_json=graph_context_json, state_summary_json=state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', analysis_json='{"summary":{"short":"x"}}', writer_json='{}', chapter_json='{}'
+        ))['anti_fabrication_guard']
+        new_guard = build_agent_stage_prompts(ChapterAgentContext(
+            chapter_index=20, normalized_title=segment.normalized_title, chapter_content=staged,
+            previous_summary=previous_summary, intake_json='{"chapter_index":20}', prior_context_json=compact_prior_context_json,
+            graph_context_json='{}', state_summary_json=compact_state_summary_json,
+            cleaned_text='sample cleaned text', window_summary=window_summary,
+            fact_json='{"events":[{"label":"x"}]}', analysis_json='{"summary":{"short":"x"}}', writer_json='{}', chapter_json='{}'
+        ))['anti_fabrication_guard']
+
+        assert len(new_fact) / len(old_fact) < 0.12
+        assert len(new_analysis) / len(old_analysis) < 0.1
+        assert len(new_guard) / len(old_guard) < 0.1
+
+
+def test_compact_previous_summary_truncates_and_marks_ellipsis() -> None:
+    text = '卫图' * 200
+    compact = AnalysisService._compact_previous_summary(text, max_chars=50)
+    assert len(compact) <= 50
+    assert compact.endswith('…')
+
+
+def test_stage_prompts_use_compacted_previous_summary(monkeypatch, tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+
+        captured: list[str] = []
+        real_build = __import__('novel_analyzer.services.analysis_service', fromlist=['build_agent_stage_prompts'])
+        original = real_build.build_agent_stage_prompts
+
+        def _capture(context):
+            prompts = original(context)
+            captured.append(prompts['chapter_intake'])
+            captured.append(prompts['fact_extractor'])
+            return prompts
+
+        monkeypatch.setattr('novel_analyzer.services.analysis_service.build_agent_stage_prompts', _capture)
+        monkeypatch.setattr(service.context_service, 'previous_summary', lambda *args, **kwargs: '上一章摘要' * 200)
+        monkeypatch.setattr(service.context_service, 'fact_context_json', lambda *args, **kwargs: {'facts': []})
+        monkeypatch.setattr(service.context_service, 'graph_context_json', lambda *args, **kwargs: {})
+        monkeypatch.setattr(service.context_service, 'state_summary_json', lambda *args, **kwargs: {})
+        monkeypatch.setattr(service.context_service, 'window_summary', lambda *args, **kwargs: '')
+
+        responses = iter([
+            '{"chapter_index":1,"normalized_title":"一","cleaned_text":"第1章 一\\n卫图觉醒命格。","paragraph_blocks":[{"order":1,"text":"第1章 一"}],"notes":[]}',
+            '{"characters":[{"label":"卫图","evidence":["卫图觉醒命格。"],"confidence":0.9}],"events":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"relations":[],"conflicts":[],"foreshadowing":[],"worldbuilding_facts":[]}',
+            '{"retained_items":[{"label":"卫图觉醒命格","evidence":["卫图觉醒命格。"],"confidence":0.9}],"unsupported_items":[],"coverage_summary":"ok"}',
+            '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+            '{"unsupported_inferences":[],"ambiguous_points":[],"overclaim_flags":[],"needs_human_review":false}',
+        ])
+
+        def _fake_invoke(_model, _prompt):
+            return AIMessage(content=next(responses))
+
+        service._invoke_with_retry = _fake_invoke  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        joined = '\n'.join(captured)
+        assert ('上一章摘要' * 200) not in joined
+        assert '…' in joined
+        assert len(joined) < 12000
+
+
+def test_merged_stages_invoke_merged_stage_parses_both_keys(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=True))
+
+        intake_obj = ChapterIntakeOutput(
+            chapter_index=1,
+            normalized_title='一',
+            cleaned_text='第1章 一\n卫图觉醒命格。',
+            paragraph_blocks=[],
+            dialogue_candidates=[],
+            scene_candidates=[],
+            notes=[],
+        )
+        facts_obj = ChapterFactExtractionOutput(
+            characters=[EvidenceNote(label='卫图', evidence=['卫图觉醒命格'], confidence=0.9)],
+            events=[EvidenceNote(label='觉醒命格', evidence=['命格：大器晚成'], confidence=0.9)],
+        )
+        evidence_obj = EvidenceBindingOutput(
+            retained_items=[EvidenceNote(label='卫图', evidence=['卫图觉醒命格'], confidence=0.9)],
+            unsupported_items=[],
+            coverage_summary='ok',
+        )
+        analysis_obj = ChapterAnalysisLayerOutput(
+            summary=AnalysisSummary(one_sentence='卫图觉醒。', short='卫图觉醒命格。', detailed='卫图觉醒命格。'),
+            themes=[],
+            pacing={'overall': '平稳'},
+            emotional_curve={'start': '平静', 'end': '振奋'},
+            continuity_notes=['主线开启'],
+        )
+        guard_obj = AntiFabricationGuardOutput()
+
+        merged_call_count = [0]
+
+        def _fake_merged(_model, _prompt, key_a, schema_a, key_b, schema_b):
+            merged_call_count[0] += 1
+            if key_a == 'intake':
+                return (intake_obj, facts_obj)
+            return (evidence_obj, analysis_obj)
+
+        def _fake_stage(_model, _prompt, schema):
+            return guard_obj
+
+        fallback_json = json.dumps({
+            'chapter_index': 1, 'normalized_title': '一',
+            'chapter_summary': '卫图觉醒命格。', 'key_entities': ['卫图'],
+            'key_events': ['觉醒命格'], 'continuity_notes': [], 'dimensions': [],
+            'writer_learning_notes': [], 'unsupported_inferences': [],
+            'ambiguous_points': [], 'needs_human_review': False,
+            'quality_gate_notes': [], 'hook_score': 4.0,
+            'state_transition_notes': [], 'evidence_backed_resolutions': [],
+            'unresolved_threads': [],
+        })
+
+        def _fake_retry(_model, _prompt):
+            return AIMessage(content=fallback_json)
+
+        service._invoke_merged_stage = _fake_merged  # type: ignore[method-assign]
+        service._invoke_stage = _fake_stage  # type: ignore[method-assign]
+        service._invoke_with_retry = _fake_retry  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        artifact = session.scalar(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .where(ChapterArtifact.visibility == 'active')
+        )
+        assert artifact is not None
+        assert artifact.payload_json['chapter_summary'] == '卫图觉醒命格。'
+        assert '卫图' in artifact.payload_json['key_entities']
+
+
+def test_merged_stages_fallback_on_bad_response(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=True))
+
+        intake_obj = ChapterIntakeOutput(
+            chapter_index=1,
+            normalized_title='一',
+            cleaned_text='第1章 一\n卫图觉醒命格。',
+            paragraph_blocks=[],
+            dialogue_candidates=[],
+            scene_candidates=[],
+            notes=[],
+        )
+        facts_obj = ChapterFactExtractionOutput(
+            characters=[EvidenceNote(label='卫图', evidence=['卫图'], confidence=0.9)],
+            events=[EvidenceNote(label='觉醒', evidence=['觉醒'], confidence=0.9)],
+        )
+        evidence_obj = EvidenceBindingOutput(
+            retained_items=[EvidenceNote(label='卫图', evidence=['卫图'], confidence=0.9)],
+            unsupported_items=[],
+            coverage_summary='ok',
+        )
+        analysis_obj = ChapterAnalysisLayerOutput(
+            summary=AnalysisSummary(short='卫图觉醒。'),
+            continuity_notes=['开启'],
+        )
+        guard_obj = AntiFabricationGuardOutput()
+
+        merged_call_count = [0]
+        fallback_triggered = [False]
+
+        def _fake_merged(_model, _prompt, key_a, schema_a, key_b, schema_b):
+            merged_call_count[0] += 1
+            if merged_call_count[0] == 1:
+                raise ValueError('bad merged response')
+            return (evidence_obj, analysis_obj)
+
+        def _fake_stage(_model, _prompt, schema):
+            if schema.__name__ == 'ChapterIntakeOutput':
+                fallback_triggered[0] = True
+                return intake_obj
+            if schema.__name__ == 'ChapterFactExtractionOutput':
+                return facts_obj
+            if schema.__name__ == 'EvidenceBindingOutput':
+                return evidence_obj
+            if schema.__name__ == 'ChapterAnalysisLayerOutput':
+                return analysis_obj
+            return guard_obj
+
+        fallback_json = json.dumps({
+            'chapter_index': 1, 'normalized_title': '一',
+            'chapter_summary': '卫图觉醒。', 'key_entities': ['卫图'],
+            'key_events': ['觉醒'], 'continuity_notes': [], 'dimensions': [],
+            'writer_learning_notes': [], 'unsupported_inferences': [],
+            'ambiguous_points': [], 'needs_human_review': False,
+            'quality_gate_notes': [], 'hook_score': 4.0,
+            'state_transition_notes': [], 'evidence_backed_resolutions': [],
+            'unresolved_threads': [],
+        })
+
+        def _fake_retry(_model, _prompt):
+            return AIMessage(content=fallback_json)
+
+        service._invoke_merged_stage = _fake_merged  # type: ignore[method-assign]
+        service._invoke_stage = _fake_stage  # type: ignore[method-assign]
+        service._invoke_with_retry = _fake_retry  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        assert fallback_triggered[0]
+        artifact = session.scalar(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch.id)
+            .where(ChapterArtifact.chapter_index == 1)
+            .where(ChapterArtifact.visibility == 'active')
+        )
+        assert artifact is not None
+        assert artifact.payload_json['chapter_summary']

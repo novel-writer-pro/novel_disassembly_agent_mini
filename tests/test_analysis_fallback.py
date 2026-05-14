@@ -68,7 +68,7 @@ def test_stage_failure_falls_back_to_monolithic_and_persists_result(tmp_path: Pa
         novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
         run, branch = RunService(session).create_run(novel.id, manifest.id)
 
-        service = AnalysisService(session, Settings(llm_api_key='test-key'))
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
         dummy_model = _DummyModel(
             [
                 INTAKE_OK,
@@ -95,3 +95,37 @@ def test_stage_failure_falls_back_to_monolithic_and_persists_result(tmp_path: Pa
         assert raw_output is not None
         assert raw_output.parse_status == 'parsed'
         assert raw_output.parsed_json is not None
+
+
+def test_recorded_raw_output_includes_prompt_metrics(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n卫图觉醒命格。\n', encoding='utf-8')
+
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        run, branch = RunService(session).create_run(novel.id, manifest.id)
+
+        service = AnalysisService(session, Settings(llm_api_key='test-key', use_merged_stages=False))
+        dummy_model = _DummyModel(
+            [
+                INTAKE_OK,
+                FACTS_EMPTY,
+                EVIDENCE_EMPTY,
+                '{"summary":{"one_sentence":"卫图觉醒命格。","short":"卫图觉醒命格。","detailed":"卫图觉醒命格。"},"themes":[],"pacing":{},"emotional_curve":{},"continuity_notes":["主线开启"]}',
+                GUARD_EMPTY,
+            ]
+        )
+        service._invoke_with_retry = lambda _model, _prompt: dummy_model.invoke(_prompt)  # type: ignore[method-assign]
+        service.analyze_range(run.id, branch.id, 1, 1)
+
+        raw_output = session.scalar(
+            select(ChapterRawOutput).where(ChapterRawOutput.branch_id == branch.id)
+        )
+        assert raw_output is not None
+        meta = raw_output.invocation_metadata
+        assert meta.get('pipeline') == 'small-model-skills-v1'
+        assert isinstance(meta.get('prompt_char_counts'), dict)
+        assert meta.get('total_prompt_chars', 0) > 0
+        assert 'chapter_intake_chars' in meta['prompt_char_counts']
+        assert 'fact_extractor_chars' in meta['prompt_char_counts']
+        assert 'analysis_generator_chars' in meta['prompt_char_counts']

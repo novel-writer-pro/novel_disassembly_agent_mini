@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from novel_analyzer.runtime.notify import notify_pipeline_complete
+from novel_analyzer.runtime.trace_context import get_current_context
+
 from novel_analyzer.domain.schemas import (
+    ChapterImitationHarnessReport,
     StoryMappingPack,
     WholeBookCarryOverState,
     WholeBookImitationExecutedStep,
@@ -204,6 +208,164 @@ class WholeBookImitationService:
             )[:3],
             "risk_chapters": list(dashboard_summary.get("top_risk_chapters", []))[:5],
             "final_verdicts": list(policy_summary.get("verdicts", [])),
+        }
+
+    @staticmethod
+    def _extract_step_loom_signals(
+        harness_report: ChapterImitationHarnessReport,
+    ) -> dict[str, object]:
+        final_round = harness_report.rounds[-1] if harness_report.rounds else None
+        skill_outputs = final_round.skill_outputs if final_round is not None else {}
+        tension_signal = skill_outputs.get("_loom_tension", {}) if isinstance(skill_outputs, dict) else {}
+        rhythm_signal = skill_outputs.get("_loom_rhythm", {}) if isinstance(skill_outputs, dict) else {}
+        style_signal = skill_outputs.get("_loom_style", {}) if isinstance(skill_outputs, dict) else {}
+        character_signal = skill_outputs.get("_loom_character_consistency", {}) if isinstance(skill_outputs, dict) else {}
+        thread_signal = skill_outputs.get("_loom_thread_activation", {}) if isinstance(skill_outputs, dict) else {}
+        reader_signal = skill_outputs.get("_loom_reader_sim", {}) if isinstance(skill_outputs, dict) else {}
+        reference_signal = skill_outputs.get("_loom_reference_fidelity", {}) if isinstance(skill_outputs, dict) else {}
+        return {
+            "chapter_quality": harness_report.chapter_quality_signal,
+            "dialogue": harness_report.dialogue_signal,
+            "tension": tension_signal if isinstance(tension_signal, dict) else {},
+            "rhythm": rhythm_signal if isinstance(rhythm_signal, dict) else {},
+            "style": style_signal if isinstance(style_signal, dict) else {},
+            "character": character_signal if isinstance(character_signal, dict) else {},
+            "thread_activation": thread_signal if isinstance(thread_signal, dict) else {},
+            "reader_sim": reader_signal if isinstance(reader_signal, dict) else {},
+            "reference_fidelity": reference_signal if isinstance(reference_signal, dict) else {},
+        }
+
+    @classmethod
+    def _build_whole_book_session_loom_signals(
+        cls,
+        executed_steps: list[WholeBookImitationExecutedStep],
+    ) -> dict[str, object]:
+        quality_scores: list[float] = []
+        tension_scores: list[float] = []
+        style_drift_scores: list[float] = []
+        hook_densities: list[float] = []
+        reader_sim_scores: list[float] = []
+        reference_fidelity_scores: list[float] = []
+        quality_chapters: list[int] = []
+        tension_chapters: list[int] = []
+        style_chapters: list[int] = []
+        rhythm_chapters: list[int] = []
+        dialogue_chapters: list[int] = []
+        reader_sim_chapters: list[int] = []
+        reference_fidelity_chapters: list[int] = []
+        alert_chapters: list[int] = []
+        chapter_signals: list[dict[str, object]] = []
+
+        for step in executed_steps:
+            chapter_index = step.source_chapter_index
+            loom_signals = step.loom_signals if isinstance(step.loom_signals, dict) else {}
+            quality_signal = loom_signals.get("chapter_quality", {})
+            tension_signal = loom_signals.get("tension", {})
+            style_signal = loom_signals.get("style", {})
+            rhythm_signal = loom_signals.get("rhythm", {})
+            dialogue_signal = loom_signals.get("dialogue", {})
+            reader_sim_signal = loom_signals.get("reader_sim", {})
+            reference_fidelity_signal = loom_signals.get("reference_fidelity", {})
+
+            chapter_entry: dict[str, object] = {"source_chapter_index": chapter_index}
+
+            if isinstance(quality_signal, dict) and isinstance(quality_signal.get("quality_score"), (int, float)):
+                quality_scores.append(float(quality_signal["quality_score"]))
+                quality_chapters.append(chapter_index)
+                chapter_entry["chapter_quality_score"] = float(quality_signal["quality_score"])
+
+            if isinstance(tension_signal, dict) and isinstance(tension_signal.get("tension_score"), (int, float)):
+                tension_scores.append(float(tension_signal["tension_score"]))
+                tension_chapters.append(chapter_index)
+                chapter_entry["tension_score"] = float(tension_signal["tension_score"])
+                alerts = tension_signal.get("alerts", [])
+                if isinstance(alerts, list) and alerts:
+                    alert_chapters.append(chapter_index)
+                    chapter_entry["tension_alert_count"] = len(alerts)
+
+            if isinstance(style_signal, dict) and isinstance(style_signal.get("style_drift_score"), (int, float)):
+                style_drift_scores.append(float(style_signal["style_drift_score"]))
+                style_chapters.append(chapter_index)
+                chapter_entry["style_drift_score"] = float(style_signal["style_drift_score"])
+
+            if isinstance(rhythm_signal, dict) and isinstance(rhythm_signal.get("hook_density"), (int, float)):
+                hook_densities.append(float(rhythm_signal["hook_density"]))
+                rhythm_chapters.append(chapter_index)
+                chapter_entry["hook_density"] = float(rhythm_signal["hook_density"])
+
+            if isinstance(dialogue_signal, dict) and dialogue_signal:
+                dialogue_chapters.append(chapter_index)
+                if isinstance(dialogue_signal.get("conflict_density"), (int, float)):
+                    chapter_entry["dialogue_conflict_density"] = float(dialogue_signal["conflict_density"])
+
+            if isinstance(reader_sim_signal, dict) and isinstance(reader_sim_signal.get("overall_score"), (int, float)):
+                reader_sim_scores.append(float(reader_sim_signal["overall_score"]))
+                reader_sim_chapters.append(chapter_index)
+                chapter_entry["reader_sim_score"] = float(reader_sim_signal["overall_score"])
+
+            if isinstance(reference_fidelity_signal, dict) and isinstance(reference_fidelity_signal.get("overall_fidelity"), (int, float)):
+                reference_fidelity_scores.append(float(reference_fidelity_signal["overall_fidelity"]))
+                reference_fidelity_chapters.append(chapter_index)
+                chapter_entry["reference_fidelity"] = float(reference_fidelity_signal["overall_fidelity"])
+
+            if len(chapter_entry) > 1:
+                chapter_signals.append(chapter_entry)
+
+        return {
+            "contract_version": "whole-book-session-loom-signals.v1",
+            "chapter_quality_signal_count": len(quality_chapters),
+            "style_signal_count": len(style_chapters),
+            "rhythm_signal_count": len(rhythm_chapters),
+            "dialogue_signal_count": len(dialogue_chapters),
+            "tension_signal_count": len(tension_chapters),
+            "reader_sim_signal_count": len(reader_sim_chapters),
+            "reference_fidelity_signal_count": len(reference_fidelity_chapters),
+            "tension_alert_chapters": alert_chapters,
+            "average_tension_score": round(sum(tension_scores) / len(tension_scores), 4) if tension_scores else None,
+            "average_chapter_quality_score": round(sum(quality_scores) / len(quality_scores), 4) if quality_scores else None,
+            "average_style_drift_score": round(sum(style_drift_scores) / len(style_drift_scores), 4) if style_drift_scores else None,
+            "average_hook_density": round(sum(hook_densities) / len(hook_densities), 4) if hook_densities else None,
+            "average_reader_sim_score": round(sum(reader_sim_scores) / len(reader_sim_scores), 4) if reader_sim_scores else None,
+            "average_reference_fidelity": round(sum(reference_fidelity_scores) / len(reference_fidelity_scores), 4) if reference_fidelity_scores else None,
+            "signals": chapter_signals,
+        }
+
+    @staticmethod
+    def _build_whole_book_session_loom_gate_summary(
+        policy_summary: dict[str, object],
+        session_loom_signals: dict[str, object],
+    ) -> dict[str, object]:
+        avg_quality = policy_summary.get("average_chapter_quality_score")
+        quality_verdict = str(policy_summary.get("quality_verdict", "")).strip()
+        tension_signal_count = int(session_loom_signals.get("tension_signal_count", 0) or 0)
+        tension_alert_chapters = session_loom_signals.get("tension_alert_chapters", [])
+        tension_alert_count = len(tension_alert_chapters) if isinstance(tension_alert_chapters, list) else 0
+        avg_reader_sim = session_loom_signals.get("average_reader_sim_score")
+        avg_fidelity = session_loom_signals.get("average_reference_fidelity")
+        if quality_verdict == "quality-hold":
+            gate_status = "blocked-on-quality"
+            next_gate_action = "raise chapter quality before continuing whole-book execution"
+        elif isinstance(avg_fidelity, (int, float)) and float(avg_fidelity) < 0.5:
+            gate_status = "fidelity-blocked"
+            next_gate_action = "reference fidelity too low — improve carry_over memory and chapter_goal accuracy"
+        elif isinstance(avg_reader_sim, (int, float)) and float(avg_reader_sim) < 0.4:
+            gate_status = "reader-sim-warn"
+            next_gate_action = "reader satisfaction score low — review tension/hook/climax signals"
+        else:
+            gate_status = "monitoring"
+            next_gate_action = "continue whole-book execution while monitoring Loom quality and tension"
+        return {
+            "contract_version": "loom-gate-summary.v2",
+            "quality_verdict": quality_verdict,
+            "average_chapter_quality_score": avg_quality,
+            "chapter_quality_signal_count": int(policy_summary.get("chapter_quality_signal_count", 0) or 0),
+            "tension_signal_count": tension_signal_count,
+            "tension_alert_chapter_count": tension_alert_count,
+            "tension_alert_chapters": tension_alert_chapters if isinstance(tension_alert_chapters, list) else [],
+            "average_reader_sim_score": avg_reader_sim,
+            "average_reference_fidelity": avg_fidelity,
+            "gate_status": gate_status,
+            "next_gate_action": next_gate_action,
         }
 
     @staticmethod
@@ -571,6 +733,8 @@ class WholeBookImitationService:
             execution_mode="dry_run",
             policy_summary=policy_summary,
             dashboard_summary=dashboard_summary,
+            session_loom_signals={},
+            session_loom_gate_summary={},
             run_notes=run_notes,
         )
 
@@ -677,6 +841,7 @@ class WholeBookImitationService:
                     scheduling_priority=scheduling_priority,
                     scheduling_reason=scheduling_reason,
                     policy_summary=harness_report.policy_summary,
+                    loom_signals=self._extract_step_loom_signals(harness_report),
                 )
             )
             previous_revise_payload = (
@@ -1122,10 +1287,40 @@ class WholeBookImitationService:
         handoff_summary = self._book_handoff_summary(
             executed_steps, policy_summary, dashboard_summary
         )
+        session_loom_signals = self._build_whole_book_session_loom_signals(executed_steps)
+        avg_quality_score = session_loom_signals.get("average_chapter_quality_score")
+        quality_signal_count = int(session_loom_signals.get("chapter_quality_signal_count", 0) or 0)
+        quality_verdict = (
+            "quality-hold"
+            if isinstance(avg_quality_score, (int, float)) and avg_quality_score < 0.7
+            else "quality-pass"
+        )
+        policy_summary["average_chapter_quality_score"] = avg_quality_score
+        policy_summary["chapter_quality_signal_count"] = quality_signal_count
+        policy_summary["quality_verdict"] = quality_verdict
         policy_summary["next_stage_focus"] = handoff_summary["next_stage_focus"]
         policy_summary["long_book_consistency_diagnostics"] = long_book_diagnostics
         dashboard_summary["book_handoff_summary"] = handoff_summary
         dashboard_summary["long_book_consistency_diagnostics"] = long_book_diagnostics
+        dashboard_summary["session_loom_signals"] = session_loom_signals
+        session_loom_gate_summary = self._build_whole_book_session_loom_gate_summary(
+            policy_summary,
+            session_loom_signals,
+        )
+        dashboard_summary["session_loom_gate_summary"] = session_loom_gate_summary
+
+        ctx = get_current_context()
+        notify_pipeline_complete(
+            branch_id=report.branch_id,
+            status=str(quality_verdict or "completed"),
+            user_id=ctx.user_id if ctx else "local-default",
+            metadata={
+                "executed_step_count": len(executed_steps),
+                "queue_size": len(report.queue),
+                "chapter_quality_signal_count": quality_signal_count,
+            },
+        )
+
         return WholeBookImitationRunReport(
             contract_version="whole-book-imitation.v1",
             stable_contract_version="whole-book-imitation-pre-v1",
@@ -1138,5 +1333,7 @@ class WholeBookImitationService:
             final_carry_over_state=carry_state,
             policy_summary=policy_summary,
             dashboard_summary=dashboard_summary,
+            session_loom_signals=session_loom_signals,
+            session_loom_gate_summary=session_loom_gate_summary,
             run_notes=run_notes,
         )

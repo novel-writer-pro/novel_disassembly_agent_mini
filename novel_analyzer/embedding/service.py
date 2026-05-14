@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import time
+import urllib.request
+import urllib.error
 from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
@@ -181,6 +184,181 @@ class OnnxBgeEmbeddingProvider:
         return cast(list[list[float]], normalized.astype(np.float32).tolist())
 
 
+@dataclass
+class HttpEmbeddingProvider:
+    model_name: str
+    api_base: str
+    api_key: str = ""
+    api_format: str = "openai"
+    timeout: float = 30.0
+    max_retries: int = 2
+    verify_ssl: bool = True
+    batch_size: int = 0
+    fallback_backend: str = ""
+    fallback_after_failures: int = 3
+    _opener: Any = None
+    _consecutive_failures: int = 0
+    _fallback_provider: Any = None
+    _last_health_check: float = 0.0
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        
+        if self._should_use_fallback():
+            return self._embed_via_fallback(texts)
+        
+        if self.batch_size > 0 and len(texts) > self.batch_size:
+            return self._embed_texts_chunked(texts)
+        
+        return self._embed_texts_single(texts)
+    
+    def _should_use_fallback(self) -> bool:
+        if not self.fallback_backend or self.fallback_backend != "onnx":
+            return False
+        
+        if self._consecutive_failures < self.fallback_after_failures:
+            return False
+        
+        current_time = time.time()
+        if current_time - self._last_health_check > 60:
+            self._last_health_check = current_time
+            if self._check_http_health():
+                self._consecutive_failures = 0
+                return False
+        
+        return True
+    
+    def _check_http_health(self) -> bool:
+        try:
+            api_base = self.api_base.rstrip("/")
+            url = f"{api_base}/health" if self.api_format == "tei" else f"{api_base}/v1/models"
+            req = urllib.request.Request(url, method="GET")
+            opener = self._get_opener()
+            with opener.open(req, timeout=5) as response:
+                return response.status == 200
+        except Exception:
+            return False
+    
+    def _embed_via_fallback(self, texts: list[str]) -> list[list[float]]:
+        if self._fallback_provider is None:
+            from novel_analyzer.config.settings import get_settings
+            settings = get_settings()
+            self._fallback_provider = OnnxBgeEmbeddingProvider(
+                model_name=settings.embedding_model_name,
+                model_path=settings.embedding_model_path or None,
+                cache_dir=settings.embedding_cache_dir or None,
+                max_length=settings.embedding_max_length,
+            )
+        return self._fallback_provider.embed_texts(texts)
+    
+    def _get_opener(self) -> urllib.request.OpenerDirector:
+        if self._opener is None:
+            handlers = []
+            if not self.verify_ssl:
+                import ssl
+                context = ssl._create_unverified_context()
+                handlers.append(urllib.request.HTTPSHandler(context=context))
+            self._opener = urllib.request.build_opener(*handlers)
+        return self._opener
+    
+    def _embed_texts_single(self, texts: list[str]) -> list[list[float]]:
+        api_base = self.api_base.rstrip("/")
+        
+        if self.api_format == "openai":
+            url = f"{api_base}/v1/embeddings"
+            body = {
+                "input": texts,
+                "model": self.model_name,
+                "encoding_format": "float",
+            }
+        elif self.api_format == "tei":
+            url = f"{api_base}/embed"
+            body = {"inputs": texts, "truncate": True}
+        else:
+            raise ValueError(f"Unsupported api_format: {self.api_format}")
+
+        opener = self._get_opener()
+        
+        for attempt in range(self.max_retries + 1):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(body).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                
+                if self.api_key and self.api_format == "openai":
+                    req.add_header("Authorization", f"Bearer {self.api_key}")
+
+                with opener.open(req, timeout=self.timeout) as response:
+                    response_data = json.loads(response.read().decode("utf-8"))
+                    
+                    if self.api_format == "openai":
+                        data_items = response_data.get("data", [])
+                        sorted_items = sorted(data_items, key=lambda x: x.get("index", 0))
+                        result = [item["embedding"] for item in sorted_items]
+                    else:
+                        result = response_data
+                    
+                    self._consecutive_failures = 0
+                    return result
+
+            except urllib.error.HTTPError as exc:
+                status_code = exc.code
+                response_body = exc.read().decode("utf-8", errors="replace")[:500]
+                
+                if 400 <= status_code < 500:
+                    self._consecutive_failures += 1
+                    raise RuntimeError(
+                        f"HTTP {status_code} from {url}: {response_body}"
+                    ) from exc
+                
+                if attempt < self.max_retries:
+                    time.sleep(0.5 * (2 ** attempt))
+                    continue
+                
+                self._consecutive_failures += 1
+                raise RuntimeError(
+                    f"HTTP {status_code} from {url} after {self.max_retries + 1} attempts: {response_body}"
+                ) from exc
+
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                if attempt < self.max_retries:
+                    time.sleep(0.5 * (2 ** attempt))
+                    continue
+                
+                self._consecutive_failures += 1
+                raise RuntimeError(
+                    f"Failed to connect to {url} after {self.max_retries + 1} attempts: {exc}"
+                ) from exc
+
+        raise RuntimeError(f"Unexpected: exhausted retries for {url}")
+    
+    def _embed_texts_chunked(self, texts: list[str]) -> list[list[float]]:
+        results: list[list[float]] = []
+        failed_chunks: list[tuple[int, int, str]] = []
+        
+        for i in range(0, len(texts), self.batch_size):
+            chunk = texts[i:i + self.batch_size]
+            try:
+                chunk_results = self._embed_texts_single(chunk)
+                results.extend(chunk_results)
+            except Exception as e:
+                failed_chunks.append((i, i + len(chunk), str(e)))
+                results.extend([[0.0] * 1024] * len(chunk))
+        
+        if failed_chunks:
+            chunk_desc = ", ".join(f"[{start}:{end}]" for start, end, _ in failed_chunks)
+            raise RuntimeError(
+                f"Failed to embed {len(failed_chunks)} chunk(s) at indices {chunk_desc}. "
+                f"First error: {failed_chunks[0][2]}"
+            )
+        
+        return results
+
+
 @lru_cache(maxsize=8)
 def _cached_embedding_provider(
     backend: str,
@@ -189,6 +367,15 @@ def _cached_embedding_provider(
     cache_dir: str,
     max_length: int,
     stub_dim: int,
+    api_base: str,
+    api_key: str,
+    api_format: str,
+    http_timeout: float,
+    http_max_retries: int,
+    http_verify_ssl: bool,
+    http_batch_size: int,
+    fallback_backend: str,
+    fallback_after_failures: int,
 ) -> EmbeddingProvider:
     if backend == 'onnx':
         return OnnxBgeEmbeddingProvider(
@@ -196,6 +383,19 @@ def _cached_embedding_provider(
             model_path=model_path or None,
             cache_dir=cache_dir or None,
             max_length=max_length,
+        )
+    if backend in ('http', 'openai'):
+        return HttpEmbeddingProvider(
+            model_name=model_name,
+            api_base=api_base,
+            api_key=api_key,
+            api_format=api_format,
+            timeout=http_timeout,
+            max_retries=http_max_retries,
+            verify_ssl=http_verify_ssl,
+            batch_size=http_batch_size,
+            fallback_backend=fallback_backend,
+            fallback_after_failures=fallback_after_failures,
         )
     return DeterministicStubEmbeddingProvider(dim=stub_dim)
 
@@ -211,4 +411,13 @@ def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvide
         runtime.embedding_cache_dir,
         runtime.embedding_max_length,
         runtime.embedding_stub_dim,
+        runtime.embedding_api_base,
+        runtime.embedding_api_key,
+        runtime.embedding_api_format,
+        runtime.embedding_http_timeout,
+        runtime.embedding_http_max_retries,
+        runtime.embedding_http_verify_ssl,
+        runtime.effective_embedding_batch_size(),
+        runtime.embedding_fallback_backend,
+        runtime.embedding_fallback_after_failures,
     )

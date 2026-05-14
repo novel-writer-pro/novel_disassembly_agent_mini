@@ -32,6 +32,10 @@
 12. [whole-book-imitation-api-freeze-readiness.md](../../whole-book-imitation-api-freeze-readiness.md) — API 冻结就绪判断
 13. [whole-book-imitation-provider-recovery-checklist.md](../../whole-book-imitation-provider-recovery-checklist.md) — Provider 恢复 checklist
 14. [whole-book-imitation-docs-index.md](../../whole-book-imitation-docs-index.md) — 全书仿写文档索引
+15. [whole-book-imitation-freeze-evidence-20260503.md](../../whole-book-imitation-freeze-evidence-20260503.md) — 冻结证据
+16. [whole-book-imitation-readiness.sample.json](../../examples/whole-book-imitation-readiness.sample.json) — 就绪状态样例
+17. [whole-book-imitation-sample-coverage-matrix.md](../../whole-book-imitation-sample-coverage-matrix.md) — 样例覆盖矩阵
+18. [whole-book-imitation-handoff-brief.md](../../whole-book-imitation-handoff-brief.md) — 全书仿写交接说明
 
 ### 第四步：了解 Review API 稳定性
 

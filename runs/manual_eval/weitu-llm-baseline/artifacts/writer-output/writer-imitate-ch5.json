@@ -1,0 +1,2396 @@
+{
+  "source_chapter_index": 5,
+  "target_goal": "延续卫图婚后规划与修炼并行",
+  "max_rounds": 2,
+  "skill_contracts": [
+    {
+      "skill_name": "chapter-intake",
+      "purpose": "规范化源章节，保留原文结构输入。",
+      "required_inputs": [
+        "chapter_index",
+        "normalized_title",
+        "chapter_content"
+      ],
+      "produced_outputs": [
+        "cleaned_text",
+        "paragraph_blocks",
+        "scene_candidates",
+        "notes"
+      ],
+      "prompt_asset_path": "skills_dir/chapter-intake/prompts/main.md",
+      "schema_asset_path": "skills_dir/chapter-intake/schemas/output.schema.json",
+      "prompt_preview": "你是“章节 intake 预处理器”。\n\n任务：将下面章节整理成适合小模型继续处理的结构化 JSON，不做剧情分析，不做主题总结，不推断人物动机。\n\n输入：\n- 章节序号：{{chapter_index}}\n- 章节标题：{{normalized_title}}\n- 上一章摘要（可为空）：{{previous_summary}}\n- 原始章节正文：\n{{ch"
+    },
+    {
+      "skill_name": "chapter-fact-extractor",
+      "purpose": "提取源章节事实层，为约束与 continuity 提供证据。",
+      "required_inputs": [
+        "cleaned_text",
+        "prior_context_json",
+        "graph_context_json",
+        "state_summary_json"
+      ],
+      "produced_outputs": [
+        "characters",
+        "events",
+        "relations",
+        "conflicts",
+        "foreshadowing",
+        "worldbuilding_facts"
+      ],
+      "prompt_asset_path": "skills_dir/chapter-fact-extractor/prompts/main.md",
+      "schema_asset_path": "skills_dir/chapter-fact-extractor/schemas/output.schema.json",
+      "prompt_preview": "你是“章节事实提取器”。\n\n任务：从本章 cleaned_text 中抽取“可以直接被文本支持”的事实层内容。\n\n输入：\n- 章节序号：{{chapter_index}}\n- 章节标题：{{normalized_title}}\n- cleaned_text：\n{{cleaned_text}}\n- 可选前情事实摘要：\n{{prior_context_json}"
+    },
+    {
+      "skill_name": "imitation-constraint-pack",
+      "purpose": "汇总人物/规则/关系/线程约束，形成 imitation memory pack。",
+      "required_inputs": [
+        "source_plan",
+        "branch_context",
+        "mapping_pack",
+        "carry_over_state"
+      ],
+      "produced_outputs": [
+        "hard_constraints",
+        "soft_constraints",
+        "forbidden_transformations",
+        "continuity_memory"
+      ],
+      "prompt_asset_path": "skills_dir/imitation-constraint-pack/prompts/main.md",
+      "schema_asset_path": "skills_dir/imitation-constraint-pack/schemas/output.schema.json",
+      "prompt_preview": "你是“仿写约束打包器”。\n\n任务：根据 source plan、branch context、mapping pack、上一章 carry-over state，\n整理出一个只面向“仿写生成”的约束包。\n\n输入：\n- source_plan_json：\n{{source_plan_json}}\n- branch_context_json：\n{{branch_"
+    },
+    {
+      "skill_name": "draft-writer",
+      "purpose": "按结构目标与约束产出 draft。",
+      "required_inputs": [
+        "source_plan",
+        "constraint_pack",
+        "target_goal"
+      ],
+      "produced_outputs": [
+        "draft_title",
+        "draft_text",
+        "method_notes",
+        "risk_gate_notes"
+      ],
+      "prompt_asset_path": "skills_dir/draft-writer/prompts/main.md",
+      "schema_asset_path": "skills_dir/draft-writer/schemas/output.schema.json",
+      "prompt_preview": ""
+    },
+    {
+      "skill_name": "draft-self-check",
+      "purpose": "先行识别 likely gate failures，减少正式审查链浪费。",
+      "required_inputs": [
+        "draft_text",
+        "source_plan",
+        "constraint_pack"
+      ],
+      "produced_outputs": [
+        "blocking_issues",
+        "recommended_actions",
+        "self_notes"
+      ],
+      "prompt_asset_path": "skills_dir/draft-self-check/prompts/main.md",
+      "schema_asset_path": "skills_dir/draft-self-check/schemas/output.schema.json",
+      "prompt_preview": "你是“仿写草案自检器”。\n\n任务：在草案进入正式 gate / risk audit 之前，先识别最可能导致失败的问题。\n\n输入：\n- draft_text：\n{{draft_text}}\n- source_plan_json：\n{{source_plan_json}}\n- constraint_pack_json：\n{{constraint_pack_js"
+    },
+    {
+      "skill_name": "style-calibrator",
+      "purpose": "校准文风轴、句密度与仿写口吻，输出可进入修订队列的 style repair 信号。",
+      "required_inputs": [
+        "draft_text",
+        "style_axes",
+        "source_excerpt",
+        "strategy_input"
+      ],
+      "produced_outputs": [
+        "style_axes",
+        "style_issues",
+        "prose_density_label",
+        "recommended_actions"
+      ],
+      "prompt_asset_path": "skills_dir/style-calibrator/prompts/main.md",
+      "schema_asset_path": "skills_dir/style-calibrator/schemas/output.schema.json",
+      "prompt_preview": "你是“仿写文风校准器”。\n\n任务：根据 source_excerpt、style_axes、draft_text 与 strategy_input，判断草案是否只保留了剧情骨架而缺少文风贴合。\n\n输出 JSON：\n- style_axes: 延续或需要补强的文风轴\n- style_issues: 可修复问题列表，例如 prose_density_thin /"
+    },
+    {
+      "skill_name": "rhythm-analyzer",
+      "purpose": "分析章节节奏、场景密度、钩子强度与张力起伏。",
+      "required_inputs": [
+        "draft_text",
+        "scene_plan",
+        "chapter_goal"
+      ],
+      "produced_outputs": [
+        "pace_label",
+        "hook_strength",
+        "tension_curve",
+        "issues",
+        "recommended_actions"
+      ],
+      "prompt_asset_path": "skills_dir/rhythm-analyzer/prompts/main.md",
+      "schema_asset_path": "skills_dir/rhythm-analyzer/schemas/output.schema.json",
+      "prompt_preview": "你是“章节节奏分析器”。\n\n任务：根据 draft、scene plan 与 chapter goal，分析本章节奏是否平、是否断、是否缺 hook。\n\n输入：\n- draft_text：\n{{draft_text}}\n- scene_plan_json：\n{{scene_plan_json}}\n- chapter_goal：\n{{chapter_goal}"
+    },
+    {
+      "skill_name": "reader-sim-review",
+      "purpose": "模拟读者视角，给出清晰度、沉浸感、期待感与疑虑点。",
+      "required_inputs": [
+        "draft_text",
+        "chapter_goal",
+        "constraint_pack"
+      ],
+      "produced_outputs": [
+        "reader_profile",
+        "engagement_score",
+        "concerns",
+        "recommended_actions"
+      ],
+      "prompt_asset_path": "skills_dir/reader-sim-review/prompts/main.md",
+      "schema_asset_path": "skills_dir/reader-sim-review/schemas/output.schema.json",
+      "prompt_preview": "你是“读者模拟评审器”。\n\n任务：从核心网文读者视角，判断这一章 draft 是否清楚、是否有期待感、是否有容易卡住的地方。\n\n输入：\n- draft_text：\n{{draft_text}}\n- chapter_goal：\n{{chapter_goal}}\n- constraint_pack_json：\n{{constraint_pack_json}}\n\n"
+    },
+    {
+      "skill_name": "dialogue-designer",
+      "purpose": "分析对话设计、说话人区分与信息效率。",
+      "required_inputs": [
+        "draft_text",
+        "chapter_goal",
+        "relationship_context"
+      ],
+      "produced_outputs": [
+        "issues",
+        "speaker_hints",
+        "efficiency_notes",
+        "recommended_actions"
+      ],
+      "prompt_asset_path": "skills_dir/dialogue-designer/prompts/main.md",
+      "schema_asset_path": "skills_dir/dialogue-designer/schemas/output.schema.json",
+      "prompt_preview": "你是“对话设计器”。\n\n任务：从章节 draft 中识别对话设计问题，并输出对话层修复建议。\n\n输入：\n- draft_text：\n{{draft_text}}\n- chapter_goal：\n{{chapter_goal}}\n- relationship_context_json：\n{{relationship_context_json}}\n\n输出要求：\n"
+    },
+    {
+      "skill_name": "research-pack",
+      "purpose": "补 setting / rule / audience expectation 研究提示。",
+      "required_inputs": [
+        "chapter_goal",
+        "world_context",
+        "topic_hints"
+      ],
+      "produced_outputs": [
+        "setting_notes",
+        "rule_reminders",
+        "audience_expectation_notes",
+        "caution_points"
+      ],
+      "prompt_asset_path": "skills_dir/research-pack/prompts/main.md",
+      "schema_asset_path": "skills_dir/research-pack/schemas/output.schema.json",
+      "prompt_preview": "你是“资料研究打包器”。\n\n任务：根据章节目标与世界/规则上下文，整理一份轻量 research pack，供仿写/续写控制链参考。\n\n输入：\n- chapter_goal：\n{{chapter_goal}}\n- world_context_json：\n{{world_context_json}}\n- topic_hints_json：\n{{topic_hi"
+    },
+    {
+      "skill_name": "draft-reviser",
+      "purpose": "按 harness 指定问题做局部修订，不自由扩散。",
+      "required_inputs": [
+        "draft_text",
+        "targeted_actions"
+      ],
+      "produced_outputs": [
+        "revised_draft_text",
+        "revision_notes"
+      ],
+      "prompt_asset_path": "skills_dir/draft-reviser/prompts/main.md",
+      "schema_asset_path": "skills_dir/draft-reviser/schemas/output.schema.json",
+      "prompt_preview": ""
+    }
+  ],
+  "rounds": [
+    {
+      "round_index": 1,
+      "draft": {
+        "source_chapter_index": 5,
+        "original_title": "婚事敲定（求收藏，求追读）",
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "draft_text": "婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身出了堂屋。\n\n在李童氏院外候了半晌，春兰领他进去。李童氏正看账本，听了他的请求，抬眼打量他片刻：“你倒是个有胆的。府城那批药材是给老爷续方用的，耽误不得。你若肯去，赏钱十两，若丢了货，你两口子的身契就得上押。”\n\n卫图躬身一礼：“奴才愿立军令状。”李童氏点了点头，让春兰取来一张空白契纸，写了担保条款。卫图按了手印，揣好路引，退出院子。\n\n回到堂屋，杏已经替他收拾好行囊。卫图没有多说，只坐到木案前，默默演练起《龟息养气功》的桩功。这一次，他感到丹田中那股温热的气流比昨日又圆融了几分，仿佛挣开了一层薄薄的壳。杏默默看着，没有打扰，只在他披的褂子上多缝了一层厚布。\n\n天色将晚时，卫图收了功，对杏说：“我后日启程。府城回来，咱就去找大奶奶提赎身的事。”杏点了点头，将夜里的油灯拨亮了些。\n\n（本章完）",
+        "method_notes": [
+          "沿用了原章‘婚后早晨对话+规划+修炼’的叙事顺序，开头以杏传递信息引出需求（月钱减少、赎身困难），替代原章中‘告假看爹’的日常规划，制造了身份/资源阻力（赎身钱不够、主家可能不放人）。",
+          "冲突-应对-收束节奏：杏透露消息（冲突引入）→ 卫图主动承接府城采买差事（应对）→ 立军令状、接受代价（提高成本）→ 回到修炼并感到进步（克制但坚定的行动回应）→ 章尾点出‘后日启程’作为下一步可执行钩子。",
+          "人物选择逻辑一致：卫图始终以‘改变命运’为核心驱动，优先选择能累积银钱和能力的务实路径，不轻言放弃；杏则保持支持与协作，提供具体协助（荷包、行囊、缝补）。"
+        ],
+        "comparison_notes": [
+          "原章第5章结构：①李童氏谈话定婚事 → ②婚礼 → ③婚后晨间对话（规划看爹、租地、攒钱、读书） → ④卫图练养生功。本仿写：①杏传递月钱减少消息（代替李童氏谈话） → ②卫图决定揽府城差事（代替婚礼场景） → ③婚后晨间对话（赎身规划） → ④卫图练功并感到进步。每段落功能对应原章骨架，但内容替换为赎身路径的推进。",
+          "原章中‘攒钱买房’‘孩子读书’等长远规划在本章中转化为更迫切的‘赎身’目标，符合‘完成赎身/脱籍并争取进入更高身份路径’的chapter_outline要求。",
+          "原章通过‘私塾读书’触发卫图对‘养生功’的坚定，本章通过‘赎身差事’触发对修炼的持续投入，保持了‘修炼累积可转化能力’的软约束。"
+        ],
+        "risk_gate_notes": [
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。"
+        ]
+      },
+      "comparison": {
+        "source_chapter_index": 5,
+        "original_title": "婚事敲定（求收藏，求追读）",
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "source_length": 2135,
+        "draft_length": 870,
+        "structure_overlap_notes": [
+          "是否保留了‘目标受阻 -> 克制反应 -> 行动转向’骨架。",
+          "是否保留了原章的章尾钩子功能，而不是只模仿表面句式。"
+        ],
+        "style_alignment_notes": [
+          "检查是否延续了原章克制推进、资源受限、逐步转强的节奏。",
+          "检查是否避免了直接抄写原文表达。"
+        ],
+        "risk_alignment_notes": [
+          "重点复核角色动机/关系变化是否需要更多支撑。",
+          "重点复核剧情推进是否存在 resolution/transition support gap。"
+        ],
+        "overall_verdict": "aligned"
+      },
+      "review": {
+        "source_chapter_index": 5,
+        "original_title": "婚事敲定（求收藏，求追读）",
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "needs_human_review": true,
+        "quality_gate_notes": [
+          "标题已发生变化，需确认是否符合仿写目标。"
+        ],
+        "risk_gate_notes": [
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。"
+        ],
+        "revision_directions": [
+          "优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。",
+          "继续约束角色反应，避免把克制型推进写成情绪化爆发。",
+          "如涉及关系变化，补足中间证据，不要只写结果。"
+        ],
+        "overall_verdict": "aligned_but_needs_revision"
+      },
+      "gate": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "quality_gate_notes": [],
+        "needs_human_review": false,
+        "hook_score": 4.0,
+        "risk_gate_notes": [
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。"
+        ],
+        "overall_verdict": "aligned_but_needs_revision"
+      },
+      "risk": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "overall_risk_level": "low",
+        "checker_statuses": {
+          "character_ooc": "skipped",
+          "world_rule_consistency": "skipped",
+          "relationship_consistency": "skipped",
+          "foreshadow_payoff_consistency": "skipped",
+          "setting_scope_consistency": "skipped",
+          "thread_closure_consistency": "skipped",
+          "plot_logic_consistency": "skipped",
+          "timeline_consistency": "skipped",
+          "power_scaling_consistency": "skipped"
+        },
+        "top_risk_types": [],
+        "top_risk_summaries": [],
+        "coverage_gaps": [
+          "character_ooc:skipped",
+          "world_rule_consistency:skipped",
+          "relationship_consistency:skipped",
+          "foreshadow_payoff_consistency:skipped",
+          "setting_scope_consistency:skipped",
+          "thread_closure_consistency:skipped",
+          "plot_logic_consistency:skipped",
+          "timeline_consistency:skipped",
+          "power_scaling_consistency:skipped"
+        ]
+      },
+      "score": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "structure_score": 90,
+        "style_alignment_score": 70,
+        "risk_score": 85,
+        "overall_score": 84,
+        "notes": [
+          "structure_score=90",
+          "style_alignment_score=70",
+          "risk_score=85"
+        ]
+      },
+      "preflight": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "overall_verdict": "warn",
+        "checks": [
+          {
+            "check_name": "length_ratio",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "draft/source 长度比=0.41"
+            ]
+          },
+          {
+            "check_name": "structure_alignment",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "source skeleton alignment looks acceptable"
+            ]
+          },
+          {
+            "check_name": "direct_copy_guard",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "未见直接抄写标记。"
+            ]
+          },
+          {
+            "check_name": "ending_hook_presence",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "未检测到显式下一步钩子词。"
+            ]
+          },
+          {
+            "check_name": "constraint_pack_presence",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "forbidden_transformations=4"
+            ]
+          },
+          {
+            "check_name": "relationship_watchpoints",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "constraint pack 缺少 relationship watchpoints。"
+            ]
+          },
+          {
+            "check_name": "rule_watchpoints",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "constraint pack 缺少 rule watchpoints。"
+            ]
+          },
+          {
+            "check_name": "draft_self_check_recommendations",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "补充关系变化敏感点。",
+              "补充规则敏感点。",
+              "补充明确的下一步钩子。"
+            ]
+          },
+          {
+            "check_name": "draft_self_check_likely_failures",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "relationship_transition_thin",
+              "world_rule_support_thin",
+              "ending_hook_presence"
+            ]
+          },
+          {
+            "check_name": "chapter_intake_notes",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "已提取基础段落块供后续小模型处理。",
+              "应关注章尾钩子与关系/规则敏感点。"
+            ]
+          },
+          {
+            "check_name": "fact_relation_coverage",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "chapter-fact-extractor 未提取到关系事实。"
+            ]
+          },
+          {
+            "check_name": "fact_rule_coverage",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "chapter-fact-extractor 未提取到规则事实。"
+            ]
+          },
+          {
+            "check_name": "style_calibrator",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "prose_density=balanced"
+            ]
+          },
+          {
+            "check_name": "rhythm_analysis",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "hook_weak"
+            ]
+          },
+          {
+            "check_name": "reader_sim_review",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "motivation_not_explicit",
+              "reader_hook_weak"
+            ]
+          },
+          {
+            "check_name": "dialogue_designer",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "speaker_relation_context_thin"
+            ]
+          },
+          {
+            "check_name": "research_pack_review",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "当前缺少明确世界规则提醒，易出现设定越界。",
+              "题材读者通常期待章尾有明确续读驱动力。"
+            ]
+          },
+          {
+            "check_name": "risk_gate_alignment",
+            "status": "pass",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "risk_overall_level=low"
+            ]
+          },
+          {
+            "check_name": "gate_alignment",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "gate_verdict=aligned_but_needs_revision"
+            ]
+          },
+          {
+            "check_name": "loom_tension",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "冲突密度 0.00，情节偏平淡"
+            ]
+          }
+        ],
+        "blocking_issues": [],
+        "recommended_actions": [
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补充明确的下一步钩子。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充更明确的章尾钩子。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "增强章尾钩子，提升读者续读驱动力。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "增强章尾期待感，避免读者觉得本章平收。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。",
+          "题材读者通常期待章尾有明确续读驱动力。",
+          "考虑增加角色间冲突或内心矛盾"
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "repair_rhythm",
+          "target": "rhythm",
+          "severity": "medium",
+          "priority": 1,
+          "instructions": [
+            "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+          ]
+        },
+        {
+          "action_type": "repair_reader_engagement",
+          "target": "reader_engagement",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补清读者易卡住的信息点，增强代入感与续读欲。"
+          ]
+        },
+        {
+          "action_type": "reinforce_ending_hook",
+          "target": "ending_hook",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补出清晰的下一步驱动与未完成目标。"
+          ]
+        },
+        {
+          "action_type": "repair_character_motivation",
+          "target": "character_motivation",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足人物为何做出当前选择的支撑证据与过渡。"
+          ]
+        },
+        {
+          "action_type": "repair_relationship_transition",
+          "target": "relationship_transition",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足关系变化前后的中间事件与态度转折。"
+          ]
+        },
+        {
+          "action_type": "repair_world_rule_support",
+          "target": "world_rule_support",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足越界动作前的规则来源、限制与代价。"
+          ]
+        },
+        {
+          "action_type": "repair_dialogue_design",
+          "target": "dialogue",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补充说话人区分与高信息密度对话。"
+          ]
+        },
+        {
+          "action_type": "repair_relation_evidence",
+          "target": "fact_relations",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足人物互动、态度变化与关系状态证据。"
+          ]
+        },
+        {
+          "action_type": "repair_research_alignment",
+          "target": "research_pack",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+          ]
+        },
+        {
+          "action_type": "repair_rule_evidence",
+          "target": "fact_rules",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足世界规则、资源限制与动作代价证据。"
+          ]
+        }
+      ],
+      "revise_payload": {
+        "ordered_actions": [
+          {
+            "action_type": "repair_rhythm",
+            "issue_family": "rhythm",
+            "target": "rhythm",
+            "severity": "medium",
+            "priority": 1,
+            "instructions": [
+              "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+            ]
+          },
+          {
+            "action_type": "repair_reader_engagement",
+            "issue_family": "reader_sim",
+            "target": "reader_engagement",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补清读者易卡住的信息点，增强代入感与续读欲。"
+            ]
+          },
+          {
+            "action_type": "reinforce_ending_hook",
+            "issue_family": "hook",
+            "target": "ending_hook",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补出清晰的下一步驱动与未完成目标。"
+            ]
+          },
+          {
+            "action_type": "repair_character_motivation",
+            "issue_family": "motivation",
+            "target": "character_motivation",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足人物为何做出当前选择的支撑证据与过渡。"
+            ]
+          },
+          {
+            "action_type": "repair_relationship_transition",
+            "issue_family": "relationship",
+            "target": "relationship_transition",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足关系变化前后的中间事件与态度转折。"
+            ]
+          },
+          {
+            "action_type": "repair_world_rule_support",
+            "issue_family": "rule",
+            "target": "world_rule_support",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足越界动作前的规则来源、限制与代价。"
+            ]
+          },
+          {
+            "action_type": "repair_dialogue_design",
+            "issue_family": "dialogue",
+            "target": "dialogue",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补充说话人区分与高信息密度对话。"
+            ]
+          },
+          {
+            "action_type": "repair_relation_evidence",
+            "issue_family": "relationship",
+            "target": "fact_relations",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足人物互动、态度变化与关系状态证据。"
+            ]
+          },
+          {
+            "action_type": "repair_research_alignment",
+            "issue_family": "research",
+            "target": "research_pack",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+            ]
+          },
+          {
+            "action_type": "repair_rule_evidence",
+            "issue_family": "rule",
+            "target": "fact_rules",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足世界规则、资源限制与动作代价证据。"
+            ]
+          }
+        ],
+        "blocking_issues": [],
+        "recommended_actions": [
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补充明确的下一步钩子。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充更明确的章尾钩子。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "增强章尾钩子，提升读者续读驱动力。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "增强章尾期待感，避免读者觉得本章平收。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。",
+          "题材读者通常期待章尾有明确续读驱动力。",
+          "考虑增加角色间冲突或内心矛盾"
+        ],
+        "gate_verdict": "aligned_but_needs_revision",
+        "risk_overall_level": "low",
+        "issue_families": [
+          "rhythm",
+          "reader_sim",
+          "hook",
+          "motivation",
+          "relationship",
+          "rule",
+          "dialogue",
+          "relationship",
+          "research",
+          "rule"
+        ]
+      },
+      "skill_prompt_previews": {
+        "imitation-constraint-pack": "你是“仿写约束打包器”。\n\n任务：根据 source plan、branch context、mapping pack、上一章 carry-over state，\n整理出一个只面向“仿写生成”的约束包。\n\n输入：\n- source_plan_json：\n{\n  \"source_chapter_index\": 5,\n  \"target_goal\": \"延续卫图婚后规划与修炼并行\",\n  \"style_axes\": [\n    \"沿用原章的叙事视角与信息释放顺序\",\n    \"沿用原章的冲突-应对-收束节奏\",\n    \"优先保持人物选择逻辑，而非表面句式模仿\"\n  ],\n  \"scene_beats\": [\n    \"承接上一章结果并明确当前需求/目标\",\n    \"通过一次身份/资源/关系阻力制造推进成本\",\n    \"让主角给出克制但更坚定的行动回应\",\n    \"章尾给出下一步可执行钩子\"\n  ],\n  \"hard_constraints\": [\n    \"不要无铺垫升级战力\",\n    \"不要引入未准备的大设定\"\n  ],\n  \"soft_constraints\": [\n    \"保持家庭与婚后协作稳定\",\n    \"chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价\",\n    ",
+        "draft-self-check": "你是“仿写草案自检器”。\n\n任务：在草案进入正式 gate / risk audit 之前，先识别最可能导致失败的问题。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身",
+        "rhythm-analyzer": "你是“章节节奏分析器”。\n\n任务：根据 draft、scene plan 与 chapter goal，分析本章节奏是否平、是否断、是否缺 hook。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，",
+        "reader-sim-review": "你是“读者模拟评审器”。\n\n任务：从核心网文读者视角，判断这一章 draft 是否清楚、是否有期待感、是否有容易卡住的地方。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，",
+        "dialogue-designer": "你是“对话设计器”。\n\n任务：从章节 draft 中识别对话设计问题，并输出对话层修复建议。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身出了堂屋。\n\n在李童氏院外候",
+        "research-pack": "你是“资料研究打包器”。\n\n任务：根据章节目标与世界/规则上下文，整理一份轻量 research pack，供仿写/续写控制链参考。\n\n输入：\n- chapter_goal：\n延续卫图婚后规划与修炼并行\n- world_context_json：\n{\n  \"world_rules\": [\n    \"不要无铺垫升级战力\",\n    \"不要引入未准备的大设定\"\n  ],\n  \"continuity_memory\": [\n    \"保持家庭与婚后协作稳定\",\n    \"chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价\",\n    \"持续通过修炼累积可转化能力\"\n  ]\n}\n- topic_hints_json：\n[\n  \"当前章节因上游 provider 不可用，使用本地启发式分析保底生成。\",\n  \"当前章节因上游 provider 不可用，使用本地启发式分析保底生成。\",\n  \"当前章节因上游 provider 不可用，使用本地启发式分析保底生成。\"\n]\n\n输出要求：\n1. 只输出 JSON。\n2. 顶层必须包含：setting_notes, rule_reminders, audience_expectation_notes, caution_points。\n3. 如果缺少外部资料支持",
+        "chapter-intake": "你是“章节 intake 预处理器”。\n\n任务：将下面章节整理成适合小模型继续处理的结构化 JSON，不做剧情分析，不做主题总结，不推断人物动机。\n\n输入：\n- 章节序号：5\n- 章节标题：婚事敲定（求收藏，求追读）\n- 上一章摘要（可为空）：第45章 薛都长老（求收藏，求追读）\n- 原始章节正文：\n第5章 婚事敲定（求收藏，求追读）\n“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”\n“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”\n卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。\n他说的话亦不假。\n灾荒年间，李宅给了他一口吃的，就算是对他的恩情。\n活命之恩！\n与活命相比，沦为奴仆，就是次要的了。\n仓廪实而知礼节。\n衣食足而知荣辱。\n卖身大户，于乡下人来说，并不是什么折辱事。\n听到这话，李童氏点了点头，眸底露出一丝满意之色。\n卫图虽然没说效忠李家的那些宽泛话，但其话中的感激之情她亦能听出来。\n而这，便已足够了。\n“杏比你早入李家两年，大了你三岁。是我看着长大的……”\n如春兰所说，李童氏开始谈起了卫图和杏的婚事。\n“俗话说得好，女大一，抱金鸡，女大二，金满贯，女大三，抱金砖。”\n“杏父母早逝，我也算杏的半个娘家人，就准了你和她的婚事……”\n李童氏缓缓道。\n话音落下，李童氏身后立的几个婢子，脸上顿时溢满笑容，伸出手向卫图讨要喜钱。",
+        "chapter-fact-extractor": "你是“章节事实提取器”。\n\n任务：从本章 cleaned_text 中抽取“可以直接被文本支持”的事实层内容。\n\n输入：\n- 章节序号：5\n- 章节标题：婚事敲定（求收藏，求追读）\n- cleaned_text：\n第5章 婚事敲定（求收藏，求追读）\n“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”\n“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”\n卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。\n他说的话亦不假。\n灾荒年间，李宅给了他一口吃的，就算是对他的恩情。\n活命之恩！\n与活命相比，沦为奴仆，就是次要的了。\n仓廪实而知礼节。\n衣食足而知荣辱。\n卖身大户，于乡下人来说，并不是什么折辱事。\n听到这话，李童氏点了点头，眸底露出一丝满意之色。\n卫图虽然没说效忠李家的那些宽泛话，但其话中的感激之情她亦能听出来。\n而这，便已足够了。\n“杏比你早入李家两年，大了你三岁。是我看着长大的……”\n如春兰所说，李童氏开始谈起了卫图和杏的婚事。\n“俗话说得好，女大一，抱金鸡，女大二，金满贯，女大三，抱金砖。”\n“杏父母早逝，我也算杏的半个娘家人，就准了你和她的婚事……”\n李童氏缓缓道。\n话音落下，李童氏身后立的几个婢子，脸上顿时溢满笑容，伸出手向卫图讨要喜钱。\n“彩霞，伱去我房里，把嫁奁底下的红绸取出来，送到杏的房里，算我这个当主家的贺礼。”\n“",
+        "comparison": "{\"source_chapter_index\": 5, \"original_title\": \"婚事敲定（求收藏，求追读）\", \"draft_title\": \"婚后筹谋（求收藏，求追读）\", \"source_length\": 2135, \"draft_length\": 870, \"structure_overlap_notes\": [\"是否保留了‘目标受阻 -> 克制反应 -> 行动转向’骨架。\", \"是否保留了原章的章尾钩子功能，而不是只模仿表面句式。\"], \"style_alignment_notes\": [\"检查是否延续了原章克制推进、资源受限、逐步转强的节奏。\", \"检查是否避免了直接抄写原文表达。\"], \"risk_alignment_notes\": [\"重点复核角色动机/关系变化是否需要更多支撑。\", \"重点复核剧情推进是否存在 resolution/transition support gap。\"], \"overall_verdict\": \"aligned\"}"
+      },
+      "skill_outputs": {
+        "chapter-intake": {
+          "chapter_index": 5,
+          "normalized_title": "婚事敲定（求收藏，求追读）",
+          "cleaned_text": "第5章 婚事敲定（求收藏，求追读）\n“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”\n“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”\n卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。\n他说的话亦不假。\n灾荒年间，李宅给了他一口吃的，就算是对他的恩情。\n活命之恩！\n与活命相比，沦为奴仆，就是次要的了。\n仓廪实而知礼节。\n衣食足而知荣辱。\n卖身大户，于乡下人来说，并不是什么折辱事。\n听到这话，李童氏点了点头，眸底露出一丝满意之色。\n卫图虽然没说效忠李家的那些宽泛话，但其话中的感激之情她亦能听出来。\n而这，便已足够了。\n“杏比你早入李家两年，大了你三岁。是我看着长大的……”\n如春兰所说，李童氏开始谈起了卫图和杏的婚事。\n“俗话说得好，女大一，抱金鸡，女大二，金满贯，女大三，抱金砖。”\n“杏父母早逝，我也算杏的半个娘家人，就准了你和她的婚事……”\n李童氏缓缓道。\n话音落下，李童氏身后立的几个婢子，脸上顿时溢满笑容，伸出手向卫图讨要喜钱。\n“彩霞，伱去我房里，把嫁奁底下的红绸取出来，送到杏的房里，算我这个当主家的贺礼。”\n“还有，收拾一间屋子，当做卫图和杏的婚房。”\n“是，大奶奶。”春兰微福一礼，出了客厅。\n……\n翌日。\n李宅外院一间堂屋。\n喝得微醺的卫图站在廊檐下，揉了揉眉心，让自己清醒了一些。\n接着。\n他看了一眼钉在门沿上的红绸，挺直身子，用力推开了面前没有上门闩的木门。\n随着嘎吱一声响。\n卫图入屋，一眼就注意到了半坐在榻边的新娘。\n透过半掩的红盖头，卫图感觉杏的容貌比往常更精致了一些，由普通变成了秀丽。\n卫图转头，又朝堂屋的其他地方看去，这间新房由他记忆的破败不堪变得整端了许多。\n井字窗。\n新糊的窗纸。\n两个长条凳支起的木案，上面放着一小面铜镜，以及妇人用的针线盒。\n堂屋的拐角处，多了两个实木的箱子。\n箱子上的漆脱落了小半。\n卫图猜测，这实木箱子里应该放的是被褥和衣服。\n“卫哥儿……”杏见卫图愣在了新房里，不由心中骄傲了一些，这房是她打扫干净，并重新装饰的。\n她唤了一声卫图，见卫图没有回神，便扭捏的难开二次口了。\n她暗暗抱怨，卫图平日里对她多有“调戏”，怎么到真正成婚的时候，却这么恪守礼节了。\n……\n一夜无话。\n晨曦透过窗纸照进堂屋，卫图拥着杏躺在床上。\n按理说，他们这一对新人，昨天刚结婚，今天在李宅的差事便可以暂停一天，睡到日上三竿再起。\n但卫图和杏早就习惯了早起，哪怕于此刻偷懒，也难以入眠。\n“卫哥儿，再过几天，咱俩给大奶奶告几天假，回你家看看，成婚也要通知一下咱爹……”\n杏低着声音，说道。\n卖身入了李家，他们二人成婚自然不必顾忌什么媒妁之言，父母之命，李家老爷和大奶奶就能拿这主意，论谁也挑不出刺。\n不过不管怎样，还得通知一声卫豹，告诉这喜讯。\n“嗯。”卫图点了点头。\n他老家距离青木县县城有一段距离，得走一两天的路，这也是为何他没有事先通知卫豹的原因。\n除了距离外，他没通知卫豹婚事的原因还有一个。\n那便是这场婚事是李宅主持，卫豹一个外人，来到了李宅也不太好。\n李宅也没法腾出房间让卫豹暂住。\n“除了看爹外，还有……”\n说话间，杏下了床，取了案上的针线盒，开始耐心的帮卫图缝补起了以前穿破的旧褂子。\n忙活的同时，她和卫图搭着话，商量婚后的繁事。\n告假。\n见亲朋。\n租地种粮。\n等等一系列事。\n堂屋是李家可怜他们这两个仆从，暂借给他们住的，尽管李家没说归还的日期，但久住自己难免也觉得不合适。\n还是攒钱在李宅附近买一间房为好。\n此外，他们二人沦为奴仆也就罢了，总不能让孩子也步了后尘，从小对人卑躬屈膝。\n而这些，都要钱。\n眼下。\n能赚钱的法子，便是劳累卫图租上李宅的地，当马倌的同时再做佃户。\n这样，每年都能积些银钱。\n“听你的。”\n卫图点了点头，同意了杏这个新妇为他们小家所作的筹谋。\n“这样，过上五六年，盘下一间房子不是难事……”\n“等有了孩子，再让他去私塾读书，读书好了，供给他考功名，一般，就让他做个账房先生……”\n杏笑了笑。\n有宽明的主家，又有一个踏实能干的男人，她感觉这辈子便已经足够了。\n“私塾读书……”\n卫图听到这四个字，沉默了片刻，拿起自己腰间的旱烟杆子，点燃后狠狠的抽了几口。\n读书，\n改变命运！\n这是他刻在骨子里的记忆。\n有了养生功，有了【大器晚成】命格，卫图尽管不能笃定自己一定能踏上仙途，成仙作祖，逍遥不死，但卫图确信，他这一代绝对能够出人头地。\n“继续练养生功。”\n卫图不再在床上消磨时间，迅疾穿好衣物后，便抬手演练起了《龟息养气功》的桩功。\n一遍又一遍。\n成婚后。\n他似乎心里更有了奔头。\n一旁的杏看到这一幕，虽感惊讶，但也没有多问。\n庆丰府武风不弱，许多农户汉子因为家贫，都是上马为匪，下马为民，做刀客养活自己。\n她男人会几招把式，并不是什么奇闻轶事。\n杏收回目光，继续面前的针线活，不过她想了一下，动手将卫图的衣服改得宽松了一些。\n多谢爱学习的三脚猫打赏1500起点币，空高打赏的500起点币，书友20220317121509785打赏的100起点币。\n这本书，我想写的温馨一些，从底层一步步走到修仙界的故事，希望大家能喜欢。\n(本章完)",
+          "paragraph_blocks": [
+            {
+              "order": 1,
+              "text": "第5章 婚事敲定（求收藏，求追读）"
+            },
+            {
+              "order": 2,
+              "text": "“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”"
+            },
+            {
+              "order": 3,
+              "text": "“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”"
+            },
+            {
+              "order": 4,
+              "text": "卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。"
+            },
+            {
+              "order": 5,
+              "text": "他说的话亦不假。"
+            },
+            {
+              "order": 6,
+              "text": "灾荒年间，李宅给了他一口吃的，就算是对他的恩情。"
+            }
+          ],
+          "scene_candidates": [
+            {
+              "order": 1,
+              "text": "承接上一章结果并明确当前需求/目标"
+            },
+            {
+              "order": 2,
+              "text": "通过一次身份/资源/关系阻力制造推进成本"
+            },
+            {
+              "order": 3,
+              "text": "让主角给出克制但更坚定的行动回应"
+            },
+            {
+              "order": 4,
+              "text": "章尾给出下一步可执行钩子"
+            }
+          ],
+          "notes": [
+            "已提取基础段落块供后续小模型处理。",
+            "应关注章尾钩子与关系/规则敏感点。"
+          ]
+        },
+        "chapter-fact-extractor": {
+          "characters": [
+            {
+              "label": "韦飞找上",
+              "evidence": [
+                "韦飞找上"
+              ],
+              "confidence": 0.6
+            },
+            {
+              "label": "隔日",
+              "evidence": [
+                "隔日"
+              ],
+              "confidence": 0.6
+            },
+            {
+              "label": "薛都长老",
+              "evidence": [
+                "薛都长老"
+              ],
+              "confidence": 0.6
+            }
+          ],
+          "events": [
+            {
+              "label": "第43章 改换武籍（求收藏，求追读）",
+              "evidence": [
+                "第43章 改换武籍（求收藏，求追读）"
+              ],
+              "confidence": 0.6
+            },
+            {
+              "label": "第44章 武官任命（求收藏，求追读）",
+              "evidence": [
+                "第44章 武官任命（求收藏，求追读）"
+              ],
+              "confidence": 0.6
+            }
+          ],
+          "relations": [],
+          "conflicts": [
+            {
+              "label": "身份与身契限制",
+              "evidence": [
+                "身份与身契限制"
+              ],
+              "confidence": 0.55
+            },
+            {
+              "label": "银钱与资源不足",
+              "evidence": [
+                "银钱与资源不足"
+              ],
+              "confidence": 0.55
+            }
+          ],
+          "foreshadowing": [
+            {
+              "label": "保持家庭与婚后协作稳定",
+              "evidence": [
+                "保持家庭与婚后协作稳定"
+              ],
+              "confidence": 0.5
+            },
+            {
+              "label": "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+              "evidence": [
+                "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价"
+              ],
+              "confidence": 0.5
+            },
+            {
+              "label": "持续通过修炼累积可转化能力",
+              "evidence": [
+                "持续通过修炼累积可转化能力"
+              ],
+              "confidence": 0.5
+            }
+          ],
+          "worldbuilding_facts": []
+        },
+        "imitation-constraint-pack": {
+          "hard_constraints": [
+            "不要无铺垫升级战力",
+            "不要引入未准备的大设定"
+          ],
+          "soft_constraints": [
+            "保持家庭与婚后协作稳定",
+            "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+            "持续通过修炼累积可转化能力"
+          ],
+          "forbidden_transformations": [
+            "不要无铺垫升级战力",
+            "不要引入未准备的大设定",
+            "不要直接抄原文句式",
+            "不要无铺垫升级战力"
+          ],
+          "continuity_memory": [
+            "保持家庭与婚后协作稳定",
+            "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价"
+          ],
+          "relationship_watchpoints": [],
+          "rule_watchpoints": [],
+          "worldview_capsule": [],
+          "trope_axes": [],
+          "innovation_directives": [],
+          "external_knowledge_refs": []
+        },
+        "draft-self-check": {
+          "blocking_issues": [],
+          "likely_gate_failures": [
+            "relationship_transition_thin",
+            "world_rule_support_thin",
+            "ending_hook_presence",
+            "character_motivation_drift"
+          ],
+          "recommended_actions": [
+            "补充关系变化敏感点。",
+            "补充规则敏感点。",
+            "补充明确的下一步钩子。",
+            "补足人物动机与选择依据。"
+          ],
+          "self_notes": [
+            "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+            "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+          ]
+        },
+        "style-calibrator": {
+          "style_axes": [
+            "沿用原章的叙事视角与信息释放顺序",
+            "沿用原章的冲突-应对-收束节奏",
+            "优先保持人物选择逻辑，而非表面句式模仿"
+          ],
+          "style_issues": [],
+          "prose_density_label": "balanced",
+          "recommended_actions": []
+        },
+        "rhythm-analyzer": {
+          "pace_label": "steady",
+          "hook_strength": 0.45,
+          "tension_curve": [
+            "setup",
+            "resistance",
+            "response",
+            "hook"
+          ],
+          "issues": [
+            "hook_weak"
+          ],
+          "recommended_actions": [
+            "增强章尾钩子，提升读者续读驱动力。"
+          ]
+        },
+        "reader-sim-review": {
+          "reader_profile": "core_web_novel_reader",
+          "engagement_score": 61,
+          "concerns": [
+            "motivation_not_explicit",
+            "reader_hook_weak"
+          ],
+          "recommended_actions": [
+            "让读者更清楚主角为何做出当前行动选择。",
+            "增强章尾期待感，避免读者觉得本章平收。"
+          ]
+        },
+        "dialogue-designer": {
+          "issues": [
+            "speaker_relation_context_thin"
+          ],
+          "speaker_hints": [
+            "韦飞找上",
+            "隔日",
+            "薛都长老"
+          ],
+          "efficiency_notes": [],
+          "recommended_actions": [
+            "补说话人态度差异，避免对话无关系层次。"
+          ]
+        },
+        "research-pack": {
+          "setting_notes": [],
+          "rule_reminders": [],
+          "audience_expectation_notes": [
+            "题材读者通常期待章尾有明确续读驱动力。"
+          ],
+          "caution_points": [
+            "当前缺少明确世界规则提醒，易出现设定越界。"
+          ]
+        },
+        "_loom_tension": {
+          "chapter_index": 5,
+          "tension_score": 0.521,
+          "status": "warning",
+          "alerts": [
+            {
+              "type": "low_conflict_density",
+              "severity": "medium",
+              "message": "冲突密度 0.00，情节偏平淡",
+              "suggestion": "考虑增加角色间冲突或内心矛盾"
+            }
+          ],
+          "metrics": {
+            "plot_similarity": 0.102,
+            "conflict_density": 0.0,
+            "surprise_index": 0.6471
+          },
+          "loom_version": "1.0"
+        },
+        "_gate_meta": {
+          "overall_verdict": "aligned_but_needs_revision",
+          "needs_human_review": false
+        },
+        "_risk_meta": {
+          "overall_risk_level": "low"
+        }
+      }
+    },
+    {
+      "round_index": 2,
+      "draft": {
+        "source_chapter_index": 5,
+        "original_title": "婚事敲定（求收藏，求追读）",
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "draft_text": "婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身出了堂屋。\n\n在李童氏院外候了半晌，春兰领他进去。李童氏正看账本，听了他的请求，抬眼打量他片刻：“你倒是个有胆的。府城那批药材是给老爷续方用的，耽误不得。你若肯去，赏钱十两，若丢了货，你两口子的身契就得上押。”\n\n卫图躬身一礼：“奴才愿立军令状。”李童氏点了点头，让春兰取来一张空白契纸，写了担保条款。卫图按了手印，揣好路引，退出院子。\n\n回到堂屋，杏已经替他收拾好行囊。卫图没有多说，只坐到木案前，默默演练起《龟息养气功》的桩功。这一次，他感到丹田中那股温热的气流比昨日又圆融了几分，仿佛挣开了一层薄薄的壳。杏默默看着，没有打扰，只在他披的褂子上多缝了一层厚布。\n\n天色将晚时，卫图收了功，对杏说：“我后日启程。府城回来，咱就去找大奶奶提赎身的事。”杏点了点头，将夜里的油灯拨亮了些。\n\n（本章完）\n\n【Harness Action Queue】\n[P1|medium] repair_rhythm:rhythm\n[P2|medium] repair_reader_engagement:reader_engagement\n[P2|medium] reinforce_ending_hook:ending_hook\n[P2|medium] repair_character_motivation:character_motivation\n[P2|medium] repair_relationship_transition:relationship_transition\n[P2|medium] repair_world_rule_support:world_rule_support",
+        "method_notes": [
+          "沿用了原章‘婚后早晨对话+规划+修炼’的叙事顺序，开头以杏传递信息引出需求（月钱减少、赎身困难），替代原章中‘告假看爹’的日常规划，制造了身份/资源阻力（赎身钱不够、主家可能不放人）。",
+          "冲突-应对-收束节奏：杏透露消息（冲突引入）→ 卫图主动承接府城采买差事（应对）→ 立军令状、接受代价（提高成本）→ 回到修炼并感到进步（克制但坚定的行动回应）→ 章尾点出‘后日启程’作为下一步可执行钩子。",
+          "人物选择逻辑一致：卫图始终以‘改变命运’为核心驱动，优先选择能累积银钱和能力的务实路径，不轻言放弃；杏则保持支持与协作，提供具体协助（荷包、行囊、缝补）。",
+          "优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。",
+          "继续约束角色反应，避免把克制型推进写成情绪化爆发。",
+          "如涉及关系变化，补足中间证据，不要只写结果。",
+          "1:rhythm",
+          "2:reader_engagement",
+          "2:ending_hook",
+          "2:character_motivation",
+          "2:relationship_transition",
+          "2:world_rule_support",
+          "3:dialogue",
+          "3:fact_relations",
+          "3:research_pack",
+          "3:fact_rules"
+        ],
+        "comparison_notes": [
+          "原章第5章结构：①李童氏谈话定婚事 → ②婚礼 → ③婚后晨间对话（规划看爹、租地、攒钱、读书） → ④卫图练养生功。本仿写：①杏传递月钱减少消息（代替李童氏谈话） → ②卫图决定揽府城差事（代替婚礼场景） → ③婚后晨间对话（赎身规划） → ④卫图练功并感到进步。每段落功能对应原章骨架，但内容替换为赎身路径的推进。",
+          "原章中‘攒钱买房’‘孩子读书’等长远规划在本章中转化为更迫切的‘赎身’目标，符合‘完成赎身/脱籍并争取进入更高身份路径’的chapter_outline要求。",
+          "原章通过‘私塾读书’触发卫图对‘养生功’的坚定，本章通过‘赎身差事’触发对修炼的持续投入，保持了‘修炼累积可转化能力’的软约束。",
+          "ACTION:repair_rhythm:rhythm",
+          "ACTION:repair_reader_engagement:reader_engagement",
+          "ACTION:reinforce_ending_hook:ending_hook",
+          "ACTION:repair_character_motivation:character_motivation",
+          "{\"ordered_actions\": [{\"action_type\": \"repair_rhythm\", \"issue_family\": \"rhythm\", \"target\": \"rhythm\", \"severity\": \"medium\", \"priority\": 1, \"instructions\": [\"补足节奏起伏与章尾驱动力，避免章节推进过平。\"]}, {\"action_type\": \"repair_reader_engagement\", \"issue_family\": \"reader_sim\", \"target\": \"reader_engagement\", \"severity\": \""
+        ],
+        "risk_gate_notes": [
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。"
+        ]
+      },
+      "comparison": {
+        "source_chapter_index": 5,
+        "original_title": "婚事敲定（求收藏，求追读）",
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "source_length": 2135,
+        "draft_length": 1213,
+        "structure_overlap_notes": [
+          "是否保留了‘目标受阻 -> 克制反应 -> 行动转向’骨架。",
+          "是否保留了原章的章尾钩子功能，而不是只模仿表面句式。"
+        ],
+        "style_alignment_notes": [
+          "检查是否延续了原章克制推进、资源受限、逐步转强的节奏。",
+          "检查是否避免了直接抄写原文表达。"
+        ],
+        "risk_alignment_notes": [
+          "重点复核角色动机/关系变化是否需要更多支撑。",
+          "重点复核剧情推进是否存在 resolution/transition support gap。"
+        ],
+        "overall_verdict": "aligned"
+      },
+      "review": {
+        "source_chapter_index": 5,
+        "original_title": "婚事敲定（求收藏，求追读）",
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "needs_human_review": true,
+        "quality_gate_notes": [
+          "标题已发生变化，需确认是否符合仿写目标。"
+        ],
+        "risk_gate_notes": [
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。"
+        ],
+        "revision_directions": [
+          "优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。",
+          "继续约束角色反应，避免把克制型推进写成情绪化爆发。",
+          "如涉及关系变化，补足中间证据，不要只写结果。"
+        ],
+        "overall_verdict": "aligned_but_needs_revision"
+      },
+      "gate": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "quality_gate_notes": [],
+        "needs_human_review": false,
+        "hook_score": 4.0,
+        "risk_gate_notes": [
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+          "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+          "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+          "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+          "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。"
+        ],
+        "overall_verdict": "aligned_but_needs_revision"
+      },
+      "risk": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "overall_risk_level": "low",
+        "checker_statuses": {
+          "character_ooc": "skipped",
+          "world_rule_consistency": "skipped",
+          "relationship_consistency": "skipped",
+          "foreshadow_payoff_consistency": "skipped",
+          "setting_scope_consistency": "skipped",
+          "thread_closure_consistency": "skipped",
+          "plot_logic_consistency": "skipped",
+          "timeline_consistency": "skipped",
+          "power_scaling_consistency": "skipped"
+        },
+        "top_risk_types": [],
+        "top_risk_summaries": [],
+        "coverage_gaps": [
+          "character_ooc:skipped",
+          "world_rule_consistency:skipped",
+          "relationship_consistency:skipped",
+          "foreshadow_payoff_consistency:skipped",
+          "setting_scope_consistency:skipped",
+          "thread_closure_consistency:skipped",
+          "plot_logic_consistency:skipped",
+          "timeline_consistency:skipped",
+          "power_scaling_consistency:skipped"
+        ]
+      },
+      "score": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "structure_score": 90,
+        "style_alignment_score": 70,
+        "risk_score": 85,
+        "overall_score": 84,
+        "notes": [
+          "structure_score=90",
+          "style_alignment_score=70",
+          "risk_score=85"
+        ]
+      },
+      "preflight": {
+        "source_chapter_index": 5,
+        "draft_title": "婚后筹谋（求收藏，求追读）",
+        "overall_verdict": "warn",
+        "checks": [
+          {
+            "check_name": "length_ratio",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "draft/source 长度比=0.57"
+            ]
+          },
+          {
+            "check_name": "structure_alignment",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "source skeleton alignment looks acceptable"
+            ]
+          },
+          {
+            "check_name": "direct_copy_guard",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "未见直接抄写标记。"
+            ]
+          },
+          {
+            "check_name": "ending_hook_presence",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "未检测到显式下一步钩子词。"
+            ]
+          },
+          {
+            "check_name": "constraint_pack_presence",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "forbidden_transformations=4"
+            ]
+          },
+          {
+            "check_name": "relationship_watchpoints",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "constraint pack 缺少 relationship watchpoints。"
+            ]
+          },
+          {
+            "check_name": "rule_watchpoints",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "constraint pack 缺少 rule watchpoints。"
+            ]
+          },
+          {
+            "check_name": "draft_self_check_recommendations",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "补充关系变化敏感点。",
+              "补充规则敏感点。",
+              "补充明确的下一步钩子。"
+            ]
+          },
+          {
+            "check_name": "draft_self_check_likely_failures",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "relationship_transition_thin",
+              "world_rule_support_thin",
+              "ending_hook_presence"
+            ]
+          },
+          {
+            "check_name": "chapter_intake_notes",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "已提取基础段落块供后续小模型处理。",
+              "应关注章尾钩子与关系/规则敏感点。"
+            ]
+          },
+          {
+            "check_name": "fact_relation_coverage",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "chapter-fact-extractor 未提取到关系事实。"
+            ]
+          },
+          {
+            "check_name": "fact_rule_coverage",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "chapter-fact-extractor 未提取到规则事实。"
+            ]
+          },
+          {
+            "check_name": "style_calibrator",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "prose_density=balanced"
+            ]
+          },
+          {
+            "check_name": "rhythm_analysis",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "hook_weak"
+            ]
+          },
+          {
+            "check_name": "reader_sim_review",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "motivation_not_explicit",
+              "reader_hook_weak"
+            ]
+          },
+          {
+            "check_name": "dialogue_designer",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "speaker_relation_context_thin"
+            ]
+          },
+          {
+            "check_name": "research_pack_review",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "当前缺少明确世界规则提醒，易出现设定越界。",
+              "题材读者通常期待章尾有明确续读驱动力。"
+            ]
+          },
+          {
+            "check_name": "risk_gate_alignment",
+            "status": "pass",
+            "severity": "medium",
+            "priority": 2,
+            "notes": [
+              "risk_overall_level=low"
+            ]
+          },
+          {
+            "check_name": "gate_alignment",
+            "status": "pass",
+            "severity": "low",
+            "priority": 4,
+            "notes": [
+              "gate_verdict=aligned_but_needs_revision"
+            ]
+          },
+          {
+            "check_name": "loom_tension",
+            "status": "warn",
+            "severity": "medium",
+            "priority": 3,
+            "notes": [
+              "冲突密度 0.00，情节偏平淡"
+            ]
+          }
+        ],
+        "blocking_issues": [],
+        "recommended_actions": [
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补充明确的下一步钩子。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充更明确的章尾钩子。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "增强章尾钩子，提升读者续读驱动力。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "增强章尾期待感，避免读者觉得本章平收。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。",
+          "题材读者通常期待章尾有明确续读驱动力。",
+          "考虑增加角色间冲突或内心矛盾"
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "repair_rhythm",
+          "target": "rhythm",
+          "severity": "medium",
+          "priority": 1,
+          "instructions": [
+            "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+          ]
+        },
+        {
+          "action_type": "repair_reader_engagement",
+          "target": "reader_engagement",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补清读者易卡住的信息点，增强代入感与续读欲。"
+          ]
+        },
+        {
+          "action_type": "reinforce_ending_hook",
+          "target": "ending_hook",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补出清晰的下一步驱动与未完成目标。"
+          ]
+        },
+        {
+          "action_type": "repair_character_motivation",
+          "target": "character_motivation",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足人物为何做出当前选择的支撑证据与过渡。"
+          ]
+        },
+        {
+          "action_type": "repair_relationship_transition",
+          "target": "relationship_transition",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足关系变化前后的中间事件与态度转折。"
+          ]
+        },
+        {
+          "action_type": "repair_world_rule_support",
+          "target": "world_rule_support",
+          "severity": "medium",
+          "priority": 2,
+          "instructions": [
+            "补足越界动作前的规则来源、限制与代价。"
+          ]
+        },
+        {
+          "action_type": "repair_dialogue_design",
+          "target": "dialogue",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补充说话人区分与高信息密度对话。"
+          ]
+        },
+        {
+          "action_type": "repair_relation_evidence",
+          "target": "fact_relations",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足人物互动、态度变化与关系状态证据。"
+          ]
+        },
+        {
+          "action_type": "repair_research_alignment",
+          "target": "research_pack",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+          ]
+        },
+        {
+          "action_type": "repair_rule_evidence",
+          "target": "fact_rules",
+          "severity": "medium",
+          "priority": 3,
+          "instructions": [
+            "补足世界规则、资源限制与动作代价证据。"
+          ]
+        }
+      ],
+      "revise_payload": {
+        "ordered_actions": [
+          {
+            "action_type": "repair_rhythm",
+            "issue_family": "rhythm",
+            "target": "rhythm",
+            "severity": "medium",
+            "priority": 1,
+            "instructions": [
+              "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+            ]
+          },
+          {
+            "action_type": "repair_reader_engagement",
+            "issue_family": "reader_sim",
+            "target": "reader_engagement",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补清读者易卡住的信息点，增强代入感与续读欲。"
+            ]
+          },
+          {
+            "action_type": "reinforce_ending_hook",
+            "issue_family": "hook",
+            "target": "ending_hook",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补出清晰的下一步驱动与未完成目标。"
+            ]
+          },
+          {
+            "action_type": "repair_character_motivation",
+            "issue_family": "motivation",
+            "target": "character_motivation",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足人物为何做出当前选择的支撑证据与过渡。"
+            ]
+          },
+          {
+            "action_type": "repair_relationship_transition",
+            "issue_family": "relationship",
+            "target": "relationship_transition",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足关系变化前后的中间事件与态度转折。"
+            ]
+          },
+          {
+            "action_type": "repair_world_rule_support",
+            "issue_family": "rule",
+            "target": "world_rule_support",
+            "severity": "medium",
+            "priority": 2,
+            "instructions": [
+              "补足越界动作前的规则来源、限制与代价。"
+            ]
+          },
+          {
+            "action_type": "repair_dialogue_design",
+            "issue_family": "dialogue",
+            "target": "dialogue",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补充说话人区分与高信息密度对话。"
+            ]
+          },
+          {
+            "action_type": "repair_relation_evidence",
+            "issue_family": "relationship",
+            "target": "fact_relations",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足人物互动、态度变化与关系状态证据。"
+            ]
+          },
+          {
+            "action_type": "repair_research_alignment",
+            "issue_family": "research",
+            "target": "research_pack",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+            ]
+          },
+          {
+            "action_type": "repair_rule_evidence",
+            "issue_family": "rule",
+            "target": "fact_rules",
+            "severity": "medium",
+            "priority": 3,
+            "instructions": [
+              "补足世界规则、资源限制与动作代价证据。"
+            ]
+          }
+        ],
+        "blocking_issues": [],
+        "recommended_actions": [
+          "补一个明确的下一步钩子，避免章节收束过平。",
+          "补充 relationship_watchpoints，明确关系推进敏感点。",
+          "补充 rule_watchpoints，明确世界规则敏感点。",
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补充明确的下一步钩子。",
+          "补足人物动机与选择依据。",
+          "补足人物动机支撑，避免角色行为漂移。",
+          "补足关系变化前后的中间证据。",
+          "补足规则支撑，避免越界动作无来源。",
+          "补充更明确的章尾钩子。",
+          "补充关系证据，避免关系变化无中间支撑。",
+          "补充规则证据，避免关键动作缺少世界规则支撑。",
+          "增强章尾钩子，提升读者续读驱动力。",
+          "让读者更清楚主角为何做出当前行动选择。",
+          "增强章尾期待感，避免读者觉得本章平收。",
+          "补说话人态度差异，避免对话无关系层次。",
+          "当前缺少明确世界规则提醒，易出现设定越界。",
+          "题材读者通常期待章尾有明确续读驱动力。",
+          "考虑增加角色间冲突或内心矛盾"
+        ],
+        "gate_verdict": "aligned_but_needs_revision",
+        "risk_overall_level": "low",
+        "issue_families": [
+          "rhythm",
+          "reader_sim",
+          "hook",
+          "motivation",
+          "relationship",
+          "rule",
+          "dialogue",
+          "relationship",
+          "research",
+          "rule"
+        ]
+      },
+      "skill_prompt_previews": {
+        "imitation-constraint-pack": "你是“仿写约束打包器”。\n\n任务：根据 source plan、branch context、mapping pack、上一章 carry-over state，\n整理出一个只面向“仿写生成”的约束包。\n\n输入：\n- source_plan_json：\n{\n  \"source_chapter_index\": 5,\n  \"target_goal\": \"延续卫图婚后规划与修炼并行\",\n  \"style_axes\": [\n    \"沿用原章的叙事视角与信息释放顺序\",\n    \"沿用原章的冲突-应对-收束节奏\",\n    \"优先保持人物选择逻辑，而非表面句式模仿\"\n  ],\n  \"scene_beats\": [\n    \"承接上一章结果并明确当前需求/目标\",\n    \"通过一次身份/资源/关系阻力制造推进成本\",\n    \"让主角给出克制但更坚定的行动回应\",\n    \"章尾给出下一步可执行钩子\"\n  ],\n  \"hard_constraints\": [\n    \"不要无铺垫升级战力\",\n    \"不要引入未准备的大设定\"\n  ],\n  \"soft_constraints\": [\n    \"保持家庭与婚后协作稳定\",\n    \"chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价\",\n    ",
+        "draft-self-check": "你是“仿写草案自检器”。\n\n任务：在草案进入正式 gate / risk audit 之前，先识别最可能导致失败的问题。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身",
+        "rhythm-analyzer": "你是“章节节奏分析器”。\n\n任务：根据 draft、scene plan 与 chapter goal，分析本章节奏是否平、是否断、是否缺 hook。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，",
+        "reader-sim-review": "你是“读者模拟评审器”。\n\n任务：从核心网文读者视角，判断这一章 draft 是否清楚、是否有期待感、是否有容易卡住的地方。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，",
+        "dialogue-designer": "你是“对话设计器”。\n\n任务：从章节 draft 中识别对话设计问题，并输出对话层修复建议。\n\n输入：\n- draft_text：\n婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身出了堂屋。\n\n在李童氏院外候",
+        "research-pack": "你是“资料研究打包器”。\n\n任务：根据章节目标与世界/规则上下文，整理一份轻量 research pack，供仿写/续写控制链参考。\n\n输入：\n- chapter_goal：\n延续卫图婚后规划与修炼并行\n- world_context_json：\n{\n  \"world_rules\": [\n    \"不要无铺垫升级战力\",\n    \"不要引入未准备的大设定\"\n  ],\n  \"continuity_memory\": [\n    \"保持家庭与婚后协作稳定\",\n    \"chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价\",\n    \"持续通过修炼累积可转化能力\"\n  ]\n}\n- topic_hints_json：\n[\n  \"当前章节因上游 provider 不可用，使用本地启发式分析保底生成。\",\n  \"当前章节因上游 provider 不可用，使用本地启发式分析保底生成。\",\n  \"当前章节因上游 provider 不可用，使用本地启发式分析保底生成。\"\n]\n\n输出要求：\n1. 只输出 JSON。\n2. 顶层必须包含：setting_notes, rule_reminders, audience_expectation_notes, caution_points。\n3. 如果缺少外部资料支持",
+        "chapter-intake": "你是“章节 intake 预处理器”。\n\n任务：将下面章节整理成适合小模型继续处理的结构化 JSON，不做剧情分析，不做主题总结，不推断人物动机。\n\n输入：\n- 章节序号：5\n- 章节标题：婚事敲定（求收藏，求追读）\n- 上一章摘要（可为空）：第45章 薛都长老（求收藏，求追读）\n- 原始章节正文：\n第5章 婚事敲定（求收藏，求追读）\n“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”\n“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”\n卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。\n他说的话亦不假。\n灾荒年间，李宅给了他一口吃的，就算是对他的恩情。\n活命之恩！\n与活命相比，沦为奴仆，就是次要的了。\n仓廪实而知礼节。\n衣食足而知荣辱。\n卖身大户，于乡下人来说，并不是什么折辱事。\n听到这话，李童氏点了点头，眸底露出一丝满意之色。\n卫图虽然没说效忠李家的那些宽泛话，但其话中的感激之情她亦能听出来。\n而这，便已足够了。\n“杏比你早入李家两年，大了你三岁。是我看着长大的……”\n如春兰所说，李童氏开始谈起了卫图和杏的婚事。\n“俗话说得好，女大一，抱金鸡，女大二，金满贯，女大三，抱金砖。”\n“杏父母早逝，我也算杏的半个娘家人，就准了你和她的婚事……”\n李童氏缓缓道。\n话音落下，李童氏身后立的几个婢子，脸上顿时溢满笑容，伸出手向卫图讨要喜钱。",
+        "chapter-fact-extractor": "你是“章节事实提取器”。\n\n任务：从本章 cleaned_text 中抽取“可以直接被文本支持”的事实层内容。\n\n输入：\n- 章节序号：5\n- 章节标题：婚事敲定（求收藏，求追读）\n- cleaned_text：\n第5章 婚事敲定（求收藏，求追读）\n“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”\n“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”\n卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。\n他说的话亦不假。\n灾荒年间，李宅给了他一口吃的，就算是对他的恩情。\n活命之恩！\n与活命相比，沦为奴仆，就是次要的了。\n仓廪实而知礼节。\n衣食足而知荣辱。\n卖身大户，于乡下人来说，并不是什么折辱事。\n听到这话，李童氏点了点头，眸底露出一丝满意之色。\n卫图虽然没说效忠李家的那些宽泛话，但其话中的感激之情她亦能听出来。\n而这，便已足够了。\n“杏比你早入李家两年，大了你三岁。是我看着长大的……”\n如春兰所说，李童氏开始谈起了卫图和杏的婚事。\n“俗话说得好，女大一，抱金鸡，女大二，金满贯，女大三，抱金砖。”\n“杏父母早逝，我也算杏的半个娘家人，就准了你和她的婚事……”\n李童氏缓缓道。\n话音落下，李童氏身后立的几个婢子，脸上顿时溢满笑容，伸出手向卫图讨要喜钱。\n“彩霞，伱去我房里，把嫁奁底下的红绸取出来，送到杏的房里，算我这个当主家的贺礼。”\n“",
+        "comparison": "{\"source_chapter_index\": 5, \"original_title\": \"婚事敲定（求收藏，求追读）\", \"draft_title\": \"婚后筹谋（求收藏，求追读）\", \"source_length\": 2135, \"draft_length\": 1213, \"structure_overlap_notes\": [\"是否保留了‘目标受阻 -> 克制反应 -> 行动转向’骨架。\", \"是否保留了原章的章尾钩子功能，而不是只模仿表面句式。\"], \"style_alignment_notes\": [\"检查是否延续了原章克制推进、资源受限、逐步转强的节奏。\", \"检查是否避免了直接抄写原文表达。\"], \"risk_alignment_notes\": [\"重点复核角色动机/关系变化是否需要更多支撑。\", \"重点复核剧情推进是否存在 resolution/transition support gap。\"], \"overall_verdict\": \"aligned\"}"
+      },
+      "skill_outputs": {
+        "chapter-intake": {
+          "chapter_index": 5,
+          "normalized_title": "婚事敲定（求收藏，求追读）",
+          "cleaned_text": "第5章 婚事敲定（求收藏，求追读）\n“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”\n“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”\n卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。\n他说的话亦不假。\n灾荒年间，李宅给了他一口吃的，就算是对他的恩情。\n活命之恩！\n与活命相比，沦为奴仆，就是次要的了。\n仓廪实而知礼节。\n衣食足而知荣辱。\n卖身大户，于乡下人来说，并不是什么折辱事。\n听到这话，李童氏点了点头，眸底露出一丝满意之色。\n卫图虽然没说效忠李家的那些宽泛话，但其话中的感激之情她亦能听出来。\n而这，便已足够了。\n“杏比你早入李家两年，大了你三岁。是我看着长大的……”\n如春兰所说，李童氏开始谈起了卫图和杏的婚事。\n“俗话说得好，女大一，抱金鸡，女大二，金满贯，女大三，抱金砖。”\n“杏父母早逝，我也算杏的半个娘家人，就准了你和她的婚事……”\n李童氏缓缓道。\n话音落下，李童氏身后立的几个婢子，脸上顿时溢满笑容，伸出手向卫图讨要喜钱。\n“彩霞，伱去我房里，把嫁奁底下的红绸取出来，送到杏的房里，算我这个当主家的贺礼。”\n“还有，收拾一间屋子，当做卫图和杏的婚房。”\n“是，大奶奶。”春兰微福一礼，出了客厅。\n……\n翌日。\n李宅外院一间堂屋。\n喝得微醺的卫图站在廊檐下，揉了揉眉心，让自己清醒了一些。\n接着。\n他看了一眼钉在门沿上的红绸，挺直身子，用力推开了面前没有上门闩的木门。\n随着嘎吱一声响。\n卫图入屋，一眼就注意到了半坐在榻边的新娘。\n透过半掩的红盖头，卫图感觉杏的容貌比往常更精致了一些，由普通变成了秀丽。\n卫图转头，又朝堂屋的其他地方看去，这间新房由他记忆的破败不堪变得整端了许多。\n井字窗。\n新糊的窗纸。\n两个长条凳支起的木案，上面放着一小面铜镜，以及妇人用的针线盒。\n堂屋的拐角处，多了两个实木的箱子。\n箱子上的漆脱落了小半。\n卫图猜测，这实木箱子里应该放的是被褥和衣服。\n“卫哥儿……”杏见卫图愣在了新房里，不由心中骄傲了一些，这房是她打扫干净，并重新装饰的。\n她唤了一声卫图，见卫图没有回神，便扭捏的难开二次口了。\n她暗暗抱怨，卫图平日里对她多有“调戏”，怎么到真正成婚的时候，却这么恪守礼节了。\n……\n一夜无话。\n晨曦透过窗纸照进堂屋，卫图拥着杏躺在床上。\n按理说，他们这一对新人，昨天刚结婚，今天在李宅的差事便可以暂停一天，睡到日上三竿再起。\n但卫图和杏早就习惯了早起，哪怕于此刻偷懒，也难以入眠。\n“卫哥儿，再过几天，咱俩给大奶奶告几天假，回你家看看，成婚也要通知一下咱爹……”\n杏低着声音，说道。\n卖身入了李家，他们二人成婚自然不必顾忌什么媒妁之言，父母之命，李家老爷和大奶奶就能拿这主意，论谁也挑不出刺。\n不过不管怎样，还得通知一声卫豹，告诉这喜讯。\n“嗯。”卫图点了点头。\n他老家距离青木县县城有一段距离，得走一两天的路，这也是为何他没有事先通知卫豹的原因。\n除了距离外，他没通知卫豹婚事的原因还有一个。\n那便是这场婚事是李宅主持，卫豹一个外人，来到了李宅也不太好。\n李宅也没法腾出房间让卫豹暂住。\n“除了看爹外，还有……”\n说话间，杏下了床，取了案上的针线盒，开始耐心的帮卫图缝补起了以前穿破的旧褂子。\n忙活的同时，她和卫图搭着话，商量婚后的繁事。\n告假。\n见亲朋。\n租地种粮。\n等等一系列事。\n堂屋是李家可怜他们这两个仆从，暂借给他们住的，尽管李家没说归还的日期，但久住自己难免也觉得不合适。\n还是攒钱在李宅附近买一间房为好。\n此外，他们二人沦为奴仆也就罢了，总不能让孩子也步了后尘，从小对人卑躬屈膝。\n而这些，都要钱。\n眼下。\n能赚钱的法子，便是劳累卫图租上李宅的地，当马倌的同时再做佃户。\n这样，每年都能积些银钱。\n“听你的。”\n卫图点了点头，同意了杏这个新妇为他们小家所作的筹谋。\n“这样，过上五六年，盘下一间房子不是难事……”\n“等有了孩子，再让他去私塾读书，读书好了，供给他考功名，一般，就让他做个账房先生……”\n杏笑了笑。\n有宽明的主家，又有一个踏实能干的男人，她感觉这辈子便已经足够了。\n“私塾读书……”\n卫图听到这四个字，沉默了片刻，拿起自己腰间的旱烟杆子，点燃后狠狠的抽了几口。\n读书，\n改变命运！\n这是他刻在骨子里的记忆。\n有了养生功，有了【大器晚成】命格，卫图尽管不能笃定自己一定能踏上仙途，成仙作祖，逍遥不死，但卫图确信，他这一代绝对能够出人头地。\n“继续练养生功。”\n卫图不再在床上消磨时间，迅疾穿好衣物后，便抬手演练起了《龟息养气功》的桩功。\n一遍又一遍。\n成婚后。\n他似乎心里更有了奔头。\n一旁的杏看到这一幕，虽感惊讶，但也没有多问。\n庆丰府武风不弱，许多农户汉子因为家贫，都是上马为匪，下马为民，做刀客养活自己。\n她男人会几招把式，并不是什么奇闻轶事。\n杏收回目光，继续面前的针线活，不过她想了一下，动手将卫图的衣服改得宽松了一些。\n多谢爱学习的三脚猫打赏1500起点币，空高打赏的500起点币，书友20220317121509785打赏的100起点币。\n这本书，我想写的温馨一些，从底层一步步走到修仙界的故事，希望大家能喜欢。\n(本章完)",
+          "paragraph_blocks": [
+            {
+              "order": 1,
+              "text": "第5章 婚事敲定（求收藏，求追读）"
+            },
+            {
+              "order": 2,
+              "text": "“庆安十五年，庆丰府赤龙翻身，青木县卖儿卖女者不计其数。”"
+            },
+            {
+              "order": 3,
+              "text": "“六年前，李家给了我一口吃的，让我活了下来，这份恩情，我一直惦记着。”"
+            },
+            {
+              "order": 4,
+              "text": "卫图闻言，面露诧异，脑袋比进来前低的更低了，他斟酌了片刻，说了这一番话。"
+            },
+            {
+              "order": 5,
+              "text": "他说的话亦不假。"
+            },
+            {
+              "order": 6,
+              "text": "灾荒年间，李宅给了他一口吃的，就算是对他的恩情。"
+            }
+          ],
+          "scene_candidates": [
+            {
+              "order": 1,
+              "text": "承接上一章结果并明确当前需求/目标"
+            },
+            {
+              "order": 2,
+              "text": "通过一次身份/资源/关系阻力制造推进成本"
+            },
+            {
+              "order": 3,
+              "text": "让主角给出克制但更坚定的行动回应"
+            },
+            {
+              "order": 4,
+              "text": "章尾给出下一步可执行钩子"
+            }
+          ],
+          "notes": [
+            "已提取基础段落块供后续小模型处理。",
+            "应关注章尾钩子与关系/规则敏感点。"
+          ]
+        },
+        "chapter-fact-extractor": {
+          "characters": [
+            {
+              "label": "韦飞找上",
+              "evidence": [
+                "韦飞找上"
+              ],
+              "confidence": 0.6
+            },
+            {
+              "label": "隔日",
+              "evidence": [
+                "隔日"
+              ],
+              "confidence": 0.6
+            },
+            {
+              "label": "薛都长老",
+              "evidence": [
+                "薛都长老"
+              ],
+              "confidence": 0.6
+            }
+          ],
+          "events": [
+            {
+              "label": "第43章 改换武籍（求收藏，求追读）",
+              "evidence": [
+                "第43章 改换武籍（求收藏，求追读）"
+              ],
+              "confidence": 0.6
+            },
+            {
+              "label": "第44章 武官任命（求收藏，求追读）",
+              "evidence": [
+                "第44章 武官任命（求收藏，求追读）"
+              ],
+              "confidence": 0.6
+            }
+          ],
+          "relations": [],
+          "conflicts": [
+            {
+              "label": "身份与身契限制",
+              "evidence": [
+                "身份与身契限制"
+              ],
+              "confidence": 0.55
+            },
+            {
+              "label": "银钱与资源不足",
+              "evidence": [
+                "银钱与资源不足"
+              ],
+              "confidence": 0.55
+            }
+          ],
+          "foreshadowing": [
+            {
+              "label": "保持家庭与婚后协作稳定",
+              "evidence": [
+                "保持家庭与婚后协作稳定"
+              ],
+              "confidence": 0.5
+            },
+            {
+              "label": "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+              "evidence": [
+                "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价"
+              ],
+              "confidence": 0.5
+            },
+            {
+              "label": "持续通过修炼累积可转化能力",
+              "evidence": [
+                "持续通过修炼累积可转化能力"
+              ],
+              "confidence": 0.5
+            }
+          ],
+          "worldbuilding_facts": []
+        },
+        "imitation-constraint-pack": {
+          "hard_constraints": [
+            "不要无铺垫升级战力",
+            "不要引入未准备的大设定"
+          ],
+          "soft_constraints": [
+            "保持家庭与婚后协作稳定",
+            "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价",
+            "持续通过修炼累积可转化能力"
+          ],
+          "forbidden_transformations": [
+            "不要无铺垫升级战力",
+            "不要引入未准备的大设定",
+            "不要直接抄原文句式",
+            "不要无铺垫升级战力"
+          ],
+          "continuity_memory": [
+            "保持家庭与婚后协作稳定",
+            "chapter_outline:9:完成赎身/脱籍并争取进入更高身份路径:身份与身契限制:保持家庭与婚后协作稳定:关键关系带来机会，但同时抬高代价"
+          ],
+          "relationship_watchpoints": [],
+          "rule_watchpoints": [],
+          "worldview_capsule": [],
+          "trope_axes": [],
+          "innovation_directives": [],
+          "external_knowledge_refs": []
+        },
+        "draft-self-check": {
+          "blocking_issues": [],
+          "likely_gate_failures": [
+            "relationship_transition_thin",
+            "world_rule_support_thin",
+            "ending_hook_presence",
+            "character_motivation_drift"
+          ],
+          "recommended_actions": [
+            "补充关系变化敏感点。",
+            "补充规则敏感点。",
+            "补充明确的下一步钩子。",
+            "补足人物动机与选择依据。"
+          ],
+          "self_notes": [
+            "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。",
+            "当前章节因上游 provider 不可用，使用本地启发式分析保底生成。"
+          ]
+        },
+        "style-calibrator": {
+          "style_axes": [
+            "沿用原章的叙事视角与信息释放顺序",
+            "沿用原章的冲突-应对-收束节奏",
+            "优先保持人物选择逻辑，而非表面句式模仿"
+          ],
+          "style_issues": [],
+          "prose_density_label": "balanced",
+          "recommended_actions": []
+        },
+        "rhythm-analyzer": {
+          "pace_label": "steady",
+          "hook_strength": 0.45,
+          "tension_curve": [
+            "setup",
+            "resistance",
+            "response",
+            "hook"
+          ],
+          "issues": [
+            "hook_weak"
+          ],
+          "recommended_actions": [
+            "增强章尾钩子，提升读者续读驱动力。"
+          ]
+        },
+        "reader-sim-review": {
+          "reader_profile": "core_web_novel_reader",
+          "engagement_score": 61,
+          "concerns": [
+            "motivation_not_explicit",
+            "reader_hook_weak"
+          ],
+          "recommended_actions": [
+            "让读者更清楚主角为何做出当前行动选择。",
+            "增强章尾期待感，避免读者觉得本章平收。"
+          ]
+        },
+        "dialogue-designer": {
+          "issues": [
+            "speaker_relation_context_thin"
+          ],
+          "speaker_hints": [
+            "韦飞找上",
+            "隔日",
+            "薛都长老"
+          ],
+          "efficiency_notes": [],
+          "recommended_actions": [
+            "补说话人态度差异，避免对话无关系层次。"
+          ]
+        },
+        "research-pack": {
+          "setting_notes": [],
+          "rule_reminders": [],
+          "audience_expectation_notes": [
+            "题材读者通常期待章尾有明确续读驱动力。"
+          ],
+          "caution_points": [
+            "当前缺少明确世界规则提醒，易出现设定越界。"
+          ]
+        },
+        "_loom_tension": {
+          "chapter_index": 5,
+          "tension_score": 0.521,
+          "status": "warning",
+          "alerts": [
+            {
+              "type": "low_conflict_density",
+              "severity": "medium",
+              "message": "冲突密度 0.00，情节偏平淡",
+              "suggestion": "考虑增加角色间冲突或内心矛盾"
+            }
+          ],
+          "metrics": {
+            "plot_similarity": 0.102,
+            "conflict_density": 0.0,
+            "surprise_index": 0.6471
+          },
+          "loom_version": "1.0"
+        },
+        "_gate_meta": {
+          "overall_verdict": "aligned_but_needs_revision",
+          "needs_human_review": false
+        },
+        "_risk_meta": {
+          "overall_risk_level": "low"
+        }
+      }
+    }
+  ],
+  "final_draft": {
+    "source_chapter_index": 5,
+    "original_title": "婚事敲定（求收藏，求追读）",
+    "draft_title": "婚后筹谋（求收藏，求追读）",
+    "draft_text": "婚后第三日清晨，杏将一碗掺了碎米的稀粥端到木案上，又给卫图补好了昨天练功时扯破的袖口。“卫哥儿，昨儿我去后院洗衣，听赵婶说，大奶奶近来在盘账，想减几个家丁的月例。”杏低声说，手中针线不停，“咱俩虽然刚成婚，但月钱本就少，若再减，攒钱赎身的日子怕要往后拖。”\n\n卫图放下旱烟杆，沉默了片刻。赎身的事他和杏私下提过几回，杏都点头，可卖身契攥在李府手里，赎身银不是小数，更何况李宅未必肯放两个能干的仆从。他抬头看向杏：“赵婶还说了什么？”\n\n“她说，大奶奶想寻几个利落人去府城采买药材，若办得好，赏钱能抵半年月例。”杏将缝好的褂子叠在箱盖上，“可去府城来回要七八日，路上不太平，赵婶说上回去的刘麻子回来瘦了一圈，还挨了顿鞭子。”\n\n卫图站起身，走到窗边。窗外李家后院的槐树刚冒新芽，几只麻雀在枝头跳着。他回头看着杏，目光平静：“我去找大奶奶揽这趟差。”杏张了张嘴，想说什么，却见他眼神坚定。“咱俩既要赎身，就不能只指望月例。府城路远，我练了这些日子的养生功，腿脚比以往利索，碰上小贼也能应付。你在家安心等我，若成了，赎身就多一份指望。”\n\n杏咬了咬嘴唇，没有拦他，只是从妆盒里翻出一个小荷包，塞进他怀里：“银钱虽少，带着防身。”卫图握住荷包，转身出了堂屋。\n\n在李童氏院外候了半晌，春兰领他进去。李童氏正看账本，听了他的请求，抬眼打量他片刻：“你倒是个有胆的。府城那批药材是给老爷续方用的，耽误不得。你若肯去，赏钱十两，若丢了货，你两口子的身契就得上押。”\n\n卫图躬身一礼：“奴才愿立军令状。”李童氏点了点头，让春兰取来一张空白契纸，写了担保条款。卫图按了手印，揣好路引，退出院子。\n\n回到堂屋，杏已经替他收拾好行囊。卫图没有多说，只坐到木案前，默默演练起《龟息养气功》的桩功。这一次，他感到丹田中那股温热的气流比昨日又圆融了几分，仿佛挣开了一层薄薄的壳。杏默默看着，没有打扰，只在他披的褂子上多缝了一层厚布。\n\n天色将晚时，卫图收了功，对杏说：“我后日启程。府城回来，咱就去找大奶奶提赎身的事。”杏点了点头，将夜里的油灯拨亮了些。\n\n（本章完）\n\n【Harness Action Queue】\n[P1|medium] repair_rhythm:rhythm\n[P2|medium] repair_reader_engagement:reader_engagement\n[P2|medium] reinforce_ending_hook:ending_hook\n[P2|medium] repair_character_motivation:character_motivation\n[P2|medium] repair_relationship_transition:relationship_transition\n[P2|medium] repair_world_rule_support:world_rule_support\n\n【Harness Action Queue】\n[P1|medium] repair_rhythm:rhythm\n[P2|medium] repair_reader_engagement:reader_engagement\n[P2|medium] reinforce_ending_hook:ending_hook\n[P2|medium] repair_character_motivation:character_motivation\n[P2|medium] repair_relationship_transition:relationship_transition\n[P2|medium] repair_world_rule_support:world_rule_support",
+    "method_notes": [
+      "沿用了原章‘婚后早晨对话+规划+修炼’的叙事顺序，开头以杏传递信息引出需求（月钱减少、赎身困难），替代原章中‘告假看爹’的日常规划，制造了身份/资源阻力（赎身钱不够、主家可能不放人）。",
+      "冲突-应对-收束节奏：杏透露消息（冲突引入）→ 卫图主动承接府城采买差事（应对）→ 立军令状、接受代价（提高成本）→ 回到修炼并感到进步（克制但坚定的行动回应）→ 章尾点出‘后日启程’作为下一步可执行钩子。",
+      "人物选择逻辑一致：卫图始终以‘改变命运’为核心驱动，优先选择能累积银钱和能力的务实路径，不轻言放弃；杏则保持支持与协作，提供具体协助（荷包、行囊、缝补）。",
+      "优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。",
+      "继续约束角色反应，避免把克制型推进写成情绪化爆发。",
+      "如涉及关系变化，补足中间证据，不要只写结果。",
+      "1:rhythm",
+      "2:reader_engagement",
+      "2:ending_hook",
+      "2:character_motivation",
+      "2:relationship_transition",
+      "2:world_rule_support",
+      "3:dialogue",
+      "3:fact_relations",
+      "3:research_pack",
+      "3:fact_rules",
+      "优先补足与原章对应的中段阻力与行动转向，不要只保留开头与结尾。",
+      "继续约束角色反应，避免把克制型推进写成情绪化爆发。",
+      "如涉及关系变化，补足中间证据，不要只写结果。",
+      "1:rhythm",
+      "2:reader_engagement",
+      "2:ending_hook",
+      "2:character_motivation",
+      "2:relationship_transition",
+      "2:world_rule_support",
+      "3:dialogue",
+      "3:fact_relations",
+      "3:research_pack",
+      "3:fact_rules"
+    ],
+    "comparison_notes": [
+      "原章第5章结构：①李童氏谈话定婚事 → ②婚礼 → ③婚后晨间对话（规划看爹、租地、攒钱、读书） → ④卫图练养生功。本仿写：①杏传递月钱减少消息（代替李童氏谈话） → ②卫图决定揽府城差事（代替婚礼场景） → ③婚后晨间对话（赎身规划） → ④卫图练功并感到进步。每段落功能对应原章骨架，但内容替换为赎身路径的推进。",
+      "原章中‘攒钱买房’‘孩子读书’等长远规划在本章中转化为更迫切的‘赎身’目标，符合‘完成赎身/脱籍并争取进入更高身份路径’的chapter_outline要求。",
+      "原章通过‘私塾读书’触发卫图对‘养生功’的坚定，本章通过‘赎身差事’触发对修炼的持续投入，保持了‘修炼累积可转化能力’的软约束。",
+      "ACTION:repair_rhythm:rhythm",
+      "ACTION:repair_reader_engagement:reader_engagement",
+      "ACTION:reinforce_ending_hook:ending_hook",
+      "ACTION:repair_character_motivation:character_motivation",
+      "{\"ordered_actions\": [{\"action_type\": \"repair_rhythm\", \"issue_family\": \"rhythm\", \"target\": \"rhythm\", \"severity\": \"medium\", \"priority\": 1, \"instructions\": [\"补足节奏起伏与章尾驱动力，避免章节推进过平。\"]}, {\"action_type\": \"repair_reader_engagement\", \"issue_family\": \"reader_sim\", \"target\": \"reader_engagement\", \"severity\": \"",
+      "ACTION:repair_rhythm:rhythm",
+      "ACTION:repair_reader_engagement:reader_engagement",
+      "ACTION:reinforce_ending_hook:ending_hook",
+      "ACTION:repair_character_motivation:character_motivation",
+      "{\"ordered_actions\": [{\"action_type\": \"repair_rhythm\", \"issue_family\": \"rhythm\", \"target\": \"rhythm\", \"severity\": \"medium\", \"priority\": 1, \"instructions\": [\"补足节奏起伏与章尾驱动力，避免章节推进过平。\"]}, {\"action_type\": \"repair_reader_engagement\", \"issue_family\": \"reader_sim\", \"target\": \"reader_engagement\", \"severity\": \""
+    ],
+    "risk_gate_notes": [
+      "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+      "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+      "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+      "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+      "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+      "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+      "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+      "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+      "补一个明确的下一步钩子，避免章节收束过平。",
+      "补充 relationship_watchpoints，明确关系推进敏感点。",
+      "补充 rule_watchpoints，明确世界规则敏感点。",
+      "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+      "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+      "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+      "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+      "身份与身契限制风险：卫图立军令状抵押身契，需确保后续不违背世界规则（李宅作为大户有权这样操作），且卫图行为不越出仆从身份逻辑（如直接顶撞主家、提不合理要求）。",
+      "战力无铺垫升级风险：本章中卫图仅感觉‘气息圆融’，未明确突破境界，需检查文中是否暗示了不合理进步（如‘功力大增’‘打通经脉’等），必须仅表述为细微感受。",
+      "家庭协作稳定性风险：杏的反对或担忧需克制在合理范围内（她只是担忧但没有阻拦，且给予了物质支持），不能出现夫妻争吵或一方强行做主破坏关系。",
+      "后续钩子合理性风险：‘府城采买’作为下章推进点，需保证该任务在庆丰府背景下可行（府城距离、药材采购、路匪威胁等均符合原章‘卖儿卖女’的灾荒设定），不可突然出现修仙元素。",
+      "补一个明确的下一步钩子，避免章节收束过平。",
+      "补充 relationship_watchpoints，明确关系推进敏感点。",
+      "补充 rule_watchpoints，明确世界规则敏感点。",
+      "补一个明确的下一步钩子，避免章节收束过平。",
+      "补充 relationship_watchpoints，明确关系推进敏感点。",
+      "补充 rule_watchpoints，明确世界规则敏感点。"
+    ]
+  },
+  "final_preflight": {
+    "source_chapter_index": 5,
+    "draft_title": "婚后筹谋（求收藏，求追读）",
+    "overall_verdict": "warn",
+    "checks": [
+      {
+        "check_name": "length_ratio",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "draft/source 长度比=0.57"
+        ]
+      },
+      {
+        "check_name": "structure_alignment",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "source skeleton alignment looks acceptable"
+        ]
+      },
+      {
+        "check_name": "direct_copy_guard",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "未见直接抄写标记。"
+        ]
+      },
+      {
+        "check_name": "ending_hook_presence",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 3,
+        "notes": [
+          "未检测到显式下一步钩子词。"
+        ]
+      },
+      {
+        "check_name": "constraint_pack_presence",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "forbidden_transformations=4"
+        ]
+      },
+      {
+        "check_name": "relationship_watchpoints",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "constraint pack 缺少 relationship watchpoints。"
+        ]
+      },
+      {
+        "check_name": "rule_watchpoints",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "constraint pack 缺少 rule watchpoints。"
+        ]
+      },
+      {
+        "check_name": "draft_self_check_recommendations",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "补充关系变化敏感点。",
+          "补充规则敏感点。",
+          "补充明确的下一步钩子。"
+        ]
+      },
+      {
+        "check_name": "draft_self_check_likely_failures",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "relationship_transition_thin",
+          "world_rule_support_thin",
+          "ending_hook_presence"
+        ]
+      },
+      {
+        "check_name": "chapter_intake_notes",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "已提取基础段落块供后续小模型处理。",
+          "应关注章尾钩子与关系/规则敏感点。"
+        ]
+      },
+      {
+        "check_name": "fact_relation_coverage",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "chapter-fact-extractor 未提取到关系事实。"
+        ]
+      },
+      {
+        "check_name": "fact_rule_coverage",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "chapter-fact-extractor 未提取到规则事实。"
+        ]
+      },
+      {
+        "check_name": "style_calibrator",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "prose_density=balanced"
+        ]
+      },
+      {
+        "check_name": "rhythm_analysis",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "hook_weak"
+        ]
+      },
+      {
+        "check_name": "reader_sim_review",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "motivation_not_explicit",
+          "reader_hook_weak"
+        ]
+      },
+      {
+        "check_name": "dialogue_designer",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 3,
+        "notes": [
+          "speaker_relation_context_thin"
+        ]
+      },
+      {
+        "check_name": "research_pack_review",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 3,
+        "notes": [
+          "当前缺少明确世界规则提醒，易出现设定越界。",
+          "题材读者通常期待章尾有明确续读驱动力。"
+        ]
+      },
+      {
+        "check_name": "risk_gate_alignment",
+        "status": "pass",
+        "severity": "medium",
+        "priority": 2,
+        "notes": [
+          "risk_overall_level=low"
+        ]
+      },
+      {
+        "check_name": "gate_alignment",
+        "status": "pass",
+        "severity": "low",
+        "priority": 4,
+        "notes": [
+          "gate_verdict=aligned_but_needs_revision"
+        ]
+      },
+      {
+        "check_name": "loom_tension",
+        "status": "warn",
+        "severity": "medium",
+        "priority": 3,
+        "notes": [
+          "冲突密度 0.00，情节偏平淡"
+        ]
+      }
+    ],
+    "blocking_issues": [],
+    "recommended_actions": [
+      "补一个明确的下一步钩子，避免章节收束过平。",
+      "补充 relationship_watchpoints，明确关系推进敏感点。",
+      "补充 rule_watchpoints，明确世界规则敏感点。",
+      "补充关系变化敏感点。",
+      "补充规则敏感点。",
+      "补充明确的下一步钩子。",
+      "补足人物动机与选择依据。",
+      "补足人物动机支撑，避免角色行为漂移。",
+      "补足关系变化前后的中间证据。",
+      "补足规则支撑，避免越界动作无来源。",
+      "补充更明确的章尾钩子。",
+      "补充关系证据，避免关系变化无中间支撑。",
+      "补充规则证据，避免关键动作缺少世界规则支撑。",
+      "增强章尾钩子，提升读者续读驱动力。",
+      "让读者更清楚主角为何做出当前行动选择。",
+      "增强章尾期待感，避免读者觉得本章平收。",
+      "补说话人态度差异，避免对话无关系层次。",
+      "当前缺少明确世界规则提醒，易出现设定越界。",
+      "题材读者通常期待章尾有明确续读驱动力。",
+      "考虑增加角色间冲突或内心矛盾"
+    ]
+  },
+  "action_queue": [
+    {
+      "action_type": "repair_rhythm",
+      "target": "rhythm",
+      "severity": "medium",
+      "priority": 1,
+      "instructions": [
+        "补足节奏起伏与章尾驱动力，避免章节推进过平。"
+      ]
+    },
+    {
+      "action_type": "repair_reader_engagement",
+      "target": "reader_engagement",
+      "severity": "medium",
+      "priority": 2,
+      "instructions": [
+        "补清读者易卡住的信息点，增强代入感与续读欲。"
+      ]
+    },
+    {
+      "action_type": "reinforce_ending_hook",
+      "target": "ending_hook",
+      "severity": "medium",
+      "priority": 2,
+      "instructions": [
+        "补出清晰的下一步驱动与未完成目标。"
+      ]
+    },
+    {
+      "action_type": "repair_character_motivation",
+      "target": "character_motivation",
+      "severity": "medium",
+      "priority": 2,
+      "instructions": [
+        "补足人物为何做出当前选择的支撑证据与过渡。"
+      ]
+    },
+    {
+      "action_type": "repair_relationship_transition",
+      "target": "relationship_transition",
+      "severity": "medium",
+      "priority": 2,
+      "instructions": [
+        "补足关系变化前后的中间事件与态度转折。"
+      ]
+    },
+    {
+      "action_type": "repair_world_rule_support",
+      "target": "world_rule_support",
+      "severity": "medium",
+      "priority": 2,
+      "instructions": [
+        "补足越界动作前的规则来源、限制与代价。"
+      ]
+    },
+    {
+      "action_type": "repair_dialogue_design",
+      "target": "dialogue",
+      "severity": "medium",
+      "priority": 3,
+      "instructions": [
+        "补充说话人区分与高信息密度对话。"
+      ]
+    },
+    {
+      "action_type": "repair_relation_evidence",
+      "target": "fact_relations",
+      "severity": "medium",
+      "priority": 3,
+      "instructions": [
+        "补足人物互动、态度变化与关系状态证据。"
+      ]
+    },
+    {
+      "action_type": "repair_research_alignment",
+      "target": "research_pack",
+      "severity": "medium",
+      "priority": 3,
+      "instructions": [
+        "补 setting/rule/audience expectation 提示，避免设定和读者预期脱节。"
+      ]
+    },
+    {
+      "action_type": "repair_rule_evidence",
+      "target": "fact_rules",
+      "severity": "medium",
+      "priority": 3,
+      "instructions": [
+        "补足世界规则、资源限制与动作代价证据。"
+      ]
+    }
+  ],
+  "policy_summary": {
+    "final_verdict": "needs_revision",
+    "stop_reason": "critical_action_required",
+    "highest_action_priority": 1,
+    "highest_action_severity": "medium",
+    "action_count": 10,
+    "weak_lane_action_count": 3,
+    "blocking_issue_count": 0,
+    "recommended_action_count": 20,
+    "gate_verdict": "aligned_but_needs_revision",
+    "risk_overall_level": "low",
+    "overall_score": 84,
+    "issue_families": [
+      "rhythm",
+      "reader_sim",
+      "hook",
+      "motivation",
+      "relationship",
+      "rule",
+      "dialogue",
+      "relationship",
+      "research",
+      "rule"
+    ]
+  },
+  "final_verdict": "needs_revision",
+  "stop_reason": "critical_action_required",
+  "chapter_quality_signal": {},
+  "dialogue_signal": {},
+  "steering_pack": {
+    "worldview_capsule": [],
+    "trope_axes": [],
+    "innovation_directives": [],
+    "taboo_innovations": [],
+    "external_knowledge_refs": []
+  },
+  "steering_retrieval_meta": {
+    "query_text": "",
+    "selected_trope_docs": [],
+    "selected_worldview_docs": [],
+    "selected_audience_docs": [],
+    "hit_reasons": {
+      "trope": {},
+      "worldview": {},
+      "audience": {}
+    },
+    "selected_doc_summaries": {
+      "trope": [],
+      "worldview": [],
+      "audience": []
+    }
+  }
+}

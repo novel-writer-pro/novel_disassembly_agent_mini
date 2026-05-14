@@ -25,7 +25,7 @@
 | [../loom/README.md](../loom/README.md) | Loom 架构总入口 |
 | [../loom/arch-diff-and-alignment.md](../loom/arch-diff-and-alignment.md) | **0509 vs Loom 冲突点与对齐方案**（必读） |
 | [../loom/overview.md](../loom/overview.md) | 完整架构图 + SOTA 对比表 |
-| [../loom/roadmap.md](../loom/roadmap.md) | Phase 1/2/3 开发路线图 |
+| [../loom/roadmap.md](../loom/roadmap.md) | Phase 1-5 开发路线图 |
 
 ---
 
@@ -52,6 +52,7 @@
 | [risk-audit-completion-status.md](./risk-audit-completion-status.md) | 风险审查完成度 / 测试 / 使用说明 |
 | [risk-audit-semantic-enhancement.md](./risk-audit-semantic-enhancement.md) | 语义增强设计（为什么分层、如何演进） |
 | [risk-audit-embedding-pgvector-implementation-spec.md](./risk-audit-embedding-pgvector-implementation-spec.md) | ONNX embedding + pgvector 实现规范 |
+| [../risk-audit-production-readiness.md](../risk-audit-production-readiness.md) | 风险审查生产就绪状态 |
 
 ---
 
@@ -86,6 +87,18 @@
 | [../imitation-control-plane-glossary.md](../imitation-control-plane-glossary.md) | 控制层术语表（control plane / runtime / governance / retirement 等，0509 更新） |
 | [../writer-imitation-workflow.md](../writer-imitation-workflow.md) | 实战工作流（已更新引用所有 0509 文档） |
 | [../imitation-next-dev-handoff.md](../imitation-next-dev-handoff.md) | 下一阶段开发交接（0509 完整新增产物清单 + P1/P2/P3） |
+
+---
+
+## 拆书加速优化
+
+| 文档 | 说明 |
+|------|------|
+| [../deconstruction-acceleration/README.md](../deconstruction-acceleration/README.md) | 拆书加速优化专题入口 |
+| [../deconstruction-acceleration/architecture.md](../deconstruction-acceleration/architecture.md) | Quick / Deep 双档与 canonical / enrichment 边界 |
+| [../deconstruction-acceleration/development-guide.md](../deconstruction-acceleration/development-guide.md) | 开发顺序、代码触点、测试矩阵与落地约束 |
+| [../deconstruction-acceleration/critical-open-points.md](../deconstruction-acceleration/critical-open-points.md) | 当前方案下剩余关键点审查 |
+| [../deconstruction-acceleration/benchmark-baseline-20260511.md](../deconstruction-acceleration/benchmark-baseline-20260511.md) | 当前 canonical 默认读路径 benchmark 零点 |
 
 ---
 

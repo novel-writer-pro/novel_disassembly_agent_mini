@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 from novel_analyzer.cli.app import app
 from typing import Any
 from tests.cli_test_support import patch_cli_sqlite_runtime
+from tests.test_whole_book_imitation_service import _seed_branch
 
 runner = CliRunner()
 
@@ -466,6 +467,26 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Side-by-side Review' in review_text
     assert '## Action Queue' in review_text
 
+    loom_payload_path = output_dir / 'writer-imitate-ch1.json'
+    loom_payload = json.loads(loom_payload_path.read_text(encoding='utf-8'))
+    loom_payload['branch_id'] = run_lines['branch_id']
+    loom_payload['chapter_quality_score'] = 0.82
+    rounds = loom_payload.get('rounds', [])
+    if isinstance(rounds, list) and rounds and isinstance(rounds[-1], dict):
+        skill_outputs = rounds[-1].setdefault('skill_outputs', {})
+        if isinstance(skill_outputs, dict):
+            skill_outputs['_loom_tension'] = {
+                'tension_score': 0.71,
+                'plot_similarity_score': 0.63,
+                'conflict_density': 0.52,
+                'surprise_index': 0.98,
+                'alerts': [
+                    {'message': 'recent beat similarity is rising', 'suggestion': 'inject a sharper reversal'}
+                ],
+                'loom_version': '1.0',
+            }
+    loom_payload_path.write_text(json.dumps(loom_payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
     result = runner.invoke(
         app,
         ['writer-imitate-index', '--output-dir', str(output_dir)],
@@ -634,6 +655,9 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'external_runtime_executor_preview_role: runtime-executor-review-surface' in index_text
     assert 'display_policy: primary-first-legacy-secondary' in index_text
     assert '### Operator-Facing Stable Contract' in index_text
+    assert '### Loom Gate Summary' in index_text
+    assert 'gate_status: monitoring' in index_text
+    assert 'quality_verdict: quality-pass' in index_text
     assert '### Full Session Field Surface' in index_text
     assert 'promotion_verdict:' in index_text
     assert 'risk_register:' in index_text
@@ -857,8 +881,18 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_operator_contract']['queues']['priority_queue']
     assert session_state['session_operator_contract']['owners']['session_recovery_owner']
     assert session_state['session_primary_verdicts']['final_verdict']
+    assert session_state['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert session_state['session_primary_verdicts']['average_chapter_quality_score'] == 0.82
+    assert session_state['session_primary_verdicts']['chapter_quality_signal_count'] == 1
+    assert session_state['session_primary_verdicts']['runtime_verdict'].endswith(':quality-pass')
+    assert session_state['session_primary_verdicts']['final_verdict'].endswith(':quality-pass')
     assert session_state['session_primary_digests']['runtime_contract']
+    assert session_state['session_primary_digests']['operating_digest'].endswith('quality=0.82')
     assert session_state['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert session_state['session_consumer_migration_telemetry']['contract_version'] == 'writer-imitate-consumer-migration-telemetry.v1'
+    assert session_state['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert 'writer-imitate-operator-surface' in session_state['session_consumer_migration_telemetry']['primary_consumers_ready']
+    assert 'writer-imitate-legacy-contract-surface' in session_state['session_consumer_migration_telemetry']['legacy_consumers_remaining']
     assert session_state['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert session_state['session_legacy_retirement_plan']['phase'] == 'pre-retirement'
     assert session_state['session_legacy_retirement_pilot_wave']['wave_id'] == 'legacy-retirement-wave-01'
@@ -875,15 +909,28 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_readiness'] == 'runtime-executor-gate-surface'
     assert session_state['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_preview'] == 'runtime-executor-review-surface'
     assert session_state['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
+    assert session_state['session_loom_signals']['contract_version'] == 'loom-operator-signals.v1'
+    assert session_state['session_loom_signals']['chapter_count'] == 1
+    assert session_state['session_loom_signals']['tension_signal_count'] == 1
+    assert session_state['session_loom_signals']['chapter_quality_signal_count'] == 1
+    assert session_state['session_loom_signals']['average_tension_score'] == 0.71
+    assert session_state['session_loom_signals']['average_chapter_quality_score'] == 0.82
+    assert session_state['session_loom_signals']['tension_alert_chapters'] == [1]
     assert session_state['experiments']
     operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
     assert operator_surface_payload['contract_version'] == 'writer-imitate-operator-surface.v1'
     assert operator_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
     assert operator_surface_payload['legacy_operator_entrypoint'] == 'writer-imitate-legacy-contract-surface.json'
     assert operator_surface_payload['session_operator_contract']['status']['session_execution_mode']
+    assert operator_surface_payload['session_operator_contract']['status']['quality_verdict'] == 'quality-pass'
     assert operator_surface_payload['session_primary_verdicts']['runtime_verdict']
+    assert operator_surface_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert operator_surface_payload['session_primary_verdicts']['average_chapter_quality_score'] == 0.82
+    assert operator_surface_payload['session_primary_verdicts']['chapter_quality_signal_count'] == 1
     assert operator_surface_payload['session_primary_digests']['operating_digest']
     assert operator_surface_payload['session_primary_contract_hints']['preferred_verdict_source'] == 'session_primary_verdicts'
+    assert operator_surface_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert operator_surface_payload['session_consumer_migration_telemetry']['next_migration_slice']
     assert operator_surface_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert operator_surface_payload['session_control_surface_entrypoints']['legacy_operator_entrypoint_markdown'] == 'writer-imitate-legacy-contract-surface.md'
     assert operator_surface_payload['session_control_surface_entrypoints']['legacy_retirement_preview_markdown'] == 'writer-imitate-legacy-retirement-preview.md'
@@ -899,8 +946,12 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert operator_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['external_runtime_executor_preview'] == 'runtime-executor-review-surface'
     assert operator_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
     assert operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
+    assert 'loom quality gate passes for the current session' in operator_surface_payload['session_legacy_retirement_readiness']['required_conditions']
     assert operator_surface_payload['session_legacy_retirement_plan']['pilot_candidates']
     assert operator_surface_payload['session_legacy_retirement_pilot_wave']['target_family'] == 'extra digest/checksum variants'
+    assert operator_surface_payload['session_loom_signals']['chapter_count'] == 1
+    assert operator_surface_payload['session_loom_signals']['signals'][0]['chapter_quality_score'] == 0.82
+    assert operator_surface_payload['session_loom_signals']['signals'][0]['tension_signal']['tension_score'] == 0.71
     operator_surface_text = operator_surface_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Operator Surface' in operator_surface_text
     assert 'legacy_operator_entrypoint: writer-imitate-legacy-contract-surface.md' in operator_surface_text
@@ -913,15 +964,25 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert 'primary_operator_role: default-operator-home' in operator_surface_text
     assert 'display_policy: primary-first-legacy-secondary' in operator_surface_text
     assert '## Primary Verdicts' in operator_surface_text
+    assert 'quality_verdict: quality-pass' in operator_surface_text
+    assert 'average_chapter_quality_score: 0.82' in operator_surface_text
+    assert 'chapter_quality_signal_count: 1' in operator_surface_text
     assert '## Primary Digests' in operator_surface_text
     assert operator_surface_text.index('## Primary Verdicts') < operator_surface_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in operator_surface_text
     assert '## Primary Contract Migration Hints' in operator_surface_text
+    assert '## Consumer Migration Telemetry' in operator_surface_text
+    assert 'migration_status: primary-in-progress' in operator_surface_text
     assert 'compatibility_note: legacy verdict/digest fields remain available but are no longer the preferred first-layer entrypoint' in operator_surface_text
     assert '## Legacy Contract Layer' in operator_surface_text
     assert '## Legacy Retirement Readiness' in operator_surface_text
     assert '## Legacy Retirement Plan' in operator_surface_text
     assert '## Legacy Retirement Pilot Wave' in operator_surface_text
+    assert '## Loom Signals' in operator_surface_text
+    assert 'average_tension_score: 0.71' in operator_surface_text
+    assert 'average_chapter_quality_score: 0.82' in operator_surface_text
+    assert '### Loom Chapter Signals' in operator_surface_text
+    assert 'chapter 1: tension=0.71 | quality=0.82 | alerts=1' in operator_surface_text
     legacy_surface_payload = json.loads(legacy_surface_json.read_text(encoding='utf-8'))
     assert legacy_surface_payload['contract_version'] == 'writer-imitate-legacy-contract-surface.v1'
     assert legacy_surface_payload['primary_operator_entrypoint'] == 'writer-imitate-operator-surface.json'
@@ -936,6 +997,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert legacy_surface_payload['session_control_surface_entrypoints']['external_runtime_executor_preview_markdown'] == 'writer-imitate-external-runtime-executor-preview.md'
     assert legacy_surface_payload['session_control_surface_entrypoints']['entrypoint_roles']['legacy_operator_entrypoint'] == 'compatibility-governance-surface'
     assert legacy_surface_payload['session_control_surface_entrypoints']['display_policy'] == 'primary-first-legacy-secondary'
+    assert legacy_surface_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert legacy_surface_payload['session_legacy_retirement_readiness']['status'] == 'not-ready'
     assert legacy_surface_payload['session_legacy_retirement_plan']['second_wave_candidates']
     assert legacy_surface_payload['session_legacy_retirement_pilot_wave']['status'] == 'planned-not-executed'
@@ -948,25 +1010,58 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert '## Legacy Contract Layer' in legacy_surface_text
     assert '## Legacy Retirement Readiness' in legacy_surface_text
     assert '## Legacy Retirement Plan' in legacy_surface_text
+    assert '## Consumer Migration Telemetry' in legacy_surface_text
     assert 'session_governance_checksum_v2' in legacy_surface_text
     assert 'session_operating_checksum' in legacy_surface_text
     legacy_retirement_preview_payload = json.loads(legacy_retirement_preview_json.read_text(encoding='utf-8'))
     assert legacy_retirement_preview_payload['contract_version'] == 'writer-imitate-legacy-retirement-preview.v1'
     assert legacy_retirement_preview_payload['preview_status'] == 'planned-not-executed'
+    assert legacy_retirement_preview_payload['consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
     assert legacy_retirement_preview_payload['retirement_pilot_wave']['wave_id'] == 'legacy-retirement-wave-01'
     legacy_retirement_preview_text = legacy_retirement_preview_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Legacy Retirement Preview' in legacy_retirement_preview_text
     assert '## Retirement Readiness' in legacy_retirement_preview_text
+    assert '## Consumer Migration Telemetry' in legacy_retirement_preview_text
     assert '## Retirement Pilot Wave' in legacy_retirement_preview_text
     assert '## Projected Effect' in legacy_retirement_preview_text
+
+    loom_payload['chapter_quality_score'] = 0.61
+    loom_payload_path.write_text(json.dumps(loom_payload, ensure_ascii=False, indent=2), encoding='utf-8')
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    blocked_operator_surface_payload = json.loads(operator_surface_json.read_text(encoding='utf-8'))
+    assert blocked_operator_surface_payload['session_primary_verdicts']['quality_verdict'] == 'quality-hold'
+    assert blocked_operator_surface_payload['session_legacy_retirement_readiness']['status'] == 'quality-blocked'
+    blocking_reasons = blocked_operator_surface_payload['session_legacy_retirement_readiness']['blocking_reasons']
+    assert any('loom quality gate blocks retirement' in reason for reason in blocking_reasons)
+    blocked_preview_payload = json.loads(legacy_retirement_preview_json.read_text(encoding='utf-8'))
+    assert blocked_preview_payload['preview_status'] == 'quality-blocked'
+    assert blocked_preview_payload['projected_effect']['quality_gate'] == 'quality-blocked'
+    blocked_preview_text = legacy_retirement_preview_md.read_text(encoding='utf-8')
+    assert 'preview_status: quality-blocked' in blocked_preview_text
+    assert 'status: quality-blocked' in blocked_preview_text
+
+    loom_payload['chapter_quality_score'] = 0.82
+    loom_payload_path.write_text(json.dumps(loom_payload, ensure_ascii=False, indent=2), encoding='utf-8')
+    result = runner.invoke(
+        app,
+        ['writer-imitate-index', '--output-dir', str(output_dir)],
+    )
+    assert result.exit_code == 0
+    index_text = index_md.read_text(encoding='utf-8')
     control_surface_registry_payload = json.loads(control_surface_registry_json.read_text(encoding='utf-8'))
     assert control_surface_registry_payload['contract_version'] == 'writer-imitate-control-surface-registry.v1'
     assert control_surface_registry_payload['registry_status'] == 'active'
     assert control_surface_registry_payload['session_control_surface_entrypoints']['entrypoint_roles']['primary_operator_entrypoint'] == 'default-operator-home'
+    assert control_surface_registry_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     control_surface_registry_text = control_surface_registry_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Control Surface Registry' in control_surface_registry_text
     assert '## EntryPoints' in control_surface_registry_text
     assert '## EntryPoint Roles' in control_surface_registry_text
+    assert '## Loom Gate Summary' in control_surface_registry_text
     assert '## Legacy Retirement Pilot Wave' in legacy_surface_text
     action_queue_payload = json.loads(action_queue_json.read_text(encoding='utf-8'))
     assert action_queue_payload['contract_version'] == 'writer-imitate-action-queue.v1'
@@ -976,6 +1071,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert action_queue_payload['session_primary_verdicts']['runtime_verdict']
     assert action_queue_payload['session_primary_digests']['control_summary']
     assert action_queue_payload['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert action_queue_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
+    assert action_queue_payload['session_loom_gate_summary']['gate_status'] == 'monitoring'
     assert action_queue_payload['session_legacy_contract_layer']['legacy_digest_count'] > 0
     assert action_queue_payload['action_backlog']
     assert 'execution_mode' in action_queue_payload['execution_registry']
@@ -991,6 +1088,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert action_queue_text.index('## Primary Verdicts') < action_queue_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in action_queue_text
     assert '## Primary Contract Migration Hints' in action_queue_text
+    assert '## Loom Gate Summary' in action_queue_text
     assert '## Action Backlog' in action_queue_text
     assert '## Transition Queue' in action_queue_text
     assert '## Checkpoint Mutations' in action_queue_text
@@ -1002,6 +1100,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_state_payload['session_primary_verdicts']['control_verdict']
     assert execution_state_payload['session_primary_digests']['governance_checksum']
     assert execution_state_payload['session_primary_contract_hints']['preferred_digest_source'] == 'session_primary_digests'
+    assert execution_state_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert execution_state_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert execution_state_payload['execution_tickets']
     assert execution_state_payload['transition_history']
@@ -1017,6 +1116,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_state_text.index('## Primary Verdicts') < execution_state_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in execution_state_text
     assert '## Primary Contract Migration Hints' in execution_state_text
+    assert '## Loom Gate Summary' in execution_state_text
     assert '## Execution Tickets' in execution_state_text
     assert '## Transition History' in execution_state_text
     assert '## Checkpoint Log' in execution_state_text
@@ -1030,6 +1130,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_replay_payload['session_primary_verdicts']['final_verdict']
     assert execution_replay_payload['session_primary_digests']['runtime_contract']
     assert execution_replay_payload['session_primary_contract_hints']['migration_status'] == 'compatibility-layer-active'
+    assert execution_replay_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert execution_replay_payload['session_legacy_contract_layer']['legacy_verdict_count'] > 0
     assert 'next_run_status' in execution_replay_payload
     assert execution_replay_payload['replay_results']
@@ -1045,6 +1146,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_replay_text.index('## Primary Verdicts') < execution_replay_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in execution_replay_text
     assert '## Primary Contract Migration Hints' in execution_replay_text
+    assert '## Loom Gate Summary' in execution_replay_text
     assert '## Replay Results' in execution_replay_text
     assert '## Transition Preview' in execution_replay_text
     assert '## Checkpoint Preview' in execution_replay_text
@@ -1065,6 +1167,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_apply_payload['session_primary_verdicts']['promotion_verdict']
     assert execution_apply_payload['session_primary_digests']['operating_digest']
     assert execution_apply_payload['session_primary_contract_hints']['preferred_verdict_source'] == 'session_primary_verdicts'
+    assert execution_apply_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert execution_apply_payload['session_legacy_contract_layer']['legacy_digest_count'] > 0
     assert 'apply_status' in execution_apply_payload
     assert 'next_resume_hint' in execution_apply_payload
@@ -1077,6 +1180,7 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_apply_text.index('## Primary Verdicts') < execution_apply_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in execution_apply_text
     assert '## Primary Contract Migration Hints' in execution_apply_text
+    assert '## Loom Gate Summary' in execution_apply_text
     assert '## Applied Tickets' in execution_apply_text
     assert '## Applied Transitions' in execution_apply_text
     assert '## Applied Checkpoints' in execution_apply_text
@@ -1093,10 +1197,14 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert live_control_state_payload['live_state_status'] == 'preview-backed-pending-live-mutation'
     assert live_control_state_payload['pending_checkpoint_writeback']
     assert live_control_state_payload['live_mutation_readiness']['status'] == 'not-ready'
+    assert live_control_state_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert live_control_state_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert live_control_state_payload['live_mutation_plan']['execution_order']
     assert live_control_state_payload['live_mutation_pilot_wave']['wave_id'] == 'live-mutation-wave-01'
     live_control_state_text = live_control_state_md.read_text(encoding='utf-8')
     assert '# Writer Imitation Live Control State' in live_control_state_text
+    assert '## Loom Gate Summary' in live_control_state_text
+    assert '## Consumer Migration Telemetry' in live_control_state_text
     assert '## Live Mutation Readiness' in live_control_state_text
     assert '## Live Mutation Plan' in live_control_state_text
     assert '## Live Mutation Pilot Wave' in live_control_state_text
@@ -1176,9 +1284,15 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_readiness_payload = json.loads(external_runtime_readiness_json.read_text(encoding='utf-8'))
     assert external_runtime_readiness_payload['contract_version'] == 'writer-imitate-external-runtime-executor-readiness.v1'
     assert external_runtime_readiness_payload['readiness']['next_action'] == 'implement external runtime checkpoint executor'
+    assert external_runtime_readiness_payload['readiness']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_readiness_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert external_runtime_readiness_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert external_runtime_readiness_payload['external_runtime_executor_pilot_wave']['wave_id'] == 'external-runtime-wave-01'
     external_runtime_readiness_text = external_runtime_readiness_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Readiness' in external_runtime_readiness_text
+    assert '## Primary Verdicts' in external_runtime_readiness_text
+    assert '## Loom Gate Summary' in external_runtime_readiness_text
+    assert '## Consumer Migration Telemetry' in external_runtime_readiness_text
     assert '## Readiness' in external_runtime_readiness_text
     assert '## External Runtime Executor Plan' in external_runtime_readiness_text
     assert '## External Runtime Executor Pilot Wave' in external_runtime_readiness_text
@@ -1193,9 +1307,15 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_preview_payload = json.loads(external_runtime_preview_json.read_text(encoding='utf-8'))
     assert external_runtime_preview_payload['contract_version'] == 'writer-imitate-external-runtime-executor-preview.v1'
     assert external_runtime_preview_payload['preview_status'] == 'planned-not-executed'
+    assert external_runtime_preview_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_preview_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert external_runtime_preview_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert external_runtime_preview_payload['external_runtime_executor_pilot_wave']['status'] == 'planned-not-executed'
     external_runtime_preview_text = external_runtime_preview_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Executor Preview' in external_runtime_preview_text
+    assert '## Primary Verdicts' in external_runtime_preview_text
+    assert '## Loom Gate Summary' in external_runtime_preview_text
+    assert '## Consumer Migration Telemetry' in external_runtime_preview_text
     assert '## Readiness' in external_runtime_preview_text
     assert '## External Runtime Executor Plan' in external_runtime_preview_text
     assert '## External Runtime Executor Pilot Wave' in external_runtime_preview_text
@@ -1210,9 +1330,15 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_checkpoint_payload = json.loads(external_runtime_checkpoint_json.read_text(encoding='utf-8'))
     assert external_runtime_checkpoint_payload['contract_version'] == 'writer-imitate-external-runtime-checkpoint-state.v1'
     assert external_runtime_checkpoint_payload['checkpoint_state_status'] == 'external-runtime-checkpoint-simulated-local'
+    assert external_runtime_checkpoint_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_checkpoint_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert external_runtime_checkpoint_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert external_runtime_checkpoint_payload['applied_runtime_checkpoints']
     external_runtime_checkpoint_text = external_runtime_checkpoint_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Checkpoint State' in external_runtime_checkpoint_text
+    assert '## Primary Verdicts' in external_runtime_checkpoint_text
+    assert '## Loom Gate Summary' in external_runtime_checkpoint_text
+    assert '## Consumer Migration Telemetry' in external_runtime_checkpoint_text
     assert '## Applied Runtime Checkpoints' in external_runtime_checkpoint_text
 
     result = runner.invoke(
@@ -1225,9 +1351,15 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_transition_payload = json.loads(external_runtime_transition_json.read_text(encoding='utf-8'))
     assert external_runtime_transition_payload['contract_version'] == 'writer-imitate-external-runtime-transition-state.v1'
     assert external_runtime_transition_payload['transition_state_status'] == 'external-runtime-transition-simulated-local'
+    assert external_runtime_transition_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_transition_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert external_runtime_transition_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert external_runtime_transition_payload['applied_runtime_transitions']
     external_runtime_transition_text = external_runtime_transition_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Transition State' in external_runtime_transition_text
+    assert '## Primary Verdicts' in external_runtime_transition_text
+    assert '## Loom Gate Summary' in external_runtime_transition_text
+    assert '## Consumer Migration Telemetry' in external_runtime_transition_text
     assert '## Applied Runtime Transitions' in external_runtime_transition_text
 
     result = runner.invoke(
@@ -1240,9 +1372,15 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     external_runtime_validation_payload = json.loads(external_runtime_validation_json.read_text(encoding='utf-8'))
     assert external_runtime_validation_payload['contract_version'] == 'writer-imitate-external-runtime-validation-state.v1'
     assert external_runtime_validation_payload['validation_status'] == 'validated-runtime-simulation'
+    assert external_runtime_validation_payload['session_primary_verdicts']['quality_verdict'] == 'quality-pass'
+    assert external_runtime_validation_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert external_runtime_validation_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert external_runtime_validation_payload['validation_checks']
     external_runtime_validation_text = external_runtime_validation_md.read_text(encoding='utf-8')
     assert '# Writer Imitation External Runtime Validation State' in external_runtime_validation_text
+    assert '## Primary Verdicts' in external_runtime_validation_text
+    assert '## Loom Gate Summary' in external_runtime_validation_text
+    assert '## Consumer Migration Telemetry' in external_runtime_validation_text
     assert '## Validation Checks' in external_runtime_validation_text
 
     result = runner.invoke(
@@ -1260,6 +1398,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_payload['session_primary_verdicts']['runtime_verdict']
     assert execution_resume_payload['session_primary_digests']['control_summary']
     assert execution_resume_payload['session_primary_contract_hints']['preferred_digest_source'] == 'session_primary_digests'
+    assert execution_resume_payload['session_consumer_migration_telemetry']['migration_status'] == 'primary-in-progress'
+    assert execution_resume_payload['session_loom_gate_summary']['quality_verdict'] == 'quality-pass'
     assert execution_resume_payload['session_legacy_contract_layer']['status'] == 'compatibility-layer-active'
     assert 'resume_status' in execution_resume_payload
     assert execution_resume_payload['resume_steps']
@@ -1272,6 +1412,8 @@ def test_writer_imitate_and_range_write_output_files(monkeypatch: MonkeyPatch, t
     assert execution_resume_text.index('## Primary Verdicts') < execution_resume_text.index('## Operator-Facing Stable Contract')
     assert '## Operator-Facing Stable Contract' in execution_resume_text
     assert '## Primary Contract Migration Hints' in execution_resume_text
+    assert '## Consumer Migration Telemetry' in execution_resume_text
+    assert '## Loom Gate Summary' in execution_resume_text
     assert '## Resume Targets' in execution_resume_text
     assert '## Resume Steps' in execution_resume_text
 
@@ -1293,3 +1435,41 @@ def test_writer_output_markdown_skips_empty_hit_doc_summaries(tmp_path: Path) ->
     _json_path, md_path = _write_writer_imitation_outputs(output_dir, "empty-hit-doc-summaries", payload)
     md_text = md_path.read_text(encoding="utf-8")
     assert "### Hit Doc Summaries" not in md_text
+
+
+def test_export_whole_book_imitation_run_includes_loom_summaries(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _engine, _factory, db_url = patch_cli_sqlite_runtime(monkeypatch)
+    with _factory() as session:
+        branch_id = _seed_branch(session, tmp_path / "whole-book-source.txt")
+        session.commit()
+
+    output_path = tmp_path / "whole-book-report.json"
+    result = runner.invoke(
+        app,
+        [
+            "export-whole-book-imitation-run",
+            branch_id,
+            "测试项目",
+            "源作",
+            "目标作",
+            str(output_path),
+            "2:延续主线",
+            "3:加深冲突",
+            "--execute",
+            "--database-url",
+            db_url,
+        ],
+    )
+    assert result.exit_code == 0
+    assert output_path.exists()
+
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["execution_mode"] == "sandbox_execute"
+    assert payload["session_loom_gate_summary"]["contract_version"] == "loom-gate-summary.v2"
+    assert payload["session_loom_signals"]["contract_version"] == "whole-book-session-loom-signals.v1"
+    assert isinstance(payload["executed_steps"], list)
+    assert payload["executed_steps"]
+    assert "loom_signals" in payload["executed_steps"][0]

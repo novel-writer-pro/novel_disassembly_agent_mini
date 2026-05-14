@@ -16,10 +16,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from novel_analyzer.database.models import ChapterArtifact, FactRecord, GraphNode
+from novel_analyzer.database.models import ChapterArtifact, FactRecord, GraphEdge, GraphNode
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +175,8 @@ class MemoryConsolidationService:
                 node.conflict_status = "ambiguity"
                 self.session.flush()
 
+        self._update_node_importance(branch_id, chapter_index)
+        self._update_fact_importance(branch_id, chapter_index)
         self._decay_episodic_importance(branch_id, chapter_index)
         self.session.flush()
         return result
@@ -294,6 +296,78 @@ class MemoryConsolidationService:
         new_node.loom_version = old_node.loom_version + 1
         new_node.conflict_status = "evolution"
         self.session.flush()
+
+    def _update_node_importance(self, branch_id: str, chapter_index: int) -> None:
+        from sqlalchemy import union_all, literal_column
+
+        src = (
+            select(GraphEdge.source_node_id.label("node_id"))
+            .where(GraphEdge.branch_id == branch_id)
+            .where(GraphEdge.deleted_at.is_(None))
+        )
+        tgt = (
+            select(GraphEdge.target_node_id.label("node_id"))
+            .where(GraphEdge.branch_id == branch_id)
+            .where(GraphEdge.deleted_at.is_(None))
+        )
+        edge_counts_sq = union_all(src, tgt).subquery()
+        rows = self.session.execute(
+            select(
+                edge_counts_sq.c.node_id,
+                func.count(literal_column("1")).label("edge_count"),
+            )
+            .group_by(edge_counts_sq.c.node_id)
+        ).all()
+
+        if not rows:
+            return
+
+        max_edges = max(r.edge_count for r in rows) or 1
+        id_to_score = {
+            r.node_id: round(0.3 + 0.7 * (r.edge_count / max_edges), 4)
+            for r in rows
+        }
+
+        nodes = self.session.scalars(
+            select(GraphNode)
+            .where(GraphNode.branch_id == branch_id)
+            .where(GraphNode.chapter_first_seen <= chapter_index)
+            .where(GraphNode.id.in_(list(id_to_score)))
+            .where(GraphNode.deleted_at.is_(None))
+        ).all()
+        for node in nodes:
+            node.importance_score = id_to_score[node.id]
+
+    def _update_fact_importance(self, branch_id: str, chapter_index: int) -> None:
+        from sqlalchemy import union_all, literal_column
+
+        rows = self.session.execute(
+            select(FactRecord.label, func.count(FactRecord.id).label("cnt"))
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.fact_type == "entity")
+            .where(FactRecord.deleted_at.is_(None))
+            .group_by(FactRecord.label)
+        ).all()
+
+        if not rows:
+            return
+
+        max_cnt = max(r.cnt for r in rows) or 1
+        label_to_score = {
+            r.label: round(0.3 + 0.7 * (r.cnt / max_cnt), 4)
+            for r in rows
+        }
+
+        facts = self.session.scalars(
+            select(FactRecord)
+            .where(FactRecord.branch_id == branch_id)
+            .where(FactRecord.chapter_index <= chapter_index)
+            .where(FactRecord.fact_type == "entity")
+            .where(FactRecord.deleted_at.is_(None))
+        ).all()
+        for fact in facts:
+            if fact.label in label_to_score:
+                fact.importance_score = label_to_score[fact.label]
 
     def _decay_episodic_importance(
         self, branch_id: str, current_chapter: int

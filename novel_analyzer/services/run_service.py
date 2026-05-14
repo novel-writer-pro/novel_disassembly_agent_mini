@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import and_, select, update
 from sqlalchemy.orm import Session
 
 from novel_analyzer.config.settings import Settings, get_settings
@@ -24,6 +26,18 @@ from novel_analyzer.database.models import (
 from novel_analyzer.services.job_event_service import JobEventService
 
 
+_HEURISTIC_NOTE_MARKER = "本地启发式分析保底生成"
+
+
+def default_readable_artifact_clause() -> object:
+    """Return the canonical active-artifact filter used by default readers."""
+
+    return and_(
+        ChapterArtifact.visibility == "active",
+        ChapterArtifact.participates_in_downstream.is_(True),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class FailedJobInfo:
     """Compact failed-job summary."""
@@ -37,6 +51,39 @@ class FailedJobInfo:
 
 class RunService:
     """Handles analysis run lifecycle."""
+
+    @staticmethod
+    def _chapter_payload_with_profile_metadata(
+        payload: dict[str, Any],
+        *,
+        branch_id: str,
+        chapter_index: int,
+        artifact_id: str,
+        source_kind: str,
+    ) -> dict[str, Any]:
+        enriched = dict(payload)
+        profile = dict(enriched.get('_deconstruction_profile') or {})
+        if not profile:
+            return enriched
+        profile['canonical_artifact_id'] = artifact_id
+        if not profile.get('idempotency_key'):
+            profile_name = str(profile.get('profile') or 'quick')
+            content_hash = str(profile.get('content_hash') or '')
+            seed = json.dumps(
+                {
+                    'branch_id': branch_id,
+                    'chapter_index': chapter_index,
+                    'artifact_id': artifact_id,
+                    'profile': profile_name,
+                    'content_hash': content_hash,
+                    'source_kind': source_kind,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            profile['idempotency_key'] = hashlib.sha256(seed.encode('utf-8')).hexdigest()
+        enriched['_deconstruction_profile'] = profile
+        return enriched
 
     def __init__(self, session: Session, settings: Settings | None = None) -> None:
         self.session = session
@@ -101,6 +148,8 @@ class RunService:
         manifest_id: str,
         branch_name: str = "main",
         analysis_profile: dict[str, Any] | None = None,
+        *,
+        owner_user_id: str = "local-default",
     ) -> tuple[AnalysisRun, RunBranch]:
         """Create a new run with an active root branch."""
 
@@ -113,6 +162,7 @@ class RunService:
             llm_base_url=self.settings.llm_base_url,
             llm_model_name=self.settings.llm_model_name,
             analysis_profile=analysis_profile or {},
+            owner_user_id=owner_user_id,
         )
         self.session.add(run)
         self.session.flush()
@@ -122,6 +172,7 @@ class RunService:
             name=branch_name,
             fork_after_chapter_index=0,
             status="active",
+            owner_user_id=owner_user_id,
         )
         self.session.add(branch)
         self.session.flush()
@@ -143,6 +194,23 @@ class RunService:
             raise ValueError("branch does not belong to run")
         return run, branch
 
+    def chapter_has_readable_artifact(self, branch_id: str, chapter_index: int) -> bool:
+        return bool(
+            self.session.scalar(
+                select(ChapterArtifact.id)
+                .where(ChapterArtifact.branch_id == branch_id)
+                .where(ChapterArtifact.chapter_index == chapter_index)
+                .where(default_readable_artifact_clause())
+                .limit(1)
+            )
+        )
+
+    def ensure_chapter_retryable(self, branch_id: str, chapter_index: int) -> None:
+        if self.chapter_has_readable_artifact(branch_id, chapter_index):
+            raise ValueError(
+                f"chapter {chapter_index} already has an active canonical artifact; retry is refused"
+            )
+
     def next_chapter_index(self, run_id: str, branch_id: str) -> int | None:
         """Return the next chapter index that should be analyzed for a branch."""
 
@@ -156,7 +224,7 @@ class RunService:
         completed = self.session.scalars(
             select(ChapterArtifact.chapter_index)
             .where(ChapterArtifact.branch_id == branch.id)
-            .where(ChapterArtifact.visibility == "active")
+            .where(default_readable_artifact_clause())
             .order_by(ChapterArtifact.chapter_index)
         ).all()
         done = set(completed)
@@ -214,8 +282,15 @@ class RunService:
             .where(ChapterJob.branch_id == branch_id)
             .where(ChapterJob.status == "running")
             .where(
-                (ChapterJob.heartbeat_at.is_(None) & ChapterJob.started_at.is_not(None) & (ChapterJob.started_at < cutoff))
-                | (ChapterJob.heartbeat_at.is_not(None) & (ChapterJob.heartbeat_at < cutoff))
+                (
+                    ChapterJob.heartbeat_at.is_(None)
+                    & ChapterJob.started_at.is_not(None)
+                    & (ChapterJob.started_at < cutoff)
+                )
+                | (
+                    ChapterJob.heartbeat_at.is_not(None)
+                    & (ChapterJob.heartbeat_at < cutoff)
+                )
             )
             .order_by(ChapterJob.chapter_index)
         ).all()
@@ -238,7 +313,11 @@ class RunService:
                 stage=job.current_stage,
                 level="warning",
                 message=job.last_error or "job stalled",
-                payload_json={"failure_class": "stalled", "failure_code": "heartbeat_timeout", "timeout_seconds": timeout},
+                payload_json={
+                    "failure_class": "stalled",
+                    "failure_code": "heartbeat_timeout",
+                    "timeout_seconds": timeout,
+                },
             )
         return len(jobs)
 
@@ -432,7 +511,11 @@ class RunService:
             stage=job.current_stage,
             level="error",
             message=error,
-            payload_json={"failure_class": failure_class, "failure_code": failure_code, "attempts": job.attempts},
+            payload_json={
+                "failure_class": failure_class,
+                "failure_code": failure_code,
+                "attempts": job.attempts,
+            },
         )
 
     def record_raw_output(
@@ -483,13 +566,25 @@ class RunService:
         if branch is None:
             raise ValueError(f"Unknown branch_id: {branch_id}")
 
-        self.session.execute(
-            update(ChapterArtifact)
-            .where(ChapterArtifact.branch_id == branch_id)
-            .where(ChapterArtifact.chapter_index == chapter_index)
-            .where(ChapterArtifact.visibility == "active")
-            .values(visibility="hidden")
-        )
+        if "extraction_source" not in payload:
+            notes = payload.get("continuity_notes") or []
+            is_heuristic = (
+                isinstance(notes, list)
+                and len(notes) > 0
+                and isinstance(notes[0], str)
+                and _HEURISTIC_NOTE_MARKER in notes[0]
+            )
+            payload = {**payload, "extraction_source": "heuristic" if is_heuristic else "llm"}
+
+        if participates_in_downstream:
+            self.session.execute(
+                update(ChapterArtifact)
+                .where(ChapterArtifact.branch_id == branch_id)
+                .where(ChapterArtifact.chapter_index == chapter_index)
+                .where(ChapterArtifact.visibility == "active")
+                .where(ChapterArtifact.participates_in_downstream.is_(True))
+                .values(visibility="hidden")
+            )
 
         checkpoint = self.session.scalar(
             select(RunCheckpoint)
@@ -521,6 +616,14 @@ class RunService:
             participates_in_downstream=participates_in_downstream,
         )
         self.session.add(artifact)
+        self.session.flush()
+        artifact.payload_json = self._chapter_payload_with_profile_metadata(
+            payload,
+            branch_id=branch_id,
+            chapter_index=chapter_index,
+            artifact_id=artifact.id,
+            source_kind=source_kind,
+        )
         self.session.commit()
         self.session.refresh(artifact)
         self.record_job_event(
@@ -531,6 +634,30 @@ class RunService:
             payload_json={"artifact_id": artifact.id, "source_kind": source_kind},
         )
         return artifact
+
+    def restore_previous_active_artifact(
+        self,
+        branch_id: str,
+        chapter_index: int,
+        artifact_id: str,
+    ) -> None:
+        """Rollback a just-persisted artifact so failed downstream materialization stays blocking."""
+
+        self.session.execute(
+            update(ChapterArtifact)
+            .where(ChapterArtifact.id == artifact_id)
+            .values(visibility="hidden")
+        )
+        previous_artifact = self.session.scalar(
+            select(ChapterArtifact)
+            .where(ChapterArtifact.branch_id == branch_id)
+            .where(ChapterArtifact.chapter_index == chapter_index)
+            .where(ChapterArtifact.id != artifact_id)
+            .order_by(ChapterArtifact.created_at.desc())
+        )
+        if previous_artifact is not None:
+            previous_artifact.visibility = "active"
+        self.session.commit()
 
     def add_manual_artifact(
         self,
@@ -568,6 +695,7 @@ class RunService:
             parent_branch_id=source_branch.id,
             fork_after_chapter_index=keep_through,
             status="active",
+            owner_user_id=source_branch.owner_user_id,
         )
         self.session.add(child)
         self.session.flush()
@@ -596,7 +724,7 @@ class RunService:
             select(ChapterArtifact)
             .where(ChapterArtifact.branch_id == source_branch.id)
             .where(ChapterArtifact.chapter_index <= keep_through)
-            .where(ChapterArtifact.visibility == "active")
+            .where(default_readable_artifact_clause())
             .order_by(ChapterArtifact.chapter_index)
         ).all()
         for artifact in artifacts:

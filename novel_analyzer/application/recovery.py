@@ -30,13 +30,22 @@ def recover_branch(
         if action == "retry-chapter":
             if chapter_index is None:
                 raise ValueError("chapter_index is required for retry-chapter")
+            run_service.ensure_chapter_retryable(branch_id, chapter_index)
             run_service.reset_failed_job(branch_id, chapter_index)
             message = f"retried chapter {chapter_index}"
         elif action == "retry-failed":
             failed = run_service.list_failed_jobs(branch_id)
+            reset_count = 0
+            skipped_count = 0
             for item in failed:
+                try:
+                    run_service.ensure_chapter_retryable(branch_id, item.chapter_index)
+                except ValueError:
+                    skipped_count += 1
+                    continue
                 run_service.reset_failed_job(branch_id, item.chapter_index)
-            message = f"reset {len(failed)} failed jobs"
+                reset_count += 1
+            message = f"reset {reset_count} failed jobs (skipped {skipped_count} already-completed chapters)"
         elif action == "clear-running":
             cleared = run_service.clear_running_jobs(
                 branch_id,

@@ -54,6 +54,12 @@
 16. [whole-book-imitation-freeze-evidence-20260503.md](../../whole-book-imitation-freeze-evidence-20260503.md) — 冻结证据（D层）
 17. [whole-book-imitation-provider-recovery-checklist.md](../../whole-book-imitation-provider-recovery-checklist.md) — Provider 恢复 checklist
 18. [whole-book-imitation-handoff-brief.md](../../whole-book-imitation-handoff-brief.md) — 全书仿写交接说明
+19. [examples/whole-book-imitation-run.sample.json](../../examples/whole-book-imitation-run.sample.json) — 运行样例
+20. [examples/whole-book-imitation-readiness.sample.json](../../examples/whole-book-imitation-readiness.sample.json) — 就绪状态样例
+21. [examples/whole-book-imitation-run.request.sample.json](../../examples/whole-book-imitation-run.request.sample.json) — 请求样例
+22. [examples/whole-book-imitation-run.error.provider-billing.sample.json](../../examples/whole-book-imitation-run.error.provider-billing.sample.json) — Provider 计费错误样例
+23. [whole-book-imitation-sample-coverage-matrix.md](../../whole-book-imitation-sample-coverage-matrix.md) — 样例覆盖矩阵
+24. [examples/whole-book-imitation-run.provider-success-20260504.sample.json](../../examples/whole-book-imitation-run.provider-success-20260504.sample.json) — Provider 成功样例
 
 ---
 

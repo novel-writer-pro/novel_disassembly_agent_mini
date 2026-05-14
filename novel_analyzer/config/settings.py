@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import SplitResult, quote_plus, urlsplit, urlunsplit
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     llm_provider_name: str = Field(default="vip1129")
     llm_base_url: str = Field(default="")
+    llm_base_url_override: str | None = Field(default=None)
     llm_api_key: str = Field(default="")
     llm_provider_vip1129_base_url: str = Field(default="https://api.vip1129.cc/v1")
     llm_provider_vip1129_api_key: str = Field(default="")
@@ -40,10 +41,10 @@ class Settings(BaseSettings):
     llm_stage_model_name: str = Field(default="gpt-5.1")
     llm_qa_model_name: str = Field(default="gpt-5.2")
     llm_fallback_model_name: str = Field(default="gpt-5.4")
-    llm_timeout_seconds: float = Field(default=60.0)
+    llm_timeout_seconds: float = Field(default=180.0)
     llm_max_retries: int = Field(default=2)
     chapter_failure_retry_limit: int = Field(default=5)
-    chapter_job_stall_timeout_seconds: int = Field(default=180)
+    chapter_job_stall_timeout_seconds: int = Field(default=600)
     cross_chapter_window: int = Field(default=5)
     chapter_splitter_version: str = Field(default="heuristic-v1")
     skills_dir: str = Field(default="skills_dir")
@@ -61,6 +62,26 @@ class Settings(BaseSettings):
     rerank_cache_dir: str = Field(default=".cache/rerank-models")
     rerank_max_length: int = Field(default=512)
     gate_model_name: str = Field(default="")
+    use_merged_stages: bool = Field(default=True)
+
+    embedding_api_base: str = Field(default="")
+    embedding_api_key: str = Field(default="")
+    embedding_api_format: str = Field(default="openai")
+    embedding_http_timeout: float = Field(default=30.0)
+    embedding_http_max_retries: int = Field(default=2)
+    embedding_http_verify_ssl: bool = Field(default=True)
+
+    rerank_api_base: str = Field(default="")
+    rerank_api_key: str = Field(default="")
+    rerank_api_format: str = Field(default="tei")
+    rerank_http_timeout: float = Field(default=30.0)
+    rerank_http_max_retries: int = Field(default=2)
+    rerank_http_verify_ssl: bool = Field(default=True)
+
+    embedding_fallback_backend: str = Field(default="")
+    embedding_fallback_after_failures: int = Field(default=3)
+    embedding_http_batch_size: int = Field(default=0)
+    rerank_http_batch_size: int = Field(default=0)
 
     # ------------------------------------------------------------------
     # Loom feature flags
@@ -74,6 +95,64 @@ class Settings(BaseSettings):
     loom_pairwise_enabled: bool = Field(default=False)
     loom_episodic_top_k: int = Field(default=20)
     loom_tension_lookback_n: int = Field(default=3)
+    loom_style_enabled: bool = Field(default=False)
+    loom_character_enabled: bool = Field(default=False)
+
+    @model_validator(mode='after')
+    def validate_http_backend_config(self) -> 'Settings':
+        """Validate HTTP backend configuration requirements."""
+        if self.embedding_backend in ("http", "openai") and not self.embedding_api_base:
+            raise ValueError(
+                "embedding_backend is set to 'http' or 'openai' but embedding_api_base is empty. "
+                "Please set NOVEL_ANALYZER_EMBEDDING_API_BASE to your HTTP endpoint."
+            )
+        
+        if self.rerank_backend in ("http", "tei") and not self.rerank_api_base:
+            raise ValueError(
+                "rerank_backend is set to 'http' or 'tei' but rerank_api_base is empty. "
+                "Please set NOVEL_ANALYZER_RERANK_API_BASE to your HTTP endpoint."
+            )
+        
+        if self.embedding_fallback_backend not in ("", "onnx"):
+            raise ValueError(
+                f"embedding_fallback_backend must be '' or 'onnx', got '{self.embedding_fallback_backend}'"
+            )
+        
+        valid_embedding_formats = {"openai", "tei"}
+        if self.embedding_api_format not in valid_embedding_formats:
+            raise ValueError(
+                f"embedding_api_format must be one of {valid_embedding_formats}, "
+                f"got '{self.embedding_api_format}'"
+            )
+        
+        valid_rerank_formats = {"tei"}
+        if self.rerank_api_format not in valid_rerank_formats:
+            raise ValueError(
+                f"rerank_api_format must be one of {valid_rerank_formats}, "
+                f"got '{self.rerank_api_format}'"
+            )
+        
+        return self
+
+    def effective_embedding_batch_size(self) -> int:
+        """Return the effective batch size for embedding HTTP requests.
+        
+        Returns:
+            - User-configured value if embedding_http_batch_size > 0
+            - 2048 for OpenAI format
+            - 32 for TEI format
+            - 0 for ONNX backend (no chunking)
+        """
+        if self.embedding_http_batch_size > 0:
+            return self.embedding_http_batch_size
+        
+        if self.embedding_backend in ("http", "openai"):
+            if self.embedding_api_format == "openai":
+                return 2048
+            elif self.embedding_api_format == "tei":
+                return 32
+        
+        return 0
 
     @property
     def resolved_database_url(self) -> str:

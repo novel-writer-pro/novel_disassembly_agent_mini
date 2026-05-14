@@ -148,7 +148,7 @@ poetry run novel-analyzer fork-branch <branch_id> <keep_through>
 
 ---
 
-## 8. Loom 记忆层检查（Phase 1+2 已上线）
+## 8. Loom 记忆层检查（Phase 1+2+3 已上线）
 
 Loom 默认以 `shadow` 模式运行，不影响主链路。试跑完成后可用以下命令检查 Loom 状态。
 
@@ -191,4 +191,19 @@ NOVEL_ANALYZER_LOOM_MEMORY_MODE=shadow   # 先用 shadow 观察
 NOVEL_ANALYZER_LOOM_MEMORY_MODE=enabled
 ```
 
-详细说明见 [CLI 操作手册第 12 节](./cli-operations-manual.md#12-loom-记忆与张力命令phase-12)。
+### 8.5 Pairwise 数据采集（Phase 3）
+
+```bash
+# 从 manual_eval 工作区提取
+novel-analyzer loom-collect-pairs-from-manual \
+  --manual-eval-dir runs/manual_eval/ \
+  --pairs-file output/loom-pairs.jsonl
+
+# 从 writer-imitate 产物提取
+novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl
+
+# 查看采集进度
+novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl
+```
+
+详细说明见 [CLI 操作手册第 12 节](./cli-operations-manual.md#12-loom-记忆与张力命令phase-123)。

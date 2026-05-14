@@ -47,3 +47,28 @@ def test_chapter_index_rows_include_pending_manifest_chapters(tmp_path: Path) ->
         assert rows[0].has_artifact is True
         assert rows[1].job_status == 'pending'
         assert rows[1].title == '二'
+
+
+def test_chapter_index_ignores_non_downstream_active_companion_summary(tmp_path: Path) -> None:
+    novel_path = tmp_path / 'novel.txt'
+    novel_path.write_text('第1章 一\n正文\n第2章 二\n正文\n', encoding='utf-8')
+    with _session() as session:
+        novel, manifest = IngestService(session).ingest_text_file(str(novel_path), '样例')
+        _, branch = RunService(session).create_run(novel.id, manifest.id)
+        service = RunService(session)
+        service.record_chapter_artifact(
+            branch.id,
+            1,
+            {'chapter_summary': 'canonical summary', 'normalized_title': 'canonical title'},
+        )
+        service.record_chapter_artifact(
+            branch.id,
+            1,
+            {'chapter_summary': 'companion summary', 'normalized_title': 'companion title'},
+            source_kind='manual',
+            participates_in_downstream=False,
+        )
+
+        rows = ChapterIndexService(session).list_rows(branch.id)
+        assert rows[0].summary == 'canonical summary'
+        assert rows[0].title == 'canonical title'

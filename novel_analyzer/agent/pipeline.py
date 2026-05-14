@@ -15,6 +15,12 @@ DEFAULT_SMALL_MODEL_STAGES = [
     'anti_fabrication_guard',
 ]
 
+MERGED_STAGES = [
+    'intake_and_facts',
+    'evidence_and_analysis',
+    'anti_fabrication_guard',
+]
+
 STAGE_TO_SKILL = {
     'chapter_intake': 'chapter-intake',
     'fact_extractor': 'chapter-fact-extractor',
@@ -22,6 +28,8 @@ STAGE_TO_SKILL = {
     'analysis_generator': 'chapter-analysis-generator',
     'writer_learning_lens': 'writer-learning-lens',
     'anti_fabrication_guard': 'anti-fabrication-guard',
+    'intake_and_facts': 'chapter-intake-and-facts',
+    'evidence_and_analysis': 'evidence-and-analysis',
 }
 
 

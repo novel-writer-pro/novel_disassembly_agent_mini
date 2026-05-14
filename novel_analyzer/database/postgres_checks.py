@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -48,7 +48,7 @@ class PostgresCheckReport:
     available_text_search_configs: list[str]
     missing_tables: list[str]
     missing_extensions: list[str]
-    missing_cluster_review_columns: dict[str, list[str]]
+    missing_cluster_review_columns: dict[str, list[str]] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:

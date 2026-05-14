@@ -55,12 +55,14 @@ const routeByWorkspace: Record<string, string> = {
   control: "/control",
   pipeline: "/control",
   reader: "/reader",
+  writing: "/writing",
+  quality: "/quality",
   qa: "/qa",
   ops: "/ops",
 };
 
 interface Props {
-  initialWorkspace: "library" | "control" | "pipeline" | "reader" | "qa" | "ops";
+  initialWorkspace: "library" | "control" | "pipeline" | "reader" | "writing" | "quality" | "qa" | "ops";
 }
 
 export default function WorkbenchApp({ initialWorkspace }: Props) {

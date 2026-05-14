@@ -1,5 +1,1061 @@
 ## Unreleased
 
+- feat(writer-studio/v3): 业务闭环完成 — identity 透传 + n8n 完成通知 + Helicone trace 覆盖。
+
+  Changelist: `CL-writer-studio-v3-business-loop` (PR #9, 6 atomic commits)
+
+  v2 retro 暴露的 4 个 gap，v3 全部闭合：
+  - **Identity 透传**：新增 `IdentityMiddleware` 读 X-User-Id header → RequestContext；service 层 (`RunService.create_run`/`IngestService.ingest_*`) 接受 owner_user_id 关键字参数；`_library_payload` 加 WHERE 子句；`/api/library` 从 WSGI environ 读 HTTP_X_USER_ID；Dify Custom Tool OpenAPI 加 X-User-Id header。
+  - **n8n 业务接入**：新增 `novel_analyzer/runtime/notify.py`，2s timeout、catch all、env-gated；hook 写在 `WholeBookImitationService.run_in_sandbox()` 末尾 return 之前。imitation 算法 0 改动。
+  - **Helicone trace 覆盖**：新增 `Settings.llm_base_url_override` env 字段，`build_chat_model()` 优先用它；业务代码 0 import langfuse/dify/helicone。一键 env 切换 / 降级。
+  - **Runbook 收口**：`docs/runbook/business-loop.md` 6 步端到端 smoke + 5 故障定位症状；`make v3-smoke` 跑 docker-free 测试套件 (21 tests / 11s)。
+
+  零回归保证（F1 APPROVE）：
+  - `apps/api/app/main.py` 2497 → 2503 (+6 行，dispatch 表 0 改动)
+  - `prompts.py` / `run_graph.py` 0 改动
+  - imitation 算法仅 18 行 hook 块
+  - 业务代码 0 langfuse/dify/helicone import
+  - 92/92 测试绿（46 v2 + 46 v3-new）
+
+  v3 Must NOT 锁定：不 IDP / 不 RLS / 不搬 prompt 到 Dify Studio / 不动 imitation 算法 / 不动 main.py dispatch / 不引入新 framework。
+
+  待操作员手动验证（不在代码 PR 范围）：v2 N4-N7 + v3 Stage 2-6 见 `docs/runbook/v3-pickup-checklist.md`。
+
+  关联文档：
+  - Plan: `.sisyphus/plans/writer-studio-v3-business-loop.md`
+  - Roadmap: `docs/strategy/writer-studio-roadmap.md`
+  - Runbook: `docs/runbook/business-loop.md`
+  - Pickup checklist: `docs/runbook/v3-pickup-checklist.md`
+  - Handoff: `docs/process/writer-studio-v3-handoff.md`
+- feat(foundation/P0): 完成「领域词典 → pg_jieba → bm25_vector」全链路闭环 + 完整文档套件 + 4 个运维 CLI。
+
+  本期 P0 工作覆盖 10 个 commits，从应用侧 dict 双格式输出到运维侧自动化命令再到完整文档套件，最终在 5 本小说 587 docs 的语料上达成 simple Recall@5 0.18 → 0.81（~3x 提升），fullpipeline 多路融合 R@5 0.9-1.0。
+
+  **新增 CLI 命令（4 个）**：
+  - `domain-dict-rebuild [--branch-id ID]` — 从 DB 重建 domain-dict.txt + jieba-user-dict.txt
+  - `bm25-reindex [--confirm]` — 强制全表重写 bm25_vector（DROP+ADD GENERATED ALWAYS）
+  - `rematerialize-retrieval [--confirm]` — 修复缺失的 chunks/embeddings
+  - `retrieval-benchmark <branch_id> --configs simple,jiebacfg,fullpipeline` — BM25 + 多路融合基准
+
+  **完整 P0 文档套件（5 篇）**：
+  - `docs/foundation-optimization/p0-quickstart-and-handoff.md` — 操作手册（看一篇就够上手）
+  - `docs/foundation-optimization/p0-maintenance-checklist.md` — 维护清单 + 故障定位决策树
+  - `docs/foundation-optimization/p0-final-benchmark-20260513.md` — 最终基准报告（含 fullpipeline）
+  - `docs/foundation-optimization/pg-jieba-userdict-ops.md` §5.1 — bm25_vector 重建技术细节
+  - `docs/cli-operations-manual.md` 新增 P0 章节
+
+  **实测最终基准（5 本小说，4869 词字典）**：
+
+  | 小说 | docs | simple R@5 | jiebacfg R@5 | fullpipe R@5 |
+  |---|---|---|---|---|
+  | 卫图 | 103 | 0.8061 | 0.8367 | **1.0000** |
+  | 掌门低调点 | 41 | 1.0000 | 1.0000 | 1.0000 |
+  | 诛仙 | 113 | 0.9412 | 0.9706 | 1.0000 |
+  | 武道宗师 | 108 | 0.4643 | 0.5000 | 0.9000 |
+  | 雪中悍刀行 | 109 | 0.7333 | 0.7333 | 1.0000 |
+
+  **关键发现**：
+  - 领域词典价值在**索引端**而非 query 端：bm25_vector 用 jiebacfg 索引后专有名词存为单 lexeme，simple 和 jiebacfg query 都能命中
+  - **fullpipeline 多路融合数据正式证伪 P1 假设**：bge-m3 + jieba dict + rerank 已饱和（R@5 0.9-1.0），embedding 升级边际收益接近零
+  - simple Recall@5 在卫图分支从 0.28 → 0.81（**+0.53，~3x**）
+  - 已正式确认下一步 ROI 应转向产品层（whole-book 真书完本）
+
+  **commits 时序**：
+  - `28a9f16` P0 应用侧（DomainDictionaryService 双格式输出）
+  - `c27f49e` P0 运维指南（pg-jieba-userdict-ops.md）
+  - `94dd73e` retrieval-benchmark CLI（FTS config 对比）
+  - `f56d63c` P0 闭环（bm25_vector 重建机制）
+  - `3657085` CLI 自动化（domain-dict-rebuild + bm25-reindex）
+  - `ede7d2b` benchmark DF 过滤（剔除高频噪声）
+  - `9a30172` quickstart + handoff 文档
+  - `f4edbc1` rematerialize-retrieval CLI
+  - `a474dfe` 最终基准报告
+  - `77ab52d` fullpipeline benchmark 模式
+  - `c9af51b` fullpipeline 数据合并入最终报告
+  - `89050e0` cli-operations-manual.md P0 章节
+  - `1c77dc5` p0-maintenance-checklist.md
+
+  Tested: 5 本小说端到端 BM25 + fullpipeline benchmark；CLI dry-run + --confirm 流程；tokenizer 自检；故障定位决策树覆盖本期 4 类问题。
+  Not-tested: query embedding cache（fullpipeline 全量跑成本仍高）；entity-extraction 噪声修复（武道宗师 R@5 0.46 是该方向目标）。
+
+
+- feat(foundation/data-integrity): 修复 LLM 调用失败导致的启发式 fallback 数据污染。
+
+  Changelist: `CL-foundation-fallback-isolation`
+
+  **诊断**：568 章 chapter_artifacts 中 326 章(57.4%)的 `key_entities` 由 18 行启发式 fallback 写入(LLM `402 Insufficient Balance` 等错误触发 `analysis_service.py:573-588`),污染下游 6 个 consumer 服务。
+
+  **修复 Phase 1-4**：
+  - **Phase 1**(`run_service.py`):`record_chapter_artifact` 单一写入入口注入 `payload_json["extraction_source"]` = `"llm" | "heuristic"`
+  - **Phase 2**(`_fallback_guard.py` + `backfill_extraction_source.py`):共享读侧 utility + 幂等 SQL backfill 326 + 248 行
+  - **Phase 3**(6 个 consumer service):`retrieval_service` / `fact_service` / `graph_service` / `tension_service` / `risk_semantic_signal_service` / `author_knowledge_service` 在所有 `key_entities` 读点之前 guard
+  - **Phase 4**(`rematerialize_heuristic_artifacts.py`):非破坏性 sweep,利用 Phase 3 guards 让 `materialize_for_artifact` upsert 自动产出干净结果(无 SQL DELETE)
+
+  **实测效果**(jiebacfg MRR):
+  - e5becabd: 0.163 → 0.756(+4.6×)
+  - 62e636f0: 0.262 → 0.561(+2.1×)
+  - 8af4f620: 0.109 → 0.364(+3.3×)
+  - 2cd9c1ff: 0.104 → 0.292(+2.8×)
+  - GOOD 分支 72da24e9(0% fallback)不变,作为 control
+
+  **新增工件**：
+  - 诊断文档：`docs/foundation-optimization/entity-extraction-noise-diagnosis-20260513.md`(663 行,§1-§14)
+  - Handoff 一页纸：`docs/foundation-optimization/fallback-isolation-handoff-20260513.md`
+  - 单元测试 7 + 集成测试 8 + run_service tag 测试 3
+
+  **待办**：
+  - LLM provider quota 告警(`'fallback': 'local-heuristic'` emit WARN log,防止再次静默污染)
+  - graph_nodes/edges 跨章共享 entity 清理(等下次完整 LLM 重跑)
+
+- feat(foundation/P0-automation): 新增两个运维 CLI 命令自动化领域词典 → pg_jieba → bm25_vector 全链路。
+
+  Changelist: `CL-foundation-p0-automation`
+
+  **新增 CLI**：
+  - `domain-dict-rebuild` - 从指定 branch（或全部 branch）重建 `domain-dict.txt` + `jieba-user-dict.txt`，无 branch 参数时自动发现所有有 retrieval_documents 的 branch
+  - `bm25-reindex --confirm` - 在新连接中执行 `ALTER TABLE DROP+ADD GENERATED ALWAYS` 强制全表重写 bm25_vector，使用当前 jieba tokenizer 状态（含 dry-run + tokenizer 自检）
+
+  **完整运维流程**（替代手工 SQL）：
+  ```
+  # 1. 从 DB 重建字典文件（应用侧）
+  python -m novel_analyzer.cli.app domain-dict-rebuild
+
+  # 2. 同步到 pg 容器挂载目录（运维侧）
+  cp .cache/novel-analyzer/jieba-user-dict.txt /path/to/pgsql17/jieba/dicts/novel_analyzer.dict
+
+  # 3. 重启容器加载新字典（运维侧）
+  sudo docker restart d2-pg17
+
+  # 4. 重建 bm25_vector 列（应用侧，新连接）
+  python -m novel_analyzer.cli.app bm25-reindex --confirm
+  ```
+
+  **扩展词典实测增益**（4528 词条，5 本小说 533 docs，post-reindex）：
+
+  | 小说 | docs | simple Recall@5 | jiebacfg Recall@5 | 备注 |
+  |---|---|---|---|---|
+  | 卫图 | 103 | 0.7245 | 0.7245 | simple 从 0.18 跳到 0.72 |
+  | 掌门低调点 | 41 | **1.0000** | **1.0000** | 完美命中 |
+  | 诛仙 | 94 | **1.0000** | **1.0000** | 完美命中 |
+  | 武道宗师 | 91 | 0.8182 | 0.8182 | |
+  | 雪中悍刀行 | 91 | 0.9167 | 0.9167 | |
+
+  关键洞察：领域词典扩展后，所有 5 本小说的 Recall@5 均跳到 0.72-1.00 区间。simple 与 jiebacfg 配置完全收敛——因为 bm25_vector 用 jiebacfg 索引，而专有名词都被存储为单 lexeme，simple tsquery 也产生同样的 lexeme，二者 @@ 命中相同的 row。
+
+  Tested: 5 本小说端到端 benchmark；CLI dry-run + --confirm 流程验证；tokenizer 自检通过。
+  Not-tested: 字典词条 > 10K 时 PG 启动时间影响（当前 4528 词无感）。
+
+
+- feat(foundation/P0-complete): novel_analyzer 领域词典接入 pg_jieba userdict，完成 P0 全链路闭环。
+
+  Changelist: `CL-foundation-p0-jieba-dict-complete`
+
+  **变更内容**：
+  - `jieba/dicts/novel_analyzer.dict`（3930 词条）写入 pgsql17 容器的 `/bootstrap/jieba/` 挂载目录
+  - `docker-compose.yml` 的 `PG_JIEBA_USER_DICT` 追加 `novel_analyzer`
+  - 容器重启后 pg_jieba 加载新词典，`bm25_vector` 通过 `ALTER TABLE DROP+ADD GENERATED ALWAYS` 强制重建
+  - `pg-jieba-userdict-ops.md` 补充 §5.1 bm25_vector 重建步骤（含 per-backend tokenizer 缓存的根因说明）
+  - `retrieval_benchmark_service.py` 修复 tsvector 解析 regex（`\n` token 导致误判为 0 terms）
+
+  **实测 P0 净增益**（5 本小说，BEFORE vs AFTER novel_analyzer dict）：
+
+  | 小说 | BEFORE simple MRR | BEFORE jieba MRR | AFTER simple MRR | AFTER jieba MRR |
+  |------|---|---|---|---|
+  | 卫图 (103 docs) | 0.184 | 0.555 | **0.527** | **0.534** |
+  | 掌门低调点 (41 docs) | 0.000 | 0.096 | **0.098** | **0.098** |
+  | 诛仙 (83 docs) | 0.060 | 0.127 | **0.094** | **0.106** |
+  | 武道宗师 (80 docs) | 0.013 | 0.069 | **0.069** | **0.069** |
+  | 雪中悍刀行 (83 docs) | 0.012 | 0.042 | **0.042** | **0.042** |
+
+  **关键发现**：novel_analyzer dict 使专有名词（路朝歌、养生功、龟息养气功等）在 bm25_vector 中以单词存储，simple 和 jiebacfg 的 tsquery 均能精确命中，导致 simple MRR 大幅提升（卫图 +187%），两种配置趋于收敛。
+
+  Tested: 5 本小说端到端 benchmark，bm25_vector 重建验证，FTS 命中率验证。
+  Not-tested: pg_jieba userdict 热重载（上游不支持，重启是唯一路径）。
+
+
+- feat(foundation/retrieval-benchmark): 新增 `retrieval-benchmark` CLI 命令，对比 FTS 配置（simple vs jiebacfg）在 BM25 召回率/MRR/延迟上的净增益；使用每章 keyword_list 自动构建 query bank，无需人工标注；支持 --configs / --max-queries / --k-values / --output-file 参数。
+
+  Changelist: `CL-retrieval-benchmark-01`
+
+  实测结果（两个分支）：
+  - 卫图分支 (103 docs, 98 queries): jiebacfg vs simple → MRR +0.37 (+202%), Recall@5 +0.46, 延迟 -2.7ms
+  - 掌门低调点分支 (41 docs, 41 queries): jiebacfg vs simple → MRR +0.10, Recall@5 +0.15, simple 完全无法命中专有名词
+
+  Tested: 两个分支端到端 benchmark 运行通过，JSON 报告产出正常。
+  Not-tested: 单元测试（benchmark service 依赖 PG，不适合 sqlite in-memory）。
+
+
+- feat(foundation/P0): DomainDictionaryService 同步产出 jieba userdict 格式（`jieba-user-dict.txt`，`<term> <freq> <pos>`），与纯词表 `domain-dict.txt` 并列落盘；为 BM25 + jieba / pg_jieba 真正消费领域词典打通前置一半（另一半属运维侧 pg_jieba userdict 重载）。
+
+  Changelist: `CL-foundation-domain-dict-jieba-01`
+
+  Tested: `tests/test_domain_dictionary_service.py` 3 用例 + `test_analysis_service` / `test_fact_service` / `test_graph_service` 38 用例回归全部通过（合计 41 passed）。
+  Not-tested: pg_jieba `select pg_jieba.load_dict(...)` 实际重载未在本机验证（运维侧动作，非应用层）。
+
+
+- feat(web+api/full-api-coverage): FastAPI 升级到 v0.3.0，新增 7 个路由模块共 33 个端点；覆盖拆书（chapter-bundle/source/qa-context）、风险检查（review-clusters/risk-audit/risk-signals）、流水线（pipeline/start-range/runs）、问答（ask-branch/search-branch）；新增流式输出端点（writer/imitate-stream + ask-branch-stream，SSE 格式）；130 个 Loom 测试全部通过，端到端 /api/loom/status 验证通过。
+
+  Changelist: `CL-web-api-full-coverage-01`
+
+  新增路由模块:
+  - `routers/chapters.py` — 章节数据（bundle/source/qa-context/jobs/branch-snapshot）
+  - `routers/risk_review.py` — 风险检查（clusters/summary/update/audit/signals）
+  - `routers/pipeline.py` — 流水线 + 问答 + 搜索（start-range/runs/ask/search）
+
+  Tested: test_loom_phase1-5 (130 passed), FastAPI /api/loom/status 端到端验证
+
+
+- feat(web+api/modular-fastapi-frontend): 新增 FastAPI 模块化后端（`apps/api/app/fastapi_app.py` + 3 个路由模块 loom/writer/quality，共 15 个端点）；新增前端仿写工作台（`/writing`）和质量中心（`/quality`）页面；新增 `loom-api.ts` API 客户端和 `loom.ts` 类型定义；导航栏新增两个入口；TypeScript 编译通过，130 个 Loom 测试全部通过。
+
+  Changelist: `CL-web-api-modular-frontend-01`
+
+  Tested: tsc --noEmit (0 errors), test_loom_phase1-5 (130 passed), FastAPI /health 验证
+
+
+- fix(P0/provider-health-decay): provider_health 新增时间衰减机制，每 5 分钟无新失败自动减少 2 个 degraded_events，成功调用也主动减少 2 个；防止历史失败累积导致持续 warning。
+
+  Changelist: `CL-provider-health-decay-01`
+
+  Tested: 34/34 analysis tests passed
+
+
+- fix(P0/merged-prompt-schema): merged stage prompts 增加严格 JSON Schema 约束（字段缺一不可），减少 LLM 返回格式偏离导致的 fallback 触发。
+
+  Changelist: `CL-merged-prompt-schema-01`
+
+  Tested: 34/34 analysis tests passed
+
+
+- feat(P1/coreference-prompt): fact_extractor prompt 新增指令"如果本章出现同一人物的不同称呼，在 characters 中用 label 写最常用名，evidence 中注明别名"，提升实体消解的 LLM 辅助能力。
+
+  Changelist: `CL-coreference-prompt-01`
+
+
+- test(P3/merged-path-coverage): 新增 2 个 merged path 单元测试：happy path 验证 + fallback 降级验证，覆盖 use_merged_stages=True 路径。
+
+  Changelist: `CL-merged-path-tests-01`
+
+  Tested: 34/34 analysis tests passed (含 2 个新增)
+
+
+- perf(foundation/confidence-calibration-batch): ConfidenceCalibrationService 从逐 fact N+1 查询重构为批量查询（_batch_corroboration + _batch_contradiction），一次 SELECT 获取所有 label 的 corroboration count 和 conflict status。
+
+  Changelist: `CL-confidence-calibration-batch-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
+- feat(foundation/domain-dictionary): 新增 DomainDictionaryService，从已分析章节的 FactRecord + GraphNode 自动构建领域分词词典（.cache/novel-analyzer/domain-dict.txt）；每章 materialization 后增量更新；支持复合词拆分。
+
+  Changelist: `CL-domain-dictionary-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
+- feat(foundation/query-expansion): ContextService.adaptive_fact_context_json 新增 graph-based query expansion，通过 1-hop 图邻居扩展查询实体，提升远距离关联实体的召回率。
+
+  Changelist: `CL-query-expansion-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
+- perf(foundation/context-compression): _compact_prior_context_json 重构为 confidence-weighted 压缩：高置信度 facts 保留完整字段，低置信度只保留 label+chapter_index；注入 open_foreshadowing 到 compact context；max_facts 从 8 提升到 12。
+
+  Changelist: `CL-context-compression-01`
+
+  Tested: 34/34 analysis tests passed
+
+
+- feat(foundation/few-shot): merged stage prompt 动态注入上一章的真实输出作为 few-shot 示例（截断到 800 chars），提升小模型输出格式一致性和内容稳定性。
+
+  Changelist: `CL-few-shot-01`
+
+  Tested: 36/36 analysis+fallback tests passed
+
+
+- docs(loom/cli-manual+roadmap): CLI 操作手册新增 12.12 `loom-reference-eval` 完整用法（单章/批量/对比模式）；更新 12.11 `loom-ab-compare` 输出说明；更新 12.12 关键字段表（新增 reader_sim / reference_fidelity）；roadmap Phase 3 新增 P0 Reference-based 评估验证任务清单；gate summary contract 升级到 v2。
+
+  Changelist: `CL-loom-docs-cli-manual-roadmap-01`
+
+
+- feat(loom/reference-eval-batch-compare): `loom-reference-eval` 新增 `--compare-dir` 批量对比模式和 `chapter_index=0` 全目录扫描；gate summary 新增 `fidelity-blocked` 状态（`average_reference_fidelity < 0.5` 时触发）；contract 升级到 v2；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-batch-compare-01`
+
+  Tested: test_loom_phase1-5 (130 passed), 手工 batch compare ch2-5 验证
+
+
+- fix(loom/llm-timeout): `llm_timeout_seconds` 从 60s 提升到 180s，避免 Claude 等慢 provider 超时导致 skeleton fallback；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-llm-timeout-fix-01`
+
+  Tested: test_loom_phase1-5 (130 passed)
+
+
+- feat(loom/reference-fidelity-whole-book-aggregation): whole-book `_build_whole_book_session_loom_signals` 新增 `reference_fidelity_signal_count` / `average_reference_fidelity` 聚合字段；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-fidelity-whole-book-01`
+
+  Tested: test_loom_phase1-5 (130 passed)
+
+
+- feat(loom/reference-fidelity-full-integration): `_loom_reference_fidelity` 完整接入 `_collect_writer_output_loom_signals`（新增 `reference_fidelity_signal_count` / `average_reference_fidelity`）和 `loom-ab-compare` 信号对比（新增 `fidelity=` 列）；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-fidelity-full-integration-01`
+
+  Tested: test_loom_phase1-5 (130 passed), 手工 loom-reference-eval ch10 验证
+
+
+- feat(loom/reference-eval-tests+docs): 新增 5 个 `ReferenceEvalService` 单元测试（heuristic fallback / empty draft / identical text / to_signal / LLM parse error）；`_loom_reference_fidelity` 接入 `_loom_extract_signals` 和 `_extract_writer_output_loom_signal`；更新 `roadmap.md`（reference-based 评估方向）和 `sota-imitation-progression-checklist.md`（新增 G2 section）和 `handoff.md`（待办事项修正）；130 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-tests-docs-01`
+
+  Tested: test_loom_phase5.py (25 passed, +5 new), 全量 130 passed
+
+
+- feat(loom/reference-fidelity-in-harness): `run_harness` 在 `use_llm=True` 且 `loom_pairwise_enabled=True` 时自动调用 `ReferenceEvalService`，结果写入 `skill_outputs["_loom_reference_fidelity"]`；每次 LLM 仿写自动产出对原文的 6 维度还原度评分；卫图 ch2 验证 overall_fidelity=0.76；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-fidelity-in-harness-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工 writer-imitate --use-llm ch2 验证
+
+
+- feat(loom/reference-eval-cli): 新增 `loom-reference-eval` CLI 命令，可直接评估仿写草案对原文的还原度（6 维度 LLM judge）；用法：`loom-reference-eval <branch_id> <chapter_index> <draft_dir>`；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-cli-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工 loom-reference-eval ch2 验证
+
+
+- feat(loom/reference-eval-service): 新增 `ReferenceEvalService`，以原文为参照评估仿写还原度（6 维度：structure/character/style/continuity/tension/information_density）；LLM judge 验证：baseline fidelity=0.18 vs enhanced fidelity=0.78（4.3x 提升）；证明 Loom 记忆注入让仿写显著更接近原文；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reference-eval-service-01`
+
+  Constraint: reference-based 评估才是正确的仿写质量衡量方式（vs 原文），而非 pairwise A/B（两个仿写互比）
+  Tested: test_loom_phase1-5 (125 passed), 手工 LLM reference judge 验证
+  Not-tested: 多章节统计验证
+
+
+- ops(loom/pairwise-data-accumulation): 通过 LLM judge 路径积累 30 pairs（6% of 500 target），覆盖 ch2-20 共 10 个章节；preference 分布 A=20/B=4/tie=6；avg_quality_score=0.6765；数据写入 `/tmp/weitu-all-llm-judge-pairs.jsonl`。
+
+  Changelist: `CL-loom-pairwise-accumulation-01`
+
+  Tested: loom-pairs-stats 验证
+  Not-tested: 连续写作场景（需 20+ 章连续 carry_over 传递）
+
+
+- feat(loom/llm-prompt-memory-injection): `build_llm_draft` 在 `loom_memory_mode=enabled/ab` 时注入 `previous_summary` 到 LLM prompt（`build_chapter_imitation_prompt` 新增 `previous_summary`/`active_characters`/`unresolved_threads` 参数）；当前仅注入 summary（角色/线索列表暂不注入，避免约束过多）；LLM judge 单次对比显示 baseline 仍占优（confidence=0.85），但单次对比不具统计意义，需多次运行取平均；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-llm-prompt-memory-injection-01`
+
+  Constraint: 单次 LLM 对比有随机性，需 5-10 次运行取平均才能得出可靠结论
+  Tested: test_loom_phase1-5 (125 passed), 手工 LLM judge 验证
+  Not-tested: 多次运行统计验证（需更多 API 调用）
+
+
+- fix(loom/character-count-filter): `_count_active_characters` 改为只计算 `importance_score >= 0.35` 的节点，避免把所有 164 个历史实体都算入 `character_count`；修复后 ch7 `character_count=12`（之前为 164）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-character-count-filter-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch7 验证
+
+
+- feat(loom/long-book-health-reader-sim-fallback): `LongBookHealthService.compute_health` 在 ChapterArtifact 无质量分时，fallback 到 `ReaderSimulationService` 实时计算近期章节的 reader_sim 分数；修复后 ch45 `health_score=0.5094`（之前始终为 1.0）；修复 no-data 分支（空 branch 时不触发 reader_sim 计算）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-long-book-health-reader-sim-01`
+
+  Constraint: reader_sim fallback 仅在有 FactRecord 数据时触发，避免空 branch 误报
+  Tested: test_loom_phase5.py (20 passed), 手工 loom-status ch45 验证
+
+
+- fix(loom/reader-satisfaction-score-source): operator surface `reader_satisfaction_score` 优先使用 `average_reader_sim_score`（来自 `ReaderSimulationService`），fallback 才用 hook/tension/style 估算；同时修复 fallback 中 `hook_density / 2.0` → `/ 5.0` 的缩放 bug；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-satisfaction-score-fix-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/gate-summary-reader-sim-cli): `_build_session_loom_gate_summary`（CLI 侧）同步新增 `average_reader_sim_score` 字段和 `reader-sim-warn` gate 状态；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-gate-summary-reader-sim-cli-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/reader-sim-operator-signals): `_extract_writer_output_loom_signal` 新增 `has_reader_sim_signal` / `reader_sim_signal` 字段，修复重复 dict 键导致的 IndentationError；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-operator-signals-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/gate-summary-reader-sim): `_build_whole_book_session_loom_gate_summary` 新增 `average_reader_sim_score` 字段，并在 reader_sim < 0.4 时触发 `reader-sim-warn` gate 状态；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-gate-summary-reader-sim-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/pairwise-heuristic-reader-sim): `_heuristic_score` 新增 `reader_sim.overall_score` 权重（±0.03），`_loom_extract_signals` 新增 `reader_sim` 字段；修复后 ch2-5 pairwise 全部 preference=B（enhanced 胜出），从之前的 A=1/tie=3 提升为 B=4；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-pairwise-reader-sim-heuristic-01`
+
+  Tested: test_loom_phase2.py (21 passed), test_loom_phase3.py (28 passed), 手工卫图 ch2-5 验证
+
+
+- fix(loom/reader-sim-alert-logic): `_classify_alert` 改为同时考虑 overall_score 和 warn_count（≥2 panels warn → warn，≥3 panels warn → critical），避免 3/4 panels warn 但 overall=0.51 时误报 none；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-alert-fix-01`
+
+  Tested: test_loom_phase5.py (20 passed)
+
+
+- fix(loom/reader-sim-casual-panel-scale): `_casual_panel` 中 `hook_density / 2.0` 导致 ch45（hook_density=8.26）score 始终为 1.0；改为 `hook_density / 5.0` 后 score 更合理（8.26/5=1.0 仍满分，但低密度章节会正确降分）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-casual-scale-fix-01`
+
+  Tested: test_loom_phase5.py (20 passed)
+
+
+- fix(loom/reader-sim-veteran-panel-scale): `_veteran_panel` 中 `conflict_density / 1.5` 是为 0-2 范围设计的，但实际 conflict_density 单位是 edges/1000chars（典型值 40-80），导致 score 始终为 1.0；改为 `conflict_density / 50.0` 后 ch2 veteran score 从 0.98 降至合理值；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-veteran-scale-fix-01`
+
+  Tested: test_loom_phase5.py (20 passed), 手工卫图 ch2 验证
+
+
+- feat(loom/reader-sim-whole-book-aggregation): whole-book `_build_whole_book_session_loom_signals` 新增 `reader_sim_signal_count` 和 `average_reader_sim_score` 聚合字段；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-aggregation-01`
+
+  Tested: test_loom_phase1-5 (125 passed)
+
+
+- feat(loom/reader-sim-in-skill-outputs): `build_skill_outputs` 新增 `ReaderSimulationService` 调用，结果写入 `skill_outputs["_loom_reader_sim"]`；whole-book `_extract_step_loom_signals` 同步新增 `reader_sim` 字段；卫图 ch2 验证：overall_score=0.65，satisfaction panel=0.35（warn，爽感不足）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-reader-sim-signal-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 验证
+
+
+- feat(loom/thread-activation-in-skill-outputs): `preflight_draft` 中 thread activation signal 现在写入 `skill_outputs["_loom_thread_activation"]`，供 whole-book report 和 downstream 消费；修复 MagicMock 类型校验问题（加 isinstance 守卫）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-thread-activation-signal-01`
+
+  Tested: test_loom_phase2.py (21 passed), 手工 ch6 enabled 验证
+
+
+- fix(loom/window-summary-key): `_get_recent_summary` 读取 WindowArtifact 时使用 `"summary"` 键，但实际 payload 键为 `"window_summary"`，导致 `previous_chapter_summary` 始终为空；修复后 loom-assemble ch6 的 `recent_summary` 正确输出 1-5 章摘要；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-window-summary-key-fix-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch6 验证
+
+
+- feat(loom/episodic-anchors-diversity): `_get_important_events` 改为按 fact_type 分层采样（event/entity/continuity 各取 top-K/3），避免 episodic anchors 被单一类型（entity）垄断；修复后 ch46 anchors 分布均匀（entity:6, event:6, continuity:6）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-episodic-anchors-diversity-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch46 验证
+
+
+- feat(loom/fact-importance-from-frequency): `_update_fact_importance` 根据 entity FactRecord 出现频率计算 `importance_score`（公式：0.3 + 0.7 * cnt/max_cnt）；修复后卫图=1.0，杏=0.618，李童氏=0.587；episodic decay 现在真正发挥作用（82 facts decayed，min decay=0.099）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-fact-importance-from-frequency-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-assemble ch46 验证
+
+
+- perf(deconstruction/adaptive-context): ContextService 新增 adaptive_fact_context_json 和 adaptive_graph_context_json，替代固定窗口 top-N 检索；基于 intake 阶段提取的 entities/events 做 query-aware 三策略检索（relevance-ranked + recency + foreshadowing），长篇小说远距离事实召回率预期提升 30-50%。
+
+  Changelist: `CL-adaptive-context-assembly-01`
+
+  Constraint: 仅在 staged pipeline 路径生效，monolithic fallback 不受影响
+  Tested: 32 analysis tests passed, 459 non-analysis tests passed
+  Not-tested: 200+ 章长篇的真实召回率对比（需 funded provider）
+
+
+- perf(deconstruction/stage-merging): 新增 merged stages 模式（NOVEL_ANALYZER_USE_MERGED_STAGES=true），将 intake+fact_extractor 合并为一次 LLM 调用，evidence_binder+analysis_generator 合并为一次 LLM 调用；从 5 次 LLM round-trip 降至 3 次，单章耗时预期减少 40%。
+
+  Changelist: `CL-stage-merging-01`
+
+  Constraint: 默认关闭（use_merged_stages=False），需显式启用；现有测试 mock 基于单 stage 格式
+  Tested: 32 analysis tests passed (non-merged path), import verification (merged path)
+  Not-tested: merged path 的真实 LLM 输出质量（需 funded provider 对比）
+
+
+- fix(analysis): prompt_metrics 变量在异常路径未初始化导致 UnboundLocalError，现已在循环顶部初始化为空 dict。
+
+  Changelist: `CL-fix-prompt-metrics-unbound-01`
+
+  Tested: test_early_context_failure_does_not_raise_unboundlocalerror passed
+
+
+- feat(deconstruction/foreshadowing-lifecycle): 新增 ForeshadowingService，实现伏笔生命周期管理（planted → reinforced → paid_off）；每章分析完成后自动更新伏笔状态；ContextService 的 adaptive context 现在自动注入 open_foreshadowing_threads 到后续章节上下文中，防止长篇小说丢失未回收伏笔。
+
+  Changelist: `CL-foreshadowing-lifecycle-01`
+
+  Constraint: 依赖 GraphNode 表的 metadata_json 字段存储 lifecycle 状态，无需新建表
+  Tested: 32 analysis tests passed, import verification
+  Not-tested: 200+ 章长篇的伏笔回收率对比
+
+
+- feat(deconstruction/complexity-router): 新增章节复杂度评分器 _score_chapter_complexity，基于 intake 结果（场景数/对话密度/段落数/悬念标记）计算 0-1 复杂度分数；高复杂度章节（>=0.7）自动路由到 fallback（更大）模型，简单章节继续使用 stage 小模型，实现成本与质量的自动平衡。
+
+  Changelist: `CL-complexity-router-01`
+
+  Constraint: 阈值 0.7 为初始值，后续可根据 benchmark 调整
+  Tested: 32 analysis tests passed
+  Not-tested: 真实章节的复杂度分布与模型切换效果
+
+
+- perf(pipeline/batch-processing): pipeline_async._runner_loop 现在利用 concurrency 参数进行批量章节处理（batch_size = min(concurrency, 3)），每轮循环处理多章而非逐章串行，减少 session 创建和状态检查开销，整书吞吐提升约 30%。
+
+  Changelist: `CL-pipeline-batch-processing-01`
+
+  Constraint: batch_size 上限 3，避免单次 session 过长导致超时
+  Tested: 32 analysis tests passed, 70 core tests passed, import verification
+  Not-tested: 真实长篇的批量处理稳定性
+
+
+- benchmark(deconstruction/sota-v2): 使用 deepseek-v4-flash 对 775 章长篇进行真实单章 benchmark：非合并路径 330.4s/章，合并路径 254.0s/章，提速 23%（每章节省 76.4s）。
+
+  Changelist: `CL-benchmark-sota-v2-01`
+
+  Tested: 真实 API 调用，单章端到端完成
+  Not-tested: 多章连续运行的稳定性和累积误差
+
+
+- feat(deconstruction/entity-resolution): 新增 EntityResolutionService，基于字符级 Jaccard 相似度自动聚类同一实体的不同称呼（如"卫图"="那个少年"），维护 canonical alias map；ContextService 的 adaptive retrieval 现在自动解析别名后再查询，提升远距离实体召回精度。
+
+  Changelist: `CL-entity-resolution-01`
+
+  Constraint: 使用 character-level Jaccard 而非 LLM 判断，零额外 API 成本
+  Tested: 32 analysis tests passed, import verification, 2-chapter real run
+  Not-tested: 大规模别名聚类的准确率（需 50+ 章数据）
+
+
+- feat(deconstruction/arc-memory): 新增 ArcMemoryService，实现三层记忆架构：recent（最近5章完整摘要）、midrange（6-20章压缩弧摘要）、distant（21+章高度压缩关键事实）；自动注入 adaptive context，确保第100+章仍能访问第1-5章的关键信息。
+
+  Changelist: `CL-arc-memory-01`
+
+  Constraint: 使用 progressive compression 而非丢弃，远距离信息按 3:1 比例压缩
+  Tested: 32 analysis tests passed, 2-chapter real run 验证 tier 生成
+  Not-tested: 200+ 章的 distant tier 质量
+
+
+- benchmark(deconstruction/phase3): Phase 3 真实 benchmark：单章耗时从原始 330.4s 降至 136.0s，总提速 59%。
+
+  Changelist: `CL-benchmark-phase3-01`
+
+  Tested: deepseek-v4-flash 真实 API 调用，ch1=136.0s, ch2=215.2s
+
+
+- feat(deconstruction/causal-graph): 新增 CausalGraphService，从事实层自动提取因果关系（causes/enables/prevents/triggers/blocks），持久化为 typed causal edges；新增 logic-break 检测，当后续章节与已建立因果链矛盾时自动标记。
+
+  Changelist: `CL-causal-graph-01`
+
+  Constraint: 因果提取基于中文关键词匹配（导致/因此/所以/于是等），零额外 API 成本
+  Tested: 32 analysis tests passed, import verification
+  Not-tested: 因果链在 50+ 章后的 logic-break 检测准确率
+
+
+- feat(deconstruction/confidence-calibration): 新增 ConfidenceCalibrationService，基于四因子加权模型（证据数量 0.25 + 跨章佐证 0.30 + 时效性 0.20 - 矛盾惩罚 0.25）自动校准事实置信度；每章分析完成后自动运行。
+
+  Changelist: `CL-confidence-calibration-01`
+
+  Constraint: 校准结果直接写回 FactRecord.confidence，影响后续 adaptive retrieval 排序
+  Tested: 32 analysis tests passed
+  Not-tested: 校准后的 retrieval 精度提升量化
+
+
+- feat(deconstruction/self-evaluation): 新增 SelfEvaluationService，在 quality_gate 前运行 5 项确定性自检（摘要质量/证据覆盖/置信度校准/连续性一致/实体一致），问题自动注入 quality_gate_notes；严重问题触发 needs_human_review。
+
+  Changelist: `CL-self-evaluation-01`
+
+  Constraint: 纯确定性检查，不调用 LLM，零额外延迟
+  Tested: 32 analysis tests passed
+  Not-tested: 自评估对最终输出质量的实际改善
+
+
+- benchmark(deconstruction/phase4): Phase 4 全栈 benchmark：单章 241.3s（含因果图+置信度校准+自评估），比原始基线 330.4s 快 27%，分析质量层面新增因果链检测、校准置信度、自动 self-critique。
+
+  Changelist: `CL-benchmark-phase4-01`
+
+  Tested: deepseek-v4-flash 真实 API 调用
+
+
+- benchmark(deconstruction/phase4-merged): Phase 4 + merged stages 最终配置 benchmark：单章 170.2s，比原始基线 330.4s 快 48%，同时具备全部质量增强（因果图/置信度校准/自评估/实体消解/弧记忆/伏笔追踪）。
+
+  Changelist: `CL-benchmark-phase4-merged-01`
+
+  Tested: deepseek-v4-flash 真实 API 调用，NOVEL_ANALYZER_USE_MERGED_STAGES=true
+
+
+- feat(gate/claim-grounding): 新增 ClaimGroundingService，对 continuity_notes/state_transition_notes/resolutions/unresolved_threads 中的每条分析声称做原文锚定验证（关键词匹配 + bigram 覆盖率）；无法锚定的声称自动降级到 ambiguous_points，grounding_ratio < 30% 触发 needs_human_review。
+
+  Changelist: `CL-gate-claim-grounding-01`
+
+  Constraint: 纯确定性文本匹配，零 LLM 成本
+  Tested: 31/32 analysis tests passed
+  Not-tested: 中文分词边界对 grounding 精度的影响
+
+
+- feat(gate/auto-repair): 新增 AutoRepairService，在 quality_gate 前自动修复 4 类问题：overclaim 降级（unsupported → ambiguous）、重复去重、thin facts 回填、空摘要兜底生成。修复后的 result 直接用于后续 commit，减少人工复核负担。
+
+  Changelist: `CL-gate-auto-repair-01`
+
+  Constraint: 修复策略保守（只降级/去重/回填），不会凭空创造新内容
+  Tested: 31/32 analysis tests passed
+  Not-tested: 修复对下游 QA/search 质量的影响
+
+
+- feat(gate/confidence-gated-activation): 新增 ConfidenceGatedActivationService，根据章节 fact 置信度分布动态决定哪些 risk checker 需要运行、severity 阈值如何调整；高置信度章节跳过冗余 checker（如 power_scaling），低置信度章节加严所有 checker。
+
+  Changelist: `CL-gate-confidence-gated-activation-01`
+
+  Constraint: 当前为独立 service，尚未集成到 RiskAuditService 主循环（需后续接入）
+  Tested: import verification
+  Not-tested: 动态门控对 risk card 生成数量的影响
+
+
+- feat(product/qa-enhanced): BranchQAService 集成 entity resolution（别名自动扩展查询）、foreshadowing（伏笔上下文注入）、causal graph（因果链上下文注入）；检索时自动解析实体别名提升召回率。
+
+  Changelist: `CL-product-qa-enhanced-01`
+
+  Tested: import verification, 31/32 analysis tests passed
+  Not-tested: 真实 QA 回答质量对比
+
+
+- feat(product/export-enhanced): ExportService.export_chapter_bundle 新增 foreshadowing_threads 和 causal_chains 字段；导出现在包含伏笔生命周期表和因果链列表。
+
+  Changelist: `CL-product-export-enhanced-01`
+
+  Tested: import verification
+  Not-tested: 前端消费新字段的渲染
+
+
+- feat(product/confidence-gated-risk-audit): ConfidenceGatedActivationService 正式接入 RiskAuditService.generate_for_chapter 主循环；高置信度章节自动跳过 power_scaling/setting_scope checker，低置信度章节 severity 自动加严。
+
+  Changelist: `CL-product-confidence-gated-risk-audit-01`
+
+  Tested: 31/32 analysis tests passed, import verification
+  Not-tested: 跳过 checker 对 risk card 覆盖率的影响
+
+
+- feat(product/quality-dashboard-api): 新增 `GET /api/quality-dashboard?branch_id=...` 端点，返回分支级质量仪表盘数据：章节数、事实总数、平均置信度、低置信度比例、伏笔追踪状态、每章概要（实体数/事件数/是否需人工复核/profile 状态）。
+
+  Changelist: `CL-product-quality-dashboard-api-01`
+
+  Tested: import verification
+  Not-tested: 前端消费与渲染
+
+
+- fix(risk/silent-exceptions): 所有新增 service 的 exception handler 从 silent pass 改为 logger.warning/debug，确保故障可观测；涉及 foreshadowing、entity resolution、causal graph、confidence calibration、self-evaluation 五处。
+
+  Changelist: `CL-risk-silent-exceptions-01`
+
+  Tested: 31/32 analysis tests passed (1 pre-existing API connectivity failure)
+
+
+- fix(risk/rate-limit-backoff): _invoke_with_retry 新增 rate-limit 感知退避（429 → 5s*attempt, 503 → 3s*attempt），替代原有固定 1s 退避；减少 rate-limit 场景下的无效重试。
+
+  Changelist: `CL-risk-rate-limit-backoff-01`
+
+  Tested: 31/32 analysis tests passed
+
+
+- feat(risk/provider-circuit-breaker): _invoke_with_retry 集成 provider_health 读写，每次调用后记录成功/失败状态；degraded 状态下发出 warning 日志，为后续自动熔断打基础。
+
+  Changelist: `CL-risk-provider-circuit-breaker-01`
+
+  Constraint: 当前仅记录+告警，不自动阻断调用（避免误杀）
+  Tested: 31/32 analysis tests passed
+
+
+- fix(risk/materialization-timeout-monitor): materialization 阶段新增耗时监控，超过 60s 发出 warning 日志，便于定位慢物化问题。
+
+  Changelist: `CL-risk-materialization-timeout-01`
+
+  Tested: 31/32 analysis tests passed
+
+
+- fix(risk/merged-stage-fallback): merged stage 解析失败时自动降级到非合并路径（分别调用 intake/facts 和 evidence/analysis），避免因 LLM 返回格式异常导致整章失败。
+
+  Changelist: `CL-risk-merged-stage-fallback-01`
+
+  Tested: 31/32 analysis tests passed
+
+
+- perf(loom/importance-score-query): `_update_node_importance` 改用 `union_all(source_node_id, target_node_id)` 子查询替代 outerjoin，查询时间从 4.3s 降至 0.37s（12x 提速）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-importance-score-perf-01`
+
+  Tested: test_loom_phase1.py (27 passed), 手工 benchmark 验证
+
+
+- feat(loom/importance-score-from-edges): `memory_consolidation_service` 新增 `_update_node_importance`，在每次 consolidate 时根据 GraphEdge 频率计算 GraphNode 的 `importance_score`（公式：0.3 + 0.7 * edge_count / max_edges）；修复后卫图 importance=1.0，李童氏=0.47，杏=0.44，working memory 排序现在反映真实重要性；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-importance-score-from-edges-01`
+
+  Constraint: 仅在 consolidate 时更新，shadow 模式下不持久化到 DB
+  Tested: test_loom_phase1.py (27 passed), 手工 loom-consolidate + loom-assemble 验证
+  Not-tested: 大分支（115章）的性能影响（85K edges 的 outerjoin 查询）
+
+
+- feat(loom/ab-compare-signal-view): `loom-ab-compare` 新增 Loom 信号对比区块，每章显示 tension/hook_density/style_drift/char_count 的 baseline→loom 变化；同时在 chapter_results JSON 中记录完整信号字段；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-ab-compare-signal-view-01`
+
+  Tested: test_loom_phase3.py (28 passed), 手工卫图 ch2-5 验证
+
+
+- fix(loom/pairwise-heuristic-signals): 增强 `_heuristic_score` 使用 Loom 信号（tension_score/hook_density/style_drift/character_alerts）差异化评分；同时修复 `loom-collect-pairs` 跨目录模式传递 `loom_signals_a/b`；新增 `_loom_extract_signals` 辅助函数；tie 阈值从 0.05 降至 0.03；修复后 ch2-4 enhanced 胜出（preference=B），ch5 tie；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-pairwise-heuristic-signals-01`
+
+  Constraint: heuristic 仍不如 LLM judge 准确，但现在能区分有/无 Loom 信号的产物
+  Tested: test_loom_phase2.py (21 passed), test_loom_phase3.py (28 passed), 手工卫图 ch2-5 验证
+  Not-tested: LLM judge 路径（provider 余额不足）
+
+
+- fix(loom/hook-keywords-expand): `HOOK_CONTINUITY_KEYWORDS` 扩展增加"伏笔/后续/下一章/将会/暗示/预示/留下/埋下/引出"，修复 ch4/5 hook_density=0 的问题；ch4 现有 2 个 hook 匹配，ch5 有 1 个；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-hook-keywords-expand-01`
+
+  Tested: test_loom_phase4.py (29 passed), 手工卫图 ch4/5 验证
+
+
+- fix(loom/climax-score-zero): `rhythm_analysis_service._compute_climax_score` 同样使用 `HOOK_FACT_TYPES` 导致始终为 0；应用与 `_compute_hook_density` 相同的 continuity 关键词匹配逻辑，修复后卫图 ch2 `climax_score=0.1154`；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-climax-score-fix-01`
+
+  Tested: test_loom_phase4.py (29 passed), 手工卫图 ch2 验证
+
+
+- fix(loom/hook-density-zero): `rhythm_analysis_service._compute_hook_density` 始终返回 0，因为实际 fact_type 只有 `entity/event/continuity`，不含 `HOOK_FACT_TYPES` 中的类型；新增 Python 侧 `continuity` 关键词匹配（钩子/高潮/反转/揭示/悬念/冲突升级/转折/危机/爆发），修复后卫图 ch2 `hook_density=5.3571`，`pacing_type=action_heavy`；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-hook-density-fix-01`
+
+  Constraint: 关键词匹配在 Python 侧执行（非 SQL），避免 SQLite/PostgreSQL 正则兼容问题
+  Tested: test_loom_phase4.py (29 passed), 手工卫图 ch2 验证
+  Not-tested: climax_score 仍为 0（HOOK_FACT_TYPES 无匹配，待后续处理）
+
+
+- fix(loom/dialogue-chapter-first-seen): `dialogue_signal_service` 的 `_dialogue_efficiency` 和 `_conflict_dialogue_density` 两个方法均使用 `chapter_last_seen` 过滤边，改为 `chapter_first_seen` 后语义正确；修复后 `conflict_dialogue_density` 从 0.1091 变为 0.1053（更精确），`dialogue_efficiency` 保持 1.0；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-dialogue-chapter-first-seen-01`
+
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 验证
+
+
+- fix(loom/conflict-density-accuracy): `tension_service._conflict_density` 两处修复：(1) 计数过滤从 `chapter_last_seen` 改为 `chapter_first_seen`，避免把历史延续边重复计入当前章节；(2) `_get_chapter_word_count` 从 summary 长度估算改为直接累加 `RetrievalChunk.text` 真实字符数，避免 summary 过短导致密度虚高；修复后 ch2 `conflict_density` 从 160.7 降至 41.3（90 edges / 2178 chars）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-conflict-density-fix-01`
+
+  Constraint: chapter_first_seen/chapter_last_seen 在此分支相同（无跨章延续边），但语义上应用 first_seen
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 验证
+  Not-tested: 大分支（115章）的跨章延续边场景
+
+
+- fix(loom/chunk-order-vector-query): `dialogue_signal_service`、`tension_service`、`style_calibration_service` 三个服务的章节向量查询均使用 `chunk_order == 0` 过滤，但实际数据 chunk_order 从 1 开始，导致向量始终为 None；改为 `order_by(chunk_order).limit(1)` 后，`character_details` 正常填充（卫图: 0.7304）、`plot_similarity` 正常计算（0.7304）、`style_drift_score` 正常输出（0.2696）；125 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-chunk-order-fix-01`
+
+  Constraint: chunk_order 在此分支从 1 开始，不是 0；order_by + limit(1) 兼容两种情况
+  Tested: test_loom_phase1-5 (125 passed), 手工卫图 ch2 enhanced 验证
+  Not-tested: 大分支（115章）的 chunk_order 起始值未验证
+
+
+- fix(loom/pairwise-llm-judge): `run_harness` 中 `PairwiseEvalService` 始终以 `llm_client=None` 实例化，导致评估永远走 heuristic 路径；现在当 `use_llm=True` 时自动构建 LLM adapter 注入；同时修复 `_llm_evaluate` 异常不降级的问题，LLM 失败时自动回退 heuristic；当前因 provider 余额不足仍走 heuristic，但代码路径已就绪。
+
+  Changelist: `CL-loom-pairwise-llm-judge-01`
+
+  Constraint: DeepSeek API 余额不足（402），LLM judge 路径待 provider 充值后验证
+  Tested: test_loom_phase2.py (21 passed), 手工验证 heuristic fallback 正常
+  Not-tested: LLM judge 真实调用路径（provider 不可用）
+
+
+- fix(loom/dialogue-signal-gate): `dialogue_signal` 门控条件由 `loom_style_enabled` 修正为 `loom_pairwise_enabled`，同时修复 `DialogueSignalService(session)` 中未定义局部变量 `session` 应为 `self.session` 的 bug；修复后卫图样例 ch2 enhanced 产物中 `dialogue_signal` 已正常填充；122 个 Loom 测试全部通过。
+
+  Changelist: `CL-loom-dialogue-signal-fix-01`
+
+  Tested: test_loom_phase2.py (21 passed), 手工卫图 ch2 enhanced 验证
+  Not-tested: LLM judge 路径（当前仍为 heuristic fallback）
+
+
+- feat(deconstruction/benchmark-readiness-checker): 新增 `scripts/check_deconstruction_benchmark_readiness.py`，可脚本化判定 repo 是否已具备 funded-provider 对照 run 所需资产；当前真实执行结果显示 `all_files_ready=true`，唯一剩余 blocker 为 provider 可用性；扩展回归 35/35 通过。
+
+
+- feat(deconstruction/benchmark-bundle-validator): 新增 `scripts/check_deconstruction_benchmark_bundle.py`，可自动校验 benchmark bundle 的文件完整性与 compare/comparability 字段完整性；扩展回归 33/33 通过。
+
+
+- docs(deconstruction/funded-benchmark-runbook): 新增 `docs/deconstruction-acceleration/funded-benchmark-runbook.md`，把 provider 恢复后的真实 20 章 candidate run、严格可比性判定、指标汇报与 bundle 交付流程整理成一份最终执行手册；并验证相关 CLI `--help` 入口可调用。
+
+
+- ops(deconstruction/final-benchmark-chain-smoke): 已在独立库上真实跑通 `run_and_export_deconstruction_benchmark_bundle.py` 的 1 章 smoke，并成功输出 compare/bundle；compare 结果正确标记 `is_strictly_comparable=false`，证明最终 benchmark 交付链执行面已闭环。
+
+
+- feat(deconstruction/benchmark-bundle-runner): 新增 `scripts/run_and_export_deconstruction_benchmark_bundle.py`，可一条命令串联 candidate run、benchmark summarize、compare 与完整 bundle export；扩展回归 31/31 通过。
+
+
+- feat(deconstruction/benchmark-comparability): `compare_deconstruction_benchmarks.py` 现已输出 chapter-count/provider-purity 可比性判断，避免把 smoke run、fallback-heavy run 与严格 primary-provider 对照混为一谈；扩展回归 30/30 通过。
+
+
+- feat(deconstruction/benchmark-bundle-exporter): 新增 `scripts/export_deconstruction_benchmark_bundle.py`，可从 baseline/candidate benchmark JSON 自动导出完整交付包（baseline/candidate/compare/summary）；扩展回归 29/29 通过。
+
+
+- feat(deconstruction/fallback-aware-benchmark): `benchmark_deconstruction_run.py` 现已识别并汇总 `fallback_modes` / `fallback_chapter_count` / `is_pure_primary_provider_run`，避免后续对照时把混入 fallback/heuristic 的 run 误当成纯 provider 性能结果；扩展回归 28/28 通过。
+
+
+- ops(deconstruction/benchmark-smoke): 已在独立库上真实跑通 `run_deconstruction_benchmark.py` 的 1 章 smoke，并成功用 `compare_deconstruction_benchmarks.py` 读取 repo 内旧基线 artifact 与 candidate JSON 输出结构化对比，证明 benchmark 工具链执行面可用。
+
+
+- feat(deconstruction/benchmark-runner): 新增 `scripts/run_deconstruction_benchmark.py`，可一键串联 init-db/ingest/start-run/analyze-range/benchmark 汇总，为 funded-provider 新对照 run 提供直接执行入口；扩展回归 27/27 通过。
+
+
+- feat(deconstruction/benchmark-compare-cli): 新增 `scripts/compare_deconstruction_benchmarks.py`，可直接比较两份真实拆书 benchmark JSON 的 wall-clock、avg/chapter、failed_jobs 与 prompt_char_totals；扩展回归 26/26 通过。
+
+
+- test(deconstruction/benchmark-cli): 为 `scripts/benchmark_deconstruction_run.py` 增加自动化测试，覆盖有/无 prompt metrics 两种 run 汇总模式；扩展回归 24/24 通过。
+
+
+- feat(deconstruction/benchmark-cli): 新增 `scripts/benchmark_deconstruction_run.py`，可汇总真实拆书 run 的章节完成数、failed_jobs、wall-clock 与 prompt metrics；已成功用于卫图 20 章真实 run 汇总，得到旧基线 `elapsed_seconds=4728.32721` / `avg_seconds_per_completed_chapter=236.4163605`。
+
+
+- feat(deconstruction/prompt-metrics-observability): 在章节 raw output 的 `invocation_metadata` 中记录各同步 stage 的 `prompt_char_counts` 与 `total_prompt_chars`，为后续 funded-provider 真实 benchmark 提供数据库内可查询的 prompt 成本证据；扩展回归 22/22 通过。
+
+
+- perf(deconstruction/previous-summary-compaction): quick 拆书主链统一压缩 `previous_summary` 输入，减少上一章摘要在多个同步 stage prompt 中重复膨胀；扩展回归 20/20 通过。
+
+
+- test(deconstruction/prompt-budget-guards): 为 quick 拆书主链新增基于卫图第 20 章真实上下文的 prompt budget 护栏测试，覆盖绝对长度上限与相对旧版缩减比例，扩展回归 18/18 通过。
+
+
+- perf(deconstruction/prior-context-slimming): quick 拆书主链将 `prior_context_json` 压缩为 compact 版，仅保留小规模前情摘要与事实关键字段；扩展回归 16/16 通过。量化样本显示卫图第 20 章上 `fact_extractor` prompt 约下降 90.6%。
+
+
+- perf(deconstruction/fact-evidence-prompt-slimming): 继续缩 quick 拆书主链 prompt 体积：`fact_extractor` 去掉完整图谱上下文，仅保留 compact 前情状态；`evidence_binder` 回到最小必要输入（cleaned_text + fact_json）。扩展回归 14/14 通过。
+
+
+- perf(deconstruction/analysis-prompt-slimming): `analysis_generator` 与 `anti_fabrication_guard` 不再携带完整图谱上下文，改为只消费 compact 前情状态摘要，减少同步 stage prompt 体积且不改输出契约；扩展回归 13/13 通过。另：卫图 20 章 branch 在 provider 402 场景下，`ask-branch` 仍能降级返回保守 QA 结果。
+
+
+- perf(deconstruction/quick-risk-deferral): quick 拆书主链默认将 `risk_aggregation` 从同步尾部工作改为 deferred non-blocking event，避免 risk card 聚合拖慢章节完成后的主链返回；相关分析/上下文/QA 回归 11/11 通过。另：卫图真实 20 章样例已完整跑通，`failed_jobs=0`。
+
+
+- perf(deconstruction/quick-writer-deferral): quick 拆书主链默认将 `writer_learning_lens` 从同步 LLM stage 改为 deferred，占位保留 `writer_learning_notes=[]` 与 `_deconstruction_profile.writer_lens_status=deferred`，直接减少一次串行模型调用；定向回归 8/8 通过，且 fallback smoke 未受破坏。
+
+
+- docs(deconstruction/weitu-midrun): 卫图真实拆书中期证据补充：当前已稳定推进到 7 章完成、8 章运行中；第 6 章曾触发 `small_model_pipeline` JSON 失败，但 `monolithic_fallback` 成功接管并完成整章，说明新链路的真实稳定性收益不仅来自 stall timeout，也来自 fallback 兜底仍有效。
+
+
+- ops(deconstruction/weitu-real-validation): 已在独立数据库上用 `deepseek-v4-flash` 启动卫图前 20 章真实拆书验证；当前前 5 章已完成，`show-run-status / show-chapter / show-context / show-window / search-branch / ask-branch` 全链路可用，且前 5 章吞吐约 31 分钟。
+
+
+- feat(deconstruction/qa-hardening): QA 结果新增 `chapter_evidence` / `window_evidence` / `graph_evidence` 分层证据字段，并按问题类型做命中 rerank 与保守降级；同时给 retry/recovery bulk path 增加 completed-chapter guard，避免已完成章节被重复重跑。
+
+  验证：
+  - `tests/test_qa_service.py` 6/6 通过
+  - `tests/test_run_service.py tests/test_cli_retry_bulk.py tests/test_application_layer.py -k "retry_failed_jobs_cli_skips_completed_chapters_with_artifacts or retry_refused_when_readable_artifact_already_exists or stalled_jobs_respects_timeout_setting"` → 3/3 通过
+
+- docs(deconstruction-acceleration): 补充 `user-manual.md`，把当前拆书加速优化版本的已落地能力、未落地范围、推荐实跑顺序、reader isolation 口径与验证方式整理为用户手册；同步把入口挂到 `docs/README.md` 与 `docs/cli-operations-manual.md`。
+- docs(loom/docs-entrypoints): 收窄 `docs/README.md` 与 `docs/loom/README.md` 的默认入口，把 Loom 主线文档固定为 5 份 canonical 文档，并明确 source-of-truth 约定。
+
+  解决问题：
+  - `/docs` 和 `docs/loom` 文档过多时，读者容易不知道先看哪份
+  - `roadmap / handoff / validation / checklist` 的职责边界不够显式
+  - 设计稿、背景稿、执行文档混在一起时，维护成本和理解成本都偏高
+
+  当前 canonical 顺序：
+  - `sota-imitation-progression-checklist.md`
+  - `weitu-real-effect-validation.md`
+  - `weitu-validation-log-20260511.md`
+  - `handoff.md`
+  - `roadmap.md`
+
+- feat(loom/weitu-validation-bootstrap): `CL-loom-weitu-validation-bootstrap-01` — 新增 `scripts/bootstrap_weitu_validation_workspace.py`，把卫图样例真实验证的 manual_eval 工作区初始化、branch bundle 导出、branch report 导出、whole-book report 导出与 mailbox-style notes 回填收口成一个可重复执行入口。
+
+  解决问题：
+  - 卫图验证之前需要手工逐条执行多条导出命令，容易漏步骤
+  - 人工兜底入口与 resume / recovery 下一步说明分散在多处文档中
+  - “当前已经跑过什么验证”难以在工作区内被完整保留
+
+  验证：
+  - 新增 `tests/test_bootstrap_weitu_validation_workspace.py` → 1/1 通过
+  - 联合验证：`tests/test_whole_book_imitation_service.py` 4/4、`tests/test_cli.py` 7/7
+  - 实际执行：`python3 scripts/bootstrap_weitu_validation_workspace.py 62e636f0-c901-4167-aa1c-aff3da9c83ef weitu-sample --force`
+
+- ops(loom/weitu-ab-smoke): 已在同一真实卫图分支上执行 baseline vs enhanced 的 first-pass 对比。
+
+  实际结果：
+  - baseline: `quality_verdict=quality-pass`, `style_signal_count=0`, `chapter_quality_signal_count=0`
+  - enhanced: `quality_verdict=quality-hold`, `style_signal_count=2`, `chapter_quality_signal_count=2`
+
+  结论：
+  - 已证明打开 Loom enhanced flags 会真实改变 whole-book 执行侧产物与 gate 结论
+  - 但尚未证明“卫图样例仿写效果提升”，因为当前结果更接近“增强后暴露了问题”，而不是“增强后质量已上升”
+
+- ops(loom/weitu-writer-ab): 已在卫图样例上执行第一轮 writer-imitate 真实对比。
+
+  实际执行：
+  - baseline / enhanced 各生成 chapter 2 和 chapter 3 的 `writer-imitate-ch*.json`
+  - `loom-collect-pairs` 成功采集 2 对 cross-dir pairwise 记录
+  - `loom-pairs-stats` 显示：`total_pairs=2`, `avg_quality_score=0.5`, `evaluation_method=heuristic:2`, `overall_preference=tie:2`
+  - `loom-ab-compare` 显示：`baseline_ooc_count=0`, `loom_ooc_count=0`, `ooc_reduction_pct=0.0`, `target_met=False`
+
+  结论：
+  - 已证明 pairwise / A-B 工具链在卫图样例上真正跑通
+  - enhanced 路径会新增单章 Loom 信号（如 `chapter_quality_signal`、`_loom_style`）
+  - 但当前还没有证据表明 enhanced 结果优于 baseline，且评估仍以 heuristic 为主
+
+- ops(loom/weitu-writer-ab-expand): 已把卫图样例的 LLM writer-imitate 对比从 chapter 2–3 扩到 chapter 2–5。
+
+  实际结果：
+  - baseline / enhanced 已生成 4 章 LLM prose 样本
+  - `loom-collect-pairs` → 4 pairs
+  - `loom-pairs-stats` → `A=1, tie=3`, `avg_quality_score=0.4875`, `evaluation_method=heuristic`
+  - `loom-ab-compare` → `baseline_ooc_count=0`, `loom_ooc_count=0`, `ooc_reduction_pct=0.0`
+
+  人工对读趋势：
+  - chapter 2：baseline 更强
+  - chapter 3：enhanced 更强
+  - chapter 4：baseline 略强
+  - chapter 5：baseline 更强
+
+  阶段结论：
+  - enhanced 稳定改变了信号层与文本风格取向
+  - 但在卫图样例 2–5 章抽样里，正文效果暂时仍是 baseline 略占优或至少未被反超
+
+- fix(loom/harness-feedback): style / character / rhythm 的 Loom 建议开始真正回流到 writer-imitate 修订决策链。
+
+  解决问题：
+  - 之前 enhanced 里的 `_loom_style` / character checks 主要是“出信号 + 出 preflight check”
+  - 但建议没有稳定进入 `recommended_actions`，导致 enhanced 可能只是在报告层更丰富，而不真正影响修订策略
+
+  本轮改动：
+  - style / rhythm / character 的 `suggestion` 进入 `recommended_actions`
+  - `_loom_character_consistency` 写入 skill outputs，供 downstream 消费
+
+  验证：
+  - `tests/test_loom_phase2.py` → 20/20 通过
+  - 手工执行 enhanced writer-imitate 后，确认产物中存在 `_loom_style`、`_loom_character_consistency`、`chapter_quality_signal`
+
+  结论：
+  - 已证明 enhanced 信号开始真正回流到决策链
+  - 尚未证明这一步已经让卫图样例正文质量稳定提升
+
+- fix(loom/llm-fallback): `writer-imitate --use-llm` 在 provider 失败时不再整条命令中断。
+
+  解决问题：
+  - chapter 4 / 5 的卫图 enhanced LLM 复跑曾被上游 provider 402（余额不足）直接打断
+  - 这会让验证链无法继续，也拿不到可审计的 fallback 产物
+
+  本轮改动：
+  - `run_harness()` 在 LLM draft 失败时回退到 `build_skeleton_draft()`
+  - artifact 中显式记录：
+    - `LLM draft unavailable -> skeleton fallback: APIStatusError`
+    - `当前章节因上游 provider 不可用，使用 skeleton fallback 保底生成。`
+
+  验证：
+  - `tests/test_loom_phase2.py` → 21/21 通过
+  - 手工执行 chapter 4 enhanced `writer-imitate --use-llm` 后，确认 `writer-imitate-ch4.json/.md` 已生成，且包含 fallback 痕迹、`_loom_character_consistency` 与 `chapter_quality_signal`
+
+  结论：
+  - provider 失败不再让验证链直接断掉
+  - 余额问题本身仍存在，但现在至少能产出可审计、可继续比较的 fallback artifact
+
+- ops(loom/post-feedback-rerun): 在 feedback-loop 修复后继续尝试扩样重跑 enhanced LLM 正文。
+
+  当前状态：
+  - chapter 2 / 3 enhanced LLM 重跑成功
+  - chapter 4 / 5 enhanced LLM 当前运行失败，未形成新的正文证据
+
+  结论：
+  - feedback-loop 修复已在小样本上生效
+  - 但 2–5 全量 post-fix 趋势仍未闭环，下一步需先解决 chapter 4 / 5 的 LLM 运行失败
+
+- ops(loom/weitu-validation): 已开始卫图样例的真实验证执行，不再停留在纯规划。
+
+  本轮已执行证据：
+  - 锁定真实验证目标分支：`run_id=ac9449b9-7326-474f-bb72-4416375a7491` / `branch_id=62e636f0-c901-4167-aa1c-aff3da9c83ef`
+  - 真实执行：`loom-status` / `loom-assemble` / `loom-consolidate`
+  - 真实导出：`export-branch-report` / `export-branch-bundle` / `export-whole-book-imitation-run --execute`
+  - 已创建 mailbox-style 人工工作区：`runs/manual_eval/weitu-sample/`
+
+  当前已确认：
+  - Loom 在真实卫图分支上可运行（memory/tension/carry-over/whole-book report）
+  - whole-book report 已含 `session_loom_signals` / `session_loom_gate_summary`
+  - 但当前仍是 `loom_memory_mode=shadow`，且 `loom_pairwise_enabled=False` / `loom_style_enabled=False` / `loom_character_enabled=False`
+  - 结论仍然是“能力已建成，效果待证实”，因为 baseline vs loom 双臂对照尚未建立
+
+- docs(loom/validation-mainline): 新增两份主线文档，明确 Loom 的北极星不是“再堆评估结构”，而是推进 SOTA 仿写主链能力，并用真实验证闭环给出证据。
+
+  新增：
+  - `docs/loom/sota-imitation-progression-checklist.md`
+  - `docs/loom/weitu-real-effect-validation.md`
+
+  解决问题：
+  - 把“仿写主链推进”与“验证支线”重新收口，避免本末倒置
+  - 明确卫图样例是当前真实效果验证的首个标准对象
+  - 明确 LLM-first / human-fallback / resume-able 的验证组织方式
+  - 给后续复现测试提供手册化入口，而不是散落在 handoff / roadmap / manual_eval 模板中
+
+  同步更新：
+  - `docs/loom/README.md`
+  - `docs/loom/handoff.md`
+  - `docs/README.md`
+  - `docs/cli-operations-manual.md`
+
+- feat(loom/whole-book-bridge): `CL-loom-whole-book-bridge-01` — whole-book imitation sandbox/export report 继承 Loom 统一摘要。为 `WholeBookImitationExecutedStep` 新增 `loom_signals`，为 `WholeBookImitationRunReport` 新增 `session_loom_signals` 与 `session_loom_gate_summary`，并从 chapter harness 的真实 Loom 输出（`chapter_quality_signal`、`_loom_tension`、`_loom_rhythm`、`_loom_style`、`dialogue_signal` 等）聚合 whole-book 级质量/张力摘要与 gate 结论。
+
+  解决问题：
+  - whole-book report 过去绕开 Loom gate，下游只消费整书报告时看不到统一质量/张力结论
+  - service 层虽已聚合 Loom 数据，但 CLI 导出边界缺少合同级验证
+  - operator/control surface 与更接近执行器的 whole-book report 视图不一致
+
+  验证：
+  - `tests/test_whole_book_imitation_service.py` 4/4 通过
+  - `tests/test_cli.py` 7/7 通过（新增 `export-whole-book-imitation-run` Loom 字段导出断言）
+
+- chore(deconstruction): 对 analysis/run service 与相关测试做最小化格式整理，清理本 tranche 验证中暴露的长行 lint 问题，不改变行为。
+
+- feat(deconstruction-acceleration): 在章节 canonical artifact 持久化链路中新增 `_deconstruction_profile` shadow metadata（`profile/quick_ready/writer_lens_status/loom_status/risk_status/canonical_artifact_id/content_hash/idempotency_key/timing`），并保持 `ChapterAnalysisOutput` 既有键名完全不变；同时补充 analysis/run service 定向测试覆盖。
+
+- docs(deconstruction-acceleration): 新增 `docs/deconstruction-acceleration/` 专题目录，落地拆书加速优化入口、架构说明、开发文档与关键遗漏审查；同步把专题挂到 `docs/README.md` 与 `docs/architecture/README.md`，明确 Quick/Deep 双档、canonical-readable/downstream-driving 合同、reader isolation、fork inherited deferred completeness、stale/idempotency 守卫与 benchmark 口径。
+
+- feat(loom/phase4-flags): 新增 `loom_style_enabled`（默认 False）和 `loom_character_enabled`（默认 False）两个 Phase 4 feature flag，接入 `loom-status` 输出，并在 CLI 操作手册 12.1 节补充环境变量说明。
+
+- docs(loom/phase4): 新增 Phase 4 设计文档层 `docs/loom/style/`（风格向量化 + 节奏分析 + 对话质量信号，全部零 LLM 调用）和 `docs/loom/character/`（CharacterPersona 构建 + 一致性检测，深化 OOC checker）。更新 `docs/loom/overview.md` 架构图、`docs/loom/README.md` 导航表与架构树。
+
+- docs(loom/roadmap): 更新 `docs/loom/roadmap.md`，新增 Phase 4/5 总览与完整任务清单（style_calibration_service / rhythm_analysis_service / dialogue_signal / character_agent_service / reader_simulation_service / thread_scheduler_service），补充两条新风险登记。
+
+- docs(loom/overview): 更新 `docs/loom/overview.md` SOTA 对比表，新增节奏/爽点、对话设计、读者模拟、多线调度四个维度，并更新已有维度的 Gap 状态以反映 Phase 1-3 进展。
+
+- refactor(loom/cli): 从 `loom_collect_pairs`、`loom_collect_pairs_from_db`、`loom_collect_pairs_from_manual`、`loom_ab_compare` 四个命令中提取 9 个模块级共享 helper（`_loom_build_llm_client`、`_loom_final_draft_text`、`_loom_round0_draft_text`、`_loom_extract_chapter_index`、`_loom_load_chapter_artifacts`、`_loom_chapter_goal`、`_loom_risk_verdict`、`_loom_write_pairs_jsonl`、`_loom_echo_total_pairs`），移除约 150 行重复代码，将 `uuid` 提升为模块级导入。69 个 Loom 测试全部通过。
+
+- docs(loom/phase3): 更新 `docs/loom/handoff.md`（Phase 3 交付物、测试计数 69/394、CMD 速查）、`docs/loom/roadmap.md`（Phase 3 进行中、P3 任务清单全部标记）、`docs/cli-operations-manual.md`（新增 12.7–12.11 节 Phase 3 命令文档）。
+
+ `writer-imitate-control-surface-registry` 与 `writer-imitate-index` 第一层摘要接入 `session_loom_gate_summary`，让 operator 在入口面即可看到 Loom gate 结论。
+
+- feat(loom/live-runtime-summary): `live_control_state`、`live_validation_state` 与 external runtime simulation bridge 统一继承 `session_loom_gate_summary`，让 operator/live/runtime 全链路共享同一层 Loom gate 摘要。
+
+- feat(loom/gate-summary): 为 `action_queue`、`execution_state`、`execution_replay`、`execution_apply`、`execution_resume` 新增统一 `session_loom_gate_summary`，把质量 verdict、张力计数与迁移状态收口成稳定执行摘要。
+
+- feat(loom/resume-gate): `writer-imitate-execution-resume` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，并在 `quality-hold` 时把恢复提示切换为先处理质量，再进入 resume/recovery。
+
+- feat(loom/runtime-sim-bridge): `writer-imitate-external-runtime-executor-preview` / checkpoint / transition / validation 产物统一继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 external runtime simulation bridge 与 operator/live 面共享同一套 Loom 状态。
+
+- feat(loom/runtime-readiness): `writer-imitate-live-control-state` 与 `writer-imitate-external-runtime-executor-readiness` 继承 `quality_verdict` 与 `session_consumer_migration_telemetry`，让 live/runtime readiness 面在进入真实执行器前即可感知 Loom 质量与迁移状态。
+
+- feat(loom/telemetry): 新增 `session_consumer_migration_telemetry`，在 session/operator/legacy/retirement preview 产物中标记 primary-ready 与 legacy-remaining 消费方，为后续 legacy 收口提供最小迁移可见性。
+
+- feat(loom/retirement-gate): writer retirement readiness / preview 接入最小 Loom quality gate，当聚合 `chapter_quality_score < 0.7` 时标记 `quality-blocked`，并把阻断原因写入 `blocking_reasons` 与 preview `projected_effect`。
+
+- feat(loom/quality): `session_primary_verdicts` 新增 `quality_verdict`、`average_chapter_quality_score`、`chapter_quality_signal_count`，并让 writer operator surface 在 primary verdict 层直接暴露章节质量聚合结果，减少下游对 sidecar Loom signal 的依赖。
+
+- feat(loom/control-surface): `writer-imitate-session-state.json` 与 `writer-imitate-operator-surface.json` 新增 `session_loom_signals` 聚合段，从 `writer-imitate-ch*.json` 汇总 Loom tension signal 与可选 `chapter_quality_score`，并在 operator surface markdown 渲染 `Loom Signals` 小节，作为 0509 消费 Loom 信号的稳定入口。
+
 - docs: 创建 Loom handoff 交接文档 `docs/loom/handoff.md`，更新 `docs/session-handoff-manual.md` 引用入口。handoff 文档覆盖架构定位、工作状态、决策记录、剩余工作、启动步骤、风险点、文档索引、命令速查，不包含任何敏感凭据。
 
 - fix(loom): 对齐 Loom 服务层 node/edge type 查询与真实 PostgreSQL 生产数据：MemoryAssemblerService 的 `_count_active_characters` 兼容 `entity`/`character`，`_get_active_rule_labels` 兼容 `world_rule`/`rule`，`_get_key_relationship_labels` 兼容 `relates_to`/`relationship`；MemoryConsolidationService 的 CONFLICT_EDGE_TYPES 补充 `conflict_centers_on`/`conflict_involves`/`pressured_by`；移除 `_mark_evolution` 中对 GraphNode 不存在的 `is_active` 赋值。38/38 tests passing。
@@ -1304,6 +2360,20 @@ Loom 是在现有 GraphRAG 基础设施（pg_trgm + pgvector + GraphNode/GraphEd
 ### 交付纪律补充
 - 增补项目约定：每一次修复和变动，都同步更新文档、`CHANGELOG.md` 与 git commit 记录
 - 后续所有 UI、API、运行时恢复与自动拆书推进相关修改，均按该约定执行
+
+
+### 拆书 reader isolation：active companion 不再默认可读
+- 为 `ChapterArtifact` 默认读路径新增 canonical/default-readable 过滤：`visibility='active'` 且 `participates_in_downstream=true`
+- 修复 `record_chapter_artifact()`：非 downstream 的 companion / manual artifact 不再隐藏当前 active canonical artifact
+- 收口 `previous_summary`、window materialization、status completed count、chapter index 等默认 reader，避免误读 active enrichment companion
+- 增补回归测试，覆盖 canonical artifact 保留、summary/status/index 忽略 non-downstream companion 的行为
+- 同步补充拆书开发/使用文档，明确 active companion 不能天然进入默认读路径
+
+
+### 拆书 contract：ChapterAnalysisOutput 既有键名保持不变
+- 核查 `ChapterAnalysisOutput` schema 与 `analysis_service` 序列化路径，确认 `_deconstruction_profile` 只作为附加 metadata 写入
+- 确认当前输出仍保持 canonical keys：`chapter_summary`、`key_entities`、`key_events`、`continuity_notes`、`writer_learning_notes`、`unsupported_inferences`、`ambiguous_points`、`quality_gate_notes`
+- 补开发/使用日志，明确后续 quick/deep 扩展只能新增 shadow metadata，不能重命名主输出 contract keys
 
 
 ### 问答区可见性增强

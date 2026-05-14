@@ -425,6 +425,17 @@ poetry run novel-analyzer repair-branch <branch_id>
 - [`./interface-manifest.md`](./interface-manifest.md)
 - [`./examples/*.sample.json`](./examples/)
 - [`./final-handoff.md`](./final-handoff.md)
+- [`./loom/sota-imitation-progression-checklist.md`](./loom/sota-imitation-progression-checklist.md)
+- [`./loom/weitu-real-effect-validation.md`](./loom/weitu-real-effect-validation.md)
+- [`./loom/weitu-validation-log-20260511.md`](./loom/weitu-validation-log-20260511.md)
+
+默认阅读顺序建议：
+
+1. `cli-operations-manual.md`
+2. `direct-usage-guide.md`
+3. `loom/sota-imitation-progression-checklist.md`
+4. `loom/weitu-real-effect-validation.md`
+5. `loom/weitu-validation-log-20260511.md`
 
 ---
 
@@ -484,7 +495,7 @@ python -m scripts.check_sample_branch <run_id> <branch_id> ./branch.md
 
 ---
 
-## 12. Loom 记忆与张力命令（Phase 1+2）
+## 12. Loom 记忆与张力命令（Phase 1+2+3）
 
 Loom 是叠加在现有系统之上的记忆代谢与质量评估层。默认以 `shadow` 模式运行（并行计算但不影响主链路）。
 
@@ -505,6 +516,12 @@ export NOVEL_ANALYZER_LOOM_EPISODIC_TOP_K=20
 
 # 张力相似度回溯章节数
 export NOVEL_ANALYZER_LOOM_TENSION_LOOKBACK_N=3
+
+# Phase 4：文风量化 + 节奏分析（默认关闭，待 Phase 4 实现后启用）
+export NOVEL_ANALYZER_LOOM_STYLE_ENABLED=false
+
+# Phase 4：角色认知基（默认关闭，待 Phase 4 实现后启用）
+export NOVEL_ANALYZER_LOOM_CHARACTER_ENABLED=false
 ```
 
 ### 12.2 loom-status — 查看分支记忆与张力状态
@@ -623,3 +640,379 @@ Loom 是非侵入式的叠加层：
 | 其他命令 | 完全不受影响 |
 
 `loom_memory_mode=disabled` 时，所有 Loom 逻辑完全跳过，行为与 Loom 引入前完全一致。
+
+---
+
+### 12.7 loom-collect-pairs — 从 writer-imitate 产物提取 pairwise 数据
+
+```bash
+# 单目录模式：同一目录内 round-0 vs final（默认）
+novel-analyzer loom-collect-pairs --output-dir output/ --pairs-file output/loom-pairs.jsonl
+
+# 跨目录模式：baseline vs steering 对比
+novel-analyzer loom-collect-pairs \
+  --output-dir output/baseline/ \
+  --compare-dir output/steering/ \
+  --pairs-file output/loom-pairs.jsonl
+
+# 使用 LLM-as-judge（需配置 LLM）
+novel-analyzer loom-collect-pairs --output-dir output/ --use-llm
+```
+
+扫描 `--output-dir` 下的 `writer-imitate-ch*.json` 文件，提取 pairwise 对并追加写入 JSONL。
+
+### 12.8 loom-collect-pairs-from-manual — 从人工评估工作区提取 pairwise 数据
+
+```bash
+novel-analyzer loom-collect-pairs-from-manual \
+  --manual-eval-dir runs/manual_eval/ \
+  --pairs-file output/loom-pairs.jsonl
+```
+
+扫描 `runs/manual_eval/` 下所有工作区（跳过 `_template`）的 `artifacts/writer-imitate-ch*.json`，提取 round-0 vs final pairwise 对，`pair_source=manual_eval_workspace`。
+
+### 12.9 loom-collect-pairs-from-db — 从 DB 分支提取 pairwise 数据
+
+```bash
+novel-analyzer loom-collect-pairs-from-db <branch_a_id> <branch_b_id> \
+  --pairs-file output/loom-pairs.jsonl
+```
+
+跨两个 DB 分支，按章节索引匹配 `ChapterArtifact` 记录，用 `chapter_summary` 作为对比文本。
+
+### 12.10 loom-pairs-stats — 查看 pairwise 数据采集进度
+
+```bash
+novel-analyzer loom-pairs-stats --pairs-file output/loom-pairs.jsonl
+```
+
+输出示例：
+```
+=== Loom Pairwise Data Stats ===
+pairs_file:        output/loom-pairs.jsonl
+total_pairs:       47
+target:            500
+progress:          9.4%
+avg_quality_score: 0.6823
+unique_chapters:   12
+chapter_range:     1–42
+
+preference distribution:
+  A: 21
+  B: 19
+  tie: 7
+
+evaluation_method distribution:
+  heuristic: 47
+
+pair_source distribution:
+  manual_eval_workspace: 12
+  single_dir_rounds: 35
+
+remaining_to_target: 453
+```
+
+### 12.11 loom-ab-compare — A/B 实验对比报告
+
+```bash
+novel-analyzer loom-ab-compare output/baseline/ output/loom/ \
+  --output-file output/ab-report.json
+```
+
+对比两个 writer-imitate 输出目录的 `character_ooc` 触发率和 Loom 信号差异。
+
+输出包含：
+- character_ooc 触发率对比（目标下降 ≥20%）
+- risk level / verdict 分布变化
+- Loom 信号对比（tension / hook / style_drift / chars / reader_sim / fidelity）
+
+### 12.12 loom-reference-eval — 仿写还原度评估（vs 原文）
+
+```bash
+# 单章评估
+novel-analyzer loom-reference-eval <branch_id> <chapter_index> <draft_dir>
+
+# 批量评估（chapter_index=0 扫描目录内所有章节）
+novel-analyzer loom-reference-eval <branch_id> 0 <draft_dir>
+
+# 两个目录对比（A vs B 各自对原文的 fidelity）
+novel-analyzer loom-reference-eval <branch_id> 0 <draft_dir_a> --compare-dir <draft_dir_b>
+```
+
+以原文为 gold standard，评估仿写草案的还原程度。6 个维度：
+
+| 维度 | 含义 |
+|------|------|
+| `structure_fidelity` | 场景节拍、推进节奏是否与原文一致 |
+| `character_fidelity` | 角色行为、语气、动机是否与原文一致 |
+| `style_fidelity` | 文风、用词习惯、叙事视角是否与原文一致 |
+| `continuity_fidelity` | 是否正确承接前文、保持世界观一致 |
+| `tension_fidelity` | 冲突密度、悬念设置是否与原文水平匹配 |
+| `information_density` | 每千字推进量是否与原文匹配 |
+
+输出示例（单章）：
+```
+=== Loom Reference Eval (chapter 2) ===
+original_title:      二姑卫荭
+draft_len:           1363
+evaluation_method:   llm_reference_judge
+overall_fidelity:    0.4900
+confidence:          0.8200
+suggestion:          将大段连续叙述拆解为原文式的短句短段...
+
+dimensions:
+  structure_fidelity: 0.3200
+  character_fidelity: 0.5200
+  style_fidelity: 0.3800
+  continuity_fidelity: 0.6800
+  tension_fidelity: 0.5000
+  information_density: 0.5800
+```
+
+输出示例（批量对比）：
+```
+=== Loom Reference Eval (batch) ===
+branch_id:   62e636f0-c901-4167-aa1c-aff3da9c83ef
+draft_dir:   /tmp/enhanced/
+compare_dir: /tmp/baseline/
+
+  ch2: A=0.350  B=0.150  delta=-0.200
+  ch3: A=0.300  B=0.450  delta=+0.150
+  ch4: A=0.450  B=0.150  delta=-0.300
+```
+
+**关键说明**：
+- Reference-based 评估是**主评估方式**（衡量"像不像原作"）
+- Pairwise A vs B 是辅助评估（衡量"哪个更好看"）
+- `overall_fidelity < 0.5` 时 gate summary 触发 `fidelity-blocked`
+- 需要 LLM provider 可用；不可用时 fallback 到 heuristic（基于文本长度和字符重叠）
+
+### 12.13 export-whole-book-imitation-run — 导出整书仿写执行报告（含 Loom 摘要）
+
+当你需要把整书仿写的 dry-run / sandbox execute 结果交给下游系统、评估层或后续执行器消费时，使用：
+
+```bash
+python3 -m novel_analyzer.cli.app export-whole-book-imitation-run \
+  <branch_id> \
+  "项目名" \
+  "源作名" \
+  "目标作名" \
+  /tmp/whole-book-report.json \
+  "2:延续主线" \
+  "3:加深冲突" \
+  --execute
+```
+
+#### 这次补强了什么
+
+**Changelist marker**：`CL-loom-whole-book-bridge-01`
+
+之前 `writer-imitate-session-state.json` / `writer-imitate-operator-surface.json` 已有：
+- `session_loom_signals`
+- `session_loom_gate_summary`
+
+但 whole-book export report 还没有统一继承这些 Loom 视图，导致：
+- 下游如果只消费 whole-book report，看不到 Loom 质量/张力结论
+- operator 看到的 gate 与执行器侧产物不完全一致
+
+现在 whole-book report 也统一新增：
+- `session_loom_signals`
+- `session_loom_gate_summary`
+- `executed_steps[*].loom_signals`
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| `session_loom_signals.average_chapter_quality_score` | whole-book sandbox 章节平均质量分 |
+| `session_loom_signals.average_tension_score` | whole-book 平均张力分 |
+| `session_loom_signals.average_style_drift_score` | 风格漂移均值 |
+| `session_loom_signals.average_hook_density` | 爽点/钩子密度均值 |
+| `session_loom_signals.average_reader_sim_score` | 读者模拟满意度均值 |
+| `session_loom_signals.average_reference_fidelity` | 对原文还原度均值 |
+| `session_loom_gate_summary.quality_verdict` | `quality-pass` / `quality-hold` |
+| `session_loom_gate_summary.gate_status` | 当前 whole-book Loom gate 状态（monitoring / fidelity-blocked / reader-sim-warn） |
+| `executed_steps[*].loom_signals` | 每章真实 harness Loom 输出的聚合快照 |
+
+#### 解决的问题
+
+1. 解决 whole-book 执行报告绕开 Loom gate 的问题
+2. 解决 service 层有 Loom 聚合、CLI 导出边界缺合同验证的问题
+3. 让更接近执行器的整书产物与 operator surface 保持一致视图
+
+#### 推荐验证
+
+```bash
+python3 -m pytest tests/test_whole_book_imitation_service.py tests/test_cli.py -v
+```
+
+重点检查导出 JSON 中是否存在：
+- `session_loom_signals.contract_version=whole-book-session-loom-signals.v1`
+- `session_loom_gate_summary.contract_version=loom-gate-summary.v2`
+
+### 12.13 bootstrap_weitu_validation_workspace.py — 卫图样例验证工作区一键初始化
+
+如果你要复现当前 Loom 的卫图样例真实验证，不要手动逐条导出 artifact，直接运行：
+
+```bash
+python3 scripts/bootstrap_weitu_validation_workspace.py \
+  62e636f0-c901-4167-aa1c-aff3da9c83ef \
+  weitu-sample \
+  --force
+```
+
+这条命令会自动完成：
+
+1. 创建/重建 `runs/manual_eval/weitu-sample/`
+2. 导出 `weitu-branch-bundle.json`
+3. 导出 `weitu-whole-book-report.json`
+4. 导出 `weitu-branch-report.md`
+5. 生成 mailbox-style 的 `README.md / manual-review-notes.md / next-actions.md / problem-trace.md`
+
+它解决的问题是：
+
+- 过去卫图验证工作区需要手工逐条导出 artifact
+- 人工兜底入口与 resume 链条说明分散在多份文档里
+- 同一轮验证很难稳定复现
+
+现在这条脚本把：
+
+- Loom 当前执行证据
+- whole-book report
+- manual_eval mailbox 工作区
+- resume/recovery 下一步
+
+收成一个可重复执行的入口。
+
+
+## 拆书加速优化（当前版本）
+
+当前拆书加速优化已落地的重点不是完整 quick/deep 异步流水线，而是：
+- canonical quick metadata 的安全引入
+- 默认 reader / status / chapter index / window 的 canonical-only 口径
+- blocking materialization 失败时恢复 previous active artifact
+- regression / benchmark / docs / usage evidence
+
+推荐使用说明见：
+- `docs/deconstruction-acceleration/user-manual.md`
+
+当前建议 CLI 验证顺序：
+1. `show-run-status`
+2. `show-context`
+3. `show-window`
+4. `search-branch` / `ask-branch`
+
+若后续引入 companion / manual artifact，请记住：
+- 不是所有 active artifact 都会进入默认读路径
+- 默认 reader 只消费 canonical/default-readable artifact
+
+
+## 底座优化运维（P0 闭环）
+
+P0 链路：领域词典 → pg_jieba → bm25_vector。完整说明见 [foundation-optimization/p0-quickstart-and-handoff.md](./foundation-optimization/p0-quickstart-and-handoff.md)。
+
+### `domain-dict-rebuild`
+
+从 DB 重建 `domain-dict.txt` + `jieba-user-dict.txt`。
+
+```bash
+# 默认：自动发现所有有 retrieval_documents 的 branch
+python -m novel_analyzer.cli.app domain-dict-rebuild
+
+# 可选：指定 branch 子集
+python -m novel_analyzer.cli.app domain-dict-rebuild \
+  --branch-id 72da24e9-... --branch-id 2ac6f639-...
+```
+
+输出文件位置：`.cache/novel-analyzer/{domain-dict.txt, jieba-user-dict.txt}`。
+
+### `bm25-reindex`
+
+强制重建 `retrieval_documents.bm25_vector` 列（`ALTER TABLE DROP+ADD GENERATED ALWAYS`），用当前 jieba tokenizer 状态全表重写。
+
+```bash
+# 必须先 dry-run 确认 tokenizer 已加载新 userdict
+python -m novel_analyzer.cli.app bm25-reindex
+
+# 确认后真正执行
+python -m novel_analyzer.cli.app bm25-reindex --confirm
+```
+
+**前置条件**：先重启 PG 容器加载新 userdict。dry-run 会做 tokenizer 自检并 WARN 但不会拒绝执行。
+
+### `rematerialize-retrieval`
+
+修复缺失的 `retrieval_chunks` / `chunk_embeddings`（典型场景：诊断时手工 DELETE 留下的孤儿 retrieval_documents）。
+
+```bash
+# dry-run 列出所有缺 chunks 的 doc
+python -m novel_analyzer.cli.app rematerialize-retrieval
+
+# 真正执行（会重跑 ONNX embedding，每章 ~1-2s）
+python -m novel_analyzer.cli.app rematerialize-retrieval --confirm
+
+# 限定 branch
+python -m novel_analyzer.cli.app rematerialize-retrieval \
+  --branch-id 72da24e9-... --confirm
+```
+
+### `retrieval-benchmark`
+
+跑 BM25 召回率 + MRR 基准，对比不同 FTS config，可选多路融合 fullpipeline 模式。
+
+```bash
+# BM25-only 对比 simple vs jiebacfg（默认）
+python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
+  --output-file /tmp/bench.json
+
+# 带 fullpipeline（多路 RRF + rerank，慢，建议配 --max-queries）
+python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
+  --configs simple,jiebacfg,fullpipeline \
+  --max-queries 10 --output-file /tmp/bench.json
+```
+
+Query bank 自动从 `keyword_list` 构建，DF >40% 的常见词被过滤；输出 JSON 含 per-config Recall@1/3/5/10、MRR、平均延迟。
+
+### `loom-benchmark`
+
+跑 LLM 综合能力基准（拆书 / 仿写 / 风险检查三维），需要可用 LLM。
+
+```bash
+python -m novel_analyzer.cli.app loom-benchmark <branch_id> \
+  --chapters "2,3,4,5" --use-llm \
+  --output-file /tmp/loom.json
+```
+
+详见 `novel_analyzer/services/model_benchmark_service.py`。
+
+### 完整 P0 刷新流程
+
+字典更新后的标准动作（每次都跑一遍）：
+
+```bash
+# 1) 重建词典文件
+python -m novel_analyzer.cli.app domain-dict-rebuild
+
+# 2) 复制 + 过滤到 PG 容器挂载目录
+python <<'PY'
+import re
+src = open('.cache/novel-analyzer/jieba-user-dict.txt', encoding='utf-8').readlines()
+def ok(t):
+    if len(t) < 2 or len(t) > 10: return False
+    if re.search(r'[，。！？、；：「」【】()（）\s\u3000]', t): return False
+    return len(re.findall(r'[\u4e00-\u9fff]', t)) >= 2
+keep = [l.strip() for l in src if l.strip() and ok(l.strip().split()[0])]
+open('/home/user/pgsql17-ubuntu24/jieba/dicts/novel_analyzer.dict','w',encoding='utf-8').write('\n'.join(keep)+'\n')
+print(f'wrote {len(keep)} terms')
+PY
+
+# 3) 重启 PG 容器
+sudo docker restart d2-pg17 && sleep 15
+
+# 4) 重建 bm25_vector（必须新连接）
+python -m novel_analyzer.cli.app bm25-reindex --confirm
+
+# 5) 验证
+python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
+  --output-file /tmp/post-bench.json
+```
