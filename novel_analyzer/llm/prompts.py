@@ -168,6 +168,7 @@ def build_chapter_imitation_prompt(
 3. 不要让人物行为脱离既有逻辑。
 4. 输出只允许 JSON，不要 Markdown。
 5. 若给出了"设定替换映射"，draft_text 中必须使用映射后的名称，不得保留原名。
+6. draft_title 必须是干净标题，去掉源章可能携带的营销标签（例如"（求收藏，求追读）"、"（求月票）"、"（加更）"等），只保留章节正文标题。
 
 源章节：
 - chapter_index: {source_chapter_index}
