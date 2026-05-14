@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     llm_provider_name: str = Field(default="vip1129")
     llm_base_url: str = Field(default="")
+    llm_base_url_override: str | None = Field(default=None)
     llm_api_key: str = Field(default="")
     llm_provider_vip1129_base_url: str = Field(default="https://api.vip1129.cc/v1")
     llm_provider_vip1129_api_key: str = Field(default="")
