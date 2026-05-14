@@ -225,4 +225,12 @@ def loom_signals(
             except Exception:
                 pass
 
+        try:
+            from novel_analyzer.services.reader_simulation_service import ReaderSimulationService
+            reader_svc = ReaderSimulationService(session)
+            reader_result = reader_svc.simulate_all_panels(branch_id, chapter_index)
+            result["reader_sim"] = reader_result.to_reader_satisfaction()
+        except Exception:
+            result["reader_sim"] = None
+
         return result

@@ -2512,6 +2512,8 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
         if database_url:
             runtime.database_url = database_url
         limit = int(str(body.get("limit") or "6"))
+        max_chapter_raw = str(body.get("max_chapter") or "").strip()
+        max_chapter = int(max_chapter_raw) if max_chapter_raw else None
 
         def _event_iter() -> Any:
             yield _sse_event({"type": "status", "message": "正在检索相关章节…"})
@@ -2519,7 +2521,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 factory = create_session_factory(runtime)
                 with factory() as session:
                     hits = RetrievalService(session, runtime).search_branch(
-                        branch_id, question, limit
+                        branch_id, question, limit, max_chapter=max_chapter
                     )
                     yield _sse_event(
                         {
@@ -2531,7 +2533,7 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                         {"type": "status", "message": "正在结合证据与图谱线索组织回答…"}
                     )
                     result = BranchQAService(session, runtime).answer_question(
-                        branch_id, question, limit
+                        branch_id, question, limit, max_chapter=max_chapter
                     )
                 answer_text = result.answer or ""
                 for index in range(0, len(answer_text), 20):
@@ -2541,6 +2543,76 @@ def application(environ: dict[str, Any], start_response: StartResponse) -> list[
                 yield _sse_event({"type": "error", "error": str(exc)})
 
         return _stream_response(start_response, _event_iter())
+
+    if path == "/api/reader/feedback" and method == "POST":
+        body = _body(environ)
+        branch_id = str(body.get("branch_id") or "")
+        chapter_index_raw = str(body.get("chapter_index") or "").strip()
+        rating_raw = str(body.get("rating") or "").strip()
+        comment = str(body.get("comment") or "")
+        if not branch_id or not chapter_index_raw or not rating_raw:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": "branch_id, chapter_index, and rating are required"},
+            )
+        try:
+            chapter_index = int(chapter_index_raw)
+            rating = int(rating_raw)
+            if not (1 <= rating <= 5):
+                raise ValueError("rating must be 1-5")
+        except ValueError as exc:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": str(exc)},
+            )
+        database_url = str(body.get("database_url") or "") or None
+        runtime = get_settings().model_copy(deep=True)
+        if database_url:
+            runtime.database_url = database_url
+        try:
+            from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                svc = ReaderFeedbackService(session)
+                stars = "★" * rating
+                comment_text = f"{stars} {comment}".strip() if comment else stars
+                svc.record_comment(branch_id, chapter_index, comment_text)
+                session.commit()
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload={"ok": True})
+
+    if path == "/api/reader/feedback-summary":
+        ok, missing = _require(params, "branch_id")
+        if not ok:
+            return _response(
+                start_response,
+                status="400 Bad Request",
+                payload={"error": f"missing query parameter: {missing}"},
+            )
+        database_url = params.get("database_url")
+        runtime = get_settings().model_copy(deep=True)
+        if database_url:
+            runtime.database_url = database_url
+        try:
+            from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
+            factory = create_session_factory(runtime)
+            with factory() as session:
+                svc = ReaderFeedbackService(session)
+                summary = svc.summarize_branch_feedback(params["branch_id"])
+        except Exception as exc:  # noqa: BLE001
+            return _response(
+                start_response,
+                status="500 Internal Server Error",
+                payload={"error": str(exc)},
+            )
+        return _response(start_response, status="200 OK", payload=summary)
 
     if path == "/api/branch-exports":
         ok, missing = _require(params, "run_id", "branch_id")

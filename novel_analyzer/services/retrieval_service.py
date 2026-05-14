@@ -890,11 +890,17 @@ class RetrievalService:
             limit=max(limit * self.RAW_CANDIDATE_MULTIPLIER, limit),
         )
 
-    def search_branch(self, branch_id: str, query: str, limit: int = 5) -> list[RetrievalHit]:
-        """Search retrieval documents for a branch."""
+    def search_branch(self, branch_id: str, query: str, limit: int = 5, max_chapter: int | None = None) -> list[RetrievalHit]:
+        """Search retrieval documents for a branch.
+
+        Args:
+            max_chapter: If set, only return hits from chapters <= max_chapter (anti-spoiler).
+        """
 
         raw_hits = self._search_branch_raw(branch_id, query, limit)
         reranked_hits, _ = self._apply_rerank(query, raw_hits, limit=limit)
+        if max_chapter is not None:
+            reranked_hits = [h for h in reranked_hits if h.chapter_index <= max_chapter]
         return reranked_hits
 
     def search_branch_with_diagnostics(
