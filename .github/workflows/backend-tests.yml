@@ -1,0 +1,74 @@
+name: backend-tests
+
+on:
+  pull_request:
+    paths:
+      - 'novel_analyzer/**'
+      - 'apps/api/**'
+      - 'tests/**'
+      - 'alembic/**'
+      - 'pyproject.toml'
+      - '.github/workflows/backend-tests.yml'
+  push:
+    branches: [main, master]
+
+jobs:
+  contract-and-units:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: novel
+          POSTGRES_PASSWORD: novel_test
+          POSTGRES_DB: novel_analyzer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U novel"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NOVEL_ANALYZER_DB_DIALECT: postgresql
+      NOVEL_ANALYZER_DB_HOST: 127.0.0.1
+      NOVEL_ANALYZER_DB_PORT: 5432
+      NOVEL_ANALYZER_DB_USER: novel
+      NOVEL_ANALYZER_DB_PASSWORD: novel_test
+      NOVEL_ANALYZER_DB_NAME: novel_analyzer
+      NOVEL_ANALYZER_LLM_API_KEY: test-key
+      NOVEL_ANALYZER_LLM_BASE_URL: http://localhost:9999/v1
+      NOVEL_ANALYZER_LLM_MODEL_NAME: test-model
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Run alembic upgrade
+        run: alembic upgrade head
+
+      - name: Contract tests (zero-regression gate)
+        run: pytest tests/contract/ -v --tb=short
+
+      - name: Owner scoping tests (T22)
+        run: pytest tests/test_owner_scoping.py -v --tb=short
+
+      - name: Trace context tests (T2)
+        run: pytest tests/runtime/test_trace_context.py -v --tb=short
+
+      - name: Lint — no new session_* fields (T17)
+        run: python scripts/check_no_new_session_fields.py
