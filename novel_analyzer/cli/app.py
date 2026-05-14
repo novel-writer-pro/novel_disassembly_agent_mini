@@ -9620,5 +9620,52 @@ def rematerialize_retrieval(
         echo(f"done. success={success} failed={failed}")
 
 
+@app.command()
+def writer_imitate_range_split(
+    range_json: Path = typer.Argument(..., help="Path to writer-imitate-range-*.json"),
+    output_dir: Path = typer.Option(None, "--output-dir", help="Defaults to range_json's parent."),
+) -> None:
+    """Split a writer-imitate-range JSON into per-chapter writer-imitate-ch{N}.json files."""
+
+    if not range_json.exists():
+        raise typer.BadParameter(f"range_json not found: {range_json}")
+    target_dir = output_dir or range_json.parent
+    target_dir.mkdir(parents=True, exist_ok=True)
+    payload = json.loads(range_json.read_text(encoding="utf-8"))
+    items = payload.get("items") or []
+    if not items:
+        echo(f"no items in {range_json}")
+        return
+    branch_id = payload.get("branch_id", "")
+    steering_pack = payload.get("steering_pack", {})
+    written: list[Path] = []
+    for item in items:
+        ch = item.get("source_chapter_index")
+        if ch is None:
+            continue
+        per_chapter = {
+            "branch_id": branch_id,
+            "source_chapter_index": ch,
+            "target_goal": item.get("target_goal"),
+            "final_verdict": item.get("final_verdict"),
+            "stop_reason": item.get("stop_reason"),
+            "final_draft": item.get("final_draft", {}),
+            "policy_summary": item.get("policy_summary", {}),
+            "steering_pack": steering_pack,
+        }
+        stem = f"writer-imitate-ch{ch}"
+        json_path = target_dir / f"{stem}.json"
+        json_path.write_text(
+            json.dumps(per_chapter, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        written.append(json_path)
+    echo(f"wrote {len(written)} per-chapter files to {target_dir}")
+    for p in written[:5]:
+        echo(f"  {p}")
+    if len(written) > 5:
+        echo(f"  ... +{len(written) - 5} more")
+
+
 if __name__ == "__main__":
     app()
