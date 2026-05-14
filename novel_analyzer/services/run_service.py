@@ -145,6 +145,8 @@ class RunService:
         manifest_id: str,
         branch_name: str = "main",
         analysis_profile: dict[str, Any] | None = None,
+        *,
+        owner_user_id: str = "local-default",
     ) -> tuple[AnalysisRun, RunBranch]:
         """Create a new run with an active root branch."""
 
@@ -157,6 +159,7 @@ class RunService:
             llm_base_url=self.settings.llm_base_url,
             llm_model_name=self.settings.llm_model_name,
             analysis_profile=analysis_profile or {},
+            owner_user_id=owner_user_id,
         )
         self.session.add(run)
         self.session.flush()
@@ -166,6 +169,7 @@ class RunService:
             name=branch_name,
             fork_after_chapter_index=0,
             status="active",
+            owner_user_id=owner_user_id,
         )
         self.session.add(branch)
         self.session.flush()
@@ -678,6 +682,7 @@ class RunService:
             parent_branch_id=source_branch.id,
             fork_after_chapter_index=keep_through,
             status="active",
+            owner_user_id=source_branch.owner_user_id,
         )
         self.session.add(child)
         self.session.flush()

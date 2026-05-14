@@ -26,6 +26,8 @@ class IngestService:
         self,
         path: str,
         title: str | None = None,
+        *,
+        owner_user_id: str = "local-default",
     ) -> tuple[NovelSource, ChapterManifest]:
         """Import a novel text file and derive a new chapter manifest."""
 
@@ -43,6 +45,7 @@ class IngestService:
                 "raw_heading_count": preview.raw_heading_count,
                 "duplicate_heading_count": preview.duplicate_heading_count,
             },
+            owner_user_id=owner_user_id,
         )
         self.session.add(novel)
         self.session.flush()
@@ -139,6 +142,7 @@ class IngestService:
         *,
         title: str | None = None,
         source_name: str = "chapter-list-import",
+        owner_user_id: str = "local-default",
     ) -> tuple[NovelSource, ChapterManifest]:
         path = self.persist_chapter_list_file(chapters, source_name=source_name)
-        return self.ingest_text_file(path, title)
+        return self.ingest_text_file(path, title, owner_user_id=owner_user_id)
