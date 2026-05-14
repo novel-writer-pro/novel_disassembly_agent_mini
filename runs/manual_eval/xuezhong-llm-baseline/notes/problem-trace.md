@@ -11,17 +11,14 @@
 
 | chapter | 问题类型 | 描述 | 严重度 | 处置 |
 |---|---|---|---|---|
-|   |   |   |   |   |
-
-问题类型候选：
-- `style_drift` — 风格漂移
-- `dialogue_voice` — 对话辨识度低
-- `rhythm_flat` — 节奏平淡
-- `env_thin` — 环境描写薄
-- `psyche_thin` — 人物心理薄
-- `ooc` — 角色脱离设定
-- `world_rule` — 世界规则违和
-- `hook_weak` — 钩子无力
+| ch2 | `world_rule` | 白狐儿脸出场服饰"白袍"与原作"青衫"不符 | low | 接受(mapping 容忍范围) |
+| ch2 | `style_drift` | "桃花眼中闪过一丝冷意"是套语,不是烽火"凉薄"语调 | low | 用 style-calibrator 量化 |
+| ch3 | `scaffold_only` | LLM 失败 fallback,无 prose;risk_gate_notes 出现非本章内容("鬼厉""九尾天狐") | **high** | 重跑 |
+| ch4 | `prose_template_bleed` | LLM **自发** 把 method 章节标签写进 prose 末尾(目标明确/阻力浮现/主角回应/章尾钩子) | **high** | prompt 层修复(新发现 bug) |
+| ch4 | `world_rule` | LLM 重写章节标题("去那座山摘山楂"→"听潮亭论事")并替换核心情节 | medium | LLM 越界,需要 prompt 加约束 |
+| ch5 | `world_rule` | "魔门宝典《吞金宝箓》"非雪中体系内设定 | low | 接受或重跑 |
+| ch5 | `world_rule` | 地名从陵州(ch2)切换到黑水城(ch5),长程一致性破裂 | medium | Loom memory 应解决 |
+| 跨章 | `dialogue_voice` | 老道士台词模板化("贫道""殿下若欲...""贫道所求...") | medium | dialogue-designer 接 reward 闭环 |
 
 ## 写回模板
 

@@ -11,17 +11,16 @@
 
 | chapter | 问题类型 | 描述 | 严重度 | 处置 |
 |---|---|---|---|---|
-|   |   |   |   |   |
-
-问题类型候选：
-- `style_drift` — 风格漂移
-- `dialogue_voice` — 对话辨识度低
-- `rhythm_flat` — 节奏平淡
-- `env_thin` — 环境描写薄
-- `psyche_thin` — 人物心理薄
-- `ooc` — 角色脱离设定
-- `world_rule` — 世界规则违和
-- `hook_weak` — 钩子无力
+| ch2 | `scaffold_only` | LLM 报 JSONDecodeError;尝试输出"玄火坛""黑巫族"——属诛仙后期设定,context 串了 | **high** | 重跑;查 helicone trace |
+| ch3 | `psyche_thin` | 普智内心独白整段平铺,缺与外景(雨势)呼吸交替 | medium | reader-sim 应捕到 |
+| ch3 | `style_drift` | "他心中忽地一紧""他苦笑一声"等套语在一章内重复 4 次 | low | style-calibrator |
+| ch4 | `mapping_inconsistency` | method_notes 说"对应张小凡",draft 用"李尘",risk_gate_notes 出现"鬼厉" | **high** | mapping_pack 没注入 |
+| ch4 | `world_rule` | 横幅"善"被改成"剑",宗派改成"天剑宗"(与 ch5"青云"冲突) | medium | LLM 越界 |
+| ch5 | `dialogue_voice` | 道玄/普智/徐长青共用"温润威严"声纹,无辨识度 | **high** | dialogue-designer 接 reward |
+| ch5 | `psyche_thin` | 林枫(=张小凡)反应被叙述压缩,缺真实痛感 | medium | reader-sim |
+| ch5 | `style_drift` | 章尾"阳光洒在青石路上,云雾缭绕的巍峨山门"——程式化 | medium | style-calibrator |
+| 跨章 | `world_rule` | 宗派名 ch4=天剑宗 vs ch5=青云,长程一致性破裂 | **high** | Loom memory 应解决 |
+| 跨章 | `template_residue` | 所有章 method_notes 拖 12-15 行 "1:draft_body, 2:rhythm..." | medium | **已修(commit f60827d)** |
 
 ## 写回模板
 
