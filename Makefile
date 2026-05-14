@@ -1,14 +1,7 @@
-.PHONY: help tei-prefetch tei-up tei-down tei-doctor tei-restart \
-	v2-test v2-build v2-audit v2-lint v2-snapshot v2-status v2-up-all v2-down-all
+.PHONY: help v2-test v2-build v2-audit v2-lint v2-snapshot v2-status \
+	v2-up-all v2-down-all v2-pickup-checklist
 
 help:
-	@echo "TEI Development Targets:"
-	@echo "  make tei-prefetch  - Download models to .cache/tei/"
-	@echo "  make tei-up        - Start TEI containers"
-	@echo "  make tei-down      - Stop TEI containers"
-	@echo "  make tei-doctor    - Run diagnostics"
-	@echo "  make tei-restart   - Restart TEI services"
-	@echo ""
 	@echo "Writer Studio v2 Targets:"
 	@echo "  make v2-test       - Run all in-scope backend tests (contract + runtime + scoping)"
 	@echo "  make v2-build      - Frontend Next.js production build"
@@ -110,19 +103,3 @@ v2-down-all:
 	-docker compose -f infra/dify/upstream/docker/docker-compose.yaml down 2>/dev/null
 	-docker compose -f infra/n8n/docker-compose.yml down
 	-docker compose -f infra/langfuse/upstream/docker-compose.yml down 2>/dev/null
-
-# --- TEI ---
-
-tei-prefetch:
-	.venv/bin/python scripts/dev/tei-prefetch.py
-
-tei-up:
-	bash scripts/dev/tei-up.sh
-
-tei-down:
-	bash scripts/dev/tei-down.sh
-
-tei-doctor:
-	.venv/bin/python scripts/dev/tei-doctor.py
-
-tei-restart: tei-down tei-up
