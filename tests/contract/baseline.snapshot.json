@@ -1,0 +1,180 @@
+{
+  "captured_at": "2026-05-14",
+  "endpoints": {
+    "GET /api/branch-snapshot": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/chapter-bundle": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/chapter-jobs": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/chapter-source": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/job-events": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/library": {
+      "shape": {
+        "items": [
+          "dict"
+        ]
+      },
+      "status": "200 OK"
+    },
+    "GET /api/meta": {
+      "shape": {
+        "available_endpoint_specs": [
+          "dict"
+        ],
+        "available_endpoints": [
+          "str"
+        ],
+        "notes": [
+          "str"
+        ],
+        "service": "str"
+      },
+      "status": "200 OK"
+    },
+    "GET /api/mock/import?profile=auto-lite": {
+      "shape": {
+        "branch_snapshot": {
+          "allowed_actions": "list",
+          "branch_id": "str",
+          "chapter_rows": "list",
+          "failed_summary": "list",
+          "pipeline_state": "str",
+          "risk_summary": "dict"
+        },
+        "import_result": {
+          "branch_id": "str",
+          "existing": "bool",
+          "manifest_id": "str",
+          "novel_id": "str",
+          "pipeline_profile": "str",
+          "pipeline_state": "str",
+          "run_id": "str"
+        },
+        "run_snapshot": {
+          "allowed_actions": "list",
+          "branch_id": "str",
+          "branch_name": "str",
+          "completed_chapters": "int",
+          "failed_jobs": "int",
+          "manifest_chapter_count": "int",
+          "next_chapter": "int",
+          "pipeline_state": "str",
+          "run_id": "str",
+          "running_jobs": "int",
+          "setup_status": "str"
+        }
+      },
+      "status": "200 OK"
+    },
+    "GET /api/provider-health": {
+      "shape": {
+        "degraded_events": "int",
+        "last_error": "NoneType",
+        "last_status": "str",
+        "last_updated_at": "str",
+        "model_name": "str",
+        "provider_name": "str",
+        "success_events": "int"
+      },
+      "status": "200 OK"
+    },
+    "GET /api/quality-dashboard": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/review-clusters": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/run-snapshot": {
+      "shape": {
+        "error": "str"
+      },
+      "status": "400 Bad Request"
+    },
+    "GET /api/runtime-health": {
+      "shape": {
+        "cache_export_files": "int",
+        "cache_root": "str",
+        "cache_upload_files": "int",
+        "legacy_export_files": "int",
+        "legacy_root": "str",
+        "legacy_upload_files": "int",
+        "migrated_this_run": "int",
+        "missing_from_cache": "int"
+      },
+      "status": "200 OK"
+    },
+    "GET /api/whole-book-imitation-readiness": {
+      "shape": {
+        "branch_candidate": {
+          "branch_id": "str",
+          "branch_name": "str",
+          "chapter_analysis_count": "int",
+          "chapter_span": "dict",
+          "exists": "bool",
+          "fact_record_count": "int",
+          "novel_title": "str",
+          "run_id": "str",
+          "status": "str"
+        },
+        "contract_version": "str",
+        "database": {
+          "effective_db_name": "str",
+          "masked_database_url": "str"
+        },
+        "provider": {
+          "api_key_present": "bool",
+          "base_url": "str",
+          "model_name": "str",
+          "provider_health": "dict",
+          "provider_name": "str",
+          "qa_model_name": "str",
+          "stage_model_name": "str"
+        },
+        "readiness_notes": [
+          "str"
+        ],
+        "stable_contract_version": "str",
+        "whole_book_contract_version": "str",
+        "whole_book_stable_contract_version": "str"
+      },
+      "status": "200 OK"
+    },
+    "GET /health": {
+      "shape": {
+        "service": "str",
+        "status": "str"
+      },
+      "status": "200 OK"
+    }
+  },
+  "schema_version": "writer-studio-v2-baseline-1"
+}
