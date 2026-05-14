@@ -3,6 +3,7 @@
 
 help:
 	@echo "Writer Studio v2 Targets:"
+	@echo "  make v3-smoke      - Run v3 e2e suite (no docker required)"
 	@echo "  make v2-test       - Run all in-scope backend tests (contract + runtime + scoping)"
 	@echo "  make v2-build      - Frontend Next.js production build"
 	@echo "  make v2-audit      - Re-run imitation session_* field audit"
@@ -29,6 +30,13 @@ v2-lint:
 
 v2-snapshot:
 	.venv/bin/python scripts/capture_contract_snapshot.py
+
+v3-smoke:
+	@echo "Running v3 e2e suite (no docker required)..."
+	.venv/bin/pytest tests/e2e/ tests/api/middleware/ tests/runtime/test_notify.py -v --tb=short
+	@echo ""
+	@echo "For end-to-end verification with running infra, see:"
+	@echo "  docs/runbook/business-loop.md"
 
 v2-status:
 	@echo "=== Plan progress ==="

@@ -18,6 +18,18 @@ paths:
       description: |
         BM25 + vector + rerank search across a branch's chapters.
         Use this when the user asks "where in the book did X happen?".
+      parameters:
+        - name: X-User-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            default: "local-default"
+          description: |
+            Forwarded from Dify systemVariables.user_id.
+            Backend uses this for owner_user_id scoping (currently
+            applied to /api/library only; other endpoints accept any
+            caller). Empty string is treated as "local-default".
       requestBody:
         required: true
         content:
@@ -62,6 +74,18 @@ paths:
       description: |
         Returns an answer grounded in retrieved chapters with citations.
         Use this for content questions like "what is the protagonist's motivation?".
+      parameters:
+        - name: X-User-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            default: "local-default"
+          description: |
+            Forwarded from Dify systemVariables.user_id.
+            Backend uses this for owner_user_id scoping (currently
+            applied to /api/library only; other endpoints accept any
+            caller). Empty string is treated as "local-default".
       requestBody:
         required: true
         content:
@@ -111,6 +135,15 @@ paths:
           required: true
           schema:
             type: integer
+        - name: X-User-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            default: "local-default"
+          description: |
+            Forwarded from Dify systemVariables.user_id.
+            Backend uses this for owner_user_id scoping where applicable.
       responses:
         '200':
           description: Chapter source

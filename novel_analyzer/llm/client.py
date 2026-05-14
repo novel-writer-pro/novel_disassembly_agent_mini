@@ -18,9 +18,10 @@ def build_chat_model(
     runtime = settings or get_settings()
     api_key_value = runtime.resolved_llm_api_key
     api_key = SecretStr(api_key_value) if api_key_value else None
+    base_url = runtime.llm_base_url_override or runtime.resolved_llm_base_url
     return ChatOpenAI(
         model=model_name or runtime.llm_model_name,
-        base_url=runtime.resolved_llm_base_url,
+        base_url=base_url,
         api_key=api_key,
         timeout=runtime.llm_timeout_seconds,
         max_retries=runtime.llm_max_retries,
