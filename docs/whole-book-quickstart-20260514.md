@@ -75,7 +75,9 @@ LLM 配置：`https://card.nassaapi.xyz/v1` + `deepseek-v4-pro`。
    - 增加 max_rounds
    - 或调整 quality gate 阈值
    - 或 manual_eval 介入（见 `loom/handoff.md` mailbox 流程）
-3. **mapping_pack 似乎不生效**：character_map "卫图=陈默" 在生成的正文里没有体现（仍出现"卫图"）。需要核查 `_imitation_harness_service.run_harness` 是否真的把 mapping 传给 LLM prompt。
+3. ~~**mapping_pack 似乎不生效**~~：**已修复**（commit `584758f`）。`writer-imitate-range` 现在接 `--world-map` / `--character-map` / `--faction-map` / `--power-map` / `--rule-override` / `--forbidden-transformation`，会注入到 LLM prompt。
+   - 5 章实测：跨题材映射（仙侠→科幻）在 15K 字中 0 leak / 20 mapped hits，并且 LLM 整体翻译语境（非字面替换）。
+   - 详见 `whole-book-progress-20260514.md` §"验证：mapping_pack 注入修复"。
 4. **LLM 成本**：deepseek-v4-pro 是 thinking 模型，单章 token 消耗 ~5k input + ~3k output（含 reasoning_tokens）。100 章 ≈ 80 万 token / 次完整 run。
 
 ---

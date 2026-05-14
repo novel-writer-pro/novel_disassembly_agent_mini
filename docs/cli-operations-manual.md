@@ -643,6 +643,55 @@ Loom 是非侵入式的叠加层：
 
 ---
 
+### 12.6.1 writer-imitate / writer-imitate-range — 设定替换映射（mapping_pack）
+
+**用途**：跨题材仿写（如把仙侠转成科幻），在生成时让 LLM 系统性地替换名称/世界设定/力量体系。
+
+```bash
+# 单章 mapping
+novel-analyzer writer-imitate <branch_id> 2 "目标" \
+  --use-llm --max-rounds 2 \
+  --world-map "郑国=星际联邦" \
+  --character-map "卫图=魏拓" \
+  --power-map "养生功=星能调息术"
+
+# 多章批量 mapping
+novel-analyzer writer-imitate-range <branch_id> \
+  "2:目标A" "3:目标B" "4:目标C" \
+  --use-llm --max-rounds 2 \
+  --world-map "郑国=星际联邦" --world-map "庆丰府=星辰城" \
+  --character-map "卫图=魏拓" --character-map "卫荭=魏蓁" \
+  --power-map "养生功=星能调息术" \
+  --rule-override "封建奴籍体系替换为合同义务工制度"
+```
+
+支持的映射类型：
+| flag | 用途 | 示例 |
+|---|---|---|
+| `--world-map` | 国家/地点替换 | `郑国=星际联邦` |
+| `--character-map` | 人名替换 | `卫图=魏拓` |
+| `--faction-map` | 势力/组织替换 | `黄家=星舰联合` |
+| `--power-map` | 力量体系/功法替换 | `养生功=星能调息术` |
+| `--rule-override` | 规则覆盖（可重复） | `奴籍替换为合同制度` |
+| `--forbidden-transformation` | 禁止转化（可重复） | `不得出现魔法元素` |
+
+**注意**：mapping 在 prompt-time 注入 LLM，由模型整体翻译章节到目标语境（不是 regex 字面替换）。
+所有 mapping 信息会被持久化到 output JSON 的 `mapping_pack` 字段，便于审计。
+
+---
+
+### 12.6.2 writer-imitate-range-split — 把多章 range 输出拆为 per-chapter 文件
+
+```bash
+novel-analyzer writer-imitate-range-split \
+  output/whole-book-weitu-19ch/writer-imitate-range-12-30.json
+# 默认输出到 range_json 同目录，每章一个 writer-imitate-ch{N}.json
+```
+
+让 `writer-imitate-range` 的输出能被下游 `writer-imitate-review` / `loom-collect-pairs` 等消费。
+
+---
+
 ### 12.7 loom-collect-pairs — 从 writer-imitate 产物提取 pairwise 数据
 
 ```bash
