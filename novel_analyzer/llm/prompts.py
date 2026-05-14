@@ -147,7 +147,13 @@ def build_chapter_imitation_prompt(
         if isinstance(forbids, list) and forbids:
             mp_parts.append("禁止转化：" + "；".join(str(f) for f in forbids[:5]))
         if mp_parts:
-            mapping_block = "\n\n设定替换映射（draft_text 中所有出现都必须按映射后名称写）：\n" + "\n".join(f"- {p}" for p in mp_parts)
+            mapping_block = (
+                "\n\n设定替换映射（draft_text 中所有出现都必须按映射后名称写）：\n"
+                + "\n".join(f"- {p}" for p in mp_parts)
+                + "\n\n二次检查：在生成完 draft_text 后，请逐项检查上述每个替换对，"
+                "确保**任何源端名称**都未在 draft_text 中残留。如果章节信息密集（多角色/多地点同时出场），"
+                "尤其要在转折段落（情节节奏变化处）再次扫描。"
+            )
 
     return f"""
 你是一个"章节仿写规划执行器"。
