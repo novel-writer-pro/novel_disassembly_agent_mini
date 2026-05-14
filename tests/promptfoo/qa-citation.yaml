@@ -1,0 +1,46 @@
+# Writer Copilot — Q&A Citation Accuracy
+description: |
+  验证 Writer Copilot 回答关于小说的问题时，能正确引用具体章节。
+  用一个固定的 sample branch 做基线测试。
+
+prompts:
+  - |
+    使用以下 branch 的章节内容回答用户问题，回答里**必须**包含至少一个章节引用（格式：[第 N 章]）。
+
+    Branch: {{branch_id}}
+    User Question: {{question}}
+
+providers:
+  - id: openai:chat:gpt-4o-mini
+    config:
+      apiHost: ${DIFY_API_HOST}
+      apiKey: ${DIFY_WRITER_COPILOT_TOKEN}
+
+tests:
+  - description: 角色关系问题应引用对应章节
+    vars:
+      branch_id: demo-branch
+      question: 主角第一次和反派见面是哪一章？
+    assert:
+      - type: regex
+        value: '\[第\s*\d+\s*章\]|第\d+章'
+      - type: contains-any
+        value: ['第', '章']
+
+  - description: 伏笔追溯问题应给出多个章节
+    vars:
+      branch_id: demo-branch
+      question: 关于神秘信物的所有伏笔分布在哪些章节？
+    assert:
+      - type: javascript
+        value: |
+          // 至少 2 个章节引用
+          (output.match(/第\s*\d+\s*章/g) || []).length >= 2
+
+  - description: 不知情问题应明确说不知道
+    vars:
+      branch_id: demo-branch
+      question: 第 9999 章发生了什么？
+    assert:
+      - type: contains-any
+        value: ['不存在', '没有', '无法找到', '尚未', '超出']

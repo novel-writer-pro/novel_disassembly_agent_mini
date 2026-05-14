@@ -25,6 +25,13 @@ class NovelSource(TimestampSoftDeleteMixin, Base):
     source_path: Mapped[str] = mapped_column(Text())
     source_hash: Mapped[str] = mapped_column(String(64), index=True)
     metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    owner_user_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="local-default",
+        server_default="local-default",
+        index=True,
+    )
 
     manifests: Mapped[list[ChapterManifest]] = relationship(back_populates="novel")
     runs: Mapped[list[AnalysisRun]] = relationship(back_populates="novel")
@@ -70,6 +77,13 @@ class AnalysisRun(TimestampSoftDeleteMixin, Base):
     llm_model_name: Mapped[str] = mapped_column(String(128))
     analysis_profile: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
     active_branch_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    owner_user_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="local-default",
+        server_default="local-default",
+        index=True,
+    )
 
     novel: Mapped[NovelSource] = relationship(back_populates="runs")
     manifest: Mapped[ChapterManifest] = relationship(back_populates="runs")
@@ -88,6 +102,13 @@ class RunBranch(TimestampSoftDeleteMixin, Base):
     )
     fork_after_chapter_index: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(32), default="active")
+    owner_user_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="local-default",
+        server_default="local-default",
+        index=True,
+    )
 
     run: Mapped[AnalysisRun] = relationship(back_populates="branches", foreign_keys=[run_id])
     checkpoints: Mapped[list[RunCheckpoint]] = relationship(back_populates="branch")

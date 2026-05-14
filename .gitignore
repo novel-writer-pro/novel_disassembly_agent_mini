@@ -21,3 +21,8 @@ apps/web/.next/
 apps/web/tsconfig.tsbuildinfo
 **/__pycache__/
 *.py[cod]
+<<<<<<< HEAD
+=======
+.tmp
+.sisyphus
+>>>>>>> b2e0d50 (Wire CI gates and pickup automation for v2 framework migration)
