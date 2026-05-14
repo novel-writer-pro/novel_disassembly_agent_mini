@@ -1,5 +1,56 @@
 ## Unreleased
 
+- feat(foundation/P0): 完成「领域词典 → pg_jieba → bm25_vector」全链路闭环 + 完整文档套件 + 4 个运维 CLI。
+
+  本期 P0 工作覆盖 10 个 commits，从应用侧 dict 双格式输出到运维侧自动化命令再到完整文档套件，最终在 5 本小说 587 docs 的语料上达成 simple Recall@5 0.18 → 0.81（~3x 提升），fullpipeline 多路融合 R@5 0.9-1.0。
+
+  **新增 CLI 命令（4 个）**：
+  - `domain-dict-rebuild [--branch-id ID]` — 从 DB 重建 domain-dict.txt + jieba-user-dict.txt
+  - `bm25-reindex [--confirm]` — 强制全表重写 bm25_vector（DROP+ADD GENERATED ALWAYS）
+  - `rematerialize-retrieval [--confirm]` — 修复缺失的 chunks/embeddings
+  - `retrieval-benchmark <branch_id> --configs simple,jiebacfg,fullpipeline` — BM25 + 多路融合基准
+
+  **完整 P0 文档套件（5 篇）**：
+  - `docs/foundation-optimization/p0-quickstart-and-handoff.md` — 操作手册（看一篇就够上手）
+  - `docs/foundation-optimization/p0-maintenance-checklist.md` — 维护清单 + 故障定位决策树
+  - `docs/foundation-optimization/p0-final-benchmark-20260513.md` — 最终基准报告（含 fullpipeline）
+  - `docs/foundation-optimization/pg-jieba-userdict-ops.md` §5.1 — bm25_vector 重建技术细节
+  - `docs/cli-operations-manual.md` 新增 P0 章节
+
+  **实测最终基准（5 本小说，4869 词字典）**：
+
+  | 小说 | docs | simple R@5 | jiebacfg R@5 | fullpipe R@5 |
+  |---|---|---|---|---|
+  | 卫图 | 103 | 0.8061 | 0.8367 | **1.0000** |
+  | 掌门低调点 | 41 | 1.0000 | 1.0000 | 1.0000 |
+  | 诛仙 | 113 | 0.9412 | 0.9706 | 1.0000 |
+  | 武道宗师 | 108 | 0.4643 | 0.5000 | 0.9000 |
+  | 雪中悍刀行 | 109 | 0.7333 | 0.7333 | 1.0000 |
+
+  **关键发现**：
+  - 领域词典价值在**索引端**而非 query 端：bm25_vector 用 jiebacfg 索引后专有名词存为单 lexeme，simple 和 jiebacfg query 都能命中
+  - **fullpipeline 多路融合数据正式证伪 P1 假设**：bge-m3 + jieba dict + rerank 已饱和（R@5 0.9-1.0），embedding 升级边际收益接近零
+  - simple Recall@5 在卫图分支从 0.28 → 0.81（**+0.53，~3x**）
+  - 已正式确认下一步 ROI 应转向产品层（whole-book 真书完本）
+
+  **commits 时序**：
+  - `28a9f16` P0 应用侧（DomainDictionaryService 双格式输出）
+  - `c27f49e` P0 运维指南（pg-jieba-userdict-ops.md）
+  - `94dd73e` retrieval-benchmark CLI（FTS config 对比）
+  - `f56d63c` P0 闭环（bm25_vector 重建机制）
+  - `3657085` CLI 自动化（domain-dict-rebuild + bm25-reindex）
+  - `ede7d2b` benchmark DF 过滤（剔除高频噪声）
+  - `9a30172` quickstart + handoff 文档
+  - `f4edbc1` rematerialize-retrieval CLI
+  - `a474dfe` 最终基准报告
+  - `77ab52d` fullpipeline benchmark 模式
+  - `c9af51b` fullpipeline 数据合并入最终报告
+  - `89050e0` cli-operations-manual.md P0 章节
+  - `1c77dc5` p0-maintenance-checklist.md
+
+  Tested: 5 本小说端到端 BM25 + fullpipeline benchmark；CLI dry-run + --confirm 流程；tokenizer 自检；故障定位决策树覆盖本期 4 类问题。
+  Not-tested: query embedding cache（fullpipeline 全量跑成本仍高）；entity-extraction 噪声修复（武道宗师 R@5 0.46 是该方向目标）。
+
 
 - feat(foundation/data-integrity): 修复 LLM 调用失败导致的启发式 fallback 数据污染。
 
