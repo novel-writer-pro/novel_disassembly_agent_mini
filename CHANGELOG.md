@@ -1,5 +1,40 @@
 ## Unreleased
 
+- feat(reader-studio/v4): 独立读者端 `/reader/*` 路由上线，核心能力全部暴露。
+
+  Changelist: `CL-reader-studio-v4` (3 commits: Wave A + Wave B + README)
+
+  **背景**：v2/v3 的 reader 能力（RAG Q&A、章节详情、检索、Loom 信号）80% 已有，但全部藏在 Workbench 8-tab shell 里，读者必须先懂 branch_id 才能进入，心智模型错误。v4 把这些能力重新组织成读者心智的独立 UI。
+
+  **Wave A — 后端小改（零侵入）**：
+  - `/api/loom/signals` 加 `reader_sim` 字段：复用已有 tension/style/rhythm 对象，调用 `ReaderSimulationService.simulate_all_panels()` 生成 4视角评分（casual/veteran/satisfaction/editor），失败时返回 null 不影响其他字段
+  - 防剧透 `max_chapter` post-filter：`RetrievalService.search_branch` 和 `BranchQAService.answer_question` 加 `max_chapter=None` 可选参数（向后兼容），`/api/ask-branch-stream` 从 body 读取并透传
+  - 读者反馈 API：`POST /api/reader/feedback`（branch_id + chapter_index + rating 1-5 + 可选 comment）和 `GET /api/reader/feedback-summary`，委托给已有的 `ReaderFeedbackService`
+
+  **Wave B — 前端 UI（复用现有组件）**：
+  - `/reader/<branch_id>` 独立路由，bundle 323 kB（vs Workbench 420 kB，-97 kB，确认 WorkbenchApp 未加载）
+  - `ReaderLayout`：三栏（左 280px 章节导航 / 中央阅读 / 右 380px Q&A），顶部防剧透开关
+  - `ChapterNavPanel`：章节卡片含 2行摘要预览 + hook_score 进度条 + risk_level tag + 搜索 + 3种过滤（全部/高吸引/有风险）
+  - `AntiSpoilerQA`：复用 `BranchQaPanel`，防剧透开启时传 `maxChapter = currentChapterIndex`，显示"仅基于第 1–N 章回答"提示
+  - `ReaderSimPanel`：4视角评分卡，进度条 + alert 颜色 + feedback 文字，API 失败时静默隐藏
+  - `ReaderFeedbackPanel`：星级评分 + 评论提交 + 汇总展示
+
+  **零回归保证（F1 APPROVE）**：
+  - 现有 Workbench 组件（WorkbenchApp/WorkbenchLayout/ReaderPage/ChapterSidebar）0 改动
+  - `apps/api/app/main.py` dispatch 表 0 改动（仅加 2 个新 /api/reader/* 分支）
+  - imitation 算法 / prompts.py / run_graph.py 0 改动
+  - 防剧透 post-filter 不改 SQL
+  - 77/77 测试绿（含 10 个新防剧透单元测试）
+
+  **范围保真（F3 APPROVE）**：
+  - 所有新组件在 `apps/web/src/components/reader/` 和 `pages/reader/` 下
+  - `BranchQaPanel` 仅加 `maxChapter?: number` 可选 prop（向后兼容）
+  - `api.ts askBranchStream` 仅加 `maxChapter?: number` 可选参数
+
+  关联文档：
+  - Plan: `.sisyphus/plans/reader-studio-v4.md`
+  - Roadmap: `docs/strategy/writer-studio-roadmap.md`
+
 - feat(writer-studio/v3): 业务闭环完成 — identity 透传 + n8n 完成通知 + Helicone trace 覆盖。
 
   Changelist: `CL-writer-studio-v3-business-loop` (PR #9, 6 atomic commits)
