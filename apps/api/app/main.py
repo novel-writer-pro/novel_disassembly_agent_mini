@@ -82,6 +82,72 @@ class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
 
 _RUNTIME_MIGRATED = False
 
+def _quality_dashboard_payload(branch_id: str, database_url: str | None = None) -> dict[str, Any]:
+    """Compute /api/quality-dashboard payload for a branch (T7 v5 helper)."""
+    from novel_analyzer.services.foreshadowing_service import ForeshadowingService
+    from novel_analyzer.database.models import ChapterArtifact as CA
+
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    factory = create_session_factory(runtime)
+    with factory() as session:
+        artifacts = session.scalars(
+            select(CA)
+            .where(CA.branch_id == branch_id)
+            .where(CA.visibility == "active")
+            .order_by(CA.chapter_index)
+        ).all()
+        facts_all = session.scalars(
+            select(FactRecord)
+            .where(FactRecord.branch_id == branch_id)
+            .order_by(FactRecord.chapter_index)
+        ).all()
+
+        chapter_count = len(artifacts)
+        total_facts = len(facts_all)
+        avg_confidence = (
+            sum(f.confidence for f in facts_all) / total_facts if total_facts else 0.0
+        )
+        low_confidence_count = sum(1 for f in facts_all if f.confidence < 0.4)
+
+        fs = ForeshadowingService(session)
+        open_threads = fs.get_open_threads(branch_id, before_chapter=9999, limit=50)
+
+        chapter_summaries = []
+        for art in artifacts[:50]:
+            payload_data = art.payload_json or {}
+            profile = payload_data.get("_deconstruction_profile", {})
+            chapter_summaries.append({
+                "chapter_index": art.chapter_index,
+                "has_summary": bool(str(payload_data.get("chapter_summary", "")).strip()),
+                "entity_count": len(payload_data.get("key_entities", [])),
+                "event_count": len(payload_data.get("key_events", [])),
+                "needs_human_review": payload_data.get("needs_human_review", False),
+                "profile": profile.get("profile", "unknown"),
+                "writer_lens_status": profile.get("writer_lens_status", "unknown"),
+            })
+
+        return {
+            "branch_id": branch_id,
+            "chapter_count": chapter_count,
+            "total_facts": total_facts,
+            "avg_confidence": round(avg_confidence, 3),
+            "low_confidence_facts": low_confidence_count,
+            "low_confidence_ratio": round(low_confidence_count / total_facts, 3) if total_facts else 0.0,
+            "open_threads": [
+                {
+                    "thread_label": t.thread_label,
+                    "chapter_planted": t.chapter_planted,
+                    "reinforcements": t.reinforcement_count,
+                }
+                for t in open_threads
+            ],
+            "foreshadowing_open_count": len(open_threads),
+            "chapters": chapter_summaries,
+        }
+
+
 _API_ENDPOINT_SPECS: list[dict[str, str]] = [
     {"method": "GET", "path": "/health"},
     {"method": "GET", "path": "/api/meta"},

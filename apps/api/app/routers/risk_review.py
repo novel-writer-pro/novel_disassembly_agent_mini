@@ -156,3 +156,44 @@ def _filter_clusters(
     if status:
         result = [c for c in result if str(c.get("status", "")) == status]
     return result
+
+
+
+@router.get("/review-cluster-history")
+def review_cluster_history(
+    branch_id: str = Query(...),
+    cluster_key: str = Query(...),
+    database_url: str | None = Query(None),
+):
+    """Delegate to ClusterReviewService.read_history."""
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.config.settings import get_settings
+    from novel_analyzer.database.session import create_session_factory
+    from novel_analyzer.services.cluster_review_service import ClusterReviewService
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    try:
+        factory = create_session_factory(runtime)
+        with factory() as session:
+            items = ClusterReviewService(session).read_history(branch_id, cluster_key)
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return {"branch_id": branch_id, "cluster_key": cluster_key, "items": items}
+
+
+@router.get("/review-batch-history")
+def review_batch_history(
+    branch_id: str = Query(...),
+    database_url: str | None = Query(None),
+    limit: int = Query(0),
+):
+    from novel_analyzer.config.settings import get_settings
+    from novel_analyzer.runtime.review_batch_execution import read_batch_execution_history
+    runtime = get_settings().model_copy(deep=True)
+    if database_url:
+        runtime.database_url = database_url
+    items = read_batch_execution_history(branch_id, runtime)
+    if limit > 0:
+        items = items[-limit:]
+    return {"branch_id": branch_id, "items": items}

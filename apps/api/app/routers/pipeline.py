@@ -141,3 +141,72 @@ def search_branch(
             }
         except Exception as e:
             return {"error": str(e)}
+
+
+
+@router.get("/pipeline/status")
+def pipeline_status(
+    pipeline_run_id: str = Query(...),
+    database_url: str | None = Query(None),
+):
+    from dataclasses import asdict
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.application import get_pipeline_run_status
+    try:
+        snapshot = get_pipeline_run_status(
+            pipeline_run_id=pipeline_run_id,
+            database_url=database_url,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return asdict(snapshot)
+
+
+@router.get("/pipeline/progress-stream")
+def pipeline_progress_stream(
+    pipeline_run_id: str = Query(...),
+    database_url: str | None = Query(None),
+):
+    import time as _time
+    from fastapi.responses import StreamingResponse
+    from novel_analyzer.application import get_pipeline_run_status
+    from apps.api.app.main import _sse_event
+
+    def _events():
+        last_chapter = -1
+        for _ in range(600):
+            try:
+                snapshot = get_pipeline_run_status(
+                    pipeline_run_id=pipeline_run_id,
+                    database_url=database_url,
+                )
+            except Exception as exc:  # noqa: BLE001
+                yield _sse_event({"type": "error", "message": str(exc)[:200]})
+                break
+            summary = snapshot.summary_json or {}
+            current_ch = int(summary.get("current_chapter", 0) or 0)
+            last_completed = int(summary.get("last_completed_chapter", 0) or 0)
+            if last_completed > last_chapter:
+                last_chapter = last_completed
+                yield _sse_event({
+                    "type": "chapter_completed",
+                    "chapter_index": last_completed,
+                    "current_chapter": current_ch,
+                    "status": snapshot.status,
+                })
+            if snapshot.status in ("completed", "failed", "cancelled"):
+                yield _sse_event({
+                    "type": "pipeline_finished",
+                    "status": snapshot.status,
+                    "last_completed_chapter": last_completed,
+                })
+                break
+            yield _sse_event({
+                "type": "heartbeat",
+                "status": snapshot.status,
+                "current_chapter": current_ch,
+                "last_completed_chapter": last_completed,
+            })
+            _time.sleep(3.0)
+
+    return StreamingResponse(_events(), media_type="text/event-stream")

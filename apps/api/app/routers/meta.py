@@ -58,3 +58,54 @@ def mock_import(profile: str = Query("auto-lite")) -> dict:
         "run_snapshot": _mock_run_snapshot(profile),
         "branch_snapshot": _mock_branch_snapshot(profile),
     }
+
+
+
+@router.get("/api/download")
+def download(path: str = Query(...)):
+    from pathlib import Path as _Path
+    from fastapi.responses import JSONResponse, FileResponse
+    file_path = _Path(path)
+    if not file_path.exists() or not file_path.is_file():
+        return JSONResponse(status_code=404, content={"error": "export file not found"})
+    media_type = "text/markdown; charset=utf-8" if file_path.suffix == ".md" else "application/json; charset=utf-8"
+    return FileResponse(str(file_path), media_type=media_type, filename=file_path.name)
+
+
+@router.get("/api/runtime-health")
+def runtime_health():
+    from dataclasses import asdict
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.config.settings import get_settings
+    from novel_analyzer.runtime.storage import describe_runtime_storage
+    try:
+        report = describe_runtime_storage(get_settings())
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return asdict(report)
+
+
+@router.get("/api/provider-health")
+def provider_health():
+    from dataclasses import asdict
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.config.settings import get_settings
+    from novel_analyzer.runtime.provider_health import read_provider_health
+    try:
+        report = read_provider_health(get_settings())
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return asdict(report)
+
+
+@router.get("/api/quality-dashboard")
+def quality_dashboard(
+    branch_id: str = Query(..., description="branch id"),
+    database_url: str | None = Query(None),
+):
+    from fastapi.responses import JSONResponse
+    from apps.api.app.main import _quality_dashboard_payload
+    try:
+        return _quality_dashboard_payload(branch_id, database_url)
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
