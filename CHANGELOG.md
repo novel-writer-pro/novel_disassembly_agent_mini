@@ -1,5 +1,53 @@
 ## Unreleased
 
+- feat(api/v5): FastAPI cutover — WSGI dispatch retired, single source of truth.
+
+  Changelist: `CL-v5-fastapi-cutover` (12 commits, ff6e213..a28a219)
+
+  Background: v2/v3/v4 each declared FastAPI cutover out of scope. v5 cleared
+  that debt. The dispatch table in `apps/api/app/main.py` shrunk from 37 paths
+  / 2774 lines to 1 path / 1585 lines. The 36 retired paths are now served
+  exclusively by FastAPI routers (uvicorn :8011), and v3's IdentityMiddleware
+  finally gets to do its job — every router auto-receives X-User-Id and
+  echoes X-Request-Id without per-route work.
+
+  **What changed**:
+  - 18 dual-implementation endpoints brought into schema parity (T1-T4):
+    global 422->400 handler matches WSGI's `{"error": ...}` envelope; one-off
+    drifts in /api/library, /api/import, /api/branch-exports, /api/search-branch.
+  - 19 WSGI-only endpoints migrated to existing routers (T5-T7):
+    new meta router (/health, /api/meta, /api/mock/import, /api/runtime-health,
+    /api/provider-health, /api/quality-dashboard, /api/download); new
+    whole_book_imitation router; new reader router; chapters/pipeline/
+    risk_review extended.
+  - IdentityMiddleware wired into create_app() between CORS and routers (T8).
+    Library router now reads X-User-Id via get_current_user() and applies
+    owner_user_id scoping at the SQL query (v3's column finally hooked up).
+  - Default backend launch is `make api-dev` (uvicorn + FastAPI on :8011).
+    `make api-wsgi-legacy` retained as rollback for the observation window.
+  - WSGI dispatch retired: only /api/review-batch-execute remains, kept as a
+    delegation target from the FastAPI router because its 249-line implementation
+    cannot be safely hand-extracted in this session. v5.1 follow-up.
+  - main.py shrunk by 1189 lines.
+
+  **Verification**:
+  - F1 (zero regression): 83/83 tests pass; service/agent/workflows/prompts/
+    apps/web all untouched in v5; business code 0 langfuse/dify/helicone imports.
+  - F2 (cutover gate): WSGI dispatch=1, FastAPI router=59; FastAPI contract
+    29/29; dual parity 1/1.
+  - F3 (IdentityMiddleware end-to-end): alice→1 item, bob→1 item, no-header→2
+    items; X-Request-Id auto-generated and echoed.
+
+  Test additions:
+  - tests/contract/test_dual_parity.py — 18-endpoint parity harness, scoped
+    to 1 endpoint after cutover
+  - tests/contract/test_main_fastapi_contract.py — 29 assertions
+  - tests/e2e/test_anti_spoiler.py / test_owner_scoping_e2e.py — migrated
+    from WSGI to FastAPI TestClient
+
+  关联文档：
+  - Plan: `.sisyphus/plans/v5-fastapi-cutover.md`
+
 - feat(whole-book): 跨题材整本仿写 MVP 落地 + 双完本验证 + mapping_pack 全链路修复。
 
   ChangeLists（按时序）:

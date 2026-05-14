@@ -239,7 +239,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
 ## TODOs
 
-- [ ] **T1. Parity test harness — 18 个双实现端点同步对比**
+- [x] **T1. Parity test harness — 18 个双实现端点同步对比**
 
   **What to do**:
   - 新建 `tests/contract/test_dual_parity.py`
@@ -262,7 +262,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `test(contract): dual-implementation parity harness for 18 endpoints`
 
-- [ ] **T2. library + chapters router parity 修齐**
+- [x] **T2. library + chapters router parity 修齐**
 
   **What to do**:
   - 看 T1 报告里 `library_list` / `run-snapshot` / `chapter-bundle` / `chapter-source` / `chapter-jobs` / `chapter-qa-context` / `branch-snapshot` 的 drift
@@ -284,7 +284,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `fix(api/routers): align library and chapters with WSGI canonical schema`
 
-- [ ] **T3. pipeline + import_recovery router parity 修齐**
+- [x] **T3. pipeline + import_recovery router parity 修齐**
 
   **What to do**:
   - 同 T2 模式，针对 `pipeline.py` 和 `import_recovery.py`
@@ -297,7 +297,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `fix(api/routers): align pipeline and import_recovery with WSGI canonical schema`
 
-- [ ] **T4. risk_review router parity 修齐**
+- [x] **T4. risk_review router parity 修齐**
 
   **What to do**:
   - 同模式针对 `risk_review.py`
@@ -309,7 +309,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `fix(api/routers): align risk_review with WSGI canonical schema`
 
-- [ ] **T5. meta/health/mock-import → 新建 routers/meta.py**
+- [x] **T5. meta/health/mock-import → 新建 routers/meta.py**
 
   **What to do**:
   - 新建 `apps/api/app/routers/meta.py`
@@ -326,7 +326,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `feat(api/routers): add meta router (health, meta, mock-import)`
 
-- [ ] **T6. start/recovery 加固、whole-book-imitation 命名空间统一**
+- [x] **T6. start/recovery 加固、whole-book-imitation 命名空间统一**
 
   **What to do**:
   - 把 `/api/start` 加到 `import_recovery.py`（与 `/api/import`、`/api/recovery` 一组）
@@ -344,7 +344,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `feat(api/routers): migrate start, recovery, whole-book-imitation endpoints`
 
-- [ ] **T7. pipeline/review/quality/runtime/provider/reader/download/job-events 收尾**
+- [x] **T7. pipeline/review/quality/runtime/provider/reader/download/job-events 收尾**
 
   **What to do**:
   - 一次性把剩余 14 个 WSGI-only endpoint 迁完：
@@ -362,7 +362,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `feat(api/routers): migrate remaining WSGI-only endpoints to FastAPI`
 
-- [ ] **T8. 挂 IdentityMiddleware + 新版 contract 测试**
+- [x] **T8. 挂 IdentityMiddleware + 新版 contract 测试**
 
   **What to do**:
   - `fastapi_app.py` 的 `create_app()` 加 `app.add_middleware(IdentityMiddleware)`，**在 `add_middleware(CORSMiddleware, ...)` 之后**
@@ -382,7 +382,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `feat(api): wire IdentityMiddleware into FastAPI app + add fastapi contract tests`
 
-- [ ] **T9. Makefile / uvicorn 启动 / README / runbook 更新**
+- [x] **T9. Makefile / uvicorn 启动 / README / runbook 更新**
 
   **What to do**:
   - Makefile 加：
@@ -407,7 +407,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
   **Commit**: `chore(api): default launch via uvicorn, keep wsgi-legacy as fallback`
 
-- [ ] **T10. main.py 退役（删 dispatch 表，保留 compat shim）**
+- [x] **T10. main.py 退役（删 dispatch 表，保留 compat shim）**
 
   **What to do**:
   - 删 `main.py` 第 1234-2702 行的 `application()` 函数体（dispatch 表 37 个分支 + 辅助 helper）
@@ -443,7 +443,7 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
 
 ## Final Verification Wave
 
-- [ ] **F1. 零回归审计**（oracle）
+- [x] **F1. 零回归审计**（oracle）
   - 77/77 backend 测试套全绿
   - `apps/api/app/main.py` ≤ 100 行
   - `service/agent/workflows` 0 改动（git diff master..HEAD 验证）
@@ -452,14 +452,14 @@ T2/T3/T4 可并行（不同 router），T5/T6/T7 可并行（不同 router）。
   - 业务代码 0 langfuse/dify/helicone import
   - 输出：`Regression [CLEAN] | VERDICT: APPROVE/REJECT`
 
-- [ ] **F2. 双实现下线验收**（deep）
+- [x] **F2. 双实现下线验收**（deep）
   - `test_dual_parity.py` 18/18 绿
   - `test_main_fastapi_contract.py` 28/28 绿
   - WSGI 和 FastAPI 在 18 个端点上 byte-level 对比（除允许漂移字段）
   - `_API_ENDPOINT_SPECS` 已删除（meta endpoint 改为遍历 app.routes）
   - 输出：`Parity [PASS] | VERDICT`
 
-- [ ] **F3. IdentityMiddleware 端到端验收**
+- [x] **F3. IdentityMiddleware 端到端验收**
   - `curl -H "X-User-Id: alice" :8011/api/library` 返回 alice scoped 数据
   - `curl -H "X-User-Id: bob" :8011/api/library` 返回 bob scoped 数据
   - 任何 response 都含 `X-Request-Id` header
