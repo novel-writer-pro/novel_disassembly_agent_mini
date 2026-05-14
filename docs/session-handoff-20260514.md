@@ -59,7 +59,13 @@ Outputs aggregated at `output/whole-book-weitu-FULL/`:
 
 Aggregated at `output/whole-book-zhuxian-FULL/`. zhuxian is **2.6x faster** than weitu and **15% denser** per chapter.
 
-**Combined: 430K characters of real Chinese fiction across 2 independent source novels.**
+### Whole-Book THIRD: 103 chapters / 192K characters (xuezhong)
+
+Single-batch 103 chapters in 80 min, **0/103 dirty titles** (proves title cleanup fix at production scale).
+
+Aggregated at `output/whole-book-xuezhong-FULL/`. See `docs/whole-book-xuezhong-progress-20260514.md`.
+
+**Combined: 622K characters of real Chinese fiction across 3 independent source novels (307 chapters total).**
 
 ### Cross-Novel Robustness (5-chapter spikes)
 
@@ -177,15 +183,16 @@ NOVEL_ANALYZER_DB_*=...  # postgresql, d2/d2pass, port 5432
 |---|---|---|---|
 | ~~A. P1 embedding upgrade~~ | ~~low~~ | 1 week | **rejected** — fullpipeline R@5 0.9-1.0 saturates |
 | ~~B. Whole-book on a 2nd full novel~~ | high | 3-4h LLM | **DONE** — zhuxian 102 ch / 230K chars |
+| ~~B'. Whole-book on a 3rd full novel~~ | high | 80 min LLM | **DONE** — xuezhong 103 ch / 192K chars |
 | C. Tune Loom gate so verdict reaches quality-pass | medium | half day | needs harness gate threshold review (preflight + risk + score + actions all gate quality-pass) |
 | D. 武道宗师 entity-extraction cleanup | medium | 2-3 days | tracked in `entity-extraction-noise-diagnosis-20260513.md` |
-| E. Manual eval mailbox for the 102 chapters | high | depends on review bandwidth | infra exists, see `bootstrap_weitu_validation_workspace.py` |
+| E. Manual eval mailbox for the 307 chapters | high | depends on review bandwidth | infra exists, see `bootstrap_weitu_validation_workspace.py` |
 | ~~F. Run mapping_pack on 30+ chapter batch~~ | medium | 1h LLM | **DONE** — 30 ch / 87K chars / 97.7% accuracy |
 
 **Recommendation for next session**:
-- If you want **commercial-shape evidence**: do **E** (mailbox for human reviewers on the 204 chapters across 2 books).
+- If you want **commercial-shape evidence**: do **E** (mailbox for human reviewers on the 307 chapters across 3 books).
 - If you want **technical depth**: do **C** (gate tuning) — quality-pass is the only verdict that ends the harness loop cleanly.
-- If you want **third-novel coverage**: try 武道宗师 / 雪中悍刀行 with the now-stable pipeline; expect 3-4h per novel.
+- If you want **mapping at scale**: do a 100-chapter run with mapping_pack on (xianxia → sci-fi 全本 sci-fi 化版本).
 
 ---
 
