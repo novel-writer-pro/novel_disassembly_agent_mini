@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from novel_analyzer.runtime.notify import notify_pipeline_complete
+from novel_analyzer.runtime.trace_context import get_current_context
+
 from novel_analyzer.domain.schemas import (
     ChapterImitationHarnessReport,
     StoryMappingPack,
@@ -1305,6 +1308,19 @@ class WholeBookImitationService:
             session_loom_signals,
         )
         dashboard_summary["session_loom_gate_summary"] = session_loom_gate_summary
+
+        ctx = get_current_context()
+        notify_pipeline_complete(
+            branch_id=report.branch_id,
+            status=str(quality_verdict or "completed"),
+            user_id=ctx.user_id if ctx else "local-default",
+            metadata={
+                "executed_step_count": len(executed_steps),
+                "queue_size": len(report.queue),
+                "chapter_quality_signal_count": quality_signal_count,
+            },
+        )
+
         return WholeBookImitationRunReport(
             contract_version="whole-book-imitation.v1",
             stable_contract_version="whole-book-imitation-pre-v1",
