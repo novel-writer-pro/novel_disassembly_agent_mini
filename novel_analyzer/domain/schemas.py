@@ -719,6 +719,8 @@ class ChapterImitationDraft(BaseModel):
     method_notes: list[str] = Field(default_factory=list)
     comparison_notes: list[str] = Field(default_factory=list)
     risk_gate_notes: list[str] = Field(default_factory=list)
+    action_queue: list["ChapterImitationHarnessAction"] = Field(default_factory=list)
+    is_scaffold_only: bool = Field(default=False)
 
 
 class ChapterImitationComparisonReport(BaseModel):

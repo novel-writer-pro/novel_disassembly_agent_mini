@@ -241,7 +241,12 @@ def test_harness_run_returns_rounds(monkeypatch, tmp_path: Path) -> None:
         assert "weak_lane_action_count" in report.policy_summary
         if report.final_verdict != "pass":
             assert any("ACTION:" in item for item in report.final_draft.comparison_notes)
-            assert "【Harness Action Queue】" in report.final_draft.draft_text
+            assert "【Harness Action Queue】" not in report.final_draft.draft_text
+            assert report.final_draft.action_queue
+            assert all(
+                hasattr(item, "action_type") and hasattr(item, "priority")
+                for item in report.final_draft.action_queue
+            )
 
 
 def test_harness_strategy_input_influences_constraint_outputs(tmp_path: Path) -> None:
@@ -739,3 +744,133 @@ def test_harness_actions_are_sorted_by_priority_and_stop_reason_aggregates(tmp_p
         assert summary["highest_action_priority"] == min(item.priority for item in actions)
         assert "weak_lane_action_count" in summary
         assert "reader_sim" in summary["issue_families"] or "style" in summary["issue_families"]
+
+
+def test_aggregate_stop_reason_p1_medium_does_not_veto_quality_pass() -> None:
+    """P1 actions with severity=medium are advisory; if gate/risk/score are clean, allow pass.
+
+    Production data showed 297/297 chapters had P1+medium 'expand_middle:draft_body' style
+    advisory actions. Old logic vetoed all of them. Tuned threshold lets quality_pass through
+    when the substantive checks (gate/risk/score) all clear.
+    """
+    from novel_analyzer.domain.schemas import (
+        ChapterImitationGateReport,
+        ChapterImitationHarnessAction,
+        ChapterImitationPreflightReport,
+        ChapterImitationRiskReport,
+        ChapterImitationScoreReport,
+    )
+
+    preflight = ChapterImitationPreflightReport(
+        source_chapter_index=1,
+        draft_title="t",
+        overall_verdict="warn",
+        blocking_issues=[],
+    )
+    gate = ChapterImitationGateReport(
+        source_chapter_index=1,
+        draft_title="t",
+        overall_verdict="aligned_but_needs_revision",
+    )
+    risk = ChapterImitationRiskReport(
+        source_chapter_index=1,
+        draft_title="t",
+        overall_risk_level="low",
+    )
+    score = ChapterImitationScoreReport(
+        source_chapter_index=1,
+        draft_title="t",
+        structure_score=82,
+        style_alignment_score=82,
+        risk_score=85,
+        overall_score=83,
+    )
+    p1_medium_actions = [
+        ChapterImitationHarnessAction(
+            action_type="repair_rhythm", target="rhythm",
+            severity="medium", priority=1,
+        ),
+        ChapterImitationHarnessAction(
+            action_type="reinforce_ending_hook", target="ending_hook",
+            severity="medium", priority=2,
+        ),
+    ]
+    verdict, reason = HarnessControllerService._aggregate_stop_reason(  # noqa: SLF001
+        preflight=preflight, gate=gate, risk=risk, score=score, actions=p1_medium_actions,
+    )
+    assert verdict == "pass"
+    assert reason == "harness_soft_pass"
+
+
+def test_aggregate_stop_reason_p1_high_still_vetoes() -> None:
+    """P1 with severity=high (e.g. 'expand_middle' on too-short draft) MUST still block."""
+    from novel_analyzer.domain.schemas import (
+        ChapterImitationGateReport,
+        ChapterImitationHarnessAction,
+        ChapterImitationPreflightReport,
+        ChapterImitationRiskReport,
+        ChapterImitationScoreReport,
+    )
+
+    preflight = ChapterImitationPreflightReport(
+        source_chapter_index=1, draft_title="t", overall_verdict="warn",
+    )
+    gate = ChapterImitationGateReport(
+        source_chapter_index=1, draft_title="t",
+        overall_verdict="aligned_but_needs_revision",
+    )
+    risk = ChapterImitationRiskReport(source_chapter_index=1, draft_title="t")
+    score = ChapterImitationScoreReport(
+        source_chapter_index=1, draft_title="t",
+        structure_score=82, style_alignment_score=82, risk_score=85, overall_score=83,
+    )
+    high_actions = [
+        ChapterImitationHarnessAction(
+            action_type="expand_middle", target="draft_body",
+            severity="high", priority=1,
+        ),
+    ]
+    verdict, reason = HarnessControllerService._aggregate_stop_reason(  # noqa: SLF001
+        preflight=preflight, gate=gate, risk=risk, score=score, actions=high_actions,
+    )
+    assert verdict == "needs_revision"
+    assert reason == "critical_action_required"
+
+
+def test_apply_actions_to_draft_does_not_pollute_draft_text() -> None:
+    """P0-1 fix: action_queue lives in a structured field, not draft_text."""
+    from novel_analyzer.domain.schemas import (
+        ChapterImitationDraft,
+        ChapterImitationGateReport,
+        ChapterImitationHarnessAction,
+        ChapterImitationPreflightReport,
+        ChapterImitationReviewReport,
+        ChapterImitationRiskReport,
+    )
+
+    base = ChapterImitationDraft(
+        source_chapter_index=1, original_title="原", draft_title="原",
+        draft_text="正文段落，没有调试痕迹。",
+    )
+
+    def reviser(d: ChapterImitationDraft, *, review: ChapterImitationReviewReport) -> ChapterImitationDraft:
+        return d
+
+    review = ChapterImitationReviewReport(
+        source_chapter_index=1, original_title="原", draft_title="原",
+    )
+    preflight = ChapterImitationPreflightReport(source_chapter_index=1, draft_title="原")
+    actions = [
+        ChapterImitationHarnessAction(
+            action_type="repair_rhythm", target="rhythm",
+            severity="medium", priority=2,
+        ),
+    ]
+    out = HarnessControllerService._apply_actions_to_draft(  # noqa: SLF001
+        base, review=review, preflight=preflight, actions=actions, base_reviser=reviser,
+    )
+    assert "【Harness Action Queue】" not in out.draft_text
+    assert "[P2|medium]" not in out.draft_text
+    assert len(out.action_queue) == 1
+    assert out.action_queue[0].action_type == "repair_rhythm"
+    assert out.action_queue[0].priority == 2

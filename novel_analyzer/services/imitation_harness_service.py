@@ -218,9 +218,31 @@ class HarnessControllerService:
         score: ChapterImitationScoreReport,
         actions: list[ChapterImitationHarnessAction],
     ) -> tuple[str, str]:
-        if preflight.overall_verdict == "pass" and gate.overall_verdict != "needs_revision" and risk.overall_risk_level == "low" and score.overall_score >= 80:
+        critical_actions = [
+            item for item in actions
+            if item.priority == 1 and item.severity in {"high", "critical"}
+        ]
+        gate_aligned = gate.overall_verdict != "needs_revision"
+        risk_low = risk.overall_risk_level == "low"
+        no_blocking = len(preflight.blocking_issues) == 0
+
+        if (
+            preflight.overall_verdict == "pass"
+            and gate_aligned
+            and risk_low
+            and score.overall_score >= 80
+            and not critical_actions
+        ):
             return ("pass", "harness_quality_threshold_reached")
-        if any(item.priority == 1 for item in actions):
+        if (
+            gate_aligned
+            and risk_low
+            and no_blocking
+            and score.overall_score >= 75
+            and not critical_actions
+        ):
+            return ("pass", "harness_soft_pass")
+        if critical_actions:
             return ("needs_revision", "critical_action_required")
         if risk.overall_risk_level != "low":
             return ("needs_revision", "risk_revision_required")
@@ -238,11 +260,6 @@ class HarnessControllerService:
         base_reviser,
     ) -> ChapterImitationDraft:
         revised = base_reviser(draft, review=review)
-        action_lines = [f"[P{item.priority}|{item.severity}] {item.action_type}:{item.target}" for item in actions[:6]]
-        revise_notes = [
-            "【Harness Action Queue】",
-            *action_lines,
-        ]
         revise_payload = HarnessControllerService._build_revise_payload(
             actions=actions,
             preflight=preflight,
@@ -254,7 +271,8 @@ class HarnessControllerService:
                 "risk_gate_notes": revised.risk_gate_notes + preflight.recommended_actions[:3],
                 "method_notes": revised.method_notes + [f"{item.priority}:{item.target}" for item in actions],
                 "comparison_notes": revised.comparison_notes + [f"ACTION:{item.action_type}:{item.target}" for item in actions[:4]] + [json.dumps(revise_payload, ensure_ascii=False)[:300]],
-                "draft_text": revised.draft_text + ("\n\n" + "\n".join(revise_notes) if action_lines else ""),
+                "action_queue": list(actions[:6]),
+                "is_scaffold_only": draft.is_scaffold_only,
             }
         )
 
@@ -1409,6 +1427,7 @@ class HarnessControllerService:
                             *draft.risk_gate_notes,
                             "当前章节因上游 provider 不可用，使用 skeleton fallback 保底生成。",
                         ],
+                        "is_scaffold_only": True,
                     }
                 )
         else:
@@ -1418,6 +1437,7 @@ class HarnessControllerService:
                 target_goal=target_goal,
                 steering_pack=steering_pack,
             )
+            draft = draft.model_copy(update={"is_scaffold_only": True})
 
         rounds: list[ChapterImitationHarnessRound] = []
         stop_reason = "max_rounds_reached"
