@@ -50,7 +50,7 @@ def library_list(
                 "max_chapter_index": chapter_count,
             })
 
-        return {"items": items, "total": len(items)}
+        return {"items": items}
 
 
 @router.get("/run-snapshot")

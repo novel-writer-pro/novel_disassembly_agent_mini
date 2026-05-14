@@ -113,12 +113,14 @@ def ask_branch_stream(req: AskBranchRequest):
 
 
 @router.get("/search-branch")
+@router.post("/search-branch")
 def search_branch(
     branch_id: str = Query(...),
-    query: str = Query(...),
+    q: str = Query(..., alias="q"),
     limit: int = Query(10),
     database_url: str | None = Query(None),
 ) -> dict:
+    query = q  # WSGI canonical names this 'q'
     from novel_analyzer.services.retrieval_service import RetrievalService
 
     settings = resolve_settings(database_url)
