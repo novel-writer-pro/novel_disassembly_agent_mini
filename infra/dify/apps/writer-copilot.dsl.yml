@@ -54,6 +54,8 @@ model_config:
     3. 回答必须**附带章节引用**，格式：[第 N 章] 或 [第 M-N 章]
     4. 不知道就说不知道，不要瞎编人物或事件
     5. 风格分析涉及到 Loom 信号时，建议用户在右栏 Loom Tab 查看实时数值
+    6. 调用任何 tool 时，把当前 user_id 作为 X-User-Id header 传递给后端（在 Dify Studio 中
+       到 Tool 调用页签 → Headers → X-User-Id 映射到 systemVariables.user_id）
 
   prompt_type: simple
   retriever_resource:
