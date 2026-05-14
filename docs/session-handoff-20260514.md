@@ -31,7 +31,9 @@ Closed the long-standing gap from `a22ee0c` ("dict written but never loaded into
 **Final result**: `simple` Recall@5 0.18 → 0.81 (~3x), `fullpipeline` R@5 0.9-1.0 across 5 novels.
 **Key insight**: domain dict value lives in **index time**, not query time. P1 embedding upgrade is now formally rejected — the retrieval lane is saturated.
 
-### Whole-Book MVP: 102 chapters / 200K characters end-to-end
+**Verification (this session)**: `simple R@5=0.806, jieba R@5=0.837` — baseline holds.
+
+### Whole-Book MVP: 102 chapters / 200K characters end-to-end (weitu)
 
 | Batch | Range | Chapters | Chars | Time |
 |---|---|---|---|---|
@@ -46,21 +48,41 @@ Outputs aggregated at `output/whole-book-weitu-FULL/`:
 - `weitu-imitation-fullbook.md` (458 KB consolidated)
 - `chapter-index.md` (per-chapter title/length/verdict)
 
-### Cross-Novel Robustness
+### Whole-Book SECOND: 102 chapters / 230K characters (zhuxian)
+
+| Batch | Range | Chapters | Chars | avg | Time |
+|---|---|---|---|---|---|
+| 1 | 2-30 | 29 | 67,905 | 2,341 | 21 min |
+| 2 | 31-60 | 30 | 66,539 | 2,217 | 27 min |
+| 3 | 61-103 | 43 | 95,674 | 2,224 | 32 min |
+| **Total** | 2-103 | **102** | **230,118** | **2,256** | **80 min** |
+
+Aggregated at `output/whole-book-zhuxian-FULL/`. zhuxian is **2.6x faster** than weitu and **15% denser** per chapter.
+
+**Combined: 430K characters of real Chinese fiction across 2 independent source novels.**
+
+### Cross-Novel Robustness (5-chapter spikes)
 
 5-chapter spikes on two more genres validated pipeline is genre-agnostic:
 - 掌门低调点 (modern xianxia, NPC流): 5 ch / 7903 chars / avg 1580
 - 诛仙 (classical xianxia): 5 ch / 9140 chars / avg 1828
 
-### mapping_pack Injection Fix
+### mapping_pack Injection: fix → validation → prompt-hardening
 
 | Commit | What |
 |---|---|
 | `584758f` | mapping_pack threaded through prompt → harness → CLI flags |
 | `0840257` | 5-chapter validation: 0 source-name leaks, 20 mapped hits |
 | `51923a8` | CLI manual + quickstart docs updated |
+| `7c21c25` | 9 unit tests covering mapping_pack injection paths |
+| `d73ce60` | 30-chapter scale validation: 97.7% accuracy, 28/30 chapters clean |
+| `682d790` | second-pass prompt fix for dense chapters |
 
-**Validation**: weitu ch2-6 with xianxia→sci-fi mapping (郑国→星际联邦, 卫图→魏拓, 养生功→星能调息术) produced 15K chars with full sci-fi tone (星灶/能量块/星舰后勤区), zero source-name leaks. Mapping is **prompt-time translation**, not regex replace — characters/dialogue/motivation all coherent.
+**Validation summary**:
+- 5-chapter spike: 0 leaks / 20 mapped hits / 100% accuracy
+- 30-chapter scale: 4 leaks / 172 mapped hits / **97.7% accuracy**
+- Mapping is **prompt-time translation**, not regex replace — characters/dialogue/motivation all coherent.
+- +49% character growth vs unmapped baseline (mapping gives LLM richer setting material).
 
 ---
 
@@ -152,16 +174,16 @@ NOVEL_ANALYZER_DB_*=...  # postgresql, d2/d2pass, port 5432
 | Move | ROI | Cost | Status |
 |---|---|---|---|
 | ~~A. P1 embedding upgrade~~ | ~~low~~ | 1 week | **rejected** — fullpipeline R@5 0.9-1.0 saturates |
-| **B. Whole-book on a 2nd full novel** | high | 3-4h LLM | unstarted; 诛仙 next candidate |
-| C. Tune Loom gate so verdict reaches quality-pass | medium | half day | needs harness gate threshold review |
+| ~~B. Whole-book on a 2nd full novel~~ | high | 3-4h LLM | **DONE** — zhuxian 102 ch / 230K chars |
+| C. Tune Loom gate so verdict reaches quality-pass | medium | half day | needs harness gate threshold review (preflight + risk + score + actions all gate quality-pass) |
 | D. 武道宗师 entity-extraction cleanup | medium | 2-3 days | tracked in `entity-extraction-noise-diagnosis-20260513.md` |
 | E. Manual eval mailbox for the 102 chapters | high | depends on review bandwidth | infra exists, see `bootstrap_weitu_validation_workspace.py` |
-| F. Run mapping_pack on 30+ chapter batch | medium | 1h LLM | proves coherence holds at scale |
+| ~~F. Run mapping_pack on 30+ chapter batch~~ | medium | 1h LLM | **DONE** — 30 ch / 87K chars / 97.7% accuracy |
 
 **Recommendation for next session**:
-- If you want **commercial-shape evidence**: do **B** (full 诛仙 imitation) — second whole-book proves we ship.
-- If you want **product-shape evidence**: do **E** (mailbox for human reviewers on the 102 chapters).
+- If you want **commercial-shape evidence**: do **E** (mailbox for human reviewers on the 204 chapters across 2 books).
 - If you want **technical depth**: do **C** (gate tuning) — quality-pass is the only verdict that ends the harness loop cleanly.
+- If you want **third-novel coverage**: try 武道宗师 / 雪中悍刀行 with the now-stable pipeline; expect 3-4h per novel.
 
 ---
 
