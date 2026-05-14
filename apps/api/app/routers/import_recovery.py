@@ -104,3 +104,33 @@ def branch_exports(
             "chapter_count": bundle.get("chapter_count", 0),
             "export_keys": list(bundle.keys()),
         }
+
+
+class StartRequest(BaseModel):
+    run_id: str
+    branch_id: str
+    pipeline_profile: str = "auto-lite"
+    max_chapters: int | None = None
+    database_url: str | None = None
+
+
+@router.post("/start")
+def start_pipeline_route(req: StartRequest):
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.application import start_pipeline as _start_pipeline
+
+    try:
+        processed_chapters, next_chapter, pipeline_state = _start_pipeline(
+            run_id=req.run_id,
+            branch_id=req.branch_id,
+            pipeline_profile=req.pipeline_profile,
+            max_chapters=req.max_chapters,
+            database_url=req.database_url,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return {
+        "processed_chapters": processed_chapters,
+        "next_chapter": next_chapter,
+        "pipeline_state": pipeline_state,
+    }

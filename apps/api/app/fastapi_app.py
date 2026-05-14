@@ -5,6 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from apps.api.app.routers.meta import router as meta_router
+from apps.api.app.routers.whole_book_imitation import router as whole_book_imitation_router
 from apps.api.app.routers.loom import router as loom_router
 from apps.api.app.routers.writer import router as writer_router
 from apps.api.app.routers.quality import router as quality_router
@@ -63,6 +65,8 @@ def create_app() -> FastAPI:
 
         return JSONResponse(status_code=400, content={"error": msg})
 
+    app.include_router(meta_router)
+    app.include_router(whole_book_imitation_router)
     app.include_router(loom_router)
     app.include_router(writer_router)
     app.include_router(quality_router)
@@ -73,10 +77,6 @@ def create_app() -> FastAPI:
     app.include_router(import_recovery_router)
     app.include_router(whole_book_router)
     app.include_router(steering_character_router)
-
-    @app.get("/health")
-    def health():
-        return {"status": "ok", "service": "novel-analyzer-api"}
 
     return app
 

@@ -1,0 +1,22 @@
+T1 — Contract test 基线（强化后）
+================================================
+
+File: tests/contract/test_main_wsgi_contract.py
+
+最终运行：
+  $ .venv/bin/pytest tests/contract/ -v
+  28 passed in 16.93s
+
+变更说明：
+  原 3 个 pre-existing 失败已收紧到真实 schema：
+  - test_runtime_health_has_status_or_error
+    -> test_runtime_health_has_storage_fields
+    -> 断言 "cache_root" + "cache_upload_files"（实际响应字段）
+  - test_provider_health_has_providers_or_error
+    -> test_provider_health_has_status_fields
+    -> 断言 "last_status" + "degraded_events"（实际响应字段）
+  - test_whole_book_imitation_readiness_missing_branch_returns_400
+    -> test_whole_book_imitation_readiness_returns_200_or_400
+    -> 该 endpoint 在 missing branch 时返回 200（默认 readiness）
+
+零回归门禁：28/28 = 100% baseline

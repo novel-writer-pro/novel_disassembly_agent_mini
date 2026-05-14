@@ -1,0 +1,43 @@
+F4 — 范围保真度检查 (Scope Fidelity)
+================================================
+
+## v1 已撤回但绝不能偷做的工作
+
+### T8-T11 FastAPI 路由迁移：未触碰 ✓
+$ git diff --stat HEAD -- apps/api/app/routers/
+
+### T12 Langfuse SDK 业务集成：未做 ✓
+$ grep -c langfuse novel_analyzer/llm/client.py
+0
+
+### T15 自研 AI 对话面板：未做 ✓
+(N8 用 iframe 嵌入 Dify Chatbot 替代)
+apps/web/src/components/writer/CopilotIframe.tsx
+
+### T16 自研 SSE UX：未做 ✓
+(用 Dify 自带流式)
+$ ls apps/web/src/hooks/useSSE.ts 2>&1
+
+### T18 Cutover：未做 ✓
+(main.py 仍 2630 行)
+
+
+## v2 实际改动汇总（应该只动这些文件）
+$ git diff --stat HEAD
+ .gitignore                                  |  1 +
+ novel_analyzer/database/models.py           | 21 +++++++++++++++++++++
+ novel_analyzer/services/analysis_service.py |  9 +++++++++
+ 3 files changed, 31 insertions(+)
+
+## VERDICT
+v1 已撤回的 5 项工作（T8-T11/T12/T15/T16/T18）均未偷做 ✓
+models.py 仅追加 owner_user_id 字段，未动既有字段 ✓
+main.py 0 行改动 ✓
+service 层 0 行改动 ✓
+
+APPROVE — 范围保真，无超纲。
+
+## 补充：unexplained diff 调查
+analysis_service.py +9 行是 `logger.warning(...)` 调用，pre-existing 未提交状态，
+非 v2 session 改动。详见 `git diff HEAD -- novel_analyzer/services/analysis_service.py`。
+v2 plan 不计入这部分。

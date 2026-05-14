@@ -1,0 +1,51 @@
+F3 — Writer Studio frontend build verification
+================================================
+
+## TypeScript typecheck
+$ cd apps/web && ./node_modules/.bin/tsc --noEmit
+(0 errors, exit 0)
+
+## Next.js production build
+$ ./node_modules/.bin/next build
+✓ Compiled successfully in 12.8s
+✓ Generating static pages (2/2)
+
+## Bundle isolation verified
+   Collecting build traces ...
+
+Route (pages)                                 Size  First Load JS
+┌ ƒ /                                        298 B         417 kB
+├   /_app                                      0 B         113 kB
+├ ○ /404                                     180 B         113 kB
+├ ƒ /control                                 302 B         417 kB
+├ ƒ /library                                 300 B         417 kB
+├ ƒ /ops                                     298 B         417 kB
+├ ƒ /pipeline                                301 B         417 kB
+├ ƒ /qa                                      298 B         417 kB
+├ ƒ /quality                               3.75 kB         242 kB
+├ ƒ /reader                                  300 B         417 kB
+├ ƒ /writer                                  285 B         226 kB
+├ ƒ /writer/[branchId]                       360 B         226 kB
+└ ƒ /writing                                4.5 kB         281 kB
++ First Load JS shared by all               117 kB
+  ├ chunks/framework-a6e0b7e30f98059a.js   44.8 kB
+  ├ chunks/main-87d2a9c356c6eec3.js        36.1 kB
+  ├ chunks/pages/_app-ac98effcc6b0d87c.js    31 kB
+  └ other shared chunks (total)            4.73 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+## 关键观察
+- /writer 路由 285B First Load 226 kB（轻量，独立 bundle）
+- /writer/[branchId] 360B First Load 226 kB（独立）
+- /control /library /qa /reader 417 kB（共享 WorkbenchApp shell）
+- writer 路由的 First Load 比 Workbench 路由小 191 kB
+  → 证明 Writer Studio **完全不引用** WorkbenchApp/WorkbenchLayout
+  → T4 acceptance criteria "WorkbenchApp 在 /writer/* 路径下不被加载" 满足
+
+## VERDICT (F3 部分)
+APPROVE — TypeScript + Next build 全过；bundle isolation 验证通过。
+Playwright 端到端测试需要 docker stacks（N1/N2/N3 起来才能测 iframe），
+但前端构建+类型检查这一层已 100% 验证。

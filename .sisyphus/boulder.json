@@ -1,0 +1,8 @@
+{
+  "active_plan": "/home/user/ai-books/.sisyphus/plans/v5-fastapi-cutover.md",
+  "plan_name": "v5-fastapi-cutover",
+  "started_at": "2026-05-14T13:00:00Z",
+  "agent": "atlas",
+  "branch": "futures/enbed",
+  "notes": "v5 FastAPI cutover; user chose A (direct exec); defaults for 3 open questions"
+}
