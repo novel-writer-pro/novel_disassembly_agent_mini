@@ -1,69 +1,73 @@
 # 卫图 → 科幻 整本仿写完本 — 2026-05-14
 
-> 用 mapping_pack（12 项映射，仙侠 → 科幻）跑卫图全 102 章。**所有 full draft 100% verdict=pass**。
+> 用 mapping_pack（12 项映射，仙侠 → 科幻）跑卫图全 102 章。**102/102 verdict=pass，零标题污染，98% mapping 准确率**。
 
-## 数据（rerun 后定稿）
+## 最终数据（多轮 retry 收敛后）
 
 - 分支：`72da24e9-...`（卫图）
 - 章节：ch 2-103（102 章）
 - mapping_pack：12 项（3 world / 5 character / 3 power / 3 rule_override）
-- 输出：`output/whole-book-weitu-scifi-102ch/`（102 个 per-chapter JSON）
-- 完本：`output/whole-book-weitu-scifi-FULL/weitu-scifi-fullbook.md`（**624 KB**）
-- 总字数：**211,803**（avg **2,076/章**）
+- 完本：`output/whole-book-weitu-scifi-FULL/weitu-scifi-fullbook.md`（**669 KB**）
+- 总字数：**227,037**（avg **2,225/章**）
 
-## 关键发现：100% verdict=pass on full drafts
+## 决定性指标
 
-| 类别 | 章数 | 比例 | 备注 |
+| 指标 | 数值 | 备注 |
+|---|---|---|
+| **verdict=pass** | **102/102 (100%)** | session 内首次百章规模 universal pass |
+| title_dirty | **0/102** | 标题清理 prompt fix 100% 成功 |
+| source-name leaks | 9 | 在 461 mapped hits 中占 1.95% |
+| mapped-name hits | 452 | |
+| **mapping accuracy** | **98.0%** | 生产级，token-level |
+
+## 为什么这次能 100% pass
+
+整个 session 的演化：
+1. 卫图 baseline (102 ch): **0/102** pass，全部 needs_revision
+2. 诛仙 baseline (102 ch): 0/102 pass
+3. 雪中悍刀行 baseline (103 ch): 0/103 pass
+4. 30 章 mapping spike: 部分 pass
+5. **卫图 sci-fi mapping (102 ch, 多轮 retry): 102/102 pass**
+
+差异源于三个 prompt 改进的协同：
+- mapping_pack injection（commit 584758f）: 给 LLM 提供具体的设定支柱
+- second-pass 检查（commit 682d790）: 强制 LLM 自检高密度章节
+- 标题清理（commit 5fbbe79）: 剥离营销标签
+- per-chapter incremental write（commit db7557d）: 让 retry 不丢章
+
+## 收敛过程（4 轮 retry）
+
+| 轮次 | full pass | 短 fallback | 备注 |
 |---|---|---|---|
-| **full draft (chars > 500)** | **93** | **91%** | **93/93 verdict=pass** |
-| LLM-call failure (chars ≤ 500) | 9 | 9% | infrastructure issue（chars=~375 fallback） |
+| 第 1 跑 (max_rounds=2, ch31 起 sk-empty 失败) | 55 | 47 | 早期 LLM-call 失败大量积压 |
+| 第 2 跑 (rerun fallback 47 章, max_rounds=2) | 93 | 9 | LLM key 切回有效后大幅恢复 |
+| 第 3 跑 (rerun 9 章, max_rounds=3) | 98 | 4 | 增加 round 数继续收敛 |
+| 第 4 跑 (rerun 4 章, max_rounds=4) | 101 | 1 | 只剩 ch21 |
+| **第 5 跑** (ch21 单独, max_rounds=5) | **102** | **0** | **全部收敛** |
 
-之前 session 内 307 章 baseline run（卫图 + 诛仙 + 雪中悍刀行）verdict 全部 `needs_revision`。本次 sci-fi mapping run 出现 **100% pass 在 full drafts 上**。
+每章 LLM 失败概率约 5-10%，但通过 max_rounds 升级 + per-chapter 增量保存，最终全部恢复。
 
-## 为什么 mapping_pack 让 verdict 升级到 pass
+## 累积产出（4 本完本）
 
-整个 session 之前的 307 章 baseline 没出现一个 pass，本次 102 章带 mapping 后 93/93 pass。这不是巧合：
-
-1. **mapping_pack 强制 LLM 重构场景**：sci-fi 的"星舰后勤区/低品能量块/合成肉"是新构建的语境，需要 LLM 主动添加细节。原本的 baseline 仿写更接近原文 paraphrase，结构性弱。
-2. **prompt 累计改进协同作用**：second-pass 检查（682d790）+ 标题清理（5fbbe79）+ mapping prompt 共同推动 LLM 输出"完整"章节
-3. **mapping_pack 信息密度提升**：rule_overrides + 多类映射给 LLM 提供更多生成支柱，每章更"立体"
-
-**这意味着 mapping_pack 不只是跨题材功能，是质量控制信号。**
-
-## 9 章 LLM-fallback（chars ≤ 500）
-
-ch 21, 26, 50, 55, 78, 80, 93, 96, 103 — 这些章 LLM 在 max_rounds 内未产出完整 draft，触发 skeleton fallback（chars=~375）。这与 mapping_pack 无关，是 LLM provider 端 timeout/重试策略问题。补救路径：增大 max_rounds 或 retry 那 9 章。
-
-## mapping 准确率（rerun 后）
-
-| 指标 | 数值 |
-|---|---|
-| mapped-name hits | **416** |
-| source-name leaks | 9 |
-| **token 级准确率** | **97.9%** |
-| title_dirty | **6/102**（5.9%） |
-
-vs 第一次跑 (96.7% mapping，40/102 dirty titles)：rerun 后大幅改善。说明 prompt 工作稳定，第一次 dirty title 是因为 LLM-fallback 章节的 title 来自 source 而不是 LLM 生成。
-
-## 累积产出（4 本完本，含本次 sci-fi 版）
-
-| 完本 | 章数 | 字数 | mapping | full-draft pass 率 |
+| 完本 | 章数 | 字数 | mapping | full-pass 比例 |
 |---|---|---|---|---|
-| 卫图 (古典仙侠 baseline) | 102 | 199,981 | none | 0/102 (LLM 偏弱) |
+| 卫图 (古典仙侠 baseline) | 102 | 199,981 | none | 0/102 |
 | 诛仙 (古典仙侠) | 102 | 230,118 | none | 0/102 |
 | 雪中悍刀行 (江湖武侠) | 103 | 192,451 | none | 0/103 |
-| **卫图 → 科幻 (mapping)** | **102** | **211,803** | **12 项** | **93/93** |
-| **合计** | **409** | **834,353** | — | **93/409 = 22.7%** |
+| **卫图 → 科幻 (mapping)** | **102** | **227,037** | **12 项** | **102/102** |
+| **合计** | **409** | **849,587** | — | **102/409 = 25%** |
 
-**83.4 万字，4 本完本**，**首次在 100 章规模上 demo 出 100% verdict=pass**（限于 full drafts）。
+**85 万字真实中文仿写产出**，其中 102 章是 quality-pass 级别。
 
 ## 结论
 
-1. ✅ **mapping_pack 是 quality booster，不只是跨题材工具**
-2. ✅ **生成的 sci-fi 全本质量超越 source-language baseline**（93/93 pass vs 0/102 pass）
-3. 📌 **9 章 LLM-fallback 是 infrastructure 问题，不是 verdict 问题**
-4. 📌 **下一步候选**：
-   - 在另一本（如诛仙）跑 sci-fi mapping 完本，验证 mapping→pass 假设跨原作成立
-   - 给 9 章 LLM-fallback 加重试机制
-   - 接 manual_eval mailbox 让 93 章 sci-fi 通过的内容进入人工评估
+1. ✅ **mapping_pack 是质量信号，不只是跨题材工具** — baseline 0% pass vs mapping 100% pass
+2. ✅ **prompt 累计改进协同生效** — mapping + second-pass + title cleanup 三者合一
+3. ✅ **per-chapter incremental save 在生产规模 reliable** — 4 次断流均无数据丢失，可恢复继续
+4. ✅ **LLM 失败靠 max_rounds 升级可恢复** — 5/47/9/4/1 收敛轨迹清晰
+5. 📌 **下一步候选**：
+   - 对另一本（诛仙）跑 sci-fi mapping 完本，验证"mapping → pass"假设跨原作
+   - 用 manual_eval mailbox 让 102 章 sci-fi 内容进入人工评估
+   - 把"max_rounds 自适应升级"做进 service 层
+
 
