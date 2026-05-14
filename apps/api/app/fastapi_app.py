@@ -36,6 +36,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    from apps.api.app.middleware import IdentityMiddleware
+    app.add_middleware(IdentityMiddleware)
+
     @app.exception_handler(RequestValidationError)
     async def _validation_to_400(request: Request, exc: RequestValidationError):
         """Match WSGI behaviour: missing/invalid query/body params -> 400 + {'error': ...}.
