@@ -235,11 +235,12 @@ export const askBranchStream = async (
   onEvent: (event: BranchAskStreamEvent) => void,
   databaseUrl?: string,
   limit = 6,
+  maxChapter?: number,
 ) => {
   const response = await fetch(`${apiBase}/api/ask-branch-stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-    body: JSON.stringify({ branch_id: branchId, question, database_url: databaseUrl, limit }),
+    body: JSON.stringify({ branch_id: branchId, question, database_url: databaseUrl, limit, ...(maxChapter != null ? { max_chapter: maxChapter } : {}) }),
   });
 
   if (!response.ok) {
