@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import cast
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel
 
 from apps.api.app.routers import get_db_session, resolve_settings
@@ -197,3 +197,45 @@ def review_batch_history(
     if limit > 0:
         items = items[-limit:]
     return {"branch_id": branch_id, "items": items}
+
+
+
+@router.post("/review-batch-execute")
+async def review_batch_execute(request: Request):
+    """Delegate to WSGI dispatch — preserves the 249-line batch logic
+    without duplication. Will be reversed at T10 cutover when WSGI
+    dispatch is retired and this endpoint takes over the canonical path.
+    """
+    import json
+    from io import BytesIO
+    from typing import cast
+    from wsgiref.types import StartResponse
+    from fastapi.responses import Response, JSONResponse
+    from apps.api.app.main import application
+
+    body_bytes = await request.body()
+    captured: dict = {}
+
+    def start_response(status: str, headers: list, exc_info=None):
+        captured["status"] = status
+        captured["headers"] = headers
+        return lambda chunk: None
+
+    raw_chunks = application(
+        {
+            "REQUEST_METHOD": "POST",
+            "PATH_INFO": "/api/review-batch-execute",
+            "QUERY_STRING": "",
+            "CONTENT_TYPE": request.headers.get("content-type", "application/json"),
+            "CONTENT_LENGTH": str(len(body_bytes)),
+            "wsgi.input": BytesIO(body_bytes),
+        },
+        cast(StartResponse, start_response),
+    )
+    body_out = b"".join(raw_chunks)
+    status_code = int(captured.get("status", "500").split()[0])
+    try:
+        payload = json.loads(body_out)
+    except Exception:
+        payload = {"_raw": body_out.decode("utf-8", errors="replace")[:500]}
+    return JSONResponse(status_code=status_code, content=payload)
