@@ -13,13 +13,28 @@ def library_list(
     database_url: str | None = Query(None),
     limit: int = Query(20),
 ) -> dict:
+    """List library items.
+
+    Honors X-User-Id via IdentityMiddleware (v3 owner_user_id scoping).
+    When user_id is "local-default" (no header / dev), no filter is
+    applied — the legacy WSGI behaviour for unauthenticated callers.
+    """
     from sqlalchemy import select, func
+    from apps.api.app.middleware import get_current_user
     from novel_analyzer.database.models import NovelSource, RunBranch, FactRecord
 
+    user_id = get_current_user()
+    apply_scope = user_id != "local-default"
+
     with get_db_session(database_url) as session:
-        novels = session.scalars(
+        novels_query = (
             select(NovelSource)
             .where(NovelSource.deleted_at.is_(None))
+        )
+        if apply_scope:
+            novels_query = novels_query.where(NovelSource.owner_user_id == user_id)
+        novels = session.scalars(
+            novels_query
             .order_by(NovelSource.created_at.desc())
             .limit(limit)
         ).all()

@@ -97,34 +97,22 @@ class TestQAServiceMaxChapter:
 
 
 class TestAskBranchStreamMaxChapter:
+    """Post-v5-cutover: /api/ask-branch-stream is on FastAPI, not WSGI."""
+
     def test_ask_branch_stream_reads_max_chapter_from_body(self):
-        import json
-        from io import BytesIO
-        from typing import cast
-        from wsgiref.types import StartResponse
-        from apps.api.app.main import application
+        from fastapi.testclient import TestClient
+        from apps.api.app.fastapi_app import create_app
 
-        captured = {}
-
-        def start_response(status, headers, exc_info=None):
-            captured["status"] = status
-            return lambda chunk: None
-
-        body = json.dumps({
-            "branch_id": "nonexistent-branch",
-            "question": "test question",
-            "max_chapter": 3,
-        }).encode()
-
-        raw = b"".join(application(
-            {
-                "REQUEST_METHOD": "POST",
-                "PATH_INFO": "/api/ask-branch-stream",
-                "CONTENT_TYPE": "application/json",
-                "CONTENT_LENGTH": str(len(body)),
-                "QUERY_STRING": "",
-                "wsgi.input": BytesIO(body),
+        client = TestClient(create_app())
+        r = client.post(
+            "/api/ask-branch-stream",
+            json={
+                "branch_id": "nonexistent-branch",
+                "question": "test question",
+                "max_chapter": 3,
             },
-            cast(StartResponse, start_response),
-        ))
-        assert captured.get("status") in ("200 OK", "500 Internal Server Error")
+        )
+        # Either 200 (SSE stream begins, error inside event) or 500 (handler crashes
+        # on missing branch). Both are acceptable — the assertion is that
+        # max_chapter in body does NOT cause 4xx-class validation rejection.
+        assert r.status_code in (200, 500)

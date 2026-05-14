@@ -76,38 +76,57 @@ class AskBranchRequest(BaseModel):
     branch_id: str
     question: str
     database_url: str | None = None
+    limit: int = 6
+    max_chapter: int | None = None
+
+
+def _sse_event(payload: dict) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
 @router.post("/ask-branch")
 def ask_branch(req: AskBranchRequest) -> dict:
-    from novel_analyzer.services.branch_qa_service import BranchQaService
+    from dataclasses import asdict
+    from fastapi.responses import JSONResponse
+    from novel_analyzer.services.qa_service import BranchQAService
 
     settings = resolve_settings(req.database_url)
-    with get_db_session(req.database_url) as session:
-        svc = BranchQaService(session, settings)
-        try:
-            result = svc.ask(req.branch_id, req.question)
-            return {"answer": result.answer, "sources": result.sources}
-        except Exception as e:
-            return {"error": str(e)}
+    try:
+        with get_db_session(req.database_url) as session:
+            result = BranchQAService(session, settings).answer_question(
+                req.branch_id, req.question, req.limit, max_chapter=req.max_chapter
+            )
+        return result.model_dump(mode="json")
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @router.post("/ask-branch-stream")
 def ask_branch_stream(req: AskBranchRequest):
-    from novel_analyzer.services.branch_qa_service import BranchQaService
+    from dataclasses import asdict
+    from novel_analyzer.services.qa_service import BranchQAService
+    from novel_analyzer.services.retrieval_service import RetrievalService
 
     settings = resolve_settings(req.database_url)
 
     def generate():
-        with get_db_session(req.database_url) as session:
-            svc = BranchQaService(session, settings)
-            try:
-                for chunk in svc.ask_stream(req.branch_id, req.question):
-                    event = json.dumps({"type": "chunk", "content": chunk}, ensure_ascii=False)
-                    yield f"data: {event}\n\n"
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
-            except Exception as e:
-                yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+        yield _sse_event({"type": "status", "message": "正在检索相关章节…"})
+        try:
+            with get_db_session(req.database_url) as session:
+                hits = RetrievalService(session, settings).search_branch(
+                    req.branch_id, req.question, req.limit, max_chapter=req.max_chapter
+                )
+                yield _sse_event({"type": "retrieval", "hits": [asdict(h) for h in hits]})
+                yield _sse_event({"type": "status", "message": "正在结合证据与图谱线索组织回答…"})
+                result = BranchQAService(session, settings).answer_question(
+                    req.branch_id, req.question, req.limit, max_chapter=req.max_chapter
+                )
+            answer_text = result.answer or ""
+            for i in range(0, len(answer_text), 20):
+                yield _sse_event({"type": "delta", "delta": answer_text[i:i + 20]})
+            yield _sse_event({"type": "final", "result": result.model_dump(mode="json")})
+        except Exception as exc:  # noqa: BLE001
+            yield _sse_event({"type": "error", "error": str(exc)})
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
