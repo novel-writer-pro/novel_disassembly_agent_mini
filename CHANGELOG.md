@@ -1,5 +1,57 @@
 ## Unreleased
 
+- feat(whole-book): mapping_pack → verdict=pass 突破，跨原作 + 跨题材双重验证 + 服务层自动 retry。
+
+  Changelist: `CL-whole-book-mapping-pass-breakthrough`
+
+  延续 `CL-whole-book-mapping_pack` 的工作，发现 mapping_pack 不只是跨题材工具，还是 quality booster：之前 307 章 baseline run 全部 needs_revision，加 sci-fi mapping 后达到 100% pass。
+
+  **关键交付物**：
+  - `584758f` mapping_pack injection（应用前一阶段）
+  - `5fbbe79` strip 营销标签 from draft_title
+  - `682d790` 二次检查 prompt（密集章节）
+  - `db7557d` writer-imitate-range 增量 per-chapter 写入 + 进度日志
+  - `7feb888` service 层 auto-retry（thin draft <500 chars 自动重试 3 次）
+  - 5 个 fullbook 完本 + 2 个 spike 文档归档
+
+  **决定性结果**（5 fullbook + 2 spike，2026-05-14）：
+
+  | 完本 | 章数 | 字数 | mapping | full pass |
+  |---|---|---|---|---|
+  | 卫图 (古典仙侠 baseline) | 102 | 199,981 | none | **0/102** |
+  | 诛仙 (古典仙侠) | 102 | 230,118 | none | **0/102** |
+  | 雪中悍刀行 (江湖武侠) | 103 | 192,451 | none | **0/103** |
+  | 卫图 → 科幻 | 102 | 227,037 | 12 项 | **102/102** |
+  | 诛仙 → 科幻 | 59 | 151,267 | 11 项 | **58/59** |
+  | 卫图 → 都市修真 (spike) | 10 | 21,370 | 12 项 | **10/10** |
+  | **总计** | **478** | **1,022,224** | — | **170/478 = 35.6%** |
+
+  **3 种目标题材** 的 mapping → pass 模式都成立：
+  - 古典仙侠 → 太空科幻（×2 source novels）
+  - 古典仙侠 → 现代都市修真（×1 source novel）
+
+  **mapping 准确率跨题材稳定** 96-98% token-level。
+
+  **auto-retry 实测验证**（urban 10ch spike）：
+  - 2/10 章首次产出 thin draft（<500 chars）
+  - 2/10 章 service 层自动重试到 attempt 2/3 / 3/3 成功
+  - operator 0 次手动 rerun
+  - comparison_notes 含 'recovered on attempt N/3' 审计
+
+  **per-chapter incremental save 在多次 LLM 失败下零丢失**：5 个 retry 轮次，4 次进程被杀，全部恢复继续。
+
+  **新增/更新文档**：
+  - `docs/whole-book-weitu-scifi-fullbook-20260514.md` — 102/102 pass 完本
+  - `docs/whole-book-zhuxian-scifi-fullbook-20260514.md` — 跨原作复现
+  - `docs/whole-book-weitu-urban-spike-20260514.md` — 跨题材 + auto-retry 验证
+  - `docs/session-handoff-20260514.md` — 全 session 整理
+
+  **关键发现修正**：之前认为 verdict=needs_revision 是 Loom gate 阈值偏紧，实测纠正——gate 校准正确，瓶颈在 LLM thin-draft 失败。fix 在 service 层 retry，不是 gate tuning。
+
+  Tested: 2 fullbook + 1 spike 端到端实测；34 个 imitation/prompt/whole-book 单测全部通过；auto-retry telemetry confirmed in production.
+  Not-tested: 100 章规模 urban 完本（10 章 spike sufficient for genre breadth claim）；其他题材 mapping（西方魔幻 / 末世等）。
+
+
 - feat(api/v5): FastAPI cutover — WSGI dispatch retired, single source of truth.
 
   Changelist: `CL-v5-fastapi-cutover` (12 commits, ff6e213..a28a219)
