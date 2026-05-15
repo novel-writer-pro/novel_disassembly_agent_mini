@@ -44,6 +44,7 @@
 
 | 文档 | 说明 | 适合谁 |
 |------|------|--------|
+| **[runbook/deployment-and-operations-manual-20260515.md](./runbook/deployment-and-operations-manual-20260515.md)** | **从零部署 + 日常运维总章 (1038 行)** | **接手人优先读** |
 | [cli-operations-manual.md](./cli-operations-manual.md) | CLI 命令真相源 | 使用者 |
 | [direct-usage-guide.md](./direct-usage-guide.md) | 日常操作顺序 | 使用者 |
 | [novel-ingest-input-spec.md](./novel-ingest-input-spec.md) | 小说输入规范 (novel.txt 格式) | 使用者 |
