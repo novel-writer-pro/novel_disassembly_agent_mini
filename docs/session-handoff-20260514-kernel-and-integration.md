@@ -298,8 +298,60 @@ point.
 
 ---
 
-## 8. 修订记录
+## 8. Week 1-2 + T6 sprint outcomes (2026-05-14 → 05-15)
+
+After the 4 planning artifacts landed, work resumed on the kernel sprint. The
+following commits ship internal-state changes (not just docs):
+
+| Commit | T# | Surface |
+|---|---|---|
+| `ae16931` | T1 | jieba domain dictionary validator + cleaned userdict (7000+ → 2627 valid terms) + `docs/runbook/bm25-jieba-reindex.md` |
+| `26952d0` | T2 | `scripts/dev/helicone-doctor.py` + `docs/runbook/helicone-enable.md` for proxy-trace activation |
+| `80971ee` | T3 | `risk_audit_service.py` 2156 → 365 + `risk_audit_checkers.py` 1854 (9 GateChecker classes split out) |
+| `03daf85` | T4 | `imitation_harness_helpers.py` 238 lines (8 pure helpers extracted; class shrank by 35 net lines) |
+| `77670c4` | T6 | `RetrievalService._embedding_inputs_for_chunks()` contextual-prefix wiring, flag-gated, default off |
+
+**5 commits pushed to `origin/v0.2.4`. All in-scope tests pass:**
+- `test_domain_dictionary_service.py` 4/4
+- `tests/e2e/test_llm_base_url_override.py` 4/4
+- `test_risk_audit_service.py` 40/40 + `test_export_risk_card.py` 11/11 + `test_export_report.py` 18/18
+- `test_imitation_harness_service.py` 32/32 + `test_loom_phase2.py` 4/4 + `test_chapter_imitation_service.py` 9/9
+- `test_retrieval_service.py` 21/21 (incl. 3 new contextual-prefix tests)
+
+### 8.1 Deferred (operator/data-side, NOT lost)
+
+| Task | Why deferred this turn | Resumption signal |
+|---|---|---|
+| T1.5 `bm25-reindex` | `ALTER TABLE DROP COLUMN bm25_vector` requires `AccessExclusiveLock`; PID 7235 `writer-imitate-range` (started 06:41, still running 1h+ later) holds `AccessShareLock`. My ALTER queued and would have read-locked the entire table for the duration. **Cancelled to keep user's job alive.** | Wait for PID 7235 to finish or coordinate maintenance window, then run `python -m novel_analyzer.cli.app bm25-reindex --confirm` per `docs/runbook/bm25-jieba-reindex.md` |
+| T2.5 Helicone container up | No docker-socket access from this user; container start is operator step | Run `cd infra/helicone/upstream && docker compose up -d`, then `python scripts/dev/helicone-doctor.py` — exits 0 when trace is live |
+| T5 Loom carry-over 20-章 A/B | DB locked by T1.5 blocker + needs 20 real LLM imitation runs | After T1.5 complete; needs LLM budget + ~3 days runtime |
+| T7 FActScore-lite QA grounding | Requires new LLM prompt in `prompts.py`. The v5 cutover constraint **explicitly forbids** modifying `prompts.py`. Implementing as a deterministic ngram-overlap stub would ship a misleading signal. | Either lift the v5 prompt-freeze, or accept stubbed signal with strict warning labels |
+| T8 Persona real-vs-simulated correlation | Needs accumulated reader_feedback rows + reader_simulation history; current branches don't have enough data points | After at least 3 branches have ≥30 reader_feedback entries each |
+
+### 8.2 Honest reality check on kernel-sota §10 timeline
+
+The 6-week sprint plan I wrote in `kernel-sota-gap-assessment-20260514.md` overestimated what's achievable as pure code-side work. **Half of Week 3-4 + Week 5-6 tasks need either a clear DB maintenance window, accumulated runtime data, or a relaxation of the v5 prompts.py freeze.** The plan is still directionally right, but the order should be:
+
+1. **Operator first**: open a maintenance window, complete T1.5 + T2.5
+2. **Data first**: kick off Loom shadow runs to generate the data T5/T8 need
+3. **Decision first**: get explicit OK to edit `prompts.py` for T7, OR redefine T7 as ngram-only with a clear caveat
+4. **Then code**: T9 (reward model), T10 (LLM-judge unification) can be staged in parallel once 1-3 are unblocked
+
+### 8.3 Things in this branch that should NOT be discarded
+
+```
+M apps/api/app/routers/import_recovery.py   # v5.1 paused
+M apps/api/app/routers/risk_review.py       # v5.1 paused
+M tests/test_api_main.py                    # v5.1 paused — 30 broken tests
+```
+
+These are v5.1 in-progress edits flagged in §6 Directive of commit `80a46f6`. Do not `git checkout` them.
+
+---
+
+## 9. 修订记录
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | 1.0 | 2026-05-14 | 初版 |
+| 1.1 | 2026-05-15 | Week 1-2 + T6 sprint outcomes — 5 commits shipped (T1/T2/T3/T4/T6); T1.5/T2.5/T5/T7/T8 deferred with explicit resumption signals |
