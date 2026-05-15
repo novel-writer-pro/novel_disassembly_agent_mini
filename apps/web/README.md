@@ -37,22 +37,22 @@ npm run dev
 
 ## 后端 API
 
-前端依赖两个后端服务：
+前端依赖一个后端服务：
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| 旧 WSGI API | 8011 | 拆书/导入/分析/阅读/问答 |
-| 新 FastAPI | 8100 | Loom 信号/仿写/质量中心 |
+| FastAPI | 8011 | 全部端点（拆书/导入/分析/阅读/问答/Loom 信号/仿写/质量中心） |
 
 启动后端：
 
 ```bash
-# 旧 WSGI（拆书核心）
-source .venv/bin/activate
-python -m apps.api.app.main
+# 推荐
+make api-dev
+# 等价于：
+.venv/bin/uvicorn apps.api.app.fastapi_app:app --host 127.0.0.1 --port 8011 --reload
 
-# 新 FastAPI（仿写 + Loom）
-uvicorn apps.api.app.fastapi_app:app --port 8100
+# v5 cutover 回退用（一般不需要）：
+make api-wsgi-legacy
 ```
 
 ## 页面结构
