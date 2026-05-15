@@ -356,6 +356,104 @@ These are v5.1 in-progress edits flagged in §6 Directive of commit `80a46f6`. D
 | 1.0 | 2026-05-14 | 初版 |
 | 1.1 | 2026-05-15 | Week 1-2 + T6 sprint outcomes — 5 commits shipped (T1/T2/T3/T4/T6); T1.5/T2.5/T5/T7/T8 deferred with explicit resumption signals |
 | 1.2 | 2026-05-15 | Borrow items B1/B4/B5 shipped (3 of 5 from competing-novel-ai-projects-20260515.md); B2/B3 deferred — see §10 |
+| 1.3 | 2026-05-15 | Validation surfaced B1 inverted + scaffold cascade bug; 4 corrective commits + ch49 follow-through — see §11 |
+
+---
+
+## 10. Borrow items from competing project research (2026-05-15 后续)
+
+(unchanged from §10 in v1.2 — B1/B4/B5 shipped, B2/B3 deferred, wiring deferred)
+
+---
+
+## 11. Validation cycle and follow-through (2026-05-15 v1.3)
+
+After §10 shipped 3 standalone scoring helpers, a validation pass against
+the real 507-draft corpus produced a finding that **invalidated the
+"diagnostic → quality gate" promotion path** for B1, and incidentally
+surfaced a real cascade bug. Shipped 6 corrective commits:
+
+| Commit | Surface | Why |
+|---|---|---|
+| `3eeecda` | Real-data threshold calibration + reusable benchmark script | Original docstring thresholds (0.55/0.45) were unit-test-derived and caught 0/507 real drafts |
+| `8f24346` | Validation finding doc | B1 ai_trace correlates BACKWARDS with harness verdict (pass mean 0.201 > needs_revision mean 0.184). The dominant ngram_repetition component tracks narrative density, not "AI flavor". B4 effect size below noise floor |
+| `1d6cbae` | B1/B4 docstring demotion to "diagnostic only, NOT a gate" | Prevent future re-promotion based on stale claims |
+| `db2a179` | Loom signal extractor early-returns None for `is_scaffold_only=True` drafts | Defense-in-depth — current "no signal" gate at line 3363 catches ch49 by accident |
+| `a7d43a3` | Block scaffold-only `draft_text` from `previous_excerpt` + `generated_summary` carry-over | **Real cascade bug** — scaffold outline text was leaking into next chapter's prompt context augmentation |
+| `d29d771` | `is_scaffold_only` exposed on `/api/writer/imitate` response | Closes the audit chain so frontend can render scaffold banner |
+
+### 11.1 Cascade bug discovery — the real win of validation
+
+The benchmark surfaced `output/whole-book-zhuxian-scifi-59ch/writer-imitate-ch49.json`:
+502 chars of pure outline scaffold (`【章节目标】斗败老怪 / 场景1：承接上一章 / ...`)
+persisted as `final_draft.draft_text` with `is_scaffold_only=True` and
+`final_verdict=needs_revision`. The harness correctly knew it had failed.
+Audit of 5 downstream consumers found **2 of them silently fed scaffold text
+into next-chapter prompt context**:
+
+- `chapter_imitation_service.build_multi_chapter_consistency:589/603` → scaffold
+  excerpt entered `MultiChapterImitationStep.final_draft_excerpt`, then 120 chars
+  of it became the next chapter's `previous_excerpt`, telling the LLM to
+  "continue from this scene" when there was no scene at all.
+- `whole_book_imitation_service:818` → `WholeBookCarryOverState.generated_summary`
+  (220 chars of scaffold) flowed into the next chapter's `target_goal`
+  augmentation: `承接上一生成状态：【章节目标】斗败老怪 场景1：...`.
+  Meta-prompt language bleeding into prose generation.
+
+Fixed by checking `is_scaffold_only` before extracting context; scaffold
+contributes empty string to carry-over and a sentinel string
+(`"[scaffold-only fallback; not user-facing prose]"`) to viewer excerpts.
+
+### 11.2 Lessons for future borrow items
+
+1. **Threshold calibration ≠ signal validation.** Always run a correlation
+   against the **outcome variable** (here: harness `final_verdict`) before
+   claiming a heuristic is a quality signal.
+2. **"Inspired by N-star repo X" doesn't transfer.** The inkos 33-dim audit
+   lives inside a different harness; their dimensions might not be redundant
+   with their main pipeline. Ours are.
+3. **Pure-function helpers cost nothing as diagnostics**, but **wiring claims
+   are expensive** — they would have produced false alerts in production
+   reviewer queues.
+4. **Always audit downstream cascades** when adding a new produce/consume
+   contract. The scaffold flag existed for a year before anyone checked
+   whether all consumers honored it.
+5. **Validation can find bugs you weren't looking for.** The cascade bug
+   was a surprise; running B1 was the only reason we discovered it.
+
+### 11.3 Audit chain status
+
+| Site | Status |
+|---|---|
+| `_extract_writer_output_loom_signal` (cli/app.py) | ✅ guarded |
+| `MultiChapterImitationStep.final_draft_excerpt` (chapter_imitation) | ✅ guarded |
+| `WholeBookCarryOverState.generated_summary` (whole_book_imitation) | ✅ guarded |
+| `WholeBookImitationExecutedStep.draft_excerpt` (whole_book_imitation) | ✅ sentinel-replaced |
+| `MultiChapterImitationConsistencyReport.previous_excerpt` (chapter_imitation) | ✅ empty when scaffold |
+| `/api/writer/imitate` response | ✅ field exposed |
+| `clean_imitation_drafts.py` | ✅ already detects via regex |
+| `render_workspace_chapter_md.py` | ✅ already shows banner with --clean |
+| `cli/app.py` markdown render paths (lines 3149/3195/3279) | ⚠️ render scaffold prose without banner — cosmetic, not safety; deferred |
+
+### 11.4 Outstanding work after this cycle
+
+- B5 Elo wiring into `pairwise_eval_service` — still ready, still needs DB
+  schema decision
+- B2 (relationship dim in retrieval) — needs live retrieval testing
+- B3 (arc-rolling planning) — multi-day integration, should be its own plan
+- T1.5 bm25-reindex — still blocked by long-running graph_edges INSERT
+  transactions; check `pg_stat_activity` before next attempt
+- cli/app.py markdown render paths — could add scaffold banner; cosmetic only
+
+### 11.5 Things still NOT to discard from working tree
+
+```
+M apps/api/app/routers/import_recovery.py   # v5.1 paused
+M apps/api/app/routers/risk_review.py       # v5.1 paused
+M tests/test_api_main.py                    # v5.1 paused — 30 broken tests
+```
+
+(Same as §8.3 + §10.3, restated.)
 
 ---
 
