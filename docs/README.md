@@ -45,11 +45,16 @@
 | 文档 | 说明 | 适合谁 |
 |------|------|--------|
 | **[runbook/deployment-and-operations-manual-20260515.md](./runbook/deployment-and-operations-manual-20260515.md)** | **从零部署 + 日常运维总章 (1038 行)** | **接手人优先读** |
+| **[ops-debug-manual-20260514.md](./ops-debug-manual-20260514.md)** | **scenario-first 故障速查（自检/常见操作/故障决策树/反模式）** | **运维/调试** |
+| **[cross-genre-imitation-commercial-readiness-20260515.md](./cross-genre-imitation-commercial-readiness-20260515.md)** | **跨题材改写 99.4% pass + 6 项 SLA gap + 3 条上线路径** | **业务/PM** |
+| **[baseline-imitation-quality-validation-handoff-20260515.md](./baseline-imitation-quality-validation-handoff-20260515.md)** | **同题材 prompt 修复后 Stage A/B/C 长跑验证步骤** | **下一棒接手** |
 | [cli-operations-manual.md](./cli-operations-manual.md) | CLI 命令真相源 | 使用者 |
 | [direct-usage-guide.md](./direct-usage-guide.md) | 日常操作顺序 | 使用者 |
 | [novel-ingest-input-spec.md](./novel-ingest-input-spec.md) | 小说输入规范 (novel.txt 格式) | 使用者 |
 | [api-current-surface.md](./api-current-surface.md) | 当前 API 端点清单 | 接入者 |
 | [interface-manifest.md](./interface-manifest.md) | 稳定接口结构 | 后端 |
+| [chapter-imitation-capability-matrix.md](./chapter-imitation-capability-matrix.md) | 仿写全能力矩阵 + 当前覆盖度 | 产品/架构 |
+| [whole-book-mapping-scale-20260514.md](./whole-book-mapping-scale-20260514.md) | mapping_pack 5/30/100+ 章规模化数据 | 产品/接入者 |
 | [deconstruction-acceleration/roadmap-sota-optimization.md](./deconstruction-acceleration/roadmap-sota-optimization.md) | SOTA 优化路线图 + 架构图 | 架构师 |
 | [deconstruction-acceleration/handoff-sota-optimization.md](./deconstruction-acceleration/handoff-sota-optimization.md) | SOTA 优化交付文档 | 接手人 |
 
@@ -60,9 +65,11 @@
 | 能力线 | 入口 | 状态 |
 |--------|------|------|
 | 拆书引擎 (SOTA) | [deconstruction-acceleration/](./deconstruction-acceleration/README.md) | Phase 4.5 完成 |
-| 底座优化 | [foundation-optimization/](./foundation-optimization/README.md) | P0-P2 全部完成 |
+| 底座优化 | [foundation-optimization/](./foundation-optimization/README.md) | P0-P2 全部完成（R@5 0.81/0.84 锁基线） |
 | 风险审查 | [risk-audit-system-overview.md](./risk-audit-system-overview.md) | 9 checker 生产就绪 |
-| 仿写能力 | [writer-imitation-workflow.md](./writer-imitation-workflow.md) | 全书仿写可用 |
+| 仿写能力 - 跨题材 | [cross-genre-imitation-commercial-readiness-20260515.md](./cross-genre-imitation-commercial-readiness-20260515.md) | **✅ 170/171 pass** — 技术 ready，infra 4 周可商用 |
+| 仿写能力 - 同题材 | [baseline-imitation-quality-validation-handoff-20260515.md](./baseline-imitation-quality-validation-handoff-20260515.md) | 🔧 prompt 修复已上线，长跑验证 pending |
+| 仿写工作流 | [writer-imitation-workflow.md](./writer-imitation-workflow.md) | 全书仿写可用 |
 | Review 工作流 | [minimal-review-workflow-guide.md](./minimal-review-workflow-guide.md) | DB-only 模式 |
 | 读者体验 | [reader-experience-capability.md](./reader-experience-capability.md) | 基础可用 |
 
