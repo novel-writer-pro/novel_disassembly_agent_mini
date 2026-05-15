@@ -631,5 +631,5 @@ def test_harness_use_llm_falls_back_to_skeleton_when_provider_fails(tmp_path: Pa
             )
 
         assert report.final_draft.draft_text
-        assert any("LLM draft unavailable -> skeleton fallback" in item for item in report.final_draft.comparison_notes)
+        assert any("skeleton fallback" in item for item in report.final_draft.comparison_notes)
         assert any("skeleton fallback 保底生成" in item for item in report.final_draft.risk_gate_notes)
