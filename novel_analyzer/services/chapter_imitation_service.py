@@ -478,6 +478,7 @@ class ChapterImitationService:
         max_rounds: int = 2,
         use_llm: bool = False,
         model_name: str | None = None,
+        mapping_pack: dict[str, object] | None = None,
     ) -> ChapterImitationIterationReport:
         rounds: list[ChapterImitationIterationRound] = []
         draft = (
@@ -486,6 +487,7 @@ class ChapterImitationService:
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name,
+                mapping_pack=mapping_pack,
             )
             if use_llm
             else self.build_skeleton_draft(
@@ -562,6 +564,7 @@ class ChapterImitationService:
         max_rounds: int = 1,
         use_llm: bool = False,
         model_name: str | None = None,
+        mapping_pack: dict[str, object] | None = None,
     ) -> MultiChapterImitationConsistencyReport:
         if not chapter_goals:
             raise ValueError("chapter_goals must not be empty")
@@ -579,6 +582,7 @@ class ChapterImitationService:
                 max_rounds=max_rounds,
                 use_llm=use_llm,
                 model_name=model_name,
+                mapping_pack=mapping_pack,
             )
             final_round = report.rounds[-1]
             scaffold_only = bool(getattr(report.final_draft, "is_scaffold_only", False))

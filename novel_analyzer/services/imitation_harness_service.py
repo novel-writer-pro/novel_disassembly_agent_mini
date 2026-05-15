@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from pathlib import Path
 
@@ -30,6 +31,38 @@ from novel_analyzer.services import imitation_harness_helpers as _helpers
 from novel_analyzer.services.memory_assembler_service import MemoryAssemblerService
 from novel_analyzer.services.next_chapter_planner_service import PlannerContextWindow
 from novel_analyzer.services.tension_service import TensionService
+
+
+# Scaffold/contamination markers used to detect drafts that the LLM returned as
+# planning skeletons or with debug bleed (Harness Action Queue) instead of real prose.
+# Mirrors scripts/clean_imitation_drafts.py so we catch these in-flight, not after
+# fullbook aggregation.
+_SCAFFOLD_MARKERS_RE = re.compile(
+    r"【章节目标】|【硬约束】|【说明】当前为仿写结构草案|【修订提示】|【Harness Action Queue】"
+)
+_ACTION_QUEUE_TAIL_RE = re.compile(
+    r"\n+\[P\d\|(?:high|medium|low)\][^\n]*(?:\n\[P\d\|[^\n]*)*\s*$",
+    re.DOTALL,
+)
+
+
+def _draft_quality_issue(draft_text: str, *, min_chars: int) -> str | None:
+    """Return None if draft is acceptable, else a short reason label.
+
+    Reasons:
+      - "thin"           — clean text shorter than min_chars
+      - "scaffold_only"  — contains explicit scaffold markers
+      - "action_queue_bleed" — trailing harness action queue bleed
+    """
+    if not draft_text:
+        return "thin"
+    if _SCAFFOLD_MARKERS_RE.search(draft_text):
+        return "scaffold_only"
+    if _ACTION_QUEUE_TAIL_RE.search(draft_text):
+        return "action_queue_bleed"
+    if len(draft_text) <= min_chars:
+        return "thin"
+    return None
 
 
 class HarnessControllerService:
@@ -1368,6 +1401,7 @@ class HarnessControllerService:
             max_attempts = 3
             draft = None
             last_exc: Exception | None = None
+            quality_issues: list[str] = []
             for attempt in range(max_attempts):
                 try:
                     candidate = self.chapter_imitation.build_llm_draft(
@@ -1378,20 +1412,29 @@ class HarnessControllerService:
                         steering_pack=steering_pack,
                         mapping_pack=mapping_pack,
                     )
-                    if len((candidate.draft_text or "")) > min_chars:
+                    issue = _draft_quality_issue(candidate.draft_text or "", min_chars=min_chars)
+                    if issue is None:
                         draft = candidate
                         if attempt > 0:
+                            recovery_notes = [
+                                f"LLM draft recovered on attempt {attempt + 1}/{max_attempts}",
+                            ]
+                            if quality_issues:
+                                recovery_notes.append(
+                                    f"prior attempts rejected: {', '.join(quality_issues)}"
+                                )
                             draft = draft.model_copy(
                                 update={
                                     "comparison_notes": [
                                         *draft.comparison_notes,
-                                        f"LLM draft recovered on attempt {attempt + 1}/{max_attempts}",
+                                        *recovery_notes,
                                     ],
                                 }
                             )
                         break
+                    quality_issues.append(f"attempt{attempt + 1}={issue}")
                     last_exc = ValueError(
-                        f"thin draft ({len(candidate.draft_text or '')} chars) on attempt {attempt + 1}"
+                        f"draft rejected ({issue}, {len(candidate.draft_text or '')} chars) on attempt {attempt + 1}"
                     )
                 except Exception as exc:  # noqa: BLE001
                     last_exc = exc

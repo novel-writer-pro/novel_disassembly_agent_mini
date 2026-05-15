@@ -2151,6 +2151,12 @@ def imitate_chapter(
     target_goal: str,
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    world_map: list[str] = typer.Option([], "--world-map", help="Pairs like 郑国=星际联邦"),
+    character_map: list[str] = typer.Option([], "--character-map", help="Pairs like 卫图=魏拓"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Build a visible imitation plan + skeleton draft for one source chapter."""
@@ -2159,12 +2165,23 @@ def imitate_chapter(
     factory = create_session_factory(settings)
     with factory() as session:
         service = _chapter_imitation_service(session)
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         payload = (
             service.build_llm_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name or None,
+                mapping_pack=mapping_pack_dict,
             )
             if use_llm
             else service.build_skeleton_draft(
@@ -2183,6 +2200,12 @@ def compare_imitation(
     target_goal: str,
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Build an imitation draft and a structured comparison report."""
@@ -2191,12 +2214,23 @@ def compare_imitation(
     factory = create_session_factory(settings)
     with factory() as session:
         service = _chapter_imitation_service(session)
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         draft = (
             service.build_llm_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name or None,
+                mapping_pack=mapping_pack_dict,
             )
             if use_llm
             else service.build_skeleton_draft(
@@ -2229,6 +2263,12 @@ def review_imitation(
     target_goal: str,
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Build draft + comparison + review + revised draft for one imitation experiment."""
@@ -2237,12 +2277,23 @@ def review_imitation(
     factory = create_session_factory(settings)
     with factory() as session:
         service = _chapter_imitation_service(session)
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         draft = (
             service.build_llm_draft(
                 branch_id,
                 source_chapter_index=source_chapter_index,
                 target_goal=target_goal,
                 model_name=model_name or None,
+                mapping_pack=mapping_pack_dict,
             )
             if use_llm
             else service.build_skeleton_draft(
@@ -2296,6 +2347,12 @@ def iterate_imitation(
     max_rounds: int = typer.Option(2, "--max-rounds"),
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Run a multi-round imitation optimization loop and emit all rounds."""
@@ -2303,6 +2360,16 @@ def iterate_imitation(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         report = _chapter_imitation_service(session).iterate_draft(
             branch_id,
             source_chapter_index=source_chapter_index,
@@ -2310,6 +2377,7 @@ def iterate_imitation(
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
+            mapping_pack=mapping_pack_dict,
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 
@@ -2321,6 +2389,12 @@ def multi_chapter_imitation_consistency(
     max_rounds: int = typer.Option(1, "--max-rounds"),
     use_llm: bool = typer.Option(False, "--use-llm"),
     model_name: str = typer.Option("", "--model-name"),
+    world_map: list[str] = typer.Option([], "--world-map"),
+    character_map: list[str] = typer.Option([], "--character-map"),
+    faction_map: list[str] = typer.Option([], "--faction-map"),
+    power_map: list[str] = typer.Option([], "--power-map"),
+    rule_override: list[str] = typer.Option([], "--rule-override"),
+    forbidden_transformation: list[str] = typer.Option([], "--forbidden-transformation"),
     database_url: str | None = None,
 ) -> None:
     """Run a lightweight multi-chapter consistency pass across several imitation steps."""
@@ -2335,12 +2409,23 @@ def multi_chapter_imitation_consistency(
     settings = _safe_settings(database_url)
     factory = create_session_factory(settings)
     with factory() as session:
+        mapping_pack_dict: dict[str, object] | None = None
+        if any([world_map, character_map, faction_map, power_map, rule_override, forbidden_transformation]):
+            mapping_pack_dict = {
+                "world_mapping": _mapping_pairs(world_map),
+                "character_mapping": _mapping_pairs(character_map),
+                "faction_mapping": _mapping_pairs(faction_map),
+                "power_mapping": _mapping_pairs(power_map),
+                "rule_overrides": list(rule_override),
+                "forbidden_transformations": list(forbidden_transformation),
+            }
         report = _chapter_imitation_service(session).build_multi_chapter_consistency(
             branch_id,
             chapter_goals=parsed,
             max_rounds=max_rounds,
             use_llm=use_llm,
             model_name=model_name or None,
+            mapping_pack=mapping_pack_dict,
         )
         echo(report.model_dump_json(indent=2, ensure_ascii=False))
 
