@@ -1364,23 +1364,49 @@ class HarnessControllerService:
 
         llm_fallback_note = ""
         if use_llm:
-            try:
-                draft = self.chapter_imitation.build_llm_draft(
-                    branch_id,
-                    source_chapter_index=source_chapter_index,
-                    target_goal=target_goal,
-                    model_name=model_name,
-                    steering_pack=steering_pack,
-                    mapping_pack=mapping_pack,
-                )
-            except Exception as exc:  # noqa: BLE001
+            min_chars = 500
+            max_attempts = 3
+            draft = None
+            last_exc: Exception | None = None
+            for attempt in range(max_attempts):
+                try:
+                    candidate = self.chapter_imitation.build_llm_draft(
+                        branch_id,
+                        source_chapter_index=source_chapter_index,
+                        target_goal=target_goal,
+                        model_name=model_name,
+                        steering_pack=steering_pack,
+                        mapping_pack=mapping_pack,
+                    )
+                    if len((candidate.draft_text or "")) > min_chars:
+                        draft = candidate
+                        if attempt > 0:
+                            draft = draft.model_copy(
+                                update={
+                                    "comparison_notes": [
+                                        *draft.comparison_notes,
+                                        f"LLM draft recovered on attempt {attempt + 1}/{max_attempts}",
+                                    ],
+                                }
+                            )
+                        break
+                    last_exc = ValueError(
+                        f"thin draft ({len(candidate.draft_text or '')} chars) on attempt {attempt + 1}"
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    last_exc = exc
+
+            if draft is None:
                 draft = self.chapter_imitation.build_skeleton_draft(
                     branch_id,
                     source_chapter_index=source_chapter_index,
                     target_goal=target_goal,
                     steering_pack=steering_pack,
                 )
-                llm_fallback_note = f"LLM draft unavailable -> skeleton fallback: {type(exc).__name__}"
+                exc_label = type(last_exc).__name__ if last_exc else "ThinDraft"
+                llm_fallback_note = (
+                    f"LLM draft unavailable after {max_attempts} attempts -> skeleton fallback: {exc_label}"
+                )
                 draft = draft.model_copy(
                     update={
                         "comparison_notes": [
