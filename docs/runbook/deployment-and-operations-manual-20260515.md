@@ -296,7 +296,9 @@ Open browser → `http://127.0.0.1:4173/` → should see the workbench page.
 
 ### Phase 9: First import + analysis (10 min)
 
-You need a sample novel text file. If you don't have one:
+You need a sample novel text file. Use any plain-text Chinese novel
+(e.g. download from Project Gutenberg-zh, copy a public-domain wuxia
+chapter, or use your own draft):
 
 ```bash
 mkdir -p tmp
@@ -636,6 +638,8 @@ curl -X POST -H "X-User-Id: alice" -F file=@tmp/alice-book.txt http://127.0.0.1:
 curl -H "X-User-Id: alice" 'http://127.0.0.1:8011/api/library' | jq '.items | length'   # >=1
 curl -H "X-User-Id: bob"   'http://127.0.0.1:8011/api/library' | jq '.items | length'   # 0
 
+# (uses tmp/alice-book.txt from Phase 9 above; create another tmp/bob-book.txt for the bob side if needed)
+
 # 2. Imitation run (will fan trace to Helicone if proxy is on)
 curl -X POST -H "X-User-Id: alice" -H "Content-Type: application/json" \
   -d '{"branch_id":"<branch_id>","chapter_index":1,"goal":"测试仿写"}' \
@@ -660,36 +664,42 @@ Full procedure: [business-loop.md](./business-loop.md).
 
 ## 7. Validation suite (pre-prod sanity)
 
-Run before any major change or after pulling new commits:
+Run before any major change or after pulling new commits. The
+`scripts/run-validation.sh` helper bundles the 6 sections below
+into one command:
+
+```bash
+bash scripts/run-validation.sh                          # full suite (~10 min)
+bash scripts/run-validation.sh --quick                  # sections 1-4 only (~3 min)
+bash scripts/run-validation.sh --branch <branch_id>     # adds BM25 sanity check
+```
+
+Equivalent manual sequence (each section is independent):
 
 ```bash
 source .venv/bin/activate
 
-# 1. All unit tests
-pytest tests/ -q --ignore=tests/e2e --ignore=tests/contract -x 2>&1 | tail -5
-
-# 2. Contract tests (FastAPI canonical surface)
-pytest tests/contract/ -q
-
-# 3. E2E (no DB-mutating)
-pytest tests/e2e/test_llm_base_url_override.py -q
-
-# 4. Owner scoping (alice/bob isolation)
-pytest tests/e2e/test_owner_scoping_e2e.py -q
-
-# 5. Anti-spoiler QA
-pytest tests/e2e/test_anti_spoiler.py -q
-
-# 6. Heuristic scorer regression
+# 1. Heuristic scorer regression (B1/B4/B5/T7/T8/T5)
 pytest tests/test_ai_trace_signal_service.py tests/test_slop_scorer_service.py \
        tests/test_elo_tournament_service.py tests/test_factscore_lite_service.py \
-       tests/test_persona_correlation_service.py tests/test_loom_ab_comparison_service.py \
-       -q
+       tests/test_persona_correlation_service.py tests/test_loom_ab_comparison_service.py -q
 
-# 7. Scaffold cascade regression
+# 2. Scaffold cascade regression
 pytest tests/test_loom_signal_scaffold_filter.py tests/test_scaffold_carry_over_filter.py -q
 
-# 8. BM25 jiebacfg vs simple distribution sanity
+# 3. Kernel service tests
+pytest tests/test_retrieval_service.py tests/test_domain_dictionary_service.py \
+       tests/test_imitation_harness_service.py tests/test_chapter_imitation_service.py \
+       tests/test_loom_phase2.py -q
+
+# 4. Contract tests (FastAPI canonical surface)
+pytest tests/contract/ -q
+
+# 5. E2E tests
+pytest tests/e2e/test_llm_base_url_override.py tests/e2e/test_owner_scoping_e2e.py \
+       tests/e2e/test_anti_spoiler.py -q
+
+# 6. BM25 jiebacfg vs simple distribution sanity
 python -m novel_analyzer.cli.app retrieval-benchmark <any_branch_with_data> \
     --max-queries 20 --output-file /tmp/bm25-sanity.json
 # Inspect: jiebacfg MRR should be > simple MRR
@@ -858,7 +868,7 @@ The downstream consumers in `cli/app.py` and the harness already filter scaffold
 | Daily | PG backup | `pg_dump -F c -f .backup/$(date +%F).dump` (cron) |
 | Daily | n8n daily-eval-report | Auto via n8n schedule |
 | Weekly | Heuristic scorer benchmark | `python scripts/dev/heuristic-scorer-benchmark.py > .sisyphus/reports/heuristic-$(date +%F).log` |
-| Weekly | Run validation suite | `bash scripts/run-validation.sh` (or §7 manually) |
+| Weekly | Run validation suite | `bash scripts/run-validation.sh` (`--quick` skips e2e+bm25; `--branch <id>` includes BM25 sanity) |
 | Monthly | Userdict refresh + reindex | `python -m novel_analyzer.cli.app domain-dict-rebuild && python -m novel_analyzer.cli.app bm25-reindex --confirm` |
 | Monthly | Helicone ClickHouse prune | `docker exec helicone-clickhouse clickhouse-client -q "ALTER TABLE request_response_log DELETE WHERE created_at < now() - INTERVAL 30 DAY"` |
 | Monthly | Output dir prune | `find output -mtime +60 -name '*.json' -delete` (be careful — keeps recent runs) |
