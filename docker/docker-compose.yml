@@ -1,0 +1,56 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: pg.Dockerfile
+    image: novel-analyzer-pg:17
+    container_name: novel-analyzer-pg
+    environment:
+      POSTGRES_USER: ${NOVEL_ANALYZER_DB_USER:-d2}
+      POSTGRES_PASSWORD: ${NOVEL_ANALYZER_DB_PASSWORD:-d2pass}
+      POSTGRES_DB: ${NOVEL_ANALYZER_DB_NAME:-novel_analyzer}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ${MIGRATE_DIR:-./migrate}:/migrate:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NOVEL_ANALYZER_DB_USER:-d2}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: novel-analyzer-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NOVEL_ANALYZER_DB_HOST: postgres
+      NOVEL_ANALYZER_DB_PORT: 5432
+      NOVEL_ANALYZER_DB_USER: ${NOVEL_ANALYZER_DB_USER:-d2}
+      NOVEL_ANALYZER_DB_PASSWORD: ${NOVEL_ANALYZER_DB_PASSWORD:-d2pass}
+      NOVEL_ANALYZER_DB_NAME: ${NOVEL_ANALYZER_DB_NAME:-novel_analyzer}
+      NOVEL_ANALYZER_DB_ADMIN_NAME: postgres
+      NOVEL_ANALYZER_LLM_PROVIDER_NAME: ${NOVEL_ANALYZER_LLM_PROVIDER_NAME:-openai}
+      NOVEL_ANALYZER_LLM_BASE_URL: ${NOVEL_ANALYZER_LLM_BASE_URL}
+      NOVEL_ANALYZER_LLM_API_KEY: ${NOVEL_ANALYZER_LLM_API_KEY}
+      NOVEL_ANALYZER_LLM_MODEL_NAME: ${NOVEL_ANALYZER_LLM_MODEL_NAME:-deepseek-v4-pro}
+      NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME: ${NOVEL_ANALYZER_LLM_STAGE_MODEL_NAME:-deepseek-v4-pro}
+      NOVEL_ANALYZER_LLM_QA_MODEL_NAME: ${NOVEL_ANALYZER_LLM_QA_MODEL_NAME:-deepseek-v4-pro}
+      NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME: ${NOVEL_ANALYZER_LLM_FALLBACK_MODEL_NAME:-deepseek-v4-pro}
+      NOVEL_ANALYZER_EMBEDDING_BACKEND: ${NOVEL_ANALYZER_EMBEDDING_BACKEND:-onnx}
+      NOVEL_ANALYZER_EMBEDDING_MODEL_PATH: /models/bge-m3-onnx
+    ports:
+      - "8011:8011"
+      - "4173:4173"
+    volumes:
+      - appdata:/data
+      - ${BGE_M3_ONNX_PATH:-./models/bge-m3-onnx}:/models/bge-m3-onnx:ro
+
+volumes:
+  pgdata:
+  appdata:

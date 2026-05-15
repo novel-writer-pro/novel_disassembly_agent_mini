@@ -1,0 +1,23 @@
+# Build context is repo root; ignore everything not needed.
+**/.git
+**/.venv
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/__pycache__
+**/node_modules
+**/.next
+**/.cache
+**/runs
+**/output
+**/.tmp
+**/dist
+**/build
+**/.env
+**/.env.local
+**/.env.runtime.local
+**/.env.back
+**/coverage
+*.log
+*.db
+novel_analyzer.db
