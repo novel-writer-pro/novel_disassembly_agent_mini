@@ -1,5 +1,27 @@
 ## Unreleased
 
+- feat(imitation): 同题材 baseline self-check + scaffold-only in-flight 检测 + mapping flags 全 CLI 接通 + 商用就绪/长跑验证文档。
+
+  Changelist: `CL-imitation-baseline-quality-and-commercial-readiness`
+
+  本批次围绕"仿写能力商用化"做了**三件能立即落地的工程改动 + 两份决策文档**。
+
+  **代码改动**：
+  - `9704127` `prompts.py` baseline 加入 5 项 self-check（节奏/对话/动机/关系/营销冗余），和 mapping_pack 的二次检查同等严格。诊断证据：同 chapter (ch71/80/90) baseline 与 mapping 的 score、severity、gate_verdict 完全相同，唯一差异是 mapping prompt 含二次检查。**预测**：同题材 baseline pass-rate 从 0/307 提升到 ≥50%；待验证。
+  - `4358658` `imitation_harness_service.py` `_draft_quality_issue()` in-flight 拦截 scaffold/action_queue/thin 三种 contamination。原本 `clean_imitation_drafts.py` 是 fullbook 阶段才发现 5/100 章是废的；现在 per-chapter 实时拦截 + auto-retry。
+  - `4358658` `imitate-chapter / compare-imitation / review-imitation / iterate-imitation / multi-chapter-imitation-consistency` 全部接 `--world-map / --character-map / --faction-map / --power-map / --rule-override / --forbidden-transformation`。`iterate_draft` + `build_multi_chapter_consistency` 现 plumb mapping_pack 至 LLM。
+
+  **新文档**：
+  - `docs/baseline-imitation-quality-validation-handoff-20260515.md` — 修复后 Stage A (5-章 spike) / Stage B (30-章对比) / Stage C (100-章全本) 人工验证完整步骤 + 判定阈值 + 失败回退路径。
+  - `docs/cross-genre-imitation-commercial-readiness-20260515.md` — 跨题材改写产品化 6 项 gap 清单（计费 / 多租户 / 限流 / LLM fallback / 数据安全 / 监控）+ 路径 A (Lean B2B 4 周) / 路径 B (完整 SaaS 12 周) / 路径 C (白标 OEM 2 周) 推荐。
+
+  **测试覆盖**：
+  - `test_draft_quality_issue.py` 8 个新测试覆盖 4 种 outcome label。
+  - `test_prompts_mapping_pack.py` 2 个新测试锁定 baseline self-check 不会被 mapping 路径干掉。
+  - 42/42 imitation 相关 unit tests 全 pass。
+
+  **待人工执行**（保留在 handoff doc）：Stage A/B/C LLM 长跑验证（最坏路径 ~7h / ~$13.5 LLM 成本）。
+
 - docs(ops): 新增运维调试速查手册 `docs/ops-debug-manual-20260514.md`（433 行 / 9 段）。
 
   Changelist: `CL-ops-debug-manual`

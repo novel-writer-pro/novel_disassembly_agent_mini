@@ -161,6 +161,8 @@ python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
 | Cross-novel evidence | `docs/whole-book-cross-novel-20260514.md` | rubustness audit |
 | CLI master manual | `docs/cli-operations-manual.md` | reference |
 | Ops/debug 速查手册 | `docs/ops-debug-manual-20260514.md` | scenario-first cookbook（自检/常见操作/故障树/反模式） |
+| 同题材质量门槛验证 handoff | `docs/baseline-imitation-quality-validation-handoff-20260515.md` | 修复后人工长跑验证步骤（Stage A/B/C） |
+| 跨题材改写商用就绪 | `docs/cross-genre-imitation-commercial-readiness-20260515.md` | B2B 上线决策表 + 6 项 SLA gap 清单 |
 
 ---
 
