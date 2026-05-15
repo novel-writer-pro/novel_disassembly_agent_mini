@@ -149,6 +149,23 @@ class RetrievalService:
             order += 1
         return chunks
 
+    def _embedding_inputs_for_chunks(
+        self,
+        chunk_drafts: list[ChunkDraft],
+        *,
+        chapter_index: int,
+        title: str,
+    ) -> list[str]:
+        if not getattr(self.settings, "retrieval_contextual_chunk_prefix", False):
+            return [draft.text for draft in chunk_drafts]
+        clean_title = (title or "").strip()
+        prefix = (
+            f"第{chapter_index}章 {clean_title}\n"
+            if clean_title
+            else f"第{chapter_index}章\n"
+        )
+        return [prefix + draft.text for draft in chunk_drafts]
+
     @staticmethod
     def _embedding_norm(vector: list[float]) -> float:
         return float(sum(value * value for value in vector) ** 0.5)
@@ -396,8 +413,13 @@ class RetrievalService:
 
         chunk_drafts = self._chunk_text(bm25_text, keywords)
         provider = get_embedding_provider(self.settings)
+        embed_inputs = self._embedding_inputs_for_chunks(
+            chunk_drafts,
+            chapter_index=artifact.chapter_index,
+            title=title,
+        )
         vectors = (
-            provider.embed_texts([draft.text for draft in chunk_drafts]) if chunk_drafts else []
+            provider.embed_texts(embed_inputs) if chunk_drafts else []
         )
 
         for draft, vector in zip(chunk_drafts, vectors, strict=True):

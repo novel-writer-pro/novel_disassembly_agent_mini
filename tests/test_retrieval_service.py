@@ -638,3 +638,49 @@ def test_vector_route_uses_embedding_similarity(monkeypatch: pytest.MonkeyPatch)
         hits = service._vector_route('branch-v', '命格', limit=5)  # noqa: SLF001
         assert hits
         assert hits[0].chapter_index == 1
+
+
+def test_embedding_inputs_default_pass_through(tmp_path: Path) -> None:
+    """retrieval_contextual_chunk_prefix=False (default) preserves chunk text byte-for-byte."""
+    from novel_analyzer.services.retrieval_service import ChunkDraft
+
+    drafts = [
+        ChunkDraft(chunk_order=1, text="alpha", start_offset=0, end_offset=5, keywords=[]),
+        ChunkDraft(chunk_order=2, text="beta", start_offset=5, end_offset=9, keywords=[]),
+    ]
+    with _session() as session:
+        svc = RetrievalService(session, Settings(embedding_backend="stub"))
+        out = svc._embedding_inputs_for_chunks(drafts, chapter_index=7, title="测试")  # noqa: SLF001
+        assert out == ["alpha", "beta"]
+
+
+def test_embedding_inputs_with_contextual_prefix(tmp_path: Path) -> None:
+    """When flag is on, embedding input gets chapter+title prefix; chunk text untouched."""
+    from novel_analyzer.services.retrieval_service import ChunkDraft
+
+    drafts = [
+        ChunkDraft(chunk_order=1, text="alpha", start_offset=0, end_offset=5, keywords=[]),
+    ]
+    with _session() as session:
+        svc = RetrievalService(
+            session,
+            Settings(embedding_backend="stub", retrieval_contextual_chunk_prefix=True),
+        )
+        out = svc._embedding_inputs_for_chunks(drafts, chapter_index=7, title="命格初现")  # noqa: SLF001
+        assert out == ["第7章 命格初现\nalpha"]
+        assert drafts[0].text == "alpha"
+
+
+def test_embedding_inputs_prefix_handles_empty_title(tmp_path: Path) -> None:
+    from novel_analyzer.services.retrieval_service import ChunkDraft
+
+    drafts = [
+        ChunkDraft(chunk_order=1, text="x", start_offset=0, end_offset=1, keywords=[]),
+    ]
+    with _session() as session:
+        svc = RetrievalService(
+            session,
+            Settings(embedding_backend="stub", retrieval_contextual_chunk_prefix=True),
+        )
+        out = svc._embedding_inputs_for_chunks(drafts, chapter_index=42, title="")  # noqa: SLF001
+        assert out == ["第42章\nx"]
