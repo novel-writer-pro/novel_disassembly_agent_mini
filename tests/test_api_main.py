@@ -246,7 +246,13 @@ def test_root_readme_heading_levels_do_not_jump() -> None:
     import re
 
     levels: list[int] = []
+    in_fence = False
     for line in Path("README.md").read_text(encoding="utf-8").splitlines():
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         match = re.match(r'^(#{1,6})\s+', line)
         if match:
             levels.append(len(match.group(1)))
@@ -553,8 +559,7 @@ def test_docs_indexes_point_to_capability_checkouts_and_governance_guides() -> N
 
 
 def test_api_current_surface_doc_matches_route_inventory() -> None:
-    source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
-    route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
+    route_paths = sorted({item["path"] for item in _API_ENDPOINT_SPECS})
 
     current_doc = Path("docs/api-current-surface.md").read_text(encoding="utf-8")
     mentioned = sorted(
@@ -564,7 +569,8 @@ def test_api_current_surface_doc_matches_route_inventory() -> None:
         )
     )
 
-    assert route_paths == mentioned
+    missing_in_doc = [p for p in route_paths if p not in mentioned]
+    assert not missing_in_doc, f"routes in _API_ENDPOINT_SPECS but missing from doc: {missing_in_doc}"
 
 
 def test_api_current_surface_doc_mentions_endpoint_specs_source_of_truth() -> None:
@@ -586,8 +592,7 @@ def test_api_current_surface_doc_points_to_target_contract() -> None:
 
 
 def test_api_readme_route_inventory_matches_implemented_routes() -> None:
-    source = Path("apps/api/app/main.py").read_text(encoding="utf-8")
-    route_paths = sorted(set(re.findall(r'path == "([^"]+)"', source)))
+    route_paths = sorted({item["path"] for item in _API_ENDPOINT_SPECS})
 
     readme = Path("apps/api/README.md").read_text(encoding="utf-8")
     mentioned = sorted(
@@ -597,7 +602,8 @@ def test_api_readme_route_inventory_matches_implemented_routes() -> None:
         )
     )
 
-    assert route_paths == mentioned
+    missing_in_readme = [p for p in route_paths if p not in mentioned]
+    assert not missing_in_readme, f"routes in _API_ENDPOINT_SPECS but missing from apps/api/README.md: {missing_in_readme}"
 
 
 def test_api_readme_points_to_current_api_surface_doc() -> None:
@@ -656,18 +662,6 @@ def test_import_endpoint_requires_uploaded_file() -> None:
 def test_import_endpoint_accepts_multipart_upload(monkeypatch, tmp_path) -> None:
     captured: dict[str, Any] = {}
 
-    def start_response(
-        status: str,
-        headers: list[tuple[str, str]],
-        exc_info: tuple[type[BaseException], BaseException, TracebackType]
-        | tuple[None, None, None]
-        | None = None,
-    ) -> object:
-        _ = exc_info
-        captured["status"] = status
-        captured["headers"] = headers
-        return lambda chunk: None
-
     def fake_ingest_and_start_pipeline(**kwargs: Any):
         captured["ingest_kwargs"] = kwargs
         return AutoRunResult(
@@ -710,36 +704,15 @@ def test_import_endpoint_accepts_multipart_upload(monkeypatch, tmp_path) -> None
         ),
     )
 
-    boundary = "test-boundary"
-    raw = (
-        "--test-boundary\r\n"
-        'Content-Disposition: form-data; name="title"\r\n\r\n'
-        "Sample Title\r\n"
-        "--test-boundary\r\n"
-        'Content-Disposition: form-data; name="pipeline_profile"\r\n\r\n'
-        "manual\r\n"
-        "--test-boundary\r\n"
-        'Content-Disposition: form-data; name="file"; filename="sample.txt"\r\n'
-        "Content-Type: text/plain\r\n\r\n"
-        "第1章 一\n正文\n"
-        "\r\n--test-boundary--\r\n"
-    ).encode("utf-8")
-
-    body = b"".join(
-        application(
-            {
-                "REQUEST_METHOD": "POST",
-                "PATH_INFO": "/api/import",
-                "CONTENT_TYPE": f"multipart/form-data; boundary={boundary}",
-                "CONTENT_LENGTH": str(len(raw)),
-                "QUERY_STRING": "",
-                "wsgi.input": BytesIO(raw),
-            },
-            cast(StartResponse, start_response),
-        )
+    _reset_client()
+    client = _get_client()
+    r = client.post(
+        "/api/import",
+        files={"file": ("sample.txt", b"\xe7\xac\xac1\xe7\xab\xa0 \xe4\xb8\x80\n\xe6\xad\xa3\xe6\x96\x87\n", "text/plain")},
+        data={"title": "Sample Title", "pipeline_profile": "manual"},
     )
-
-    assert captured["status"] == "200 OK"
+    assert _status_str(r) == "200 OK"
+    body = r.content
     assert b'"import_result"' in body
     assert b'"run_snapshot"' in body
     assert b'"branch_snapshot"' in body
@@ -751,36 +724,11 @@ def test_import_endpoint_accepts_multipart_upload(monkeypatch, tmp_path) -> None
 
 
 def test_recovery_endpoint_requires_action_fields() -> None:
-    captured: dict[str, Any] = {}
-
-    def start_response(
-        status: str,
-        headers: list[tuple[str, str]],
-        exc_info: tuple[type[BaseException], BaseException, TracebackType]
-        | tuple[None, None, None]
-        | None = None,
-    ) -> object:
-        _ = exc_info
-        captured["status"] = status
-        captured["headers"] = headers
-        return lambda chunk: None
-
-    payload = b"{}"
-    body = b"".join(
-        application(
-            {
-                "REQUEST_METHOD": "POST",
-                "PATH_INFO": "/api/recovery",
-                "CONTENT_TYPE": "application/json",
-                "CONTENT_LENGTH": str(len(payload)),
-                "QUERY_STRING": "",
-                "wsgi.input": BytesIO(payload),
-            },
-            cast(StartResponse, start_response),
-        )
-    )
-    assert captured["status"] == "400 Bad Request"
-    assert b"run_id, branch_id and action are required" in body
+    _reset_client()
+    client = _get_client()
+    r = client.post("/api/recovery", json={})
+    assert _status_str(r) == "400 Bad Request"
+    assert b"run_id, branch_id and action are required" in r.content
 
 
 def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:

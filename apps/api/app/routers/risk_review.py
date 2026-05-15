@@ -32,7 +32,7 @@ def review_clusters(
     branch_id: str = Query(...),
     database_url: str | None = Query(None),
 ) -> dict:
-    from novel_analyzer.config.settings import get_settings
+    from apps.api.app.main import get_settings
     from novel_analyzer.services.export_service import ExportService
     from apps.api.app.main import (
         _apply_review_filters,
@@ -71,7 +71,7 @@ def review_cluster_summary(
     branch_id: str = Query(...),
     database_url: str | None = Query(None),
 ) -> dict:
-    from novel_analyzer.config.settings import get_settings
+    from apps.api.app.main import get_settings
     from novel_analyzer.services.export_service import ExportService
     from apps.api.app.main import (
         _apply_review_filters,
@@ -120,7 +120,7 @@ class ReviewUpdateRequest(BaseModel):
 def review_cluster_update(req: ReviewUpdateRequest):
     from dataclasses import asdict
     from fastapi.responses import JSONResponse
-    from novel_analyzer.config.settings import get_settings
+    from apps.api.app.main import get_settings
     from novel_analyzer.runtime.cluster_review_state import write_cluster_review_state
     from novel_analyzer.services.cluster_review_service import (
         ClusterReviewService,
@@ -249,7 +249,7 @@ def review_cluster_history(
     limit: int = Query(0),
 ):
     from fastapi.responses import JSONResponse
-    from novel_analyzer.config.settings import get_settings
+    from apps.api.app.main import get_settings
     from novel_analyzer.runtime.cluster_review_state import read_cluster_review_history
     from novel_analyzer.services.cluster_review_service import (
         ClusterReviewService,
@@ -311,7 +311,7 @@ def review_batch_history(
     database_url: str | None = Query(None),
     limit: int = Query(0),
 ):
-    from novel_analyzer.config.settings import get_settings
+    from apps.api.app.main import get_settings
     from novel_analyzer.runtime.review_batch_execution import read_batch_execution_history
     runtime = get_settings().model_copy(deep=True)
     if database_url:
@@ -331,7 +331,7 @@ def review_batch_execute(body: dict = Body(...)):
     """
     from typing import cast
     from fastapi.responses import JSONResponse
-    from novel_analyzer.config.settings import get_settings
+    from apps.api.app.main import get_settings
     from apps.api.app.main import create_session_factory
     from novel_analyzer.runtime.review_batch_execution import write_batch_execution_entry
     from novel_analyzer.services.cluster_review_service import ClusterReviewService

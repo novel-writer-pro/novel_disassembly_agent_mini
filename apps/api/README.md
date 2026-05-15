@@ -71,9 +71,12 @@ app/
 - `GET /api/quality/pairs-stats` — Pairwise 统计
 
 ### 风险检查
-- `GET /api/review-clusters` — 风险聚类列表
-- `GET /api/review-cluster-summary` — 风险聚类摘要
+- `GET /api/review-clusters?run_id=...&branch_id=...` — 风险聚类列表
+- `GET /api/review-cluster-summary?run_id=...&branch_id=...` — 风险聚类摘要
+- `GET /api/review-cluster-history?branch_id=...&cluster_key=...` — 单 cluster 审计历史
 - `POST /api/review-cluster-update` — 更新聚类状态
+- `POST /api/review-batch-execute` — 批量执行审查动作
+- `GET /api/review-batch-history?branch_id=...` — 批量执行审计历史
 - `GET /api/risk-audit` — 章节风险审计
 - `GET /api/risk-signals` — 风险语义信号
 
@@ -83,12 +86,19 @@ app/
 - `POST /api/ask-branch` — 小说问答（JSON）
 - `POST /api/ask-branch-stream` — 小说问答（SSE 流式）
 - `GET /api/search-branch` — 语义搜索
+- `GET /api/job-events?branch_id=...&limit=100` — 章节任务事件流
 
-### 恢复
+### 启动 / 恢复
+- `POST /api/start` — 启动 run
 - `POST /api/recovery` — 恢复失败章节
 
 ### 系统
 - `GET /health` — 健康检查
+- `GET /api/meta` — 端点元信息（`available_endpoint_specs` 来自 `_API_ENDPOINT_SPECS`，是路由 SoT）
+- `GET /api/mock/import` — 桩接口（开发用）
+
+> 端点真相源参见 [`docs/api-current-surface.md`](../../docs/api-current-surface.md) +
+> [`docs/api-contract.md`](../../docs/api-contract.md)（未来目标契约）。
 
 ## 流式输出
 
