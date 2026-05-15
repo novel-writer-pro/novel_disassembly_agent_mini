@@ -65,7 +65,21 @@ Single-batch 103 chapters in 80 min, **0/103 dirty titles** (proves title cleanu
 
 Aggregated at `output/whole-book-xuezhong-FULL/`. See `docs/whole-book-xuezhong-progress-20260514.md`.
 
-**Combined: 622K characters of real Chinese fiction across 3 independent source novels (307 chapters total).**
+### Whole-Book FOURTH: 102 chapters / 227K chars (weitu → sci-fi mapping, **102/102 verdict=pass**)
+
+Cross-genre transformation with 12-mapping mapping_pack (xianxia → sci-fi). After 5 retry rounds (max_rounds escalating 2→5), every chapter converges to verdict=pass with full draft. **First time in session a 100-chapter batch reaches universal pass.**
+
+  102 chapters / 227,037 chars / 0 dirty titles / 98% mapping accuracy
+
+See `docs/whole-book-weitu-scifi-fullbook-20260514.md`.
+
+### Whole-Book FIFTH: 59 chapters (zhuxian → sci-fi mapping, **58/59 verdict=pass**)
+
+Cross-novel reproduction of the 'mapping → pass' pattern. Same recipe (11 mappings) on a different source novel produces 58/59 pass with 97.5% mapping accuracy in 2 retry rounds (faster than weitu's 5).
+
+See `docs/whole-book-zhuxian-scifi-fullbook-20260514.md`.
+
+**Combined: ~1.0M characters of real Chinese fiction across 5 fullbooks (3 baseline + 2 sci-fi mapped). 160/468 = 34% reach verdict=pass — all of those are the sci-fi mapped runs, none are baseline.**
 
 ### Cross-Novel Robustness (5-chapter spikes)
 
@@ -184,15 +198,19 @@ NOVEL_ANALYZER_DB_*=...  # postgresql, d2/d2pass, port 5432
 | ~~A. P1 embedding upgrade~~ | ~~low~~ | 1 week | **rejected** — fullpipeline R@5 0.9-1.0 saturates |
 | ~~B. Whole-book on a 2nd full novel~~ | high | 3-4h LLM | **DONE** — zhuxian 102 ch / 230K chars |
 | ~~B'. Whole-book on a 3rd full novel~~ | high | 80 min LLM | **DONE** — xuezhong 103 ch / 192K chars |
-| C. Tune Loom gate so verdict reaches quality-pass | medium | half day | needs harness gate threshold review (preflight + risk + score + actions all gate quality-pass) |
+| ~~B''. Cross-genre 100-ch (xianxia→sci-fi)~~ | high | 90 min + retries | **DONE** — weitu sci-fi 102/102 pass |
+| ~~B'''. Cross-novel sci-fi reproducibility~~ | high | 2h | **DONE** — zhuxian sci-fi 58/59 pass |
+| C. Tune Loom gate so verdict reaches quality-pass | low | half day | **OBVIATED** by mapping_pack — gate is fine, mapping is the lever |
 | D. 武道宗师 entity-extraction cleanup | medium | 2-3 days | tracked in `entity-extraction-noise-diagnosis-20260513.md` |
-| E. Manual eval mailbox for the 307 chapters | high | depends on review bandwidth | infra exists, see `bootstrap_weitu_validation_workspace.py` |
+| E. Manual eval mailbox for the 160 verdict=pass chapters | high | depends on review bandwidth | infra exists, see `bootstrap_weitu_validation_workspace.py` |
 | ~~F. Run mapping_pack on 30+ chapter batch~~ | medium | 1h LLM | **DONE** — 30 ch / 87K chars / 97.7% accuracy |
+| G. Auto-retry on chars<500 (LLM-fallback) at service layer | medium | 1 day | new candidate — ops automation for the retry pattern proven manually |
+| H. Cross-genre extension (xianxia→urban / xianxia→western fantasy) | medium | 1.5h LLM each | natural extension; mapping_pack already supports it |
 
 **Recommendation for next session**:
-- If you want **commercial-shape evidence**: do **E** (mailbox for human reviewers on the 307 chapters across 3 books).
-- If you want **technical depth**: do **C** (gate tuning) — quality-pass is the only verdict that ends the harness loop cleanly.
-- If you want **mapping at scale**: do a 100-chapter run with mapping_pack on (xianxia → sci-fi 全本 sci-fi 化版本).
+- If you want **commercial-shape evidence**: do **E** (mailbox for human reviewers on the 160 verdict=pass sci-fi chapters).
+- If you want **technical robustness**: do **G** (auto-retry at service layer obviates the manual retry loops we did 5+ times this session).
+- If you want **product breadth**: do **H** (other genre transforms; mapping_pack is genre-agnostic).
 
 ---
 
