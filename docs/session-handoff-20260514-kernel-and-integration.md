@@ -357,6 +357,7 @@ These are v5.1 in-progress edits flagged in §6 Directive of commit `80a46f6`. D
 | 1.1 | 2026-05-15 | Week 1-2 + T6 sprint outcomes — 5 commits shipped (T1/T2/T3/T4/T6); T1.5/T2.5/T5/T7/T8 deferred with explicit resumption signals |
 | 1.2 | 2026-05-15 | Borrow items B1/B4/B5 shipped (3 of 5 from competing-novel-ai-projects-20260515.md); B2/B3 deferred — see §10 |
 | 1.3 | 2026-05-15 | Validation surfaced B1 inverted + scaffold cascade bug; 4 corrective commits + ch49 follow-through — see §11 |
+| 1.4 | 2026-05-15 | Re-examined deferred items: T2.5 unblocked at runbook level (ba86531); T5/T7/T8 unbundled with concrete blockers — see §12 |
 
 ---
 
