@@ -55,6 +55,7 @@ def writer_imitate(req: WriterImitateRequest) -> dict:
             "final_draft": {
                 "draft_title": report.final_draft.draft_title,
                 "draft_text": report.final_draft.draft_text,
+                "is_scaffold_only": report.final_draft.is_scaffold_only,
             },
             "chapter_quality_signal": report.chapter_quality_signal,
             "dialogue_signal": report.dialogue_signal,
