@@ -4,21 +4,23 @@
 
 ## 架构
 
-当前有两套后端：
-
 | 服务 | 文件 | 端口 | 说明 |
 |------|------|------|------|
-| 旧 WSGI | `app/main.py` | 8011 | 原始单体后端，兼容现有前端 |
-| **新 FastAPI** | `app/fastapi_app.py` | 8100 | 模块化后端，推荐使用 |
+| **FastAPI（主用）** | `app/fastapi_app.py` | 8011 | 模块化后端，默认启动 |
+| WSGI（legacy 兜底） | `app/main.py` | 8011 | v5 cutover 回退用，正常请勿使用 |
 
-## 启动新 FastAPI 后端
+## 启动 FastAPI 后端
 
 ```bash
-source .venv/bin/activate
-uvicorn apps.api.app.fastapi_app:app --port 8100 --reload
+# 推荐
+make api-dev
+# 等价于：
+.venv/bin/uvicorn apps.api.app.fastapi_app:app --host 127.0.0.1 --port 8011 --reload
 ```
 
-访问 API 文档：`http://127.0.0.1:8100/docs`
+API 文档：`http://127.0.0.1:8011/docs`
+
+> WSGI 兜底（仅 v5 cutover 回退场景）：`make api-wsgi-legacy`
 
 ## 路由模块
 
