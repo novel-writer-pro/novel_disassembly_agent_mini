@@ -1,29 +1,34 @@
-"""AI-trace detection: pure heuristic scoring for "AI-flavored" prose.
+"""AI-trace heuristic scoring — DIAGNOSTIC ONLY, NOT a quality gate.
+
+⚠️  Validation result (2026-05-15, n=507 production drafts):
+   B1 score is INVERTED against harness final_verdict.
+   pass-verdict mean = 0.201, needs_revision mean = 0.184.
+   The dominant component (ngram_repetition) tracks narrative
+   density, not "AI flavor". DO NOT wire this as a GateChecker
+   without first running validation on a non-imitation corpus.
+   See: docs/research/heuristic-scorer-validation-findings-20260515.md
 
 Inspired by the 33-dimension audit pattern from the inkos project. Three
 deterministic signals, no LLM calls, no DB dependency:
 
   ngram_repetition_score    — fraction of bigrams/trigrams that recur,
-                               weighted by length. High = LLM-typical
-                               vocabulary loops.
+                               weighted by length. INVERTED in our corpus:
+                               dense character-driven prose scores high.
   sentence_uniformity_score — coefficient of variation of sentence
                                lengths inverted. High = uniform = LLM-typical
-                               (real prose has bursty short/long mix).
-  hedge_word_density        — frequency of common Chinese AI tells:
-                               hedge adverbs (渐渐/缓缓/似乎), excessive
-                               similes (仿佛/宛如/犹如), and contrastive
-                               connectors (然而/不过/但是).
+                               in theory; not validated against verdict.
+  hedge_word_density        — frequency of common Chinese AI tells
+                               (渐渐/缓缓/似乎/仿佛/然而/不过). Not
+                               validated against verdict.
 
-The composite ``overall_ai_trace_score`` is a 0-1 number. Calibrated
-against 507 real production imitation drafts (2026-05-15):
+Calibrated distribution against 507 real drafts (does NOT imply quality):
 
   median = 0.19   p90 = 0.24   p95 = 0.25   p99 = 0.27   max = 0.57
 
-Thresholds derived from real-data calibration (NOT from theoretical
-"feels right" levels):
-
-  >= 0.24 — warn, deserves reviewer attention
-  >= 0.30 — alert, almost certainly a vocabulary-loop draft
+The composite ``overall_ai_trace_score`` remains useful as a NARRATIVE
+DENSITY DIAGNOSTIC — for example, surfacing extreme outliers like
+ch74 (`'叛军':28 '魏拓':23` in 2984 chars) where vocabulary loops
+do indicate a problem. Use it for that, not as a pass/fail signal.
 
 Run ``scripts/dev/heuristic-scorer-benchmark.py`` to refresh the
 distribution after material changes to LLM provider or prompt set.

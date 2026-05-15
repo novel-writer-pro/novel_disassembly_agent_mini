@@ -1,4 +1,13 @@
-"""Mechanical slop scoring: regex-based detection of fiction clichés and tells.
+"""Mechanical slop scoring — DIAGNOSTIC ONLY, weak signal in current corpus.
+
+⚠️  Validation result (2026-05-15, n=507 production drafts):
+   B4 effect size is below noise floor. needs_revision mean = 0.006,
+   pass mean = 0.002. Median is 0.000 across both groups. The
+   imitation harness already scrubs the obvious slop upstream via
+   stage-merged prompts, so this scorer rarely fires on harness
+   output. Wiring as a GateChecker would add no signal.
+   May still be useful on RAW LLM output or user-pasted drafts.
+   See: docs/research/heuristic-scorer-validation-findings-20260515.md
 
 Inspired by autonovel/evaluate.py mechanical-layer slop detection. Three
 signals orthogonal to ai_trace_signal_service:
@@ -16,20 +25,9 @@ signals orthogonal to ai_trace_signal_service:
                               特别 within short windows). High = lazy
                               intensification.
 
-Composite ``overall_slop_score`` is a 0-1 number. Calibrated against
-507 real production imitation drafts (2026-05-15):
+Calibrated distribution against 507 real drafts (does NOT imply quality):
 
   median = 0.00   p90 = 0.018   p95 = 0.028   p99 = 0.049   max = 0.10
-
-Thresholds derived from real-data calibration:
-
-  >= 0.02  — warn (above p90)
-  >= 0.05  — alert (above p99)
-
-Real production drafts in the existing imitation harness rarely show
-high slop because the harness already passes drafts through several
-stage-merged prompts. This scorer's main use is **outlier surfacing**
-when the harness misbehaves on edge-case content.
 
 Run ``scripts/dev/heuristic-scorer-benchmark.py`` to refresh the
 distribution after material changes to LLM provider or prompt set.
