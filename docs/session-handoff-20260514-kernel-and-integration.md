@@ -355,3 +355,42 @@ These are v5.1 in-progress edits flagged in §6 Directive of commit `80a46f6`. D
 |---|---|---|
 | 1.0 | 2026-05-14 | 初版 |
 | 1.1 | 2026-05-15 | Week 1-2 + T6 sprint outcomes — 5 commits shipped (T1/T2/T3/T4/T6); T1.5/T2.5/T5/T7/T8 deferred with explicit resumption signals |
+| 1.2 | 2026-05-15 | Borrow items B1/B4/B5 shipped (3 of 5 from competing-novel-ai-projects-20260515.md); B2/B3 deferred — see §10 |
+
+---
+
+## 10. Borrow items from competing project research (2026-05-15 后续)
+
+After [docs/research/competing-novel-ai-projects-20260515.md](research/competing-novel-ai-projects-20260515.md) identified 5 borrow candidates, 3 were shipped as standalone scoring helpers (no DB, no LLM, no integration risk):
+
+| Commit | Borrow | Surface |
+|---|---|---|
+| `0dc7232` | **B1** AI-trace heuristic | `novel_analyzer/services/ai_trace_signal_service.py` — ngram repetition + sentence uniformity + hedge density. 8/8 tests. |
+| `a868b32` | **B4** Mechanical slop scorer | `novel_analyzer/services/slop_scorer_service.py` — cliché density + show-don't-tell + adverb stacking. 8/8 tests. Verified orthogonal to B1. |
+| `837e346` | **B5** Elo tournament | `novel_analyzer/services/elo_tournament_service.py` — pure math aggregation over pairwise outcomes. 11/11 tests. |
+
+### 10.1 B2/B3 deferred
+
+| Borrow | Why deferred | Resumption shape |
+|---|---|---|
+| **B2** Relationship dim in retrieval | Pure-function helper feasible, but the actual value is wiring it as the 4th dimension in `ContextService.adaptive_fact_context_json`. Live retrieval modifications are too risky while writer-imitate-range processes are still inserting graph_edges. | Add `_relationship_route()` method to `ContextService` mirroring `_foreshadow_route`/`_relevance_route`. Reads `GraphEdge` table where `edge_type IN ('relationship', 'alliance', 'enmity')`. Test against a real branch with active relationship subgraph. |
+| **B3** Arc-rolling planning | Multi-day integration: needs `next_chapter_planner_service` rework + new `BranchArc` table or jsonb field on `RunBranch` + Architect agent stage in imitation harness. | Treat as a separate `kernel-7week-arc-rolling.md` plan. Cannot fit into the 6-week kernel sprint window without expanding scope. |
+
+### 10.2 Wiring B1/B4/B5 into the orchestrator (also deferred)
+
+All three shipped helpers are **standalone scoring functions**, not yet called by `RiskAuditService` or `pairwise_eval_service`. The wiring is intentionally postponed:
+
+- B1/B4 → should land as new GateChecker classes in `risk_audit_checkers.py` taking `ChapterImitationDraft.draft_text` as input. The current GateChecker contract takes `(artifact_payload, facts)` not draft text — needs a new dispatch path.
+- B5 → should write Elo deltas back to `loom_pairwise_evaluations` (or a sibling table) on each new pair. Needs DB write surface.
+
+Both wirings need a clean DB maintenance window AND a live integration test path. Defer to the same window as T1.5/T2.5.
+
+### 10.3 Things in this branch that still should NOT be discarded
+
+```
+M apps/api/app/routers/import_recovery.py   # v5.1 paused
+M apps/api/app/routers/risk_review.py       # v5.1 paused
+M tests/test_api_main.py                    # v5.1 paused — 30 broken tests
+```
+
+(Same as §8.3, restated.)
