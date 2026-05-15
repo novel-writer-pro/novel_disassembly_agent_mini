@@ -20,40 +20,66 @@ This prints exactly which boxes are unchecked. Re-run after each step.
 
 ## 1. Bring up the stack
 
-Helicone v1 self-host has its own docker-compose under `infra/helicone/upstream/`.
+The Helicone upstream repo (verified 2026-05-15) has 19 services across
+multiple compose profiles. The `infra` profile alone gives you the bare
+minimum (Postgres + ClickHouse + MinIO + MailHog + Redis); the
+`include-helicone` profile adds the actual Jawn (proxy/API, port 8585) +
+Web UI (port 3000). For our use case we want **`include-helicone`** —
+that gives us the trace endpoint at `:8585` plus the dashboard.
 
 ```bash
 cd infra/helicone
 
-# First time only:
-git clone --depth 1 --branch v1 https://github.com/Helicone/helicone.git upstream
+# First time only — note: branch is `main`, NOT `v1` (which doesn't exist):
+git clone --depth 1 https://github.com/Helicone/helicone.git upstream
 cp upstream/.env.example upstream/.env
 
-# Lock ports so they don't collide with Dify (8080) / n8n (5678) / Langfuse (3000)
-# Field names vary across Helicone releases — open .env, find the proxy/web port keys
-# and set them to 8585 / 8586 manually (or via sed if the keys are stable in your version).
-
-cd upstream
-docker compose up -d
-docker compose ps  # all services should be healthy or starting
+# Sanity-check the .env (look for DOCKER_HOST_IP, JAWN_PORT, JAWN_PUBLIC_URL).
+# JAWN_PORT defaults to 8585 — keep it (no collision with Dify 8080 / n8n 5678).
+# Web UI defaults to port 3000 — IF you also run Langfuse on 3000, change one.
 ```
 
-Wait ~30s, then:
+Use the upstream-provided helper script — it knows the profile flag dance:
 
 ```bash
-curl -fsS http://localhost:8585/healthcheck && echo OK
-curl -fsS http://localhost:8586 -o /dev/null && echo "web ok"
+cd upstream/docker
+./helicone-compose.sh helicone up
+docker compose -p helicone-self-host ps
 ```
 
-Both should succeed.
+Available profile shortcuts (from the helper):
+
+| Profile | What it brings up |
+|---|---|
+| `infra` | PostgreSQL + ClickHouse + MinIO + MailHog (no Helicone app) |
+| `helicone` | infra + Jawn (proxy:8585) + Web UI (:3000) — **what we want** |
+| `dev` | infra + Jawn-dev + Web-dev (hot reload, only for upstream contributors) |
+| `workers` | infra + 5 worker services (proxy / api / gateway / anthropic / generate) |
+| `kafka` | infra + Kafka + Zookeeper |
+| `all` | everything (do NOT use unless you specifically need Kafka tracing) |
+
+Wait ~60s for ClickHouse + DB migrations, then probe:
+
+```bash
+curl -fsS http://localhost:8585/healthcheck && echo OK     # Jawn proxy
+curl -fsS http://localhost:3000 -o /dev/null && echo OK    # Web UI
+```
+
+### 1.1 Resource cost
+
+The `helicone` profile commits ~4-5 GB memory and ~10-15 GB disk for the
+ClickHouse + Postgres + MinIO data volumes. ClickHouse will grow
+materially on imitation-heavy days; plan for monthly cleanup if disk is
+tight.
 
 ---
 
 ## 2. Create org + API key in Helicone UI
 
-1. Open `http://localhost:8586` in the browser.
-2. Sign up locally (the dev image typically allows `admin@local` / any password).
-3. Settings → API Keys → Create. Save the key (you won't need it for the **default** transparent proxy mode unless your Helicone version requires `Helicone-Auth` header — see step 4).
+1. Open `http://localhost:3000` in the browser.
+2. Sign up locally — the dev image accepts any email + password (default
+   `BETTER_AUTH_SECRET` ships in the seed env).
+3. Settings → API Keys → Create. Save the key.
 
 ---
 
@@ -100,7 +126,7 @@ python -m novel_analyzer.cli.app --help  # confirm CLI works
 # (the imitation / analysis pipeline calls build_chat_model() under the hood)
 ```
 
-Visit `http://localhost:8586` → Requests → expect at least one row with the upstream model name + token counts.
+Visit `http://localhost:3000` → Requests → expect at least one row with the upstream model name + token counts.
 
 ---
 

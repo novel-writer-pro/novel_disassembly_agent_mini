@@ -22,3 +22,6 @@ apps/web/tsconfig.tsbuildinfo
 **/__pycache__/
 *.py[cod]
 .tmp
+infra/helicone/upstream/
+infra/langfuse/upstream/
+infra/dify/upstream/

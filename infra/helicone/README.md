@@ -9,32 +9,48 @@
 
 ```bash
 cd infra/helicone
-git clone --depth 1 --branch v1 https://github.com/Helicone/helicone.git upstream
+git clone --depth 1 https://github.com/Helicone/helicone.git upstream
+# Note: branch is `main` — there is no `v1` branch on the upstream repo
 cd upstream
 cp .env.example .env
 
-# 改端口避开 8080 (Dify) / 5678 (n8n) / 3030 (Langfuse) / 8001 (ai-books) / 4173 (web)
-# 注意：Helicone 不同版本的 env 字段名可能不同，按 .env.example 里实际名称改
-sed -i 's/^OPENAI_PROXY_PORT=.*$/OPENAI_PROXY_PORT=8585/' .env || true
-sed -i 's/^WEB_PORT=.*$/WEB_PORT=8586/' .env || true
+# Sanity-check the .env (look for DOCKER_HOST_IP, JAWN_PORT, JAWN_PUBLIC_URL).
+# JAWN_PORT defaults to 8585 (no collision with Dify 8080 / n8n 5678).
+# Web UI defaults to port 3000 — IF Langfuse also uses 3000, change one.
 ```
 
 ## 启动 / 停止
 
-```bash
-cd infra/helicone/upstream
-docker compose up -d
-docker compose ps
-curl http://localhost:8585/healthcheck    # 200
-# 控制台 http://localhost:8586
+Use the upstream-provided helper script — it handles compose-profile flags:
 
-docker compose down
-docker compose down -v   # 删除全部数据
+```bash
+cd infra/helicone/upstream/docker
+
+# Bring up the full Helicone stack (Postgres + ClickHouse + MinIO + Jawn + Web UI):
+./helicone-compose.sh helicone up
+docker compose -p helicone-self-host ps
+
+curl -fsS http://localhost:8585/healthcheck && echo OK    # Jawn proxy
+curl -fsS http://localhost:3000 -o /dev/null && echo OK   # Web UI
+
+./helicone-compose.sh helicone down       # Stop
+./helicone-compose.sh helicone down -v    # Stop and drop ClickHouse + PG volumes
 ```
+
+Available profiles:
+
+| Profile | Brings up |
+|---|---|
+| `infra` | DB + ClickHouse + MinIO + MailHog (no Helicone app) |
+| `helicone` | infra + Jawn (8585) + Web UI (3000) — **what we want** |
+| `dev` | infra + Jawn-dev + Web-dev (hot reload, upstream contributors only) |
+| `workers` | infra + 5 worker services |
+| `kafka` | infra + Kafka + Zookeeper |
+| `all` | everything |
 
 ## 接入（v3 T6 已就位的 env 切换）
 
-1. Helicone console (`:8586`) → create org → Settings → API Keys → Create
+1. Helicone console (`:3000`) → create org → Settings → API Keys → Create
 2. ai-books 业务进程的 env 加：
    ```bash
    export NOVEL_ANALYZER_LLM_BASE_URL_OVERRIDE='http://localhost:8585/v1/openai'
