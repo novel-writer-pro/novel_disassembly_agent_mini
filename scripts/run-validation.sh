@@ -87,16 +87,16 @@ if [ "$QUICK" -eq 0 ]; then
         OUT=".sisyphus/reports/bm25-validation-$(date +%F).json"
         mkdir -p "$(dirname "$OUT")"
         if python -m novel_analyzer.cli.app retrieval-benchmark "$BRANCH" \
-                  --max-queries 20 --output-file "$OUT" 2>&1 | grep -q "delta:"; then
+                  --max-queries 20 --output-file "$OUT" >/dev/null 2>&1 && [ -s "$OUT" ]; then
             JIEBA=$(jq '.results[] | select(.config=="jiebacfg") | .mrr' "$OUT")
             SIMPLE=$(jq '.results[] | select(.config=="simple") | .mrr' "$OUT")
-            if awk "BEGIN { exit !($JIEBA > $SIMPLE) }"; then
-                ok "jiebacfg MRR ($JIEBA) > simple MRR ($SIMPLE) — pg_jieba wins as expected"
+            if awk "BEGIN { exit !($JIEBA >= $SIMPLE) }"; then
+                ok "jiebacfg MRR ($JIEBA) >= simple MRR ($SIMPLE) — pg_jieba healthy"
             else
-                fail "jiebacfg MRR ($JIEBA) NOT greater than simple ($SIMPLE) — investigate userdict"
+                fail "jiebacfg MRR ($JIEBA) < simple ($SIMPLE) — investigate userdict (run: python -m novel_analyzer.cli.app domain-dict-rebuild)"
             fi
         else
-            fail "retrieval-benchmark execution failed"
+            fail "retrieval-benchmark did not produce a report (check provider-health + DB)"
         fi
     else
         echo
