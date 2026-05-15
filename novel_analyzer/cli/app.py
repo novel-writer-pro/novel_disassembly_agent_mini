@@ -3316,6 +3316,9 @@ def _extract_writer_output_loom_signal(
     *,
     artifact_name: str,
 ) -> dict[str, object] | None:
+    final_draft_obj = payload.get("final_draft")
+    if isinstance(final_draft_obj, dict) and final_draft_obj.get("is_scaffold_only") is True:
+        return None
     chapter_index_obj = payload.get("source_chapter_index")
     try:
         chapter_index = int(chapter_index_obj)

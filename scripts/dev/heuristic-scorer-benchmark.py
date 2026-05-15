@@ -26,7 +26,7 @@ from novel_analyzer.services.ai_trace_signal_service import score_ai_trace  # no
 from novel_analyzer.services.slop_scorer_service import score_slop  # noqa: E402
 
 
-def collect_drafts(root: Path) -> list[tuple[Path, str]]:
+def collect_drafts(root: Path, *, include_scaffold: bool = False) -> list[tuple[Path, str]]:
     out: list[tuple[Path, str]] = []
     if not root.is_dir():
         return out
@@ -38,13 +38,13 @@ def collect_drafts(root: Path) -> list[tuple[Path, str]]:
                 payload = json.loads(js.read_text(encoding="utf-8"))
             except Exception:
                 continue
-            text = (
-                payload.get("final_draft", {}).get("draft_text")
-                or payload.get("draft_text")
-                or ""
-            )
-            if isinstance(text, str) and len(text) > 200:
-                out.append((js, text))
+            final_draft = payload.get("final_draft") or {}
+            text = final_draft.get("draft_text") or payload.get("draft_text") or ""
+            if not isinstance(text, str) or len(text) <= 200:
+                continue
+            if not include_scaffold and final_draft.get("is_scaffold_only"):
+                continue
+            out.append((js, text))
     return out
 
 
@@ -75,7 +75,15 @@ def main(argv: list[str] | None = None) -> int:
         default=str(REPO_ROOT / "output"),
         help="Root directory containing whole-book-* subdirs with writer-imitate-ch*.json files",
     )
-    parser.add_argument("--top", type=int, default=10, help="Show top-N flagged drafts")
+    parser.add_argument(
+        "--top", type=int, default=10, help="Show top-N flagged drafts"
+    )
+    parser.add_argument(
+        "--include-scaffold",
+        action="store_true",
+        help="Include is_scaffold_only=True drafts (excluded by default — they are "
+        "outline-only fallback artifacts that pollute the score distribution)",
+    )
     parser.add_argument(
         "--ai-trace-warn", type=float, default=0.24,
         help="Threshold for warn (default p90 from real-data calibration)",
@@ -94,8 +102,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    drafts = collect_drafts(Path(args.output_dir))
+    drafts = collect_drafts(Path(args.output_dir), include_scaffold=args.include_scaffold)
     print(f"Loaded {len(drafts)} drafts from {args.output_dir}")
+    if not args.include_scaffold:
+        print("(is_scaffold_only=True drafts excluded; pass --include-scaffold to include)")
     if not drafts:
         return 0
     print()
