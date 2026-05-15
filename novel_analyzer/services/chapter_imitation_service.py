@@ -581,12 +581,18 @@ class ChapterImitationService:
                 model_name=model_name,
             )
             final_round = report.rounds[-1]
+            scaffold_only = bool(getattr(report.final_draft, "is_scaffold_only", False))
+            final_draft_excerpt = (
+                "[scaffold-only fallback; not user-facing prose]"
+                if scaffold_only
+                else report.final_draft.draft_text[:240]
+            )
             steps.append(
                 MultiChapterImitationStep(
                     source_chapter_index=chapter_index,
                     target_goal=goal,
                     final_title=report.final_draft.draft_title,
-                    final_draft_excerpt=report.final_draft.draft_text[:240],
+                    final_draft_excerpt=final_draft_excerpt,
                     overall_score=final_round.score.overall_score,
                     overall_risk_level=final_round.risk.overall_risk_level,
                     stop_reason=report.stop_reason,
@@ -600,7 +606,9 @@ class ChapterImitationService:
                 risk_notes.append(
                     f"第{chapter_index}章仍有 coverage_gaps：{'、'.join(final_round.risk.coverage_gaps[:3])}"
                 )
-            previous_excerpt = report.final_draft.draft_text[:120]
+            previous_excerpt = (
+                "" if scaffold_only else report.final_draft.draft_text[:120]
+            )
             previous_goal = goal
 
         verdict = "aligned" if all(step.overall_risk_level == "low" for step in steps) else "needs_review"

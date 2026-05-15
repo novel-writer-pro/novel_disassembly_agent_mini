@@ -813,9 +813,20 @@ class WholeBookImitationService:
                 strategy_input=strategy_input,
             )
             final_round = harness_report.rounds[-1]
+            scaffold_only = bool(getattr(harness_report.final_draft, "is_scaffold_only", False))
+            generated_summary = (
+                ""
+                if scaffold_only
+                else harness_report.final_draft.draft_text[:220]
+            )
+            draft_excerpt = (
+                "[scaffold-only fallback; not user-facing prose]"
+                if scaffold_only
+                else harness_report.final_draft.draft_text[:240]
+            )
             carry_state = WholeBookCarryOverState(
                 source_chapter_index=step.source_chapter_index,
-                generated_summary=harness_report.final_draft.draft_text[:220],
+                generated_summary=generated_summary,
                 relationship_state=final_round.review.risk_gate_notes[:3],
                 unresolved_threads=final_round.risk.top_risk_summaries[:3]
                 or final_round.risk.coverage_gaps[:3],
@@ -831,7 +842,7 @@ class WholeBookImitationService:
                     overall_score=final_round.score.overall_score,
                     overall_risk_level=final_round.risk.overall_risk_level,
                     draft_title=harness_report.final_draft.draft_title,
-                    draft_excerpt=harness_report.final_draft.draft_text[:240],
+                    draft_excerpt=draft_excerpt,
                     carry_over_state=carry_state,
                     action_queue=harness_report.action_queue,
                     revise_payload=harness_report.rounds[-1].revise_payload
