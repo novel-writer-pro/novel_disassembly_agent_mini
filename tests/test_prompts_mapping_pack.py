@@ -20,6 +20,24 @@ def test_prompt_omits_mapping_block_when_pack_is_none():
     assert "世界设定替换（必须执行）" not in prompt
 
 
+def test_baseline_prompt_includes_self_check_section():
+    prompt = build_chapter_imitation_prompt(**_base_kwargs(), mapping_pack=None)
+    assert "已通过自检" in prompt
+    assert "节奏检查" in prompt
+    assert "对话检查" in prompt
+    assert "动机检查" in prompt
+    assert "关系检查" in prompt
+    assert "营销冗余检查" in prompt
+
+
+def test_mapped_prompt_keeps_baseline_self_check():
+    pack = {"character_mapping": {"卫图": "魏拓"}}
+    prompt = build_chapter_imitation_prompt(**_base_kwargs(), mapping_pack=pack)
+    assert "已通过自检" in prompt
+    assert "节奏检查" in prompt
+    assert "二次检查：在生成完 draft_text 后" in prompt
+
+
 def test_prompt_omits_mapping_block_when_pack_is_empty_dict():
     prompt = build_chapter_imitation_prompt(**_base_kwargs(), mapping_pack={})
     assert "人物名替换（必须执行）" not in prompt
