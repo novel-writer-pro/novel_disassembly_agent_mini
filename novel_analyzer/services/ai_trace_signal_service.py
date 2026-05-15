@@ -14,9 +14,19 @@ deterministic signals, no LLM calls, no DB dependency:
                                similes (仿佛/宛如/犹如), and contrastive
                                connectors (然而/不过/但是).
 
-The composite ``overall_ai_trace_score`` is a 0-1 number where >0.55
-warrants reviewer attention. Thresholds are empirical defaults; tune
-per branch via run-time settings if needed.
+The composite ``overall_ai_trace_score`` is a 0-1 number. Calibrated
+against 507 real production imitation drafts (2026-05-15):
+
+  median = 0.19   p90 = 0.24   p95 = 0.25   p99 = 0.27   max = 0.57
+
+Thresholds derived from real-data calibration (NOT from theoretical
+"feels right" levels):
+
+  >= 0.24 — warn, deserves reviewer attention
+  >= 0.30 — alert, almost certainly a vocabulary-loop draft
+
+Run ``scripts/dev/heuristic-scorer-benchmark.py`` to refresh the
+distribution after material changes to LLM provider or prompt set.
 
 Boundary contract:
 - Pure functions; safe to call from any layer (service, CLI, test).
