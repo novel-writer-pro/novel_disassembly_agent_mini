@@ -1,5 +1,23 @@
 ## Unreleased
 
+- docs(ops): 新增运维调试速查手册 `docs/ops-debug-manual-20260514.md`（433 行 / 9 段）。
+
+  Changelist: `CL-ops-debug-manual`
+
+  补齐"分步调试和验证"的速查手册需求。互补于 `cli-operations-manual.md`（深度 reference），定位为 **scenario-first 故障定位 cookbook**：
+
+  - §1 环境自检（LLM 通联 / pg_jieba user_dict / bm25_vector attgenerated 三件套）
+  - §2 7 个常见操作场景（retrieval-benchmark / 5-章 spike / mapping_pack / range-split / 失败恢复 / 字典刷新全流程 / chunks 修复）
+  - §3 后台长任务（nohup 启动 / 不阻塞监控 / kill / 速度参考表）
+  - §4 5 棵故障决策树（retrieval 分数差 / 章节字数短 / mapping 不生效 / 进程死无 final / docker 端口）
+  - §5 10 条"不要做的事"（含本会话踩过的坑：DELETE chunks / UPDATE bm25_vector / 重启前的 reindex / imitate-chapter 接 mapping）
+  - §6 锁定回归基线 + ±20% 告警门槛
+  - §7 5 个已分析 branch_id 即查表
+  - §8 LLM endpoints（当前可用 / 备用 / 已知失效）
+  - §9 session 完整命令一图流（启动 → 健康检查 → 5-章 spike → 报表）
+
+  交叉引用已在 `docs/session-handoff-20260514.md` doc map 中追加。
+
 - feat(whole-book): mapping_pack → verdict=pass 突破，跨原作 + 跨题材双重验证 + 服务层自动 retry。
 
   Changelist: `CL-whole-book-mapping-pass-breakthrough`

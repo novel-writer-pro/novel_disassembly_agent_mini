@@ -437,6 +437,8 @@ poetry run novel-analyzer repair-branch <branch_id>
 4. `loom/weitu-real-effect-validation.md`
 5. `loom/weitu-validation-log-20260511.md`
 
+**分步调试与故障定位**：见 [`./ops-debug-manual-20260514.md`](./ops-debug-manual-20260514.md)（scenario-first 速查手册：环境自检 / 常见操作 / 故障决策树 / 反模式）。
+
 ---
 
 ## 11. 当前维护建议（2026-04-28 之后）

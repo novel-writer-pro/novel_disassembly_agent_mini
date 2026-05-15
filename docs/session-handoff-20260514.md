@@ -160,6 +160,7 @@ python -m novel_analyzer.cli.app retrieval-benchmark <branch_id> \
 | Whole-book progress log | `docs/whole-book-progress-20260514.md` | session continuity |
 | Cross-novel evidence | `docs/whole-book-cross-novel-20260514.md` | rubustness audit |
 | CLI master manual | `docs/cli-operations-manual.md` | reference |
+| Ops/debug 速查手册 | `docs/ops-debug-manual-20260514.md` | scenario-first cookbook（自检/常见操作/故障树/反模式） |
 
 ---
 
