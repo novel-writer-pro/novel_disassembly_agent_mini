@@ -40,6 +40,30 @@
 | 故事架构 | chapter-level / book-level structure | 中高 | 章级较强，书级正在增强 | P1 |
 | 资料研究 | 世界观 / 历史 / 题材 / 读者体系 | 低 | 目前主要是书内知识，不是真 research lane | P1 |
 | 模拟读者评审 | 小白读者 / 老书虫 / 爽点读者 / 编辑视角 | 低 | 目前只有 system review，不是 reader simulation | P1 |
+| 跨题材改写（mapping_pack） | name / world / power / rule 设定替换 | **高** | 已突破，3 题材 170/171 章 pass | **P0** |
+| 同题材整本仿写 | 保持原 setting 的整本仿写 | 中 | prompt self-check 已修复，待长跑验证 | **P0** |
+| 在飞 contamination 拦截 | thin / scaffold / action_queue 三类拦截 | 高 | service 层 in-flight + auto-retry | P0 |
+
+---
+
+## 2.5 跨题材改写实证（2026-05-15）
+
+| 测试 | 章数 | full pass | mapping accuracy |
+|---|---:|---:|---:|
+| 卫图（古典仙侠 baseline） | 102 | **0/102** ❌ | n/a |
+| 诛仙（古典仙侠 baseline） | 102 | **0/102** ❌ | n/a |
+| 雪中悍刀行（江湖武侠 baseline） | 103 | **0/103** ❌ | n/a |
+| 卫图 → 太空科幻（mapping） | 102 | **102/102** ✅ | 98.0% |
+| 诛仙 → 太空科幻（mapping） | 59 | **58/59** ✅ | 97.5% |
+| 卫图 → 都市修真（mapping spike） | 10 | **10/10** ✅ | 96.1% |
+| **跨题材合计** | **171** | **170 / 99.4%** | **96-98%** |
+| **同题材 baseline 合计** | **307** | **0 / 0%** | n/a |
+
+**关键诊断**：同章节（ch71/80/90）mapping pass / baseline fail 时 score、severity、gate_verdict 完全相同，差异 = mapping prompt 多了一个"二次检查"。
+
+**修复**（commit `9704127`）：baseline prompt 加入 5 项 self-check（节奏 / 对话 / 动机 / 关系 / 营销冗余）。验证步骤见 [`./baseline-imitation-quality-validation-handoff-20260515.md`](./baseline-imitation-quality-validation-handoff-20260515.md)。
+
+**商用就绪**：跨题材路径见 [`./cross-genre-imitation-commercial-readiness-20260515.md`](./cross-genre-imitation-commercial-readiness-20260515.md) — 6 项 SLA gap + 3 条上线路径。
 
 ---
 
