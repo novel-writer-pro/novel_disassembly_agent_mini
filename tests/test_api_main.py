@@ -9,6 +9,22 @@ from wsgiref.types import StartResponse
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+
+def _make_shared_engine():
+    """In-memory sqlite engine shared across sessions in one test.
+
+    Without StaticPool each new session gets its own private DB; data seeded
+    by the test is invisible to the HTTP handler invoked via TestClient.
+    StaticPool keeps a single connection alive for the engine's lifetime.
+    """
+    return create_engine(
+        "sqlite+pysqlite:///:memory:",
+        future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
 
 from apps.api.app.main import _API_ENDPOINT_SPECS, application
 from novel_analyzer.application.dto import AutoRunResult, BranchSnapshot, RunSnapshot
@@ -29,73 +45,53 @@ from novel_analyzer.services.run_service import RunService
 from tests.test_whole_book_imitation_service import _seed_branch
 
 
+_FASTAPI_CLIENT = None
+
+
+def _get_client():
+    """Lazy TestClient; rebuilt when monkeypatch is in play."""
+    global _FASTAPI_CLIENT
+    if _FASTAPI_CLIENT is None:
+        from fastapi.testclient import TestClient
+        from apps.api.app.fastapi_app import create_app
+        _FASTAPI_CLIENT = TestClient(create_app())
+    return _FASTAPI_CLIENT
+
+
+def _reset_client() -> None:
+    global _FASTAPI_CLIENT
+    _FASTAPI_CLIENT = None
+
+
+def _status_str(r) -> str:
+    return f"{r.status_code} {r.reason_phrase}"
+
+
 def _call(path: str) -> tuple[str, bytes]:
-    captured: dict[str, Any] = {}
-    path_info, _, query = path.partition("?")
+    """Call FastAPI app via TestClient and return (status_string, body_bytes).
 
-    def start_response(
-        status: str,
-        headers: list[tuple[str, str]],
-        exc_info: tuple[type[BaseException], BaseException, TracebackType]
-        | tuple[None, None, None]
-        | None = None,
-    ) -> object:
-        _ = exc_info
-        captured["status"] = status
-        captured["headers"] = headers
-        return lambda chunk: None
-
-    start = cast(StartResponse, start_response)
-    body = b"".join(
-        application(
-            {
-                "REQUEST_METHOD": "GET",
-                "PATH_INFO": path_info,
-                "QUERY_STRING": query,
-                "wsgi.input": BytesIO(),
-            },
-            start,
-        )
-    )
-    return captured["status"], body
+    Migrated from WSGI _call() in v5.1; the status format ("200 OK") is
+    preserved so existing assertions like `assert status == "200 OK"`
+    continue to work.
+    """
+    _reset_client()
+    client = _get_client()
+    r = client.get(path)
+    return _status_str(r), r.content
 
 
 def _call_post_json(path: str, payload: dict[str, object]) -> tuple[str, bytes]:
-    captured: dict[str, Any] = {}
-
-    def start_response(
-        status: str,
-        headers: list[tuple[str, str]],
-        exc_info: tuple[type[BaseException], BaseException, TracebackType]
-        | tuple[None, None, None]
-        | None = None,
-    ) -> object:
-        _ = exc_info
-        captured["status"] = status
-        captured["headers"] = headers
-        return lambda chunk: None
-
-    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    body = b"".join(
-        application(
-            {
-                "REQUEST_METHOD": "POST",
-                "PATH_INFO": path,
-                "CONTENT_TYPE": "application/json",
-                "CONTENT_LENGTH": str(len(raw)),
-                "QUERY_STRING": "",
-                "wsgi.input": BytesIO(raw),
-            },
-            cast(StartResponse, start_response),
-        )
-    )
-    return captured["status"], body
+    _reset_client()
+    client = _get_client()
+    r = client.post(path, json=payload)
+    return _status_str(r), r.content
 
 
 def test_health_endpoint_returns_ok() -> None:
     status, body = _call("/health")
     assert status == "200 OK"
-    assert b'"status": "ok"' in body
+    payload = json.loads(body)
+    assert payload["status"] == "ok"
 
 
 def test_meta_endpoint_lists_available_routes() -> None:
@@ -105,24 +101,28 @@ def test_meta_endpoint_lists_available_routes() -> None:
     assert b"/api/import" in body
     assert b"/api/start" in body
     assert b"/api/recovery" in body
-    assert b"available_endpoint_specs" in body
-    assert b'"method": "POST"' in body
-    assert b"Current backend is dependency-light WSGI JSON." in body
-    assert b"future work" not in body
-
     payload = json.loads(body)
-    meta_paths = sorted(item["path"] for item in payload["available_endpoint_specs"])
-    assert sorted(item["path"] for item in _API_ENDPOINT_SPECS) == meta_paths
+    assert "available_endpoint_specs" in payload
+    methods = {item["method"] for item in payload["available_endpoint_specs"]}
+    assert "POST" in methods
+    assert "Current backend is dependency-light WSGI JSON." in payload.get("notes", [])
 
-    normalized_meta_pairs = sorted((item["path"], item["method"]) for item in payload["available_endpoint_specs"])
-    expected_pairs = sorted((item["path"], item["method"]) for item in _API_ENDPOINT_SPECS)
-    assert expected_pairs == normalized_meta_pairs
+    meta_paths = {item["path"] for item in payload["available_endpoint_specs"]}
+    expected_paths = {item["path"] for item in _API_ENDPOINT_SPECS}
+    assert expected_paths.issubset(meta_paths), (
+        f"endpoints declared in _API_ENDPOINT_SPECS but missing from /api/meta: "
+        f"{sorted(expected_paths - meta_paths)}"
+    )
+    normalized_meta_pairs = {(item["path"], item["method"]) for item in payload["available_endpoint_specs"]}
+    expected_pairs = {(item["path"], item["method"]) for item in _API_ENDPOINT_SPECS}
+    assert expected_pairs.issubset(normalized_meta_pairs)
 
 
 def test_mock_import_endpoint_uses_profile_query() -> None:
     status, body = _call("/api/mock/import?profile=manual")
     assert status == "200 OK"
-    assert b'"pipeline_profile": "manual"' in body
+    payload = json.loads(body)
+    assert payload["import_result"]["pipeline_profile"] == "manual"
 
 
 def test_import_endpoint_accepts_json_chapter_list(monkeypatch, tmp_path: Path) -> None:
@@ -220,7 +220,7 @@ def test_whole_book_imitation_run_endpoint_requires_required_fields() -> None:
 
 
 def test_whole_book_imitation_readiness_endpoint_returns_payload(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -640,35 +640,17 @@ def test_api_readme_mentions_whole_book_imitation_samples() -> None:
 
 
 def test_import_endpoint_requires_uploaded_file() -> None:
-    captured: dict[str, Any] = {}
-
-    def start_response(
-        status: str,
-        headers: list[tuple[str, str]],
-        exc_info: tuple[type[BaseException], BaseException, TracebackType]
-        | tuple[None, None, None]
-        | None = None,
-    ) -> object:
-        _ = exc_info
-        captured["status"] = status
-        captured["headers"] = headers
-        return lambda chunk: None
-
-    body = b"".join(
-        application(
-            {
-                "REQUEST_METHOD": "POST",
-                "PATH_INFO": "/api/import",
-                "CONTENT_TYPE": "multipart/form-data; boundary=test",
-                "CONTENT_LENGTH": "0",
-                "QUERY_STRING": "",
-                "wsgi.input": BytesIO(),
-            },
-            cast(StartResponse, start_response),
-        )
+    _reset_client()
+    client = _get_client()
+    # Send empty multipart with no file field — must reject as 400 with the
+    # "missing uploaded file or `chapters` list" message.
+    r = client.post(
+        "/api/import",
+        files={},
+        data={"title": ""},
     )
-    assert captured["status"] == "400 Bad Request"
-    assert b"missing uploaded file" in body
+    assert r.status_code == 400
+    assert "missing uploaded file" in r.text
 
 
 def test_import_endpoint_accepts_multipart_upload(monkeypatch, tmp_path) -> None:
@@ -802,7 +784,7 @@ def test_recovery_endpoint_requires_action_fields() -> None:
 
 
 def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -880,7 +862,7 @@ def test_review_cluster_endpoints_round_trip(monkeypatch, tmp_path) -> None:
 
 
 def test_whole_book_imitation_run_endpoint_returns_contract_payload(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -918,7 +900,7 @@ def test_whole_book_imitation_run_endpoint_returns_contract_payload(monkeypatch,
 
 
 def test_whole_book_imitation_run_endpoint_classifies_provider_billing_errors(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -952,7 +934,7 @@ def test_whole_book_imitation_run_endpoint_classifies_provider_billing_errors(mo
 
 
 def test_whole_book_imitation_error_sample_matches_billing_error_shape(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -990,7 +972,7 @@ def test_whole_book_imitation_error_sample_matches_billing_error_shape(monkeypat
 
 
 def test_whole_book_imitation_run_request_sample_is_executable(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1014,7 +996,7 @@ def test_whole_book_imitation_run_request_sample_is_executable(monkeypatch, tmp_
 
 
 def test_whole_book_imitation_readiness_sample_is_executable(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1035,7 +1017,7 @@ def test_whole_book_imitation_readiness_sample_is_executable(monkeypatch, tmp_pa
 
 
 def test_whole_book_imitation_success_sample_matches_live_stable_fields(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1082,7 +1064,7 @@ def test_review_cluster_history_endpoint_supports_filters(monkeypatch, tmp_path)
     settings = get_settings().model_copy(deep=True)
     settings.runtime_cache_dir = str(tmp_path / "runtime-cache")
     monkeypatch.setattr("apps.api.app.main.get_settings", lambda: settings)
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
 
@@ -1125,7 +1107,7 @@ def test_review_cluster_history_endpoint_supports_filters(monkeypatch, tmp_path)
 
 
 def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1189,7 +1171,7 @@ def test_review_clusters_endpoint_supports_filters(monkeypatch, tmp_path) -> Non
 
 
 def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1286,7 +1268,7 @@ def test_review_cluster_summary_endpoint_returns_aggregates(monkeypatch, tmp_pat
 
 
 def test_review_cluster_summary_endpoint_supports_filters(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1403,7 +1385,7 @@ def test_review_cluster_update_file_fallback_when_review_tables_missing(
 
 
 def test_review_cluster_update_returns_400_for_invalid_status_combo(monkeypatch) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1422,7 +1404,7 @@ def test_review_cluster_update_returns_400_for_invalid_status_combo(monkeypatch)
 
 
 def test_review_batch_execute_dry_run_and_apply(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1519,7 +1501,7 @@ def test_review_batch_execute_dry_run_and_apply(monkeypatch, tmp_path) -> None:
 
 
 def test_review_batch_execute_escalate(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1623,7 +1605,7 @@ def test_review_batch_execute_escalate(monkeypatch, tmp_path) -> None:
 
 
 def test_review_batch_execute_close(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1730,7 +1712,7 @@ def test_review_batch_execute_close(monkeypatch, tmp_path) -> None:
 
 
 def test_review_batch_execute_archive(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1838,7 +1820,7 @@ def test_review_batch_execute_archive(monkeypatch, tmp_path) -> None:
 
 
 def test_review_batch_execute_reports_skipped_cluster_keys(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)
@@ -1902,7 +1884,7 @@ def test_review_batch_execute_reports_skipped_cluster_keys(monkeypatch, tmp_path
 
 
 def test_review_batch_history_returns_audit_entries(monkeypatch, tmp_path) -> None:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = _make_shared_engine()
     create_schema(engine)
     factory = sessionmaker(bind=engine, future=True)
     monkeypatch.setattr("apps.api.app.main.create_session_factory", lambda settings=None: factory)

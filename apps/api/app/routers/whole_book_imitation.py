@@ -32,7 +32,7 @@ def readiness(
 def run(request: Request, body: dict[str, Any] = Body(...)):
     from fastapi.responses import JSONResponse
     from novel_analyzer.config.settings import get_settings
-    from novel_analyzer.database.session import create_session_factory
+    from apps.api.app.main import create_session_factory
     from novel_analyzer.services.whole_book_imitation_service import WholeBookImitationService
     from apps.api.app.main import (
         _whole_book_mapping_pack,

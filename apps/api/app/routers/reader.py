@@ -27,7 +27,7 @@ def submit_feedback(payload: dict = Body(...)):
 
     database_url = str(payload.get("database_url") or "") or None
     from novel_analyzer.config.settings import get_settings
-    from novel_analyzer.database.session import create_session_factory
+    from apps.api.app.main import create_session_factory
     from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
 
     runtime = get_settings().model_copy(deep=True)
@@ -52,7 +52,7 @@ def feedback_summary(
     database_url: str | None = Query(None),
 ):
     from novel_analyzer.config.settings import get_settings
-    from novel_analyzer.database.session import create_session_factory
+    from apps.api.app.main import create_session_factory
     from novel_analyzer.services.reader_feedback_service import ReaderFeedbackService
 
     runtime = get_settings().model_copy(deep=True)
