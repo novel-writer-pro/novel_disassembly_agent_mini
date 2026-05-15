@@ -633,3 +633,97 @@ def test_harness_use_llm_falls_back_to_skeleton_when_provider_fails(tmp_path: Pa
         assert report.final_draft.draft_text
         assert any("skeleton fallback" in item for item in report.final_draft.comparison_notes)
         assert any("skeleton fallback 保底生成" in item for item in report.final_draft.risk_gate_notes)
+
+
+def test_harness_use_llm_recovers_when_first_attempt_thin(tmp_path: Path) -> None:
+    """7feb888 retry path — first build_llm_draft returns a thin draft (<= 500 chars),
+    second succeeds. Harness must accept attempt 2 and record the recovery in
+    comparison_notes; no skeleton fallback should fire."""
+    from novel_analyzer.domain.schemas import ChapterImitationDraft
+
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        harness = HarnessControllerService(session)
+
+        thin = ChapterImitationDraft(
+            source_chapter_index=1,
+            original_title="原标题",
+            draft_title="瘦版本",
+            draft_text="太短了。" * 5,
+        )
+        full = ChapterImitationDraft(
+            source_chapter_index=1,
+            original_title="原标题",
+            draft_title="正常版本",
+            draft_text="这是正常长度的小说正文，足以通过门槛。" * 60,
+        )
+
+        with patch.object(
+            harness.chapter_imitation,
+            "build_llm_draft",
+            side_effect=[thin, full],
+        ):
+            report = harness.run_harness(
+                branch_id,
+                source_chapter_index=1,
+                target_goal="测试目标",
+                max_rounds=1,
+                use_llm=True,
+            )
+
+        assert report.final_draft.draft_title == "正常版本"
+        assert len(report.final_draft.draft_text) > 500
+        assert any(
+            "recovered on attempt 2" in note
+            for note in report.final_draft.comparison_notes
+        )
+        assert not any(
+            "skeleton fallback" in note
+            for note in report.final_draft.comparison_notes
+        )
+
+
+def test_harness_use_llm_falls_back_after_3_thin_attempts(tmp_path: Path) -> None:
+    """7feb888 retry budget — when ALL 3 attempts return thin drafts, harness
+    falls back to skeleton. Distinguishes from the exception-fallback path
+    already covered by test_harness_use_llm_falls_back_to_skeleton_when_provider_fails."""
+    from novel_analyzer.domain.schemas import ChapterImitationDraft
+
+    with _session() as session:
+        run_id, branch_id = _setup_branch(session, tmp_path)
+        for i in range(1, 4):
+            _record_chapter(session, run_id, branch_id, i)
+
+        harness = HarnessControllerService(session)
+
+        thin = ChapterImitationDraft(
+            source_chapter_index=1,
+            original_title="原标题",
+            draft_title="瘦版本",
+            draft_text="也太短了。" * 5,
+        )
+
+        with patch.object(
+            harness.chapter_imitation,
+            "build_llm_draft",
+            side_effect=[thin, thin, thin],
+        ):
+            report = harness.run_harness(
+                branch_id,
+                source_chapter_index=1,
+                target_goal="测试目标",
+                max_rounds=1,
+                use_llm=True,
+            )
+
+        assert any(
+            "skeleton fallback" in note
+            for note in report.final_draft.comparison_notes
+        )
+        assert any(
+            "保底生成" in note
+            for note in report.final_draft.risk_gate_notes
+        )
